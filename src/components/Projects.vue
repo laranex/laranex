@@ -1,32 +1,34 @@
 <template>
   <div>
     <input
-      type="text"
-      class="search-box"
-      placeholder="Search Projects..."
-      v-model="search"
+        type="text"
+        class="search-box"
+        placeholder="Search Projects..."
+        v-model="search"
     />
     <div class="card-container">
-      <div class="card" v-for="pkg in filteredPackages" :key="pkg.name">
-        <div class="card-body">
-          <h4>{{ pkg.name }}</h4>
-          <p class="card-description">{{ pkg.description }}</p>
-        </div>
+      <a :href="pkg.homepage" v-for="pkg in filteredPackages" :key="pkg.name">
+        <div class="card">
+          <div class="card-body">
+            <h4>{{ pkg.name }}</h4>
+            <p class="card-description">{{ pkg.description }}</p>
+          </div>
 
-        <div class="total-downloads">
-          <img src="/svgs/download.svg" :alt="pkg.name" />
-          <small>{{ pkg.downloads }}</small>
+          <div class="total-downloads">
+            <img src="/svgs/download.svg" :alt="pkg.name"/>
+            <small>{{ pkg.downloads }}</small>
+          </div>
         </div>
-      </div>
+      </a>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, ref, computed } from "vue";
-import { usePackagist } from "../composables/usePackagist";
+import {defineComponent, onMounted, ref, computed} from "vue";
+import {usePackagist} from "../composables/usePackagist";
 
-const { fetchPackagesFromPackagist } = usePackagist();
+const {fetchPackagesFromPackagist} = usePackagist();
 
 export default defineComponent({
   name: "Projects",
@@ -39,11 +41,11 @@ export default defineComponent({
     });
 
     const filteredPackages = computed(() =>
-      packages.value
-        .filter(({ name }) =>
-          name.toLowerCase().includes(search.value.toLowerCase())
-        )
-        .sort((a, b) => b.downloads - a.downloads)
+        packages.value
+            .filter(({name}) =>
+                name.toLowerCase().includes(search.value.toLowerCase())
+            )
+            .sort((a, b) => b.downloads - a.downloads)
     );
 
     return {
@@ -96,5 +98,10 @@ export default defineComponent({
   border-radius: 6px;
   transition: border-color 0.3s;
   margin-bottom: 20px;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
 }
 </style>
