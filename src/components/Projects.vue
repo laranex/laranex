@@ -7,10 +7,11 @@
         v-model="search"
     />
     <div class="card-container">
-      <a :href="pkg.homepage" v-for="pkg in filteredPackages" :key="pkg.name">
-        <div class="card">
+        <div class="card" v-for="pkg in filteredPackages" :key="pkg.name">
           <div class="card-body">
-            <h4>{{ pkg.name }}</h4>
+            <h4>
+              <a :href="pkg.homepage">{{pkg.name}}</a>
+            </h4>
             <p class="card-description">{{ pkg.description }}</p>
           </div>
 
@@ -19,7 +20,6 @@
             <small>{{ pkg.downloads }}</small>
           </div>
         </div>
-      </a>
     </div>
   </div>
 </template>
