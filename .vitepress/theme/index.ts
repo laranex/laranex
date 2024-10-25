@@ -4,7 +4,7 @@ import type { Theme } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
 import Projects from '../../src/components/Projects.vue'
 import './style.css'
-
+import "./main.css";
 
 export default {
   extends: DefaultTheme,
