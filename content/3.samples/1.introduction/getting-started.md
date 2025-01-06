@@ -1,20 +1,12 @@
-# Getting Started
+# LARANEX
 
-Better Laravel from your Markdown files to a deployed website in few minutes.
+From your Markdown files to a deployed website in few minutes.
 
 ## Play online
 
 You can start playing with Docus in your browser using Stackblitz:
 
-::button-link
----
-blank: true
-href: https://stackblitz.com/github/nuxt-themes/docus-starter
-icon: IconStackBlitz
-size: small
----
-Play on StackBlitz
-::
+:button-link[Play on StackBlitz]{size="small" icon="IconStackBlitz" href="https://stackblitz.com/github/nuxt-themes/docus-starter" blank}
 
 ## Create a new project
 
@@ -27,22 +19,25 @@ npx nuxi@latest init docs -t themes/docus
 2. Install the dependencies in the `docs` folder:
 
 ::code-group
-```bash [npm]
-npm install
-```
 
-```bash [yarn]
-yarn install
-```
+  ```bash [npm]
+  npm install
+  ```
 
-```bash [pnpm]
-pnpm install --shamefully-hoist
-```
+  ```bash [yarn]
+  yarn install
+  ```
+
+  ```bash [pnpm]
+  pnpm install --shamefully-hoist
+  ```
+
 ::
 
 3. Run the `dev` command to start Docus in development mode:
 
 ::code-group
+
 ```bash [npm]
 npm run dev
 ```
@@ -54,6 +49,7 @@ yarn dev
 ```bash [pnpm]
 pnpm run dev
 ```
+
 ::
 
 ::alert{type="success"}

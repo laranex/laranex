@@ -1,3 +1,3 @@
 <template>
-  <div style="height: 120px; width: 120px;">LARANEX</div>
+  <img width="120px" height="120px" src="/logo.svg" alt="LARANEX">
 </template>
