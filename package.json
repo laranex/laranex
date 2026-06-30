@@ -1,6 +1,5 @@
 {
     "scripts": {
-        "start": "npm run docs:dev",
         "build": "vitepress build",
         "dev": "vitepress dev",
         "preview": "vitepress preview"
