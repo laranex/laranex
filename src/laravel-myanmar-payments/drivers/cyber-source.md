@@ -1,12 +1,11 @@
 ---
 title: CyberSource Secure Acceptance
-description: Integrate CyberSource Secure Acceptance with Laravel Myanmar Payments using a signed form POST. The driver verifies the response signature automatically on callback.
+description: Integrate CyberSource Secure Acceptance with Laravel Myanmar Payments. Uses a signed form POST flow — use the built-in redirect or render the form yourself.
 ---
 
 # CyberSource Secure Acceptance
 
-
-CyberSource uses a form POST flow. Your page renders a hidden HTML form that auto-submits to `$result->formUrl` with the signed `$result->formData`.
+CyberSource uses a form POST flow. The driver signs the request fields and returns both a `redirectUrl` (for the built-in form page) and the raw `formUrl`/`formData` if you prefer to render the form yourself.
 
 :::warning No Query API
 CyberSource Secure Acceptance does not expose an order status query endpoint. Use `handleCallback()` to determine the final payment status.
@@ -32,6 +31,10 @@ new CyberSourcePaymentData(
 
 ## Initiating a Payment
 
+### Using the built-in form page (recommended)
+
+Redirect to `$result->redirectUrl`. The package renders a hidden form and auto-submits it to CyberSource — no extra code needed on your end.
+
 ```php
 use Laranex\LaravelMyanmarPayments\Data\CyberSourcePaymentData;
 use Laranex\LaravelMyanmarPayments\MyanmarPaymentsFacade as MyanmarPayments;
@@ -44,12 +47,24 @@ $result = MyanmarPayments::driver('cyber_source')->initiate(new CyberSourcePayme
     cancelUrl: route('payment.cancel'),
 ));
 
-// Render an auto-submit form in your view
-// $result->formUrl  — POST target
-// $result->formData — signed hidden field key/value pairs
+return redirect($result->redirectUrl);
 ```
 
-Example Blade snippet:
+### Rendering the form yourself
+
+Use `$result->formUrl` and `$result->formData` directly if you want to control the form page — custom loading state, styling, or analytics. The form data is already signed; do not modify `$result->formData` before rendering.
+
+```php
+$result = MyanmarPayments::driver('cyber_source')->initiate(new CyberSourcePaymentData(
+    orderId: 'ORD-001',
+    amount: 20000,
+    callbackUrl: route('payment.callback'),
+));
+
+return view('payment.form', ['result' => $result]);
+```
+
+In your Blade view:
 
 ```html
 <form id="payment-form" method="POST" action="{{ $result->formUrl }}">
@@ -69,18 +84,18 @@ Route::post('/payment/callback/cybersource', function (Request $request) {
     $result = MyanmarPayments::driver('cyber_source')->handleCallback($request->all());
 
     if ($result->isSuccessful()) {
-        // $result->orderId, $result->transactionId
+        // $result->orderId
     }
 });
 ```
 
-## PaymentResult Reference
+## RequestPaymentResult Reference
 
 | Property | Type | Populated by |
 |---|---|---|
 | `status` | `PaymentStatus` | All methods |
-| `formUrl` | `?string` | `initiate` |
-| `formData` | `?array` | `initiate` |
-| `transactionId` | `?string` | `handleCallback` |
+| `redirectUrl` | `?string` | `initiate` — points to built-in form page |
+| `formUrl` | `?string` | `initiate` — raw POST target |
+| `formData` | `?array` | `initiate` — signed hidden field key/value pairs |
 | `orderId` | `?string` | `handleCallback` |
 | `raw` | `array` | All methods |

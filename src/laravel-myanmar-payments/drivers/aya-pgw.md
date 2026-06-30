@@ -1,12 +1,11 @@
 ---
 title: AYA Payment Gateway
-description: Integrate AYA PGW with Laravel Myanmar Payments using a form POST flow. The callback URL is configured in the merchant portal, not in the payment request.
+description: Integrate AYA PGW with Laravel Myanmar Payments. Uses a form POST flow — use the built-in redirect or render the form yourself.
 ---
 
 # AYA Payment Gateway
 
-
-AYA PGW uses a form POST flow. Your page renders a hidden HTML form that auto-submits to `$result->formUrl` with `$result->formData`.
+AYA PGW uses a form POST flow. The driver signs the request and returns both a `redirectUrl` (for the built-in form page) and the raw `formUrl`/`formData` if you prefer to render the form yourself.
 
 :::info Callback URL
 The callback URL for AYA PGW is configured in the AYA merchant portal — it is not passed in the payment request. `AyaPgwPaymentData` has no `callbackUrl` parameter.
@@ -18,18 +17,22 @@ The callback URL for AYA PGW is configured in the AYA merchant portal — it is 
 use Laranex\LaravelMyanmarPayments\Data\AyaPgwPaymentData;
 
 new AyaPgwPaymentData(
-    orderId:      'ORD-001',   // required
-    amount:       8000,        // required, in MMK (integer)
-    channel:      'AYA_PAY',  // required
-    method:       'WALLET',   // required
-    currencyCode: 104,         // optional, 104 = MMK (default)
-    frontendUrl:  'https://...', // optional, redirect after payment
-    description:  '',          // optional
-    userRefs:     [],          // optional, up to 5 reference values
+    orderId:      'ORD-001',      // required
+    amount:       8000,           // required, in MMK (integer)
+    channel:      'AYA_PAY',     // required
+    method:       'WALLET',      // required
+    currencyCode: 104,            // optional, 104 = MMK (default)
+    frontendUrl:  'https://...',  // optional, redirect after payment
+    description:  '',             // optional
+    userRefs:     [],             // optional, up to 5 reference values
 )
 ```
 
 ## Initiating a Payment
+
+### Using the built-in form page (recommended)
+
+Redirect to `$result->redirectUrl`. The package renders a hidden form and auto-submits it — no extra code needed on your end.
 
 ```php
 use Laranex\LaravelMyanmarPayments\Data\AyaPgwPaymentData;
@@ -41,15 +44,27 @@ $result = MyanmarPayments::driver('aya_pgw')->initiate(new AyaPgwPaymentData(
     channel: 'AYA_PAY',
     method: 'WALLET',
     frontendUrl: route('payment.success'),
-    userRefs: ['ref1'],
 ));
 
-// Render an auto-submit form in your view
-// $result->formUrl  — POST target
-// $result->formData — hidden field key/value pairs
+return redirect($result->redirectUrl);
 ```
 
-Example Blade snippet:
+### Rendering the form yourself
+
+Use `$result->formUrl` and `$result->formData` directly if you want to control the form page — custom loading state, styling, or analytics.
+
+```php
+$result = MyanmarPayments::driver('aya_pgw')->initiate(new AyaPgwPaymentData(
+    orderId: 'ORD-001',
+    amount: 8000,
+    channel: 'AYA_PAY',
+    method: 'WALLET',
+));
+
+return view('payment.form', ['result' => $result]);
+```
+
+In your Blade view:
 
 ```html
 <form id="payment-form" method="POST" action="{{ $result->formUrl }}">
@@ -79,18 +94,18 @@ Route::post('/payment/callback/aya-pgw', function (Request $request) {
     );
 
     if ($result->isSuccessful()) {
-        // $result->orderId, $result->transactionId
+        // $result->orderId
     }
 });
 ```
 
-## PaymentResult Reference
+## RequestPaymentResult Reference
 
 | Property | Type | Populated by |
 |---|---|---|
 | `status` | `PaymentStatus` | All methods |
-| `formUrl` | `?string` | `initiate` |
-| `formData` | `?array` | `initiate` |
-| `transactionId` | `?string` | `verify`, `handleCallback` |
+| `redirectUrl` | `?string` | `initiate` — points to built-in form page |
+| `formUrl` | `?string` | `initiate` — raw POST target |
+| `formData` | `?array` | `initiate` — signed hidden field key/value pairs |
 | `orderId` | `?string` | `verify`, `handleCallback` |
 | `raw` | `array` | All methods |

@@ -5,7 +5,6 @@ description: Integrate KBZ Pay with Laravel Myanmar Payments. Supports PWA redir
 
 # KBZ Pay
 
-
 KBZ Pay exposes three sub-drivers depending on how you want the customer to complete the payment:
 
 | Driver | Flow |
@@ -89,12 +88,12 @@ Route::post('/payment/callback/kbzpay', function (Request $request) {
     $result = MyanmarPayments::driver('kbzpay.pwa')->handleCallback($request->all());
 
     if ($result->isSuccessful()) {
-        // $result->orderId, $result->transactionId
+        // $result->orderId
     }
 });
 ```
 
-## PaymentResult Reference
+## RequestPaymentResult Reference
 
 | Property | Type | Populated by |
 |---|---|---|
@@ -102,6 +101,5 @@ Route::post('/payment/callback/kbzpay', function (Request $request) {
 | `redirectUrl` | `?string` | `initiate` (PWA only) |
 | `qrCode` | `?string` | `initiate` (QR only) |
 | `appData` | `?array` | `initiate` (App only) |
-| `transactionId` | `?string` | `verify`, `handleCallback` |
 | `orderId` | `?string` | `verify`, `handleCallback` |
 | `raw` | `array` | All methods |
