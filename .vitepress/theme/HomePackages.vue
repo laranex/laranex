@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { data as packages } from '../../src/packages.data.ts'
+import { data as packages } from '../../src/packages.data'
 </script>
 
 <template>
@@ -13,6 +13,7 @@ import { data as packages } from '../../src/packages.data.ts'
             <h3 class="lx-package-name">{{ pkg.name }}</h3>
             <p class="lx-package-desc">{{ pkg.description }}</p>
           </div>
+
           <div class="lx-package-actions">
             <a :href="pkg.docsUrl" class="lx-btn lx-btn-brand">
               <svg class="lx-btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

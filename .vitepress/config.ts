@@ -9,9 +9,8 @@ export default defineConfig({
   srcDir: 'src',
 
   head: [
-    ['link', { rel: 'icon', sizes: '16x16', type: 'image/png', href: '/icons/16x16.png' }],
-    ['link', { rel: 'icon', sizes: '32x32', type: 'image/png', href: '/icons/32x32.png' }],
-    ['meta', { name: 'theme-color', content: '#f59e0b' }],
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
+    ['meta', { name: 'theme-color', content: '#18b69b' }],
     ['meta', { property: 'og:site_name', content: 'Laranex' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { name: 'twitter:card', content: 'summary' }],
@@ -75,7 +74,6 @@ export default defineConfig({
           ],
         },
       ],
-
       '/better-laravel/': [
         {
           text: 'Better Laravel',
@@ -107,6 +105,12 @@ export default defineConfig({
     search: {
       provider: 'local',
       options: {
+        translations: {
+          button: {
+            buttonText: 'Search docs...',
+            buttonAriaLabel: 'Search docs',
+          },
+        },
         miniSearch: {
           searchOptions: {
             // Scope results to the package currently being browsed.
@@ -120,13 +124,17 @@ export default defineConfig({
             },
           },
         },
-        placeholder: 'Search docs...',
       },
     },
 
     footer: {
-      message: 'Released under the MIT License.',
       copyright: 'Copyright © 2024 Laranex',
+    },
+  },
+
+  markdown: {
+    languageAlias: {
+      env: 'dotenv',
     },
   },
 

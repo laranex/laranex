@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useData } from 'vitepress'
 import { computed } from 'vue'
-import { data as packages } from '../../src/packages.data.ts'
+import { data as packages } from '../../src/packages.data'
 
 const { page } = useData()
 

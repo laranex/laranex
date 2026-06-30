@@ -1,16 +1,14 @@
-/* Brand colours — amber */
+/* Brand colours */
 :root {
-  --vp-c-brand-1: #f59e0b;
-  --vp-c-brand-2: #d97706;
-  --vp-c-brand-3: #b45309;
-  --vp-c-brand-soft: rgba(245, 158, 11, 0.14);
+  --vp-c-brand-1: #18b69b;
+  --vp-c-brand-2: #18b69b;
+  --vp-c-brand-3: #18b69b;
 }
 
 .dark {
-  --vp-c-brand-1: #fbbf24;
-  --vp-c-brand-2: #f59e0b;
-  --vp-c-brand-3: #d97706;
-  --vp-c-brand-soft: rgba(251, 191, 36, 0.14);
+  --vp-c-brand-1: #18b69b;
+  --vp-c-brand-2: #18b69b;
+  --vp-c-brand-3: #18b69b;
 }
 
 /* Packages section */
@@ -50,7 +48,7 @@
 
 .lx-package-card:hover {
   border-color: var(--vp-c-brand-1);
-  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.08);
+  box-shadow: 0 4px 20px rgba(24, 182, 155, 0.1);
 }
 
 .lx-package-body {
