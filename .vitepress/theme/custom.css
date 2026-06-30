@@ -1,0 +1,141 @@
+/* Brand colours — amber */
+:root {
+  --vp-c-brand-1: #f59e0b;
+  --vp-c-brand-2: #d97706;
+  --vp-c-brand-3: #b45309;
+  --vp-c-brand-soft: rgba(245, 158, 11, 0.14);
+}
+
+.dark {
+  --vp-c-brand-1: #fbbf24;
+  --vp-c-brand-2: #f59e0b;
+  --vp-c-brand-3: #d97706;
+  --vp-c-brand-soft: rgba(251, 191, 36, 0.14);
+}
+
+/* Packages section */
+.lx-packages {
+  padding: 48px 24px 80px;
+}
+
+.lx-packages-inner {
+  max-width: 1152px;
+  margin: 0 auto;
+}
+
+.lx-packages-heading {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 32px;
+  color: var(--vp-c-text-1);
+}
+
+.lx-packages-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.lx-package-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  padding: 24px;
+  background: var(--vp-c-bg-soft);
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.lx-package-card:hover {
+  border-color: var(--vp-c-brand-1);
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.08);
+}
+
+.lx-package-body {
+  flex: 1;
+  margin-bottom: 20px;
+}
+
+.lx-package-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--vp-c-brand-1);
+  margin-bottom: 10px;
+}
+
+.lx-package-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.lx-package-desc {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--vp-c-text-2);
+}
+
+.lx-package-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.lx-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none !important;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+
+.lx-btn-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.pkg-actions {
+  margin-top: 24px;
+}
+
+.pkg-github-btn {
+  font-size: 14px;
+  padding: 9px 20px;
+}
+
+.pkg-github-btn .lx-btn-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.lx-btn-brand {
+  background: var(--vp-c-brand-1);
+  color: #fff !important;
+}
+
+.lx-btn-brand:hover {
+  background: var(--vp-c-brand-2);
+}
+
+.lx-btn-alt {
+  border: 1px solid var(--vp-c-divider);
+  color: var(--vp-c-text-1) !important;
+  background: transparent;
+}
+
+.lx-btn-alt:hover {
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-brand-1) !important;
+}
