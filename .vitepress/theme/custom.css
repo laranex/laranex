@@ -1,3 +1,28 @@
+/* Keep search on the right — VitePress sets flex-grow: 1 which pushes it left */
+@media (min-width: 768px) {
+  .VPNavBarSearch {
+    flex-grow: 0 !important;
+    padding-left: 0 !important;
+    margin-right: 16px !important;
+  }
+}
+
+/* Stack logo and package name vertically inside the title anchor */
+.VPNavBarTitle .title {
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+}
+
+.lx-nav-package-name {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--vp-c-text-2);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+
 /* Brand colours */
 :root {
   --vp-c-brand-1: #18b69b;

@@ -44,33 +44,31 @@ export default defineConfig({
     logo: { light: '/logo.svg', dark: '/logo.svg' },
     siteTitle: false,
 
-    nav: [
-      {
-        text: 'Packages',
-        items: [
-          { text: 'Laravel Myanmar Payments', link: '/laravel-myanmar-payments/introduction' },
-          { text: 'Better Laravel', link: '/better-laravel/introduction' },
-        ],
-      },
-    ],
-
     sidebar: {
       '/laravel-myanmar-payments/': [
         {
-          text: 'Laravel Myanmar Payments',
+          text: 'Getting Started',
           items: [
             { text: 'Introduction',  link: '/laravel-myanmar-payments/introduction' },
             { text: 'Installation',  link: '/laravel-myanmar-payments/installation' },
             { text: 'Configuration', link: '/laravel-myanmar-payments/configuration' },
+            { text: 'Payment Flows', link: '/laravel-myanmar-payments/payment-flows' },
           ],
         },
         {
-          text: 'Drivers',
+          text: 'Usage',
           items: [
             { text: 'KBZ Pay',     link: '/laravel-myanmar-payments/drivers/kbz-pay' },
             { text: 'Wave Money',  link: '/laravel-myanmar-payments/drivers/wave-money' },
             { text: 'AYA PGW',     link: '/laravel-myanmar-payments/drivers/aya-pgw' },
             { text: 'CyberSource', link: '/laravel-myanmar-payments/drivers/cyber-source' },
+          ],
+        },
+        {
+          text: 'Return Types',
+          items: [
+            { text: 'RequestPaymentResult',  link: '/laravel-myanmar-payments/references/request-payment-result' },
+            { text: 'HandleCallbackResult',  link: '/laravel-myanmar-payments/references/handle-callback-result' },
           ],
         },
       ],

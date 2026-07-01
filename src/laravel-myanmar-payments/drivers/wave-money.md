@@ -5,56 +5,33 @@ description: Integrate Wave Money payments using a redirect flow with Laravel My
 
 # Wave Money
 
-Wave Money uses a redirect flow. After initiating, redirect the customer to `$result->redirectUrl`.
-
-:::warning No Query API
-Wave Money does not expose an order status query endpoint. Use `handleCallback()` to determine the final payment status.
-:::
-
-## Data Class
-
-```php
-use Laranex\LaravelMyanmarPayments\Data\WaveMoneyPaymentData;
-
-new WaveMoneyPaymentData(
-    orderId:             'ORD-001',     // required
-    callbackUrl:         'https://...', // required, must be a valid URL
-    items:               [],            // required — see below
-    merchantReferenceId: '',            // optional, defaults to orderId
-    frontendUrl:         'https://...', // optional, redirect after payment
-    description:         '',            // optional
-)
-```
-
-### Items
-
-`items` is required by the Wave Money gateway. Each entry must have a `name` (string) and `amount` (numeric). The total payment amount is calculated automatically from the sum of all item amounts — there is no separate `amount` parameter.
-
-```php
-items: [
-    ['name' => 'Product A', 'amount' => 3000],
-    ['name' => 'Product B', 'amount' => 2000],
-],
-// total charged: 5000 MMK
-```
+`wave_money` uses the [redirect-based](/laravel-myanmar-payments/payment-flows#redirect-based) flow.
 
 ## Initiating a Payment
 
+The total charge is calculated from the sum of all `items` amounts — there is no separate `amount` parameter.
+
 ```php
-use Laranex\LaravelMyanmarPayments\Data\WaveMoneyPaymentData;
+use Illuminate\Support\Str;
+use Laranex\LaravelMyanmarPayments\Data\Request\WaveMoneyRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\MyanmarPaymentsFacade as MyanmarPayments;
 
-$result = MyanmarPayments::driver('wave_money')->initiate(new WaveMoneyPaymentData(
-    orderId: 'ORD-001',
-    callbackUrl: route('payment.callback'),
-    items: [
-        ['name' => 'Product A', 'amount' => 3000],
-        ['name' => 'Product B', 'amount' => 2000],
-    ],
-    frontendUrl: route('payment.success'),
-));
+$transactionId = Str::uuid()->toString();
 
-return redirect($result->redirectUrl);
+$result = MyanmarPayments::driver('wave_money')->initiate(
+    new WaveMoneyRequestPaymentData(
+        transactionId: $transactionId,
+        callbackUrl:   route('payment.callback'),
+        frontendUrl:   route('payment.success'), // redirect after payment
+        description:   'Order payment',
+        items: [
+            ['name' => 'Product A', 'amount' => 3000],
+            ['name' => 'Product B', 'amount' => 2000],
+        ],
+    )
+);
+
+return redirect($result->value);
 ```
 
 ## Handling Callbacks
@@ -64,16 +41,7 @@ Route::post('/payment/callback/wave-money', function (Request $request) {
     $result = MyanmarPayments::driver('wave_money')->handleCallback($request->all());
 
     if ($result->isSuccessful()) {
-        // $result->orderId
+        // $result->transactionId
     }
 });
 ```
-
-## RequestPaymentResult Reference
-
-| Property | Type | Populated by |
-|---|---|---|
-| `status` | `PaymentStatus` | All methods |
-| `redirectUrl` | `?string` | `initiate` |
-| `orderId` | `?string` | `handleCallback` |
-| `raw` | `array` | All methods |

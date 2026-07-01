@@ -1,82 +1,69 @@
 ---
 title: KBZ Pay
-description: Integrate KBZ Pay with Laravel Myanmar Payments. Supports PWA redirect, QR code, and in-app payment flows via a single KbzPayPaymentData class.
+description: Integrate KBZ Pay with Laravel Myanmar Payments. Supports PWA redirect, QR code, and in-app payment flows via a single KbzPayRequestPaymentData class.
 ---
 
 # KBZ Pay
 
-KBZ Pay exposes three sub-drivers depending on how you want the customer to complete the payment:
-
-| Driver | Flow |
-|---|---|
-| `kbzpay.pwa` | Redirect to KBZ Pay web page |
-| `kbzpay.qr` | Display a QR code for the customer to scan |
-| `kbzpay.app` | Pass signed payload to your mobile SDK |
-
-## Data Class
-
-```php
-use Laranex\LaravelMyanmarPayments\Data\KbzPayPaymentData;
-
-new KbzPayPaymentData(
-    orderId:     'ORD-001',       // required
-    amount:      10000,           // required, in MMK (integer)
-    callbackUrl: 'https://...',   // required, must be a valid URL
-    currency:    'MMK',           // optional, default 'MMK'
-    nonceStr:    '',              // optional, auto-generated if empty
-)
-```
+- `kbzpay.pwa` — [redirect-based](/laravel-myanmar-payments/payment-flows#redirect-based) flow
+- `kbzpay.qr` — [QR-based](/laravel-myanmar-payments/payment-flows#qr-based) flow
+- `kbzpay.app` — [app-based](/laravel-myanmar-payments/payment-flows#app-based) flow
 
 ## Initiating a Payment
 
-### PWA (redirect)
+### PWA
 
 ```php
-use Laranex\LaravelMyanmarPayments\Data\KbzPayPaymentData;
+use Illuminate\Support\Str;
+use Laranex\LaravelMyanmarPayments\Data\Request\KbzPayRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\MyanmarPaymentsFacade as MyanmarPayments;
 
-$result = MyanmarPayments::driver('kbzpay.pwa')->initiate(new KbzPayPaymentData(
-    orderId: 'ORD-001',
-    amount: 10000,
-    callbackUrl: route('payment.callback'),
-));
+$transactionId = Str::uuid()->toString();
 
-return redirect($result->redirectUrl);
+$result = MyanmarPayments::driver('kbzpay.pwa')->initiate(
+    new KbzPayRequestPaymentData(
+        transactionId: $transactionId,
+        amount:        10000,              // in MMK (integer)
+        callbackUrl:   route('payment.callback'),
+        currency:      'MMK',             // optional, default 'MMK'
+        nonceStr:      '',                // optional, auto-generated if empty
+    )
+);
+
+return redirect($result->value);
 ```
 
 ### QR Code
 
 ```php
-$result = MyanmarPayments::driver('kbzpay.qr')->initiate(new KbzPayPaymentData(
-    orderId: 'ORD-001',
-    amount: 10000,
-    callbackUrl: route('payment.callback'),
-));
+$transactionId = Str::uuid()->toString();
 
-// $result->qrCode is a string — render it as a QR image in your UI
+$result = MyanmarPayments::driver('kbzpay.qr')->initiate(
+    new KbzPayRequestPaymentData(
+        transactionId: $transactionId,
+        amount:        10000,
+        callbackUrl:   route('payment.callback'),
+    )
+);
+
+// $result->value is the QR code string — render it as an image in your UI
 ```
 
 ### In-App
 
 ```php
-$result = MyanmarPayments::driver('kbzpay.app')->initiate(new KbzPayPaymentData(
-    orderId: 'ORD-001',
-    amount: 10000,
-    callbackUrl: route('payment.callback'),
-));
+$transactionId = Str::uuid()->toString();
 
-// $result->appData is the signed array payload for the KBZ Pay mobile SDK
-return response()->json($result->appData);
-```
+$result = MyanmarPayments::driver('kbzpay.app')->initiate(
+    new KbzPayRequestPaymentData(
+        transactionId: $transactionId,
+        amount:        10000,
+        callbackUrl:   route('payment.callback'),
+    )
+);
 
-## Checking Status
-
-```php
-$result = MyanmarPayments::driver('kbzpay.pwa')->verify('ORD-001');
-
-if ($result->isSuccessful()) {
-    // fulfill the order
-}
+// $result->value is the signed payload array for the KBZ Pay mobile SDK
+return response()->json($result->value);
 ```
 
 ## Handling Callbacks
@@ -85,21 +72,11 @@ KBZ Pay sends the callback payload nested under a `Request` key. The driver hand
 
 ```php
 Route::post('/payment/callback/kbzpay', function (Request $request) {
-    $result = MyanmarPayments::driver('kbzpay.pwa')->handleCallback($request->all());
+    $result = MyanmarPayments::driver('kbzpay.pwa')
+        ->handleCallback($request->all());
 
     if ($result->isSuccessful()) {
-        // $result->orderId
+        // $result->transactionId
     }
 });
 ```
-
-## RequestPaymentResult Reference
-
-| Property | Type | Populated by |
-|---|---|---|
-| `status` | `PaymentStatus` | All methods |
-| `redirectUrl` | `?string` | `initiate` (PWA only) |
-| `qrCode` | `?string` | `initiate` (QR only) |
-| `appData` | `?array` | `initiate` (App only) |
-| `orderId` | `?string` | `verify`, `handleCallback` |
-| `raw` | `array` | All methods |
