@@ -16,19 +16,19 @@ use Laranex\LaravelMyanmarPayments\MyanmarPaymentsFacade as MyanmarPayments;
 
 $transactionId = Str::uuid()->toString();
 
-$result = MyanmarPayments::driver('cyber_source')->initiate(
-    new CyberSourceRequestPaymentData(
-        transactionId:   $transactionId,
-        amount:          20000,                  // in MMK (integer)
-        callbackUrl:     route('payment.callback'),
-        currency:        'MMK',                  // optional, default 'MMK'
-        frontendUrl:     route('payment.success'),   // optional
-        transactionType: 'sale',                 // optional, default 'sale'
-        cancelUrl:       route('payment.cancel'),    // optional
-        transactionUuid: '',                     // optional, auto-generated if empty
-        referenceNumber: '',                     // optional, defaults to transactionId
-    )
+$data = new CyberSourceRequestPaymentData(
+    transactionId:   $transactionId,
+    amount:          20000,                  // in MMK (integer)
+    callbackUrl:     route('payment.callback'),
+    currency:        'MMK',                  // optional, default 'MMK'
+    frontendUrl:     route('payment.success'),   // optional
+    transactionType: 'sale',                 // optional, default 'sale'
+    cancelUrl:       route('payment.cancel'),    // optional
+    transactionUuid: '',                     // optional, auto-generated if empty
+    referenceNumber: '',                     // optional, defaults to transactionId
 );
+
+$result = MyanmarPayments::driver('cyber_source')->initiate($data);
 
 return redirect($result->value);
 ```

@@ -23,12 +23,12 @@ return redirect($result->value); // gateway URL
 
 ## Form-Based
 
-**Drivers:** `aya_pgw`, `cyber_source`
+**Drivers:** `aya_pay`, `cyber_source`
 
 The driver signs a set of fields and returns a `value` URL pointing to the package's built-in Blade page, which renders a hidden form and auto-submits it to the gateway. The customer is forwarded transparently.
 
 ```php
-$result = MyanmarPayments::driver('aya_pgw')->initiate($data);
+$result = MyanmarPayments::driver('aya_pay')->initiate($data);
 
 return redirect($result->value); // package's auto-submit form page
 ```

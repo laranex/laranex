@@ -60,7 +60,7 @@ export default defineConfig({
           items: [
             { text: 'KBZ Pay',     link: '/laravel-myanmar-payments/drivers/kbz-pay' },
             { text: 'Wave Money',  link: '/laravel-myanmar-payments/drivers/wave-money' },
-            { text: 'AYA PGW',     link: '/laravel-myanmar-payments/drivers/aya-pgw' },
+            { text: 'AYA Pay',     link: '/laravel-myanmar-payments/drivers/aya-pay' },
             { text: 'CyberSource', link: '/laravel-myanmar-payments/drivers/cyber-source' },
           ],
         },

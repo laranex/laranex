@@ -18,18 +18,18 @@ use Laranex\LaravelMyanmarPayments\MyanmarPaymentsFacade as MyanmarPayments;
 
 $transactionId = Str::uuid()->toString();
 
-$result = MyanmarPayments::driver('wave_money')->initiate(
-    new WaveMoneyRequestPaymentData(
-        transactionId: $transactionId,
-        callbackUrl:   route('payment.callback'),
-        frontendUrl:   route('payment.success'), // redirect after payment
-        description:   'Order payment',
-        items: [
-            ['name' => 'Product A', 'amount' => 3000],
-            ['name' => 'Product B', 'amount' => 2000],
-        ],
-    )
+$data = new WaveMoneyRequestPaymentData(
+    transactionId: $transactionId,
+    callbackUrl:   route('payment.callback'),
+    frontendUrl:   route('payment.success'), // redirect after payment
+    description:   'Order payment',
+    items: [
+        ['name' => 'Product A', 'amount' => 3000],
+        ['name' => 'Product B', 'amount' => 2000],
+    ],
 );
+
+$result = MyanmarPayments::driver('wave_money')->initiate($data);
 
 return redirect($result->value);
 ```

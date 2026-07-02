@@ -20,15 +20,15 @@ use Laranex\LaravelMyanmarPayments\MyanmarPaymentsFacade as MyanmarPayments;
 
 $transactionId = Str::uuid()->toString();
 
-$result = MyanmarPayments::driver('kbzpay.pwa')->initiate(
-    new KbzPayRequestPaymentData(
-        transactionId: $transactionId,
-        amount:        10000,              // in MMK (integer)
-        callbackUrl:   route('payment.callback'),
-        currency:      'MMK',             // optional, default 'MMK'
-        nonceStr:      '',                // optional, auto-generated if empty
-    )
+$data = new KbzPayRequestPaymentData(
+    transactionId: $transactionId,
+    amount:        10000,              // in MMK (integer)
+    callbackUrl:   route('payment.callback'),
+    currency:      'MMK',             // optional, default 'MMK'
+    nonceStr:      '',                // optional, auto-generated if empty
 );
+
+$result = MyanmarPayments::driver('kbzpay.pwa')->initiate($data);
 
 return redirect($result->value);
 ```
@@ -38,13 +38,13 @@ return redirect($result->value);
 ```php
 $transactionId = Str::uuid()->toString();
 
-$result = MyanmarPayments::driver('kbzpay.qr')->initiate(
-    new KbzPayRequestPaymentData(
-        transactionId: $transactionId,
-        amount:        10000,
-        callbackUrl:   route('payment.callback'),
-    )
+$data = new KbzPayRequestPaymentData(
+    transactionId: $transactionId,
+    amount:        10000,
+    callbackUrl:   route('payment.callback'),
 );
+
+$result = MyanmarPayments::driver('kbzpay.qr')->initiate($data);
 
 // $result->value is the QR code string — render it as an image in your UI
 ```
@@ -54,13 +54,13 @@ $result = MyanmarPayments::driver('kbzpay.qr')->initiate(
 ```php
 $transactionId = Str::uuid()->toString();
 
-$result = MyanmarPayments::driver('kbzpay.app')->initiate(
-    new KbzPayRequestPaymentData(
-        transactionId: $transactionId,
-        amount:        10000,
-        callbackUrl:   route('payment.callback'),
-    )
+$data = new KbzPayRequestPaymentData(
+    transactionId: $transactionId,
+    amount:        10000,
+    callbackUrl:   route('payment.callback'),
 );
+
+$result = MyanmarPayments::driver('kbzpay.app')->initiate($data);
 
 // $result->value is the signed payload array for the KBZ Pay mobile SDK
 return response()->json($result->value);
