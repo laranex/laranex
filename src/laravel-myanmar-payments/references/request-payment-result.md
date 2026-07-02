@@ -31,6 +31,6 @@ Returned by every driver's `initiate()` method.
 | Case | Value | Used by |
 |---|---|---|
 | `PaymentFlow::RedirectBased` | `redirect` | Wave Money, KBZ Pay PWA |
-| `PaymentFlow::FormBased` | `form` | AYA PGW, CyberSource |
+| `PaymentFlow::FormBased` | `form` | AYA Pay, CyberSource |
 | `PaymentFlow::QrBased` | `qr` | KBZ Pay QR |
 | `PaymentFlow::AppBased` | `app` | KBZ Pay App |

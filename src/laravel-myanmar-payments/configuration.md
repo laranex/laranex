@@ -26,10 +26,10 @@ WAVE_MONEY_MERCHANT_ID=
 WAVE_MONEY_SECRET_KEY=
 WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS=
 
-# AYA PGW
-AYA_PGW_BASE_URL=
-AYA_PGW_APP_KEY=
-AYA_PGW_APP_SECRET=
+# AYA Pay
+AYA_PAY_BASE_URL=
+AYA_PAY_APP_KEY=
+AYA_PAY_APP_SECRET=
 
 # CyberSource
 CYBER_SOURCE_BASE_URL=
@@ -54,17 +54,17 @@ return [
     ],
 
     'wave_money' => [
-        'base_url'              => env('WAVE_MONEY_BASE_URL', 'https://testpayments.wavemoney.io:8107'),
-        'merchant_name'         => env('WAVE_MONEY_MERCHANT_NAME'),
-        'merchant_id'           => env('WAVE_MONEY_MERCHANT_ID'),
-        'secret_key'            => env('WAVE_MONEY_SECRET_KEY'),
+        'base_url'                => env('WAVE_MONEY_BASE_URL', 'https://testpayments.wavemoney.io:8107'),
+        'merchant_name'           => env('WAVE_MONEY_MERCHANT_NAME'),
+        'merchant_id'             => env('WAVE_MONEY_MERCHANT_ID'),
+        'secret_key'              => env('WAVE_MONEY_SECRET_KEY'),
         'time_to_live_in_seconds' => env('WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS', 300),
     ],
 
-    'aya_pgw' => [
-        'base_url'   => env('AYA_PGW_BASE_URL'),
-        'app_key'    => env('AYA_PGW_APP_KEY'),
-        'app_secret' => env('AYA_PGW_APP_SECRET'),
+    'aya_pay' => [
+        'base_url'   => env('AYA_PAY_BASE_URL'),
+        'app_key'    => env('AYA_PAY_APP_KEY'),
+        'app_secret' => env('AYA_PAY_APP_SECRET'),
     ],
 
     'cyber_source' => [

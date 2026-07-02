@@ -75,7 +75,7 @@ Route::post('/payment/callback/kbzpay', function (Request $request) {
     $result = MyanmarPayments::driver('kbzpay.pwa')
         ->handleCallback($request->all());
 
-    if ($result->isSuccessful()) {
+    if ($result->successful) {
         // $result->transactionId
     }
 });

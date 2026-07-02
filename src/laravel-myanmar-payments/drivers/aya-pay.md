@@ -41,7 +41,7 @@ Route::post('/payment/callback/aya-pay', function (Request $request) {
         $request->only('payload', 'checkSum')
     );
 
-    if ($result->isSuccessful()) {
+    if ($result->successful) {
         // $result->transactionId
     }
 });

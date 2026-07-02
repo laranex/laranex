@@ -43,7 +43,7 @@ CyberSource posts the payment result back to your `callbackUrl`. The driver veri
 Route::post('/payment/callback/cybersource', function (Request $request) {
     $result = MyanmarPayments::driver('cyber_source')->handleCallback($request->all());
 
-    if ($result->isSuccessful()) {
+    if ($result->successful) {
         // $result->transactionId
     }
 });
