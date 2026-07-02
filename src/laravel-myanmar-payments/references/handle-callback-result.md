@@ -12,7 +12,7 @@ Returned by every driver's `handleCallback()` method.
 | Property | Type | Description |
 |---|---|---|
 | `status` | `HandlePaymentStatus` | The payment status reported by the gateway |
-| `transactionId` | `?string` | The gateway's transaction identifier |
+| `transactionId` | `string` | The gateway's transaction identifier |
 | `raw` | `array` | Raw callback payload received from the gateway |
 
 ## Methods
