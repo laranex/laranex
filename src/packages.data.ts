@@ -1,4 +1,7 @@
 import { createContentLoader } from 'vitepress'
+import packageOrder from './packages.order.json'
+
+const rank = new Map<string, number>(packageOrder.order.map(({ slug }, index) => [slug, index]))
 
 export interface PackageData {
   slug: string
@@ -27,6 +30,11 @@ export default createContentLoader('*/index.md', {
           docsUrl: `/${slug}/introduction.html`,
         }
       })
-      .sort((a, b) => a.name.localeCompare(b.name))
+      .sort((a, b) => {
+        const rankA = rank.get(a.slug) ?? Number.MAX_SAFE_INTEGER
+        const rankB = rank.get(b.slug) ?? Number.MAX_SAFE_INTEGER
+
+        return rankA - rankB || a.name.localeCompare(b.name)
+      })
   },
 })
