@@ -6,6 +6,7 @@ const route = useRoute()
 
 const packages: Record<string, string> = {
   'laravel-myanmar-payments': 'Laravel Myanmar Payments',
+  'go-myanmar-payments': 'Go Myanmar Payments',
   'php-myanmar-payments': 'PHP Myanmar Payments',
   'better-laravel': 'Better Laravel',
   'next-laravel': 'Next Laravel',

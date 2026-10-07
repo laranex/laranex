@@ -55,10 +55,10 @@ exit;
 | `returnUrl` | `string` | Yes | Valid URL Wave sends the customer back to. Not proof of payment |
 | `description` | `string` | Yes | Shown to the customer |
 | `items` | `list<WaveMoneyItem>` | Yes | At least one item |
-| `amount` | `?int` | No | Whole kyat (Wave does not accept decimals), greater than 0. Defaults to the sum of the items. Wave only accepts MMK |
+| `amount` | `Amount\|int\|null` | No | Whole kyat (Wave does not accept decimals), greater than 0. Defaults to the sum of the items. Wave only accepts MMK |
 | `merchantReferenceId` | `?string` | No | Unique id of this attempt. Defaults to a random id |
 
-`WaveMoneyItem` takes a `name` and an `amount` in whole kyat (greater than 0).
+`WaveMoneyItem` takes a `name` and an `amount` (`Amount|int`) in whole kyat, greater than 0. The default total is summed with integers, never floats.
 
 ### Merchant Reference Id
 

@@ -52,6 +52,7 @@ export default defineConfig({
             { text: 'Introduction',       link: '/laravel-myanmar-payments/introduction' },
             { text: 'Installation',       link: '/laravel-myanmar-payments/installation' },
             { text: 'Configuration',      link: '/laravel-myanmar-payments/configuration' },
+            { text: 'Amounts',            link: '/laravel-myanmar-payments/amounts' },
             { text: 'Payment Flows',      link: '/laravel-myanmar-payments/payment-flows' },
             { text: 'Callbacks & Status', link: '/laravel-myanmar-payments/callbacks' },
             { text: 'Upgrading',          link: '/laravel-myanmar-payments/upgrading' },
@@ -76,6 +77,38 @@ export default defineConfig({
           ],
         },
       ],
+      '/go-myanmar-payments/': [
+        {
+          text: 'Getting Started',
+          items: [
+            { text: 'Introduction',         link: '/go-myanmar-payments/introduction' },
+            { text: 'Installation',         link: '/go-myanmar-payments/installation' },
+            { text: 'Configuration',        link: '/go-myanmar-payments/configuration' },
+            { text: 'Amounts',              link: '/go-myanmar-payments/amounts' },
+            { text: 'Payment Flows',        link: '/go-myanmar-payments/payment-flows' },
+            { text: 'Callbacks & Status',   link: '/go-myanmar-payments/callbacks' },
+            { text: 'net/http Integration', link: '/go-myanmar-payments/net-http' },
+          ],
+        },
+        {
+          text: 'Gateways',
+          items: [
+            { text: 'KBZ Pay',     link: '/go-myanmar-payments/drivers/kbz-pay' },
+            { text: 'Wave Money',  link: '/go-myanmar-payments/drivers/wave-money' },
+            { text: 'AYA Pay',     link: '/go-myanmar-payments/drivers/aya-pay' },
+            { text: 'Yoma MMQR',   link: '/go-myanmar-payments/drivers/yoma-mmqr' },
+            { text: 'CyberSource', link: '/go-myanmar-payments/drivers/cyber-source' },
+          ],
+        },
+        {
+          text: 'Reference',
+          items: [
+            { text: 'Results',                  link: '/go-myanmar-payments/references/results' },
+            { text: 'PaymentCallback & Status', link: '/go-myanmar-payments/references/payment-callback' },
+            { text: 'Errors',                   link: '/go-myanmar-payments/references/errors' },
+          ],
+        },
+      ],
       '/php-myanmar-payments/': [
         {
           text: 'Getting Started',
@@ -83,6 +116,7 @@ export default defineConfig({
             { text: 'Introduction',          link: '/php-myanmar-payments/introduction' },
             { text: 'Installation',          link: '/php-myanmar-payments/installation' },
             { text: 'Configuration',         link: '/php-myanmar-payments/configuration' },
+            { text: 'Amounts',               link: '/php-myanmar-payments/amounts' },
             { text: 'Payment Flows',         link: '/php-myanmar-payments/payment-flows' },
             { text: 'Callbacks & Status',    link: '/php-myanmar-payments/callbacks' },
             { text: 'Framework Integration', link: '/php-myanmar-payments/framework-integration' },
