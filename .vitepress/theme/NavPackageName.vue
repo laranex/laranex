@@ -8,6 +8,14 @@ const packages: Record<string, string> = {
   'laravel-myanmar-payments': 'Laravel Myanmar Payments',
   'php-myanmar-payments': 'PHP Myanmar Payments',
   'better-laravel': 'Better Laravel',
+  'next-laravel': 'Next Laravel',
+  'lucid': 'Lucid',
+  'laravel-refresh-token': 'Laravel Refresh Token',
+  'laravel-money': 'Laravel Money',
+  'laravel-myanmar-nrc': 'Laravel Myanmar NRC',
+  'laravel-biometric-auth': 'Laravel Biometric Auth',
+  'laravel-newrelic': 'Laravel New Relic',
+  'laralog-client': 'Laralog Client',
 }
 
 const packageName = computed(() => {
