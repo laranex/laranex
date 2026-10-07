@@ -9,7 +9,6 @@ const packages: Record<string, string> = {
   'php-myanmar-payments': 'PHP Myanmar Payments',
   'better-laravel': 'Better Laravel',
   'next-laravel': 'Next Laravel',
-  'lucid': 'Lucid',
   'laravel-refresh-token': 'Laravel Refresh Token',
   'laravel-money': 'Laravel Money',
   'laravel-myanmar-nrc': 'Laravel Myanmar NRC',

@@ -151,16 +151,6 @@ export default defineConfig({
           ],
         },
       ],
-      '/lucid/': [
-        {
-          text: 'Lucid',
-          items: [
-            { text: 'Introduction', link: '/lucid/introduction' },
-            { text: 'Installation', link: '/lucid/installation' },
-            { text: 'Usage', link: '/lucid/usage' },
-          ],
-        },
-      ],
       '/laravel-refresh-token/': [
         {
           text: 'Laravel Refresh Token',
