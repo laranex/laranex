@@ -129,6 +129,101 @@ export default defineConfig({
           ],
         },
       ],
+      '/next-laravel/': [
+        {
+          text: 'Next Laravel',
+          items: [
+            { text: 'Introduction',  link: '/next-laravel/introduction' },
+            { text: 'Principles',    link: '/next-laravel/principles' },
+            { text: 'Installation',  link: '/next-laravel/installation' },
+            { text: 'Configuration', link: '/next-laravel/configuration' },
+          ],
+        },
+        {
+          text: 'Usage',
+          items: [
+            { text: 'Route',      link: '/next-laravel/usage/route' },
+            { text: 'Controller', link: '/next-laravel/usage/controller' },
+            { text: 'Feature',    link: '/next-laravel/usage/feature' },
+            { text: 'Request',    link: '/next-laravel/usage/request' },
+            { text: 'Operation',  link: '/next-laravel/usage/operation' },
+            { text: 'Job',        link: '/next-laravel/usage/job' },
+          ],
+        },
+      ],
+      '/lucid/': [
+        {
+          text: 'Lucid',
+          items: [
+            { text: 'Introduction', link: '/lucid/introduction' },
+            { text: 'Installation', link: '/lucid/installation' },
+            { text: 'Usage', link: '/lucid/usage' },
+          ],
+        },
+      ],
+      '/laravel-refresh-token/': [
+        {
+          text: 'Laravel Refresh Token',
+          items: [
+            { text: 'Introduction', link: '/laravel-refresh-token/introduction' },
+            { text: 'Installation', link: '/laravel-refresh-token/installation' },
+            { text: 'Configuration', link: '/laravel-refresh-token/configuration' },
+            { text: 'Usage', link: '/laravel-refresh-token/usage' },
+          ],
+        },
+      ],
+      '/laravel-money/': [
+        {
+          text: 'Laravel Money',
+          items: [
+            { text: 'Introduction', link: '/laravel-money/introduction' },
+            { text: 'Installation', link: '/laravel-money/installation' },
+            { text: 'Usage', link: '/laravel-money/usage' },
+          ],
+        },
+      ],
+      '/laravel-myanmar-nrc/': [
+        {
+          text: 'Laravel Myanmar NRC',
+          items: [
+            { text: 'Introduction', link: '/laravel-myanmar-nrc/introduction' },
+            { text: 'Installation', link: '/laravel-myanmar-nrc/installation' },
+            { text: 'Configuration', link: '/laravel-myanmar-nrc/configuration' },
+            { text: 'Usage', link: '/laravel-myanmar-nrc/usage' },
+          ],
+        },
+      ],
+      '/laravel-biometric-auth/': [
+        {
+          text: 'Laravel Biometric Auth',
+          items: [
+            { text: 'Introduction', link: '/laravel-biometric-auth/introduction' },
+            { text: 'Installation', link: '/laravel-biometric-auth/installation' },
+            { text: 'Configuration', link: '/laravel-biometric-auth/configuration' },
+            { text: 'Usage', link: '/laravel-biometric-auth/usage' },
+          ],
+        },
+      ],
+      '/laravel-newrelic/': [
+        {
+          text: 'Laravel New Relic',
+          items: [
+            { text: 'Introduction', link: '/laravel-newrelic/introduction' },
+            { text: 'Installation', link: '/laravel-newrelic/installation' },
+            { text: 'Usage', link: '/laravel-newrelic/usage' },
+          ],
+        },
+      ],
+      '/laralog-client/': [
+        {
+          text: 'Laralog Client',
+          items: [
+            { text: 'Introduction', link: '/laralog-client/introduction' },
+            { text: 'Installation', link: '/laralog-client/installation' },
+            { text: 'Usage', link: '/laralog-client/usage' },
+          ],
+        },
+      ],
     },
 
     socialLinks: [
