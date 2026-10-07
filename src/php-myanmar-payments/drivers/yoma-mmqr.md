@@ -43,7 +43,7 @@ $order->saveQrReference($payment->reference);
 | Parameter | Type | Required | Rules |
 |---|---|---|---|
 | `orderId` | `string` | Yes | Unique order number, at most 20 characters |
-| `amount` | `int` | Yes | Whole kyat, greater than 0 (Yoma documents no decimals or currency) |
+| `amount` | `Amount\|int` | Yes | Whole kyat, greater than 0, e.g. `1000` or `Amount::kyat(1000)`. Yoma documents no decimals or currency |
 | `description` | `string` | Yes | At most 50 characters |
 
 ## QR Lifetime and Renewal

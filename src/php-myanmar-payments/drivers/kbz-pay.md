@@ -46,7 +46,7 @@ echo json_encode($payment->toArray());
 | Parameter | Type | Required | Rules |
 |---|---|---|---|
 | `orderId` | `string` | Yes | Unique per order. Letters, digits and `_` only, at most 40 characters |
-| `amount` | `int\|string` | Yes | Kyat, greater than 0. Up to 2 decimals as a string, e.g. `'1000.50'`. KBZ only accepts MMK |
+| `amount` | `Amount\|int` | Yes | Kyat, greater than 0, up to 2 decimal places: `1000` or `Amount::parse('1000.50')`. KBZ only accepts MMK |
 | `callbackUrl` | `string` | Yes | Public URL KBZ posts the result to. At most 512 characters, no query string |
 | `title` | `?string` | No | Product name shown to the customer |
 | `timeoutMinutes` | `?int` | No | 1 to 120. KBZ defaults to 120 |

@@ -64,7 +64,7 @@ AYA expects the form as `multipart/form-data`; `$payment->enctype` carries it if
 | Parameter | Type | Required | Rules |
 |---|---|---|---|
 | `orderId` | `string` | Yes | Unique, 6 to 40 characters (`merchOrderId`) |
-| `amount` | `int` | Yes | Whole kyat, greater than 0 (AYA documents no decimals). AYA only accepts MMK (`104`) |
+| `amount` | `Amount\|int` | Yes | Whole kyat, greater than 0, e.g. `1000` or `Amount::kyat(1000)`. AYA documents no decimals. AYA only accepts MMK (`104`) |
 | `channel` | `string` | Yes | A key from `services()` |
 | `method` | `AyaPayMethod` | Yes | A method the channel supports |
 | `returnUrl` | `?string` | No | Valid URL. Defaults to the URL registered with AYA |

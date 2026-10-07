@@ -40,13 +40,15 @@ echo $payment->toHtml(); // posts the signed form to CyberSource on load
 | Parameter | Type | Required | Rules |
 |---|---|---|---|
 | `orderId` | `string` | Yes | At most 50 characters, sent as `reference_number` |
-| `amount` | `int\|string` | Yes | Order total in `currency`, 0 or more. Decimals allowed as a string, e.g. `'10.50'`. At most 15 characters |
+| `amount` | `Amount\|int` | Yes | Order total in `currency`, 0 or more, any number of decimals: `20000` or `Amount::parse('10.50')`. At most 15 characters |
 | `callbackUrl` | `string` | Yes | HTTPS URL CyberSource posts the result to. At most 255 characters |
 | `returnUrl` | `?string` | No | HTTPS receipt page for the customer. At most 255 characters |
 | `cancelUrl` | `?string` | No | HTTPS page shown when the customer cancels. At most 255 characters |
 | `currency` | `string` | No | Any ISO 4217 code (CyberSource is multi-currency), default `MMK` |
 | `transactionType` | `CyberSourceTransactionType` | No | `Sale` (default), `Authorization`, `SaleAndCreateToken` or `AuthorizationAndCreateToken` |
 | `locale` | `string` | No | Hosted page language as a CyberSource locale code such as `en-us`, default `en-us` |
+
+For decimal amounts or another currency, pass an [`Amount`](/php-myanmar-payments/amounts): `amount: Amount::parse('10.50'), currency: 'USD'`.
 
 ## Handling Callbacks
 
