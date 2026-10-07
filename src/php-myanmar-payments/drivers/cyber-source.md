@@ -1,34 +1,39 @@
 ---
 title: CyberSource
-description: Integrate CyberSource Secure Acceptance card payments with Laravel Myanmar Payments. Signed hosted checkout form and verified callbacks.
+description: Integrate CyberSource Secure Acceptance card payments in plain PHP. Signed hosted checkout form and verified callbacks.
 ---
 
 # CyberSource
 
 | Method | Flow | Returns |
 |---|---|---|
-| `cyberSource()->initiate($data)` | Signed form posted to the hosted checkout | [`FormPayment`](/laravel-myanmar-payments/payment-flows#form-payments) |
-| `cyberSource()->handleCallback($request)` | Verify the result post | `PaymentCallback` |
+| `$cyberSource->initiate($data)` | Signed form posted to the hosted checkout | [`FormPayment`](/php-myanmar-payments/payment-flows#form-payments) |
+| `$cyberSource->handleCallback($request)` | Verify the result post | `PaymentCallback` |
 
 CyberSource has no status API in this package: rely on the callback.
 
 ## Initiating a Payment
 
 ```php
-use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
+use Laranex\PhpMyanmarPayments\CyberSource\CyberSource;
+use Laranex\PhpMyanmarPayments\CyberSource\CyberSourceConfig;
 use Laranex\PhpMyanmarPayments\CyberSource\CyberSourcePaymentData;
 use Laranex\PhpMyanmarPayments\CyberSource\CyberSourceTransactionType;
 
-$payment = MyanmarPayments::cyberSource()->initiate(new CyberSourcePaymentData(
+$cyberSource = new CyberSource(new CyberSourceConfig(profileId: '...', accessKey: '...', secretKey: '...', sandbox: true));
+
+$payment = $cyberSource->initiate(new CyberSourcePaymentData(
     orderId: 'ORDER-'.$order->id,
     amount: 20000,
-    callbackUrl: route('payments.cybersource.callback'),
-    returnUrl: route('payments.cybersource.receipt'),
-    cancelUrl: route('checkout'),
+    callbackUrl: 'https://shop.test/cybersource/callback.php',
+    returnUrl: 'https://shop.test/cybersource/receipt.php',
+    cancelUrl: 'https://shop.test/checkout.php',
 ));
 
-return redirect($payment->autoSubmitUrl);
+echo $payment->toHtml(); // posts the signed form to CyberSource on load
 ```
+
+`CyberSource` only signs fields: it makes no HTTP calls, so it takes no HTTP client.
 
 ### CyberSourcePaymentData
 
@@ -48,15 +53,16 @@ return redirect($payment->autoSubmitUrl);
 CyberSource posts a form to `callbackUrl`. The same check works for the browser post to your receipt page.
 
 ```php
-Route::post('/payments/cybersource/callback', function (Request $request) {
-    $callback = MyanmarPayments::cyberSource()->handleCallback($request);
+// cybersource/callback.php
+use Laranex\PhpMyanmarPayments\Http\CallbackRequest;
 
-    if ($callback->isSuccessful()) {
-        // $callback->orderId (req_reference_number), $callback->gatewayReference (transaction_id)
-    }
+$callback = $cyberSource->handleCallback(CallbackRequest::fromGlobals());
 
-    return MyanmarPayments::acknowledge($callback);
-})->name('payments.cybersource.callback');
+if ($callback->isSuccessful()) {
+    // $callback->orderId (req_reference_number), $callback->gatewayReference (transaction_id)
+}
+
+$callback->acknowledgement()->send();
 ```
 
 ## Statuses

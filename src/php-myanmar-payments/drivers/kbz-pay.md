@@ -1,40 +1,44 @@
 ---
 title: KBZ Pay
-description: Integrate KBZ Pay with Laravel Myanmar Payments. PWA redirect, QR and in-app payments from one KbzPayPaymentData, plus status checks and verified callbacks.
+description: Integrate KBZ Pay in plain PHP. PWA redirect, QR and in-app payments from one KbzPayPaymentData, plus status checks and verified callbacks.
 ---
 
 # KBZ Pay
 
 | Method | Flow | Returns |
 |---|---|---|
-| `kbzPay()->pwa($data)` | Redirect to the KBZ Pay PWA | [`RedirectPayment`](/laravel-myanmar-payments/payment-flows#redirect-payments) |
-| `kbzPay()->qr($data)` | Customer scans a QR | [`QrPayment`](/laravel-myanmar-payments/payment-flows#qr-payments) |
-| `kbzPay()->app($data)` | Your mobile app opens the KBZ Pay SDK | [`AppPayment`](/laravel-myanmar-payments/payment-flows#app-payments) |
-| `kbzPay()->status($orderId)` | Query an order | `PaymentStatusResult` |
-| `kbzPay()->handleCallback($request)` | Verify the notification | `PaymentCallback` |
+| `$kbzPay->pwa($data)` | Redirect to the KBZ Pay PWA | [`RedirectPayment`](/php-myanmar-payments/payment-flows#redirect-payments) |
+| `$kbzPay->qr($data)` | Customer scans a QR | [`QrPayment`](/php-myanmar-payments/payment-flows#qr-payments) |
+| `$kbzPay->app($data)` | Your mobile app opens the KBZ Pay SDK | [`AppPayment`](/php-myanmar-payments/payment-flows#app-payments) |
+| `$kbzPay->status($orderId)` | Query an order | `PaymentStatusResult` |
+| `$kbzPay->handleCallback($request)` | Verify the notification | `PaymentCallback` |
 
 ## Initiating a Payment
 
 ```php
-use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
+use Laranex\PhpMyanmarPayments\KbzPay\KbzPay;
+use Laranex\PhpMyanmarPayments\KbzPay\KbzPayConfig;
 use Laranex\PhpMyanmarPayments\KbzPay\KbzPayPaymentData;
+
+$kbzPay = new KbzPay(new KbzPayConfig(appId: '...', appKey: '...', merchantCode: '...', sandbox: true));
 
 $data = new KbzPayPaymentData(
     orderId: 'ORDER_'.$order->id,
     amount: 10000,
-    callbackUrl: route('payments.kbz.callback'),
+    callbackUrl: 'https://shop.test/kbz/callback.php',
 );
 
 // PWA
-$payment = MyanmarPayments::kbzPay()->pwa($data);
-return redirect()->away($payment->url);
+$payment = $kbzPay->pwa($data);
+header('Location: '.$payment->url);
+exit;
 
 // QR: encode $payment->qrString into a QR image
-$payment = MyanmarPayments::kbzPay()->qr($data);
+$payment = $kbzPay->qr($data);
 
 // In-app: hand the signed values to your mobile app
-$payment = MyanmarPayments::kbzPay()->app($data);
-return response()->json($payment->toArray());
+$payment = $kbzPay->app($data);
+echo json_encode($payment->toArray());
 ```
 
 ### KbzPayPaymentData
@@ -58,18 +62,19 @@ Invalid values throw `InvalidPaymentDataException` before any request is sent.
 
 ## Handling Callbacks
 
-KBZ Pay posts JSON nested under a `Request` key; pass the whole request.
+KBZ Pay posts JSON nested under a `Request` key; build the `CallbackRequest` from the whole request.
 
 ```php
-Route::post('/payments/kbz/callback', function (Request $request) {
-    $callback = MyanmarPayments::kbzPay()->handleCallback($request);
+// kbz/callback.php
+use Laranex\PhpMyanmarPayments\Http\CallbackRequest;
 
-    if ($callback->isSuccessful()) {
-        // $callback->orderId is your merch_order_id, $callback->gatewayReference is KBZ's mm_order_id
-    }
+$callback = $kbzPay->handleCallback(CallbackRequest::fromGlobals());
 
-    return MyanmarPayments::acknowledge($callback); // plain-text "success"
-})->name('payments.kbz.callback');
+if ($callback->isSuccessful()) {
+    // $callback->orderId is your merch_order_id, $callback->gatewayReference is KBZ's mm_order_id
+}
+
+$callback->acknowledgement()->send(); // plain-text "success"
 ```
 
 KBZ requires an HTTP 200 with the plain-text body `success`, answered within about 10 seconds. Otherwise it retries after 60 and 600 seconds; when no callback arrives, poll `status()`.

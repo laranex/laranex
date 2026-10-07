@@ -1,14 +1,14 @@
 ---
 title: Wave Money
-description: Integrate Wave Money (WavePay) with Laravel Myanmar Payments. Redirect payments with typed line items and verified callbacks.
+description: Integrate Wave Money (WavePay) in plain PHP. Redirect payments with typed line items and verified callbacks.
 ---
 
 # Wave Money
 
 | Method | Flow | Returns |
 |---|---|---|
-| `waveMoney()->initiate($data)` | Redirect to Wave's payment page | [`RedirectPayment`](/laravel-myanmar-payments/payment-flows#redirect-payments) |
-| `waveMoney()->handleCallback($request)` | Verify the callback | `PaymentCallback` |
+| `$waveMoney->initiate($data)` | Redirect to Wave's payment page | [`RedirectPayment`](/php-myanmar-payments/payment-flows#redirect-payments) |
+| `$waveMoney->handleCallback($request)` | Verify the callback | `PaymentCallback` |
 
 Wave has no status API: the callback is the only payment result.
 
@@ -20,14 +20,17 @@ Wave's documented test host `testpayments.wavemoney.io` no longer resolves in DN
 ## Initiating a Payment
 
 ```php
-use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
+use Laranex\PhpMyanmarPayments\WaveMoney\WaveMoney;
+use Laranex\PhpMyanmarPayments\WaveMoney\WaveMoneyConfig;
 use Laranex\PhpMyanmarPayments\WaveMoney\WaveMoneyItem;
 use Laranex\PhpMyanmarPayments\WaveMoney\WaveMoneyPaymentData;
 
+$waveMoney = new WaveMoney(new WaveMoneyConfig(merchantId: '...', secretKey: '...', merchantName: 'My Shop', sandbox: true));
+
 $data = new WaveMoneyPaymentData(
     orderId: (string) $order->id,
-    callbackUrl: route('payments.wave.callback'),
-    returnUrl: route('orders.show', $order),
+    callbackUrl: 'https://shop.test/wave/callback.php',
+    returnUrl: 'https://shop.test/orders/'.$order->id,
     description: 'Order #'.$order->id,
     items: [
         new WaveMoneyItem('Product A', 3000),
@@ -35,11 +38,12 @@ $data = new WaveMoneyPaymentData(
     ],
 );
 
-$order->update(['wave_reference' => $data->merchantReferenceId]);
+$order->saveWaveReference($data->merchantReferenceId);
 
-$payment = MyanmarPayments::waveMoney()->initiate($data);
+$payment = $waveMoney->initiate($data);
 
-return redirect()->away($payment->url);
+header('Location: '.$payment->url);
+exit;
 ```
 
 ### WaveMoneyPaymentData
@@ -63,15 +67,16 @@ Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so 
 ## Handling Callbacks
 
 ```php
-Route::post('/payments/wave/callback', function (Request $request) {
-    $callback = MyanmarPayments::waveMoney()->handleCallback($request);
+// wave/callback.php
+use Laranex\PhpMyanmarPayments\Http\CallbackRequest;
 
-    if ($callback->isSuccessful()) {
-        // $callback->orderId, $callback->raw['merchantReferenceId'], $callback->gatewayReference (Wave transactionId)
-    }
+$callback = $waveMoney->handleCallback(CallbackRequest::fromGlobals());
 
-    return MyanmarPayments::acknowledge($callback);
-})->name('payments.wave.callback');
+if ($callback->isSuccessful()) {
+    // $callback->orderId, $callback->raw['merchantReferenceId'], $callback->gatewayReference (Wave transactionId)
+}
+
+$callback->acknowledgement()->send();
 ```
 
 `$callback->orderId` falls back to `merchantReferenceId` when Wave omits `orderId`.

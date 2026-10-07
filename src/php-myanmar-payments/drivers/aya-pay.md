@@ -1,6 +1,6 @@
 ---
 title: AYA Pay
-description: Integrate the AYA Payment Gateway with Laravel Myanmar Payments. One hosted checkout for AYA Pay, other wallets and cards, with channel discovery, status checks and verified callbacks.
+description: Integrate the AYA Payment Gateway in plain PHP. One hosted checkout for AYA Pay, other wallets and cards, with channel discovery, status checks and verified callbacks.
 ---
 
 # AYA Pay
@@ -9,21 +9,24 @@ The AYA Payment Gateway is one hosted checkout for AYA Pay, other wallets (KBZ P
 
 | Method | Flow | Returns |
 |---|---|---|
-| `ayaPay()->services()` | List the channels enabled for your account | `list<AyaPayService>` |
-| `ayaPay()->initiate($data)` | Signed form posted to AYA | [`FormPayment`](/laravel-myanmar-payments/payment-flows#form-payments) |
-| `ayaPay()->status($orderId)` | Enquire an order | `PaymentStatusResult` |
-| `ayaPay()->handleCallback($request)` | Verify the backend callback | `PaymentCallback` |
-| `ayaPay()->verifyRedirect($request)` | Verify the customer's return | `PaymentCallback` |
+| `$ayaPay->services()` | List the channels enabled for your account | `list<AyaPayService>` |
+| `$ayaPay->initiate($data)` | Signed form posted to AYA | [`FormPayment`](/php-myanmar-payments/payment-flows#form-payments) |
+| `$ayaPay->status($orderId)` | Enquire an order | `PaymentStatusResult` |
+| `$ayaPay->handleCallback($request)` | Verify the backend callback | `PaymentCallback` |
+| `$ayaPay->verifyRedirect($request)` | Verify the customer's return | `PaymentCallback` |
 
 ## Channels and Methods
 
 `channel` is a lowercase key such as `aya_pay`, `kbz_pay` or `visa`; `method` is how the customer pays through it. Which ones you have depends on your merchant account, so list them:
 
 ```php
-use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
+use Laranex\PhpMyanmarPayments\AyaPay\AyaPay;
+use Laranex\PhpMyanmarPayments\AyaPay\AyaPayConfig;
 use Laranex\PhpMyanmarPayments\AyaPay\AyaPayMethod;
 
-foreach (MyanmarPayments::ayaPay()->services() as $service) {
+$ayaPay = new AyaPay(new AyaPayConfig(appKey: '...', appSecret: '...', sandbox: true));
+
+foreach ($ayaPay->services() as $service) {
     $service->name;      // "AYA Pay"
     $service->key;       // "aya_pay", pass as channel
     $service->imageUrl;  // logo
@@ -43,18 +46,18 @@ foreach (MyanmarPayments::ayaPay()->services() as $service) {
 ```php
 use Laranex\PhpMyanmarPayments\AyaPay\AyaPayPaymentData;
 
-$payment = MyanmarPayments::ayaPay()->initiate(new AyaPayPaymentData(
+$payment = $ayaPay->initiate(new AyaPayPaymentData(
     orderId: 'ORDER'.$order->id,
     amount: 8000,
     channel: 'aya_pay',
     method: AyaPayMethod::Qr,
-    returnUrl: route('payments.aya.return'),
+    returnUrl: 'https://shop.test/aya/return.php',
 ));
 
-return redirect($payment->autoSubmitUrl);
+echo $payment->toHtml(); // posts the signed form to AYA on load
 ```
 
-AYA expects the form as `multipart/form-data`; `$payment->enctype` carries it if you [render the form yourself](/laravel-myanmar-payments/payment-flows#form-payments).
+AYA expects the form as `multipart/form-data`; `$payment->enctype` carries it if you [render the form yourself](/php-myanmar-payments/payment-flows#form-payments).
 
 ### AyaPayPaymentData
 
@@ -73,15 +76,16 @@ AYA expects the form as `multipart/form-data`; `$payment->enctype` carries it if
 AYA posts to the callback URL registered with them.
 
 ```php
-Route::post('/payments/aya/callback', function (Request $request) {
-    $callback = MyanmarPayments::ayaPay()->handleCallback($request);
+// aya/callback.php
+use Laranex\PhpMyanmarPayments\Http\CallbackRequest;
 
-    if ($callback->isSuccessful()) {
-        // $callback->orderId (merchOrderId), $callback->gatewayReference (tranId), $callback->amount
-    }
+$callback = $ayaPay->handleCallback(CallbackRequest::fromGlobals());
 
-    return MyanmarPayments::acknowledge($callback);
-});
+if ($callback->isSuccessful()) {
+    // $callback->orderId (merchOrderId), $callback->gatewayReference (tranId), $callback->amount
+}
+
+$callback->acknowledgement()->send();
 ```
 
 ## The Return Page
@@ -89,11 +93,10 @@ Route::post('/payments/aya/callback', function (Request $request) {
 AYA signs the query string it adds when sending the customer back, so the return page can show the right message:
 
 ```php
-Route::get('/payments/aya/return', function (Request $request) {
-    $result = MyanmarPayments::ayaPay()->verifyRedirect($request);
+// aya/return.php
+$result = $ayaPay->verifyRedirect(CallbackRequest::fromGlobals());
 
-    return view('payments.result', ['status' => $result->status]);
-})->name('payments.aya.return');
+echo $result->isSuccessful() ? 'Thank you, your payment was received.' : 'Payment '.$result->status->value.'.';
 ```
 
 Still fulfil orders from the backend callback.

@@ -49,26 +49,61 @@ export default defineConfig({
         {
           text: 'Getting Started',
           items: [
-            { text: 'Introduction',  link: '/laravel-myanmar-payments/introduction' },
-            { text: 'Installation',  link: '/laravel-myanmar-payments/installation' },
-            { text: 'Configuration', link: '/laravel-myanmar-payments/configuration' },
-            { text: 'Payment Flows', link: '/laravel-myanmar-payments/payment-flows' },
+            { text: 'Introduction',       link: '/laravel-myanmar-payments/introduction' },
+            { text: 'Installation',       link: '/laravel-myanmar-payments/installation' },
+            { text: 'Configuration',      link: '/laravel-myanmar-payments/configuration' },
+            { text: 'Payment Flows',      link: '/laravel-myanmar-payments/payment-flows' },
+            { text: 'Callbacks & Status', link: '/laravel-myanmar-payments/callbacks' },
+            { text: 'Upgrading',          link: '/laravel-myanmar-payments/upgrading' },
           ],
         },
         {
-          text: 'Usage',
+          text: 'Gateways',
           items: [
             { text: 'KBZ Pay',     link: '/laravel-myanmar-payments/drivers/kbz-pay' },
             { text: 'Wave Money',  link: '/laravel-myanmar-payments/drivers/wave-money' },
             { text: 'AYA Pay',     link: '/laravel-myanmar-payments/drivers/aya-pay' },
+            { text: 'Yoma MMQR',   link: '/laravel-myanmar-payments/drivers/yoma-mmqr' },
             { text: 'CyberSource', link: '/laravel-myanmar-payments/drivers/cyber-source' },
           ],
         },
         {
-          text: 'Return Types',
+          text: 'Reference',
           items: [
-            { text: 'RequestPaymentResult',  link: '/laravel-myanmar-payments/references/request-payment-result' },
-            { text: 'HandleCallbackResult',  link: '/laravel-myanmar-payments/references/handle-callback-result' },
+            { text: 'Results',                 link: '/laravel-myanmar-payments/references/results' },
+            { text: 'PaymentCallback & Status', link: '/laravel-myanmar-payments/references/payment-callback' },
+            { text: 'Errors',                  link: '/laravel-myanmar-payments/references/errors' },
+          ],
+        },
+      ],
+      '/php-myanmar-payments/': [
+        {
+          text: 'Getting Started',
+          items: [
+            { text: 'Introduction',          link: '/php-myanmar-payments/introduction' },
+            { text: 'Installation',          link: '/php-myanmar-payments/installation' },
+            { text: 'Configuration',         link: '/php-myanmar-payments/configuration' },
+            { text: 'Payment Flows',         link: '/php-myanmar-payments/payment-flows' },
+            { text: 'Callbacks & Status',    link: '/php-myanmar-payments/callbacks' },
+            { text: 'Framework Integration', link: '/php-myanmar-payments/framework-integration' },
+          ],
+        },
+        {
+          text: 'Gateways',
+          items: [
+            { text: 'KBZ Pay',     link: '/php-myanmar-payments/drivers/kbz-pay' },
+            { text: 'Wave Money',  link: '/php-myanmar-payments/drivers/wave-money' },
+            { text: 'AYA Pay',     link: '/php-myanmar-payments/drivers/aya-pay' },
+            { text: 'Yoma MMQR',   link: '/php-myanmar-payments/drivers/yoma-mmqr' },
+            { text: 'CyberSource', link: '/php-myanmar-payments/drivers/cyber-source' },
+          ],
+        },
+        {
+          text: 'Reference',
+          items: [
+            { text: 'Results',                  link: '/php-myanmar-payments/references/results' },
+            { text: 'PaymentCallback & Status', link: '/php-myanmar-payments/references/payment-callback' },
+            { text: 'Errors',                   link: '/php-myanmar-payments/references/errors' },
           ],
         },
       ],
