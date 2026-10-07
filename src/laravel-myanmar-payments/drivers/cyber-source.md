@@ -1,50 +1,70 @@
 ---
-title: CyberSource Secure Acceptance
-description: Integrate CyberSource Secure Acceptance with Laravel Myanmar Payments. Uses a signed form POST flow — use the built-in redirect or render the form yourself.
+title: CyberSource
+description: Integrate CyberSource Secure Acceptance card payments with Laravel Myanmar Payments. Signed hosted checkout form and verified callbacks.
 ---
 
-# CyberSource Secure Acceptance
+# CyberSource
 
-`cyber_source` uses the [form-based](/laravel-myanmar-payments/payment-flows#form-based) flow.
+| Method | Flow | Returns |
+|---|---|---|
+| `cyberSource()->initiate($data)` | Signed form posted to the hosted checkout | [`FormPayment`](/laravel-myanmar-payments/payment-flows#form-payments) |
+| `cyberSource()->handleCallback($request)` | Verify the result post | `PaymentCallback` |
+
+CyberSource has no status API in this package: rely on the callback.
 
 ## Initiating a Payment
 
 ```php
-use Illuminate\Support\Str;
-use Laranex\LaravelMyanmarPayments\Data\Request\CyberSourceRequestPaymentData;
-use Laranex\LaravelMyanmarPayments\MyanmarPaymentsFacade as MyanmarPayments;
+use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
+use Laranex\PhpMyanmarPayments\CyberSource\CyberSourcePaymentData;
+use Laranex\PhpMyanmarPayments\CyberSource\CyberSourceTransactionType;
 
-$transactionId = Str::uuid()->toString();
+$payment = MyanmarPayments::cyberSource()->initiate(new CyberSourcePaymentData(
+    orderId: 'ORDER-'.$order->id,
+    amount: 20000,
+    callbackUrl: route('payments.cybersource.callback'),
+    returnUrl: route('payments.cybersource.receipt'),
+    cancelUrl: route('checkout'),
+));
 
-$data = new CyberSourceRequestPaymentData(
-    transactionId:   $transactionId,
-    amount:          20000,                  // in MMK (integer)
-    callbackUrl:     route('payment.callback'),
-    currency:        'MMK',                  // optional, default 'MMK'
-    frontendUrl:     route('payment.success'),   // optional
-    transactionType: 'sale',                 // optional, default 'sale'
-    cancelUrl:       route('payment.cancel'),    // optional
-    transactionUuid: '',                     // optional, auto-generated if empty
-    referenceNumber: '',                     // optional, defaults to transactionId
-);
-
-$result = MyanmarPayments::driver('cyber_source')->initiate($data);
-
-return redirect($result->value);
+return redirect($payment->autoSubmitUrl);
 ```
 
-To render the form yourself instead of using the built-in page, see [Form-Based Flow](/laravel-myanmar-payments/payment-flows#form-based).
+### CyberSourcePaymentData
+
+| Parameter | Type | Required | Rules |
+|---|---|---|---|
+| `orderId` | `string` | Yes | At most 50 characters, sent as `reference_number` |
+| `amount` | `int\|string` | Yes | Order total in `currency`, 0 or more. Decimals allowed as a string, e.g. `'10.50'`. At most 15 characters |
+| `callbackUrl` | `string` | Yes | HTTPS URL CyberSource posts the result to. At most 255 characters |
+| `returnUrl` | `?string` | No | HTTPS receipt page for the customer. At most 255 characters |
+| `cancelUrl` | `?string` | No | HTTPS page shown when the customer cancels. At most 255 characters |
+| `currency` | `string` | No | Any ISO 4217 code (CyberSource is multi-currency), default `MMK` |
+| `transactionType` | `CyberSourceTransactionType` | No | `Sale` (default), `Authorization`, `SaleAndCreateToken` or `AuthorizationAndCreateToken` |
+| `locale` | `string` | No | Hosted page language as a CyberSource locale code such as `en-us`, default `en-us` |
 
 ## Handling Callbacks
 
-CyberSource posts the payment result back to your `callbackUrl`. The driver verifies the response signature automatically — if the signature is invalid a `SignatureVerificationException` is thrown.
+CyberSource posts a form to `callbackUrl`. The same check works for the browser post to your receipt page.
 
 ```php
-Route::post('/payment/callback/cybersource', function (Request $request) {
-    $result = MyanmarPayments::driver('cyber_source')->handleCallback($request->all());
+Route::post('/payments/cybersource/callback', function (Request $request) {
+    $callback = MyanmarPayments::cyberSource()->handleCallback($request);
 
-    if ($result->successful) {
-        // $result->transactionId
+    if ($callback->isSuccessful()) {
+        // $callback->orderId (req_reference_number), $callback->gatewayReference (transaction_id)
     }
-});
+
+    return MyanmarPayments::acknowledge($callback);
+})->name('payments.cybersource.callback');
 ```
+
+## Statuses
+
+| CyberSource `decision` | `PaymentStatus` |
+|---|---|
+| `ACCEPT` | `Successful` |
+| `REVIEW` | `Pending` |
+| `DECLINE`, `ERROR` | `Failed` |
+| `CANCEL` | `Cancelled` |
+| anything else | `Unknown` |

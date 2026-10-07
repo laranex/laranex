@@ -1,68 +1,96 @@
 ---
 title: Wave Money
-description: Integrate Wave Money payments using a redirect flow with Laravel Myanmar Payments. Amount defaults to the sum of items but can be overridden; final status is determined via handleCallback.
+description: Integrate Wave Money (WavePay) with Laravel Myanmar Payments. Redirect payments with typed line items and verified callbacks.
 ---
 
 # Wave Money
 
-`wave_money` uses the [redirect-based](/laravel-myanmar-payments/payment-flows#redirect-based) flow.
+| Method | Flow | Returns |
+|---|---|---|
+| `waveMoney()->initiate($data)` | Redirect to Wave's payment page | [`RedirectPayment`](/laravel-myanmar-payments/payment-flows#redirect-payments) |
+| `waveMoney()->handleCallback($request)` | Verify the callback | `PaymentCallback` |
+
+Wave has no status API: the callback is the only payment result.
+
+
+::: warning Sandbox host
+Wave's documented test host `testpayments.wavemoney.io` no longer resolves in DNS (checked October 2026). If Wave gives you a different test host, set it as the base URL; otherwise testing happens against production with your merchant credentials.
+:::
 
 ## Initiating a Payment
 
 ```php
-use Illuminate\Support\Str;
-use Laranex\LaravelMyanmarPayments\Data\Request\WaveMoneyRequestPaymentData;
-use Laranex\LaravelMyanmarPayments\MyanmarPaymentsFacade as MyanmarPayments;
+use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
+use Laranex\PhpMyanmarPayments\WaveMoney\WaveMoneyItem;
+use Laranex\PhpMyanmarPayments\WaveMoney\WaveMoneyPaymentData;
 
-$orderId = Str::uuid()->toString();
-
-$data = new WaveMoneyRequestPaymentData(
-    orderId:              $orderId,
-    backendResultUrl:     route('payment.callback'),
-    frontendResultUrl:    route('payment.success'),
-    description:          'Order payment',
+$data = new WaveMoneyPaymentData(
+    orderId: (string) $order->id,
+    callbackUrl: route('payments.wave.callback'),
+    returnUrl: route('orders.show', $order),
+    description: 'Order #'.$order->id,
     items: [
-        ['name' => 'Product A', 'amount' => 3000],
-        ['name' => 'Product B', 'amount' => 2000],
+        new WaveMoneyItem('Product A', 3000),
+        new WaveMoneyItem('Product B', 2000),
     ],
-    amount:               5000,       // optional — defaults to sum of items
-    merchantReferenceId:  $orderId,   // optional — defaults to orderId
 );
 
-$result = MyanmarPayments::driver('wave_money')->initiate($data);
+$order->update(['wave_reference' => $data->merchantReferenceId]);
 
-return redirect($result->value);
+$payment = MyanmarPayments::waveMoney()->initiate($data);
+
+return redirect()->away($payment->url);
 ```
 
-### Parameters
+### WaveMoneyPaymentData
 
-| Parameter | Type | Required | Description |
+| Parameter | Type | Required | Rules |
 |---|---|---|---|
-| `orderId` | `string` | Yes | Your unique order identifier |
-| `backendResultUrl` | `string` | Yes | URL Wave Money posts the callback to |
-| `frontendResultUrl` | `string` | Yes | URL Wave Money redirects the customer to after payment |
-| `description` | `string` | Yes | Payment description shown to the customer |
-| `items` | `array` | Yes | Line items — each must have `name` (string) and `amount` (int, MMK) |
-| `amount` | `int` | No | Total charge in MMK. Defaults to the sum of all item amounts |
-| `merchantReferenceId` | `string` | No | Your internal reference. Defaults to `orderId` |
+| `orderId` | `string` | Yes | Your order id. One order can have several payment attempts |
+| `callbackUrl` | `string` | Yes | HTTPS URL on the standard port 443 that Wave posts the result to, with a CA-issued certificate |
+| `returnUrl` | `string` | Yes | Valid URL Wave sends the customer back to. Not proof of payment |
+| `description` | `string` | Yes | Shown to the customer |
+| `items` | `list<WaveMoneyItem>` | Yes | At least one item |
+| `amount` | `?int` | No | Whole kyat (Wave does not accept decimals), greater than 0. Defaults to the sum of the items. Wave only accepts MMK |
+| `merchantReferenceId` | `?string` | No | Unique id of this attempt. Defaults to a random id |
+
+`WaveMoneyItem` takes a `name` and an `amount` in whole kyat (greater than 0).
+
+### Merchant Reference Id
+
+Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. The default is a fresh random id. **Store it**: read it from `$data->merchantReferenceId`. Wave marks `orderId` as optional in callbacks, while `merchantReferenceId` is always present.
 
 ## Handling Callbacks
 
 ```php
-Route::post('/payment/callback/wave-money', function (Request $request) {
-    $result = MyanmarPayments::driver('wave_money')->handleCallback($request->all());
+Route::post('/payments/wave/callback', function (Request $request) {
+    $callback = MyanmarPayments::waveMoney()->handleCallback($request);
 
-    if ($result->successful) {
-        // $result->transactionId — the orderId echoed back in the callback
+    if ($callback->isSuccessful()) {
+        // $callback->orderId, $callback->raw['merchantReferenceId'], $callback->gatewayReference (Wave transactionId)
     }
-});
+
+    return MyanmarPayments::acknowledge($callback);
+})->name('payments.wave.callback');
 ```
 
-### Callback statuses
+`$callback->orderId` falls back to `merchantReferenceId` when Wave omits `orderId`.
 
-| Wave Money status | `$result->successful` |
+## Statuses
+
+Only `PAYMENT_CONFIRMED` means the customer paid.
+
+| Wave `status` | `PaymentStatus` |
 |---|---|
-| `PAYMENT_CONFIRMED` | `true` |
-| `PAYMENT_FAILED` | `false` |
-| `TRANSACTION_TIMED_OUT` | `false` |
-| `SCHEDULER_TRANSACTION_TIMED_OUT` | `false` |
+| `PAYMENT_CONFIRMED` | `Successful` |
+| `INSUFFICIENT_BALANCE` | `Pending` |
+| `ACCOUNT_LOCKED`, `BILL_COLLECTION_FAILED` | `Failed` |
+| `PAYMENT_REQUEST_CANCELLED` | `Cancelled` |
+| `TRANSACTION_TIMED_OUT`, `SCHEDULER_TRANSACTION_TIMED_OUT` | `Expired` |
+| anything else | `Unknown` |
+
+`SCHEDULER_TRANSACTION_TIMED_OUT` arrives up to 15 minutes after the time-to-live ends.
+
+## Errors
+
+A rejected request throws `ApiException`; `httpStatus` tells them apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`gatewayCode` is `VALIDATION_ERROR`).

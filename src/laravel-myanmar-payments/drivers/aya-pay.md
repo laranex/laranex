@@ -1,48 +1,113 @@
 ---
 title: AYA Pay
-description: Integrate AYA Pay with Laravel Myanmar Payments. Uses a form POST flow — use the built-in redirect or render the form yourself.
+description: Integrate the AYA Payment Gateway with Laravel Myanmar Payments. One hosted checkout for AYA Pay, other wallets and cards, with channel discovery, status checks and verified callbacks.
 ---
 
 # AYA Pay
 
-`aya_pay` uses the [form-based](/laravel-myanmar-payments/payment-flows#form-based) flow.
+The AYA Payment Gateway is one hosted checkout for AYA Pay, other wallets (KBZ Pay, WavePay, UAB Pay, CB Pay…) and cards (VISA, Mastercard, JCB).
+
+| Method | Flow | Returns |
+|---|---|---|
+| `ayaPay()->services()` | List the channels enabled for your account | `list<AyaPayService>` |
+| `ayaPay()->initiate($data)` | Signed form posted to AYA | [`FormPayment`](/laravel-myanmar-payments/payment-flows#form-payments) |
+| `ayaPay()->status($orderId)` | Enquire an order | `PaymentStatusResult` |
+| `ayaPay()->handleCallback($request)` | Verify the backend callback | `PaymentCallback` |
+| `ayaPay()->verifyRedirect($request)` | Verify the customer's return | `PaymentCallback` |
+
+## Channels and Methods
+
+`channel` is a lowercase key such as `aya_pay`, `kbz_pay` or `visa`; `method` is how the customer pays through it. Which ones you have depends on your merchant account, so list them:
+
+```php
+use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
+use Laranex\PhpMyanmarPayments\AyaPay\AyaPayMethod;
+
+foreach (MyanmarPayments::ayaPay()->services() as $service) {
+    $service->name;      // "AYA Pay"
+    $service->key;       // "aya_pay", pass as channel
+    $service->imageUrl;  // logo
+    $service->methods;   // [AyaPayMethod::Qr, AyaPayMethod::Noti]
+    $service->supports(AyaPayMethod::Qr);
+}
+```
+
+| `AyaPayMethod` | Value | Customer |
+|---|---|---|
+| `Web` | `WEB` | Pays on a hosted web page (cards) |
+| `Qr` | `QR` | Scans a QR with the wallet app |
+| `Noti` | `NOTI` | Approves a push notification in the wallet app |
 
 ## Initiating a Payment
 
 ```php
-use Illuminate\Support\Str;
-use Laranex\LaravelMyanmarPayments\Data\Request\AyaPayRequestPaymentData;
-use Laranex\LaravelMyanmarPayments\MyanmarPaymentsFacade as MyanmarPayments;
+use Laranex\PhpMyanmarPayments\AyaPay\AyaPayPaymentData;
 
-$transactionId = Str::uuid()->toString();
+$payment = MyanmarPayments::ayaPay()->initiate(new AyaPayPaymentData(
+    orderId: 'ORDER'.$order->id,
+    amount: 8000,
+    channel: 'aya_pay',
+    method: AyaPayMethod::Qr,
+    returnUrl: route('payments.aya.return'),
+));
 
-$data = new AyaPayRequestPaymentData(
-    transactionId: $transactionId,
-    amount:        8000,                     // in MMK (integer)
-    method:        'WALLET',
-    currencyCode:  104,                      // optional, 104 = MMK (default)
-    frontendUrl:   route('payment.success'), // optional
-    description:   '',                       // optional
-    userRefs:      [],                       // optional, up to 5 reference values
-);
-
-$result = MyanmarPayments::driver('aya_pay')->initiate($data);
-
-return redirect($result->value);
+return redirect($payment->autoSubmitUrl);
 ```
 
-To render the form yourself instead of using the built-in page, see [Form-Based Flow](/laravel-myanmar-payments/payment-flows#form-based).
+AYA expects the form as `multipart/form-data`; `$payment->enctype` carries it if you [render the form yourself](/laravel-myanmar-payments/payment-flows#form-payments).
+
+### AyaPayPaymentData
+
+| Parameter | Type | Required | Rules |
+|---|---|---|---|
+| `orderId` | `string` | Yes | Unique, 6 to 40 characters (`merchOrderId`) |
+| `amount` | `int` | Yes | Whole kyat, greater than 0 (AYA documents no decimals). AYA only accepts MMK (`104`) |
+| `channel` | `string` | Yes | A key from `services()` |
+| `method` | `AyaPayMethod` | Yes | A method the channel supports |
+| `returnUrl` | `?string` | No | Valid URL. Defaults to the URL registered with AYA |
+| `description` | `?string` | No | Shown to the customer |
+| `userRefs` | `list<string>` | No | Up to 5 of your own values, echoed back in the callback |
 
 ## Handling Callbacks
 
-```php
-Route::post('/payment/callback/aya-pay', function (Request $request) {
-    $result = MyanmarPayments::driver('aya_pay')->handleCallback(
-        $request->only('payload', 'checkSum')
-    );
+AYA posts to the callback URL registered with them.
 
-    if ($result->successful) {
-        // $result->transactionId
+```php
+Route::post('/payments/aya/callback', function (Request $request) {
+    $callback = MyanmarPayments::ayaPay()->handleCallback($request);
+
+    if ($callback->isSuccessful()) {
+        // $callback->orderId (merchOrderId), $callback->gatewayReference (tranId), $callback->amount
     }
+
+    return MyanmarPayments::acknowledge($callback);
 });
 ```
+
+## The Return Page
+
+AYA signs the query string it adds when sending the customer back, so the return page can show the right message:
+
+```php
+Route::get('/payments/aya/return', function (Request $request) {
+    $result = MyanmarPayments::ayaPay()->verifyRedirect($request);
+
+    return view('payments.result', ['status' => $result->status]);
+})->name('payments.aya.return');
+```
+
+Still fulfil orders from the backend callback.
+
+## Statuses
+
+| AYA `statusCode` | `PaymentStatus` |
+|---|---|
+| `00` | `Successful` |
+| `01` | `Pending` |
+| `02` (fail), `03` (reject) | `Failed` |
+| `04` | `Expired` |
+| anything else | `Unknown` |
+
+## Errors
+
+`services()` and `status()` throw `ApiException` when AYA's `status` is not `00`, e.g. `20` Transaction not found, `09` Duplicate order ID.
