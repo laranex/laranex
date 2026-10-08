@@ -1,6 +1,6 @@
 ---
 name: Go Myanmar Payments
-description: Go SDK for Myanmar payment gateways. Supports KBZ Pay (PWA, QR, In-App), Wave Money, AYA Payment Gateway, Yoma MMQR, and CyberSource Secure Acceptance. Standard library only.
+description: "Go SDK for Myanmar payment gateways: KBZ Pay, Wave Money, AYA Pay, Yoma MMQR and CyberSource. Typed requests and results, exact amounts, standard library only."
 requirements:
   - Go 1.22+
   - Standard library only

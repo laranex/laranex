@@ -1,6 +1,6 @@
 ---
 name: PHP Myanmar Payments
-description: Framework-agnostic PHP SDK for Myanmar payment gateways. Supports KBZ Pay (PWA, QR, In-App), Wave Money, AYA Payment Gateway, Yoma MMQR, and CyberSource Secure Acceptance.
+description: "PHP SDK for Myanmar payment gateways: KBZ Pay, Wave Money, AYA Pay, Yoma MMQR and CyberSource. Framework-agnostic, typed requests and results, works with any PSR-18 HTTP client."
 requirements:
   - PHP ^8.1
   - Any PSR-18 HTTP client and PSR-17 factories (e.g. Guzzle)

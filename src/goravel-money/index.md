@@ -1,6 +1,6 @@
 ---
 name: Goravel Money
-description: "Exact money for Goravel, the Go counterpart of Laravel Money: an immutable Money of any size in integer minor units, strict parsing, arithmetic with eight rounding modes, percentages, allocation, locale-aware formatting without floats, and ORM column types."
+description: "Money for Goravel: exact, currency-aware amounts with arithmetic, percentages, allocation, formatting and ORM columns."
 requirements:
   - Go 1.25+
   - Goravel 1.18+

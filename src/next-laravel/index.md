@@ -1,6 +1,6 @@
 ---
 name: Next Laravel
-description: "Build scalable Laravel applications with Modular, Job-Driven and Clean Code Architecture — Routes, Controllers, Features, Operations, Requests and Jobs, all inside modules."
+description: "Modular architecture for Laravel: self-contained modules with routes, controllers, requests, features, operations and jobs, with generators for each."
 requirements:
   - PHP ^8.1
   - Laravel ^10.0|^11.0|^12.0|^13.0
