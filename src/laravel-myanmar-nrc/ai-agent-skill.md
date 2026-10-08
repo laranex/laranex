@@ -27,7 +27,7 @@ Or copy `skills/laravel-myanmar-nrc` from the [repository](https://github.com/la
 
 ## What the skill covers
 
-Validate and parse Myanmar NRC numbers in a Laravel app with laranex/laravel-myanmar-nrc, in English or Myanmar, from the database or the bundled JSON file.
+Validate Myanmar NRC numbers and format them in English or Myanmar in a Laravel app with laranex/laravel-myanmar-nrc, reading the bundled state, township and type data from the database or the JSON file.
 
 It is written from the package source and kept in the repository next to the code, so agents follow the same API, configuration and conventions these docs describe.
 

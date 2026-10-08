@@ -23,11 +23,11 @@ Already set up? Run `php artisan boost:update` after updating Better Laravel to 
 npx skills add laranex/better-laravel
 ```
 
-Or copy `skills/better-laravel-development` from the [repository](https://github.com/laranex/better-laravel) into your project's `.claude/skills` or `.agents/skills` folder.
+Or copy `skills/better-laravel` from the [repository](https://github.com/laranex/better-laravel) into your project's `.claude/skills` or `.agents/skills` folder.
 
 ## What the skill covers
 
-Structure a Laravel app into modules (controllers, features, operations) and domains (jobs, requests) with laranex/better-laravel, generate them with the better:* artisan commands and let the package load routes/web and routes/api.
+Structure a Laravel app into modules (controllers, features, operations) and domains (jobs, requests) with laranex/better-laravel, generate them with the better:* Artisan commands and let the package load routes/web and routes/api.
 
 It is written from the package source and kept in the repository next to the code, so agents follow the same API, configuration and conventions these docs describe.
 

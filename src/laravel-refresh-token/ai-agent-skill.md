@@ -23,7 +23,7 @@ Already set up? Run `php artisan boost:update` after updating Laravel Refresh To
 npx skills add laranex/laravel-refresh-token
 ```
 
-Or copy `skills/laravel-refresh-token-development` from the [repository](https://github.com/laranex/laravel-refresh-token) into your project's `.claude/skills` or `.agents/skills` folder.
+Or copy `skills/laravel-refresh-token` from the [repository](https://github.com/laranex/laravel-refresh-token) into your project's `.claude/skills` or `.agents/skills` folder.
 
 ## What the skill covers
 

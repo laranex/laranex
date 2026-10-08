@@ -17,7 +17,7 @@ Or copy `skills/goravel-myanmar-payments` from the [repository](https://github.c
 
 ## What the skill covers
 
-Accept KBZ Pay, Wave Money, AYA Pay, Yoma MMQR and CyberSource payments in a Goravel application with github.com/laranex/goravel-myanmar-payments/v4: the facade, configuration, starting payments, the auto-submit form route, callbacks and HTTP fakes in tests.
+Accept KBZ Pay, Wave Money, AYA Pay, Yoma MMQR and CyberSource payments in a Goravel application with github.com/laranex/goravel-myanmar-payments/v4: facade, config, callbacks, the auto-submit form route and HTTP fakes in tests.
 
 It is written from the package source and kept in the repository next to the code, so agents follow the same API, configuration and conventions these docs describe.
 

@@ -23,7 +23,7 @@ Already set up? Run `php artisan boost:update` after updating Next Laravel to re
 npx skills add laranex/next-laravel
 ```
 
-Or copy `skills/next-laravel-development` from the [repository](https://github.com/laranex/next-laravel) into your project's `.claude/skills` or `.agents/skills` folder.
+Or copy `skills/next-laravel` from the [repository](https://github.com/laranex/next-laravel) into your project's `.claude/skills` or `.agents/skills` folder.
 
 ## What the skill covers
 
