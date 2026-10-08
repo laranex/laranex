@@ -37,7 +37,7 @@ URL fields are optional overrides; leave them empty to use the endpoint matching
 | `MerchantCode` | `string` | Yes | `merch_code` issued by KBZ |
 | `Production` | `bool` | No | `false` (default) uses UAT |
 | `APIURL` | `string` | No | Override the API base URL |
-| `PWAURL` | `string` | No | Override the PWA checkout URL. Normalised to end with `/`, e.g. `…/pwa/#/` |
+| `PWAURL` | `string` | No | Override the PWA checkout URL. Normalized to end with `/`, e.g. `…/pwa/#/` |
 
 ### wavemoney.Config
 
@@ -89,8 +89,8 @@ URL fields are optional overrides; leave them empty to use the endpoint matching
 |---|---|---|
 | KBZ Pay API | `http://api-uat.kbzpay.com/payment/gateway/uat` | `https://api.kbzpay.com/payment/gateway` |
 | KBZ Pay PWA | `https://static.kbzpay.com/pgw/uat/pwa/#/` | `https://wap.kbzpay.com/pgw/pwa/#/` |
-| Wave Money API | `https://testpayments.wavemoney.io:8107` | `https://payments.wavemoney.io` |
-| Wave Money authenticate redirect | `https://testpayments.wavemoney.io` | `https://payments.wavemoney.io` |
+| Wave Money API | `https://preprodpayments.wavemoney.io:8107` | `https://payments.wavemoney.io` |
+| Wave Money authenticate redirect | `https://preprodpayments.wavemoney.io` | `https://payments.wavemoney.io` |
 | AYA Payment Gateway | `https://uat-pgw.ayainnovation.com` | `https://pgw.ayainnovation.com` |
 | Yoma MMQR | `https://devapi.yomabank.net` | `https://paymenthubapi.yomabank.com` |
 | CyberSource | `https://testsecureacceptance.cybersource.com` | `https://secureacceptance.cybersource.com` |
@@ -98,7 +98,6 @@ URL fields are optional overrides; leave them empty to use the endpoint matching
 The URLs are exported constants, e.g. `kbzpay.SandboxAPIURL`, `kbzpay.ProductionPWAURL`, `wavemoney.SandboxAuthenticateURL`, `yomammqr.ProductionURL`.
 
 ::: warning Wave sandbox host
-Wave's documented test host `testpayments.wavemoney.io` no longer resolves in DNS (checked October 2026). Set `BaseURL` if Wave gives you another test host.
 :::
 
 ## From Environment Variables
@@ -151,7 +150,7 @@ CYBER_SOURCE_SECRET_KEY=
 CYBER_SOURCE_BASE_URL=                # optional override
 ```
 
-`*_SANDBOX=false` (or `0`, `no`, `off`) sets `Production: true`. Unset or unrecognised values mean sandbox.
+`*_SANDBOX=false` (or `0`, `no`, `off`) sets `Production: true`. Unset or unrecognized values mean sandbox.
 
 ## HTTP Client
 

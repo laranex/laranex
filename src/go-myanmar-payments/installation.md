@@ -10,21 +10,21 @@ description: Install Go Myanmar Payments with go get. Requires Go 1.22+ and has 
 > **Requires** Go 1.22+. No dependencies outside the standard library.
 
 ```bash
-go get github.com/laranex/go-myanmar-payments
+go get github.com/laranex/go-myanmar-payments/v4
 ```
 
 The module has one root package with the shared types and one package per gateway:
 
 | Import path | Contents |
 |---|---|
-| `github.com/laranex/go-myanmar-payments` | `Amount`, results, `PaymentCallback`, `PaymentStatus`, `CallbackRequest`, errors, `HTTPDoer`, `TokenCache` |
-| `github.com/laranex/go-myanmar-payments/kbzpay` | KBZ Pay |
-| `github.com/laranex/go-myanmar-payments/wavemoney` | Wave Money |
-| `github.com/laranex/go-myanmar-payments/ayapay` | AYA Payment Gateway |
-| `github.com/laranex/go-myanmar-payments/yomammqr` | Yoma MMQR |
-| `github.com/laranex/go-myanmar-payments/cybersource` | CyberSource Secure Acceptance |
+| `github.com/laranex/go-myanmar-payments/v4` | `Amount`, results, `PaymentCallback`, `PaymentStatus`, `CallbackRequest`, errors, `HTTPDoer`, `TokenCache` |
+| `github.com/laranex/go-myanmar-payments/v4/kbzpay` | KBZ Pay |
+| `github.com/laranex/go-myanmar-payments/v4/wavemoney` | Wave Money |
+| `github.com/laranex/go-myanmar-payments/v4/ayapay` | AYA Payment Gateway |
+| `github.com/laranex/go-myanmar-payments/v4/yomammqr` | Yoma MMQR |
+| `github.com/laranex/go-myanmar-payments/v4/cybersource` | CyberSource Secure Acceptance |
 
-The root package is named `myanmarpayments`; the examples import it under that name.
+The module path carries the major version, so every import ends in `/v4`. The root package is named `myanmarpayments`; the examples import it under that name.
 
 ## Quick Start
 
@@ -36,8 +36,8 @@ import (
 	"net/http"
 	"os"
 
-	myanmarpayments "github.com/laranex/go-myanmar-payments"
-	"github.com/laranex/go-myanmar-payments/kbzpay"
+	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
+	"github.com/laranex/go-myanmar-payments/v4/kbzpay"
 )
 
 func main() {
@@ -71,7 +71,7 @@ func main() {
 			return
 		}
 		if callback.IsSuccessful() {
-			// compare callback.Amount with your order, then fulfil callback.OrderID
+			// compare callback.Amount with your order, then fulfill callback.OrderID
 		}
 		callback.Acknowledgement.Write(w) // KBZ Pay expects a plain "success"
 	})

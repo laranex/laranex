@@ -3,7 +3,7 @@ import { defineConfig, type HeadConfig } from 'vitepress'
 export default defineConfig({
   title: 'Laranex',
   titleTemplate: ':title — Laranex',
-  description: 'Open source packages for developers by Laranex',
+  description: 'Laranex is an open source organization, built by developers for developers.',
   base: '/',
   cleanUrls: false,
   srcDir: 'src',
@@ -11,6 +11,9 @@ export default defineConfig({
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
     ['meta', { name: 'theme-color', content: '#18b69b' }],
+    ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
+    ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
+    ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap' }],
     ['meta', { property: 'og:site_name', content: 'Laranex' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { name: 'twitter:card', content: 'summary' }],
@@ -22,14 +25,14 @@ export default defineConfig({
     const isHome = pageData.relativePath === 'index.md'
 
     const title = isHome
-      ? 'Laranex — Open Source Packages for Developers'
+      ? 'Laranex — Open source, built by developers for developers'
       : pageData.frontmatter.title
         ? `${pageData.frontmatter.title} — Laranex`
         : 'Laranex'
 
     const description =
       pageData.frontmatter.description ||
-      'Open source packages for developers by Laranex'
+      'Laranex is an open source organization, built by developers for developers.'
 
     heads.push(['meta', { property: 'og:title', content: title }])
     heads.push(['meta', { property: 'og:description', content: description }])
@@ -51,10 +54,12 @@ export default defineConfig({
           items: [
             { text: 'Introduction',       link: '/laravel-myanmar-payments/introduction' },
             { text: 'Installation',       link: '/laravel-myanmar-payments/installation' },
+            { text: 'AI Agent Skill', link: '/laravel-myanmar-payments/ai-agent-skill' },
             { text: 'Configuration',      link: '/laravel-myanmar-payments/configuration' },
             { text: 'Amounts',            link: '/laravel-myanmar-payments/amounts' },
             { text: 'Payment Flows',      link: '/laravel-myanmar-payments/payment-flows' },
             { text: 'Callbacks & Status', link: '/laravel-myanmar-payments/callbacks' },
+            { text: 'Handling Webhooks', link: '/laravel-myanmar-payments/webhooks' },
             { text: 'Upgrading',          link: '/laravel-myanmar-payments/upgrading' },
           ],
         },
@@ -83,10 +88,12 @@ export default defineConfig({
           items: [
             { text: 'Introduction',         link: '/go-myanmar-payments/introduction' },
             { text: 'Installation',         link: '/go-myanmar-payments/installation' },
+            { text: 'AI Agent Skill', link: '/go-myanmar-payments/ai-agent-skill' },
             { text: 'Configuration',        link: '/go-myanmar-payments/configuration' },
             { text: 'Amounts',              link: '/go-myanmar-payments/amounts' },
             { text: 'Payment Flows',        link: '/go-myanmar-payments/payment-flows' },
             { text: 'Callbacks & Status',   link: '/go-myanmar-payments/callbacks' },
+            { text: 'Handling Webhooks', link: '/go-myanmar-payments/webhooks' },
             { text: 'net/http Integration', link: '/go-myanmar-payments/net-http' },
           ],
         },
@@ -115,10 +122,12 @@ export default defineConfig({
           items: [
             { text: 'Introduction',          link: '/php-myanmar-payments/introduction' },
             { text: 'Installation',          link: '/php-myanmar-payments/installation' },
+            { text: 'AI Agent Skill', link: '/php-myanmar-payments/ai-agent-skill' },
             { text: 'Configuration',         link: '/php-myanmar-payments/configuration' },
             { text: 'Amounts',               link: '/php-myanmar-payments/amounts' },
             { text: 'Payment Flows',         link: '/php-myanmar-payments/payment-flows' },
             { text: 'Callbacks & Status',    link: '/php-myanmar-payments/callbacks' },
+            { text: 'Handling Webhooks', link: '/php-myanmar-payments/webhooks' },
             { text: 'Framework Integration', link: '/php-myanmar-payments/framework-integration' },
           ],
         },
@@ -148,7 +157,9 @@ export default defineConfig({
             { text: 'Introduction',  link: '/better-laravel/introduction' },
             { text: 'Principles',    link: '/better-laravel/principles' },
             { text: 'Installation',  link: '/better-laravel/installation' },
+            { text: 'AI Agent Skill', link: '/better-laravel/ai-agent-skill' },
             { text: 'Configuration', link: '/better-laravel/configuration' },
+            { text: 'Upgrading', link: '/better-laravel/upgrading' },
           ],
         },
         {
@@ -170,7 +181,9 @@ export default defineConfig({
             { text: 'Introduction',  link: '/next-laravel/introduction' },
             { text: 'Principles',    link: '/next-laravel/principles' },
             { text: 'Installation',  link: '/next-laravel/installation' },
+            { text: 'AI Agent Skill', link: '/next-laravel/ai-agent-skill' },
             { text: 'Configuration', link: '/next-laravel/configuration' },
+            { text: 'Upgrading', link: '/next-laravel/upgrading' },
           ],
         },
         {
@@ -191,7 +204,9 @@ export default defineConfig({
           items: [
             { text: 'Introduction', link: '/laravel-refresh-token/introduction' },
             { text: 'Installation', link: '/laravel-refresh-token/installation' },
+            { text: 'AI Agent Skill', link: '/laravel-refresh-token/ai-agent-skill' },
             { text: 'Configuration', link: '/laravel-refresh-token/configuration' },
+            { text: 'Upgrading', link: '/laravel-refresh-token/upgrading' },
             { text: 'Usage', link: '/laravel-refresh-token/usage' },
           ],
         },
@@ -202,7 +217,10 @@ export default defineConfig({
           items: [
             { text: 'Introduction', link: '/laravel-money/introduction' },
             { text: 'Installation', link: '/laravel-money/installation' },
+            { text: 'AI Agent Skill', link: '/laravel-money/ai-agent-skill' },
             { text: 'Usage', link: '/laravel-money/usage' },
+            { text: 'Casts', link: '/laravel-money/casts' },
+            { text: 'Arithmetic', link: '/laravel-money/arithmetic' },
           ],
         },
       ],
@@ -212,7 +230,9 @@ export default defineConfig({
           items: [
             { text: 'Introduction', link: '/laravel-myanmar-nrc/introduction' },
             { text: 'Installation', link: '/laravel-myanmar-nrc/installation' },
+            { text: 'AI Agent Skill', link: '/laravel-myanmar-nrc/ai-agent-skill' },
             { text: 'Configuration', link: '/laravel-myanmar-nrc/configuration' },
+            { text: 'Upgrading', link: '/laravel-myanmar-nrc/upgrading' },
             { text: 'Usage', link: '/laravel-myanmar-nrc/usage' },
           ],
         },
@@ -223,8 +243,36 @@ export default defineConfig({
           items: [
             { text: 'Introduction', link: '/laravel-biometric-auth/introduction' },
             { text: 'Installation', link: '/laravel-biometric-auth/installation' },
+            { text: 'AI Agent Skill', link: '/laravel-biometric-auth/ai-agent-skill' },
             { text: 'Configuration', link: '/laravel-biometric-auth/configuration' },
+            { text: 'Upgrading', link: '/laravel-biometric-auth/upgrading' },
             { text: 'Usage', link: '/laravel-biometric-auth/usage' },
+          ],
+        },
+      ],
+      '/goravel-myanmar-payments/': [
+        {
+          text: 'Getting Started',
+          items: [
+            { text: 'Introduction', link: '/goravel-myanmar-payments/introduction' },
+            { text: 'Installation', link: '/goravel-myanmar-payments/installation' },
+            { text: 'AI Agent Skill', link: '/goravel-myanmar-payments/ai-agent-skill' },
+            { text: 'Configuration', link: '/goravel-myanmar-payments/configuration' },
+            { text: 'Usage', link: '/goravel-myanmar-payments/usage' },
+            { text: 'Handling Webhooks', link: '/goravel-myanmar-payments/webhooks' },
+            { text: 'Callbacks & Status', link: '/goravel-myanmar-payments/callbacks' },
+            { text: 'Testing', link: '/goravel-myanmar-payments/testing' },
+          ],
+        },
+      ],
+      '/goravel-money/': [
+        {
+          text: 'Goravel Money',
+          items: [
+            { text: 'Introduction', link: '/goravel-money/introduction' },
+            { text: 'Installation', link: '/goravel-money/installation' },
+            { text: 'AI Agent Skill', link: '/goravel-money/ai-agent-skill' },
+            { text: 'Usage', link: '/goravel-money/usage' },
           ],
         },
       ],
@@ -234,17 +282,9 @@ export default defineConfig({
           items: [
             { text: 'Introduction', link: '/laravel-newrelic/introduction' },
             { text: 'Installation', link: '/laravel-newrelic/installation' },
+            { text: 'AI Agent Skill', link: '/laravel-newrelic/ai-agent-skill' },
             { text: 'Usage', link: '/laravel-newrelic/usage' },
-          ],
-        },
-      ],
-      '/laralog-client/': [
-        {
-          text: 'Laralog Client',
-          items: [
-            { text: 'Introduction', link: '/laralog-client/introduction' },
-            { text: 'Installation', link: '/laralog-client/installation' },
-            { text: 'Usage', link: '/laralog-client/usage' },
+            { text: 'Upgrading', link: '/laravel-newrelic/upgrading' },
           ],
         },
       ],
@@ -280,7 +320,8 @@ export default defineConfig({
     },
 
     footer: {
-      copyright: 'Copyright © 2024 Laranex',
+      message: 'Released under the MIT License, except where a package says otherwise.',
+      copyright: '© 2026 Laranex',
     },
   },
 

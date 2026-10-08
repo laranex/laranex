@@ -7,6 +7,26 @@ description: Verify gateway callbacks with HandleCallback, read a gateway-indepe
 
 Every gateway notifies your server of the payment result. `HandleCallback` takes a `*myanmarpayments.CallbackRequest`, verifies the gateway's signature and returns a `*myanmarpayments.PaymentCallback`.
 
+::: tip Production setup
+For production, follow [Handling Webhooks (recommended)](/go-myanmar-payments/webhooks): verify, store the call, acknowledge immediately, then process it once in the background with retries. The example below handles everything inline to show the API.
+:::
+
+Every callback goes through the same steps; KBZ Pay is shown here.
+
+<SequenceDiagram
+  title="Handling a KBZ Pay callback"
+  :participants="['Your app', 'KBZ Pay']"
+  :steps="[
+    { from: 'KBZ Pay', to: 'Your app', label: 'Payment notification', detail: 'POST to callbackUrl' },
+    { from: 'Your app', to: 'Your app', label: 'Verify the signature', detail: 'kbz.HandleCallback(request)' },
+    { from: 'Your app', to: 'KBZ Pay', label: 'Invalid: 400, never fulfill', detail: '*SignatureVerificationError', response: true },
+    { from: 'Your app', to: 'Your app', label: 'Find the order', detail: 'by callback.OrderID' },
+    { from: 'Your app', to: 'Your app', label: 'Fulfill once', detail: 'skip if paid, match the amount' },
+    { from: 'Your app', to: 'KBZ Pay', label: 'Acknowledge: plain success', detail: 'callback.Acknowledgement.Write(w)', response: true },
+    { from: 'KBZ Pay', to: 'Your app', label: 'No acknowledgement? Retry', detail: 'after 60 s, then 600 s' },
+  ]"
+/>
+
 ```go
 func (h *handlers) kbzCallback(w http.ResponseWriter, r *http.Request) {
 	request, err := myanmarpayments.NewCallbackRequestFromHTTP(r)
@@ -74,15 +94,29 @@ Every gateway's own status values are mapped onto one type. The original value s
 | `StatusSuccessful` | The customer paid. The only status that means money was collected. |
 | `StatusPending` | Still in progress or waiting on the customer. |
 | `StatusFailed` | Attempted and failed or rejected. |
-| `StatusCancelled` | Cancelled or closed before completing. |
+| `StatusCancelled` | Canceled or closed before completing. |
 | `StatusExpired` | The payment window ran out. |
-| `StatusUnknown` | A status this package does not recognise yet. Inspect `GatewayStatus`. |
+| `StatusUnknown` | A status this package does not recognize yet. Inspect `GatewayStatus`. |
 
 `status.IsFinal()` is `false` for `StatusPending` and `StatusUnknown`. Unknown statuses never return an error.
 
 Each gateway page lists its exact mapping.
 
 ## Status Checks
+
+When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Money and CyberSource have no status API.
+
+<SequenceDiagram
+  title="Checking the status when the callback is late"
+  :participants="['Your app', 'KBZ Pay']"
+  :steps="[
+    { from: 'Your app', to: 'Your app', label: 'Callback late or missing' },
+    { from: 'Your app', to: 'KBZ Pay', label: 'Ask for the order status', detail: 'kbz.Status(ctx, orderID)' },
+    { from: 'KBZ Pay', to: 'Your app', label: 'PaymentStatusResult', detail: 'trade_status, e.g. PAY_SUCCESS', response: true },
+    { from: 'Your app', to: 'Your app', label: 'Successful? Fulfill once', detail: 'same checks as the callback' },
+    { from: 'Your app', to: 'Your app', label: 'Not final? Check again later', detail: 'result.Status.IsFinal()' },
+  ]"
+/>
 
 When a callback is late or missing, ask the gateway directly. Status checks return a `*myanmarpayments.PaymentStatusResult` with the same `Status`, `GatewayStatus`, `GatewayReference` and `Amount` fields.
 

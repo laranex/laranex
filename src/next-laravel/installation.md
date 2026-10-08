@@ -9,12 +9,25 @@ description: Install Next Laravel via Composer. Requires PHP 8.1+ and Laravel 10
 
 > **Requires** PHP 8.1+ and Laravel 10 to 13.
 
-:::info
-Laravel 11, 12 and 13 support is part of the upcoming release.
-:::
-
 You may install **[Next Laravel](https://github.com/laranex/next-laravel)** into your Laravel application by running the following command.
 
 ```bash
 composer require laranex/next-laravel
 ```
+
+The `NextLaravelServiceProvider` and the `NextLaravel` facade alias are registered automatically through package discovery. Publishing the config, views or stubs is optional, see [Configuration](/next-laravel/configuration).
+
+## Commands
+
+The package registers one generator command per unit. Every unit except routes is generated inside a module.
+
+| Command | Generates |
+|---|---|
+| `next:route {route} {versionOrDirectory?} [--api] [--force]` | `routes/{web\|api}/[versionOrDirectory/]{routes}.php` |
+| `next:controller {controller} {module} [--force]` | `app/Modules/{Module}Module/Http/Controllers/{Name}Controller.php` |
+| `next:request {request} {module} [--force]` | `app/Modules/{Module}Module/Http/Requests/{Name}Request.php` |
+| `next:feature {feature} {module} [--force]` | `app/Modules/{Module}Module/Features/{Name}Feature.php` |
+| `next:operation {operation} {module} [--force]` | `app/Modules/{Module}Module/Operations/{Name}Operation.php` |
+| `next:job {job} {module} [--queue] [--force]` | `app/Modules/{Module}Module/Jobs/{Name}Job.php` |
+
+Each command exits with `0` when the file is generated and `1` when generation fails, for example when the file already exists and `--force` was not given, or when a name contains `/` or `\` (nested names such as `Blog/CreatePost` are not supported).

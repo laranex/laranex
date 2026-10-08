@@ -7,10 +7,31 @@ description: Integrate CyberSource Secure Acceptance card payments in plain PHP.
 
 | Method | Flow | Returns |
 |---|---|---|
-| `$cyberSource->initiate($data)` | Signed form posted to the hosted checkout | [`FormPayment`](/php-myanmar-payments/payment-flows#form-payments) |
-| `$cyberSource->handleCallback($request)` | Verify the result post | `PaymentCallback` |
+| `$cyberSource->initiate($data)` | Signed form posted to the hosted checkout | [`FormPayment`](#initiate-response) |
+| `$cyberSource->handleCallback($request)` | Verify the result post | [`PaymentCallback`](#handlecallback-response) |
+
+[Responses](#responses) shows what CyberSource puts in each result.
 
 CyberSource has no status API in this package: rely on the callback.
+
+## How it works
+
+CyberSource posts the result twice, to your backoffice URL and through the browser to your receipt page, and both are verified the same way.
+
+<SequenceDiagram
+  title="CyberSource: signed form, hosted checkout, two result posts"
+  :participants="['Customer', 'Your app', 'CyberSource']"
+  :steps="[
+    { from: 'Customer', to: 'Your app', label: 'Check out' },
+    { from: 'Your app', to: 'Customer', label: 'Signed form, auto-submits', detail: '$cyberSource->initiate($data)', response: true },
+    { from: 'Customer', to: 'CyberSource', label: 'Post to the hosted checkout', detail: 'POST /pay, then the card form' },
+    { from: 'CyberSource', to: 'Your app', label: 'Backoffice post', detail: 'override_backoffice_post_url' },
+    { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: '$cyberSource->handleCallback()' },
+    { from: 'Customer', to: 'Your app', label: 'Browser posts the receipt', detail: 'override_custom_receipt_page' },
+    { from: 'Your app', to: 'Your app', label: 'Same signature check', detail: '$cyberSource->handleCallback()' },
+    { from: 'Your app', to: 'Customer', label: 'Show the receipt', response: true },
+  ]"
+/>
 
 ## Initiating a Payment
 
@@ -41,9 +62,9 @@ echo $payment->toHtml(); // posts the signed form to CyberSource on load
 |---|---|---|---|
 | `orderId` | `string` | Yes | At most 50 characters, sent as `reference_number` |
 | `amount` | `Amount\|int` | Yes | Order total in `currency`, 0 or more, any number of decimals: `20000` or `Amount::parse('10.50')`. At most 15 characters |
-| `callbackUrl` | `string` | Yes | HTTPS URL CyberSource posts the result to. At most 255 characters |
-| `returnUrl` | `?string` | No | HTTPS receipt page for the customer. At most 255 characters |
-| `cancelUrl` | `?string` | No | HTTPS page shown when the customer cancels. At most 255 characters |
+| `callbackUrl` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters; CyberSource may require HTTPS in production |
+| `returnUrl` | `?string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
+| `cancelUrl` | `?string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
 | `currency` | `string` | No | Any ISO 4217 code (CyberSource is multi-currency), default `MMK` |
 | `transactionType` | `CyberSourceTransactionType` | No | `Sale` (default), `Authorization`, `SaleAndCreateToken` or `AuthorizationAndCreateToken` |
 | `locale` | `string` | No | Hosted page language as a CyberSource locale code such as `en-us`, default `en-us` |
@@ -66,6 +87,53 @@ if ($callback->isSuccessful()) {
 
 $callback->acknowledgement()->send();
 ```
+
+## Responses
+
+What CyberSource puts in each property. See [Results](/php-myanmar-payments/references/results) and [PaymentCallback & Status](/php-myanmar-payments/references/payment-callback) for the full classes.
+
+### `initiate()` → `FormPayment` {#initiate-response}
+
+| Property / Method | CyberSource value |
+|---|---|
+| `orderId` | Your `orderId` |
+| `action` | `{base_url}/pay` |
+| `fields` | The signed fields below. Post them unchanged |
+| `enctype` | `application/x-www-form-urlencoded` |
+| `autoSubmitUrl` | `null` in plain PHP until you call `withAutoSubmitUrl()` |
+| `withAutoSubmitUrl($url)` | Returns a copy with `autoSubmitUrl` set |
+| `toHtml()` | A full HTML page that posts `fields` to `action` on load |
+
+`fields`, all signed, in this order:
+
+| Key | Value |
+|---|---|
+| `access_key` | Your configured access key |
+| `profile_id` | Your configured profile id |
+| `transaction_uuid` | A random 32-character hex id, new for every call |
+| `signed_field_names` | The keys in this table, comma-separated, without `signature` |
+| `signed_date_time` | UTC time, e.g. `2026-10-08T09:30:00Z` |
+| `locale` | Your `locale`, e.g. `en-us` |
+| `transaction_type` | Your `transactionType`, e.g. `sale` |
+| `reference_number` | Your `orderId` |
+| `amount` | Your `amount`, e.g. `20000` or `10.50` |
+| `currency` | Your `currency`, e.g. `MMK` |
+| `override_custom_receipt_page` | Your `returnUrl`, `""` when unset |
+| `override_backoffice_post_url` | Your `callbackUrl` |
+| `override_custom_cancel_page` | Your `cancelUrl`, `""` when unset |
+| `signature` | Base64 HMAC-SHA256 of the signed fields |
+
+### `handleCallback()` → `PaymentCallback` {#handlecallback-response}
+
+| Property / Method | CyberSource value |
+|---|---|
+| `orderId` | CyberSource `req_reference_number` (your `orderId`) |
+| `status` | `decision` mapped, see [Statuses](#statuses) |
+| `gatewayStatus` | CyberSource `decision`, uppercased, e.g. `ACCEPT` |
+| `gatewayReference` | CyberSource `transaction_id` |
+| `amount` | CyberSource `auth_amount`, falling back to `req_amount`, e.g. `20000.00` |
+| `raw` | The verified post, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `auth_amount`, `req_reference_number`, `req_amount`, `req_currency`, `signed_field_names`, `signature` |
+| `acknowledgement()` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
 ## Statuses
 

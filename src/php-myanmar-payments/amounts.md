@@ -27,6 +27,7 @@ $payment = $kbzPay->pwa(new KbzPayPaymentData(
 |---|---|
 | `Amount::kyat(int $amount)` | A whole amount, 0 or more. Works for whole units of any currency |
 | `Amount::parse(string $amount)` | Plain digits with an optional decimal part: `1000`, `1000.50`, `0.5` |
+| `Amount::from(Amount\|int $amount)` | An `Amount` as is, or an `int` through `kyat()`. The payment data classes use it |
 
 `parse()` rejects signs, exponents, spaces and thousands separators (`-1`, `1e5`, ` 10`, `1,000`, `10.`, `.5`), and both constructors reject negatives, by throwing `InvalidPaymentDataException` with an `amount` error.
 
