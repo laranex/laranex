@@ -1,6 +1,6 @@
 ---
 name: Node Myanmar Payments
-description: Node.js and TypeScript SDK for Myanmar payment gateways. Supports KBZ Pay (PWA, QR, In-App), Wave Money, AYA Payment Gateway, Yoma MMQR, and CyberSource Secure Acceptance. ESM and CommonJS, no runtime dependencies.
+description: "Node.js SDK for Myanmar payment gateways: KBZ Pay, Wave Money, AYA Pay, Yoma MMQR and CyberSource. Typed TypeScript API, ESM and CommonJS, no runtime dependencies."
 requirements:
   - Node.js 20+
   - No runtime dependencies
