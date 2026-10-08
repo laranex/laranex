@@ -299,6 +299,21 @@ export default defineConfig({
           ],
         },
       ],
+      '/nestjs-myanmar-payments/': [
+        {
+          text: 'Getting Started',
+          items: [
+            { text: 'Introduction', link: '/nestjs-myanmar-payments/introduction' },
+            { text: 'Installation', link: '/nestjs-myanmar-payments/installation' },
+            { text: 'AI Agent Skill', link: '/nestjs-myanmar-payments/ai-agent-skill' },
+            { text: 'Configuration', link: '/nestjs-myanmar-payments/configuration' },
+            { text: 'Usage', link: '/nestjs-myanmar-payments/usage' },
+            { text: 'Callbacks', link: '/nestjs-myanmar-payments/callbacks' },
+            { text: 'Handling Webhooks', link: '/nestjs-myanmar-payments/webhooks' },
+            { text: 'Testing', link: '/nestjs-myanmar-payments/testing' },
+          ],
+        },
+      ],
       '/goravel-money/': [
         {
           text: 'Goravel Money',
