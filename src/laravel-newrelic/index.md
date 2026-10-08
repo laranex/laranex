@@ -4,7 +4,7 @@ description: "A log channel that ships Laravel logs to New Relic Logs, plus one 
 requirements:
   - PHP ^8.1
   - Laravel ^10.0|^11.0|^12.0|^13.0
-  - Monolog ^3.1
+  - Monolog ^3.6
   - ext-curl
   - New Relic PHP agent (optional)
 github: https://github.com/laranex/laravel-newrelic
