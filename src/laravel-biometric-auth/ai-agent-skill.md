@@ -27,7 +27,7 @@ Or copy `skills/laravel-biometric-auth` from the [repository](https://github.com
 
 ## What the skill covers
 
-Add passwordless biometric login (Face ID, Touch ID, Android biometrics) to a Laravel API with laranex/laravel-biometric-auth: register device public keys, issue challenges and verify signatures.
+Add passwordless biometric login (Face ID, Touch ID, Android biometrics) to a Laravel API with laranex/laravel-biometric-auth: register device public keys, issue challenges and verify signed challenges.
 
 It is written from the package source and kept in the repository next to the code, so agents follow the same API, configuration and conventions these docs describe.
 

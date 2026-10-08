@@ -27,7 +27,7 @@ Or copy `skills/laravel-newrelic` from the [repository](https://github.com/laran
 
 ## What the skill covers
 
-Ship Laravel logs to New Relic Logs and report Octane requests and queue jobs as separate New Relic APM transactions with laranex/laravel-newrelic.
+Ship Laravel logs to New Relic Logs and report each Octane request and queue job as its own New Relic APM transaction with laranex/laravel-newrelic. Use when an application logs to New Relic, runs under the New Relic PHP agent, or tests code that does.
 
 It is written from the package source and kept in the repository next to the code, so agents follow the same API, configuration and conventions these docs describe.
 
