@@ -10,6 +10,7 @@ const packages: Record<string, string> = {
   'node-myanmar-payments': 'Node Myanmar Payments',
   'php-myanmar-payments': 'PHP Myanmar Payments',
   'goravel-myanmar-payments': 'Goravel Myanmar Payments',
+  'nestjs-myanmar-payments': 'NestJS Myanmar Payments',
   'goravel-money': 'Goravel Money',
   'better-laravel': 'Better Laravel',
   'next-laravel': 'Next Laravel',
