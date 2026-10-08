@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { useData } from 'vitepress'
 import { computed } from 'vue'
-import { data as packages } from '../../src/packages.data'
+import { data as categories } from '../../src/packages.data'
 
 const { page } = useData()
 
 const pkg = computed(() => {
   const slug = page.value.relativePath.split('/')[0]
-  return packages.find((p) => p.slug === slug) ?? null
+  return categories.flatMap(({ packages }) => packages).find((p) => p.slug === slug) ?? null
 })
 </script>
 

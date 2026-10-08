@@ -27,7 +27,7 @@ WAVE_MONEY_SECRET_KEY=
 WAVE_MONEY_MERCHANT_NAME=             # defaults to APP_NAME
 WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS=300
 WAVE_MONEY_BASE_URL=                  # optional
-WAVE_MONEY_AUTHENTICATE_URL=          # optional, defaults to the base URL
+WAVE_MONEY_AUTHENTICATE_URL=          # optional customer redirect host override
 
 # AYA Payment Gateway (AYA_PGW_* names are accepted as fallbacks)
 AYA_PAY_SANDBOX=true
@@ -63,8 +63,8 @@ MYANMAR_PAYMENTS_CACHE_STORE=         # store for Yoma access tokens, null = def
 |---|---|---|
 | KBZ Pay API | `http://api-uat.kbzpay.com/payment/gateway/uat` | `https://api.kbzpay.com/payment/gateway` |
 | KBZ Pay PWA | `https://static.kbzpay.com/pgw/uat/pwa/#/` | `https://wap.kbzpay.com/pgw/pwa/#/` |
-| Wave Money API | `https://testpayments.wavemoney.io:8107` | `https://payments.wavemoney.io` |
-| Wave Money authenticate redirect | `https://testpayments.wavemoney.io` | `https://payments.wavemoney.io` |
+| Wave Money API | `https://preprodpayments.wavemoney.io:8107` | `https://payments.wavemoney.io` |
+| Wave Money authenticate redirect | `https://preprodpayments.wavemoney.io` | `https://payments.wavemoney.io` |
 | AYA Payment Gateway | `https://uat-pgw.ayainnovation.com` | `https://pgw.ayainnovation.com` |
 | Yoma MMQR | `https://devapi.yomabank.net` | `https://paymenthubapi.yomabank.com` |
 | CyberSource | `https://testsecureacceptance.cybersource.com` | `https://secureacceptance.cybersource.com` |
@@ -137,7 +137,7 @@ return [
 
 ## Auto-submit Form Route
 
-AYA Pay and CyberSource need the customer's browser to POST a signed form. The package registers a `GET myanmar-payments/form` route (named `myanmar-payments.form`) that renders that form and submits it, and sets `FormPayment::$autoSubmitUrl` to an encrypted link to it. Links expire after `ttl_minutes`; an invalid or expired link answers `410`.
+AYA Pay and CyberSource need the customer's browser to POST a signed form. The package registers a `GET myanmar-payments/form` route (named `myanmar-payments.form`) that renders that form and submits it, and sets `FormPayment::$autoSubmitUrl` to an encrypted link to it. Links expire after `ttl_minutes`; an invalid or expired link answers `410 Gone`. The page is sent with `Cache-Control: no-store`.
 
 Set `form_route.enabled` to `false` to drop the route and build the form yourself, see [Form Payments](/laravel-myanmar-payments/payment-flows#form-payments).
 

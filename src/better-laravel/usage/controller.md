@@ -17,19 +17,21 @@ Generated controller will be at `app/Modules/BlogModule/Http/Controllers/BlogCon
 
 ### Arguments
 
-- `controller` — name of the generated controller file
-- `module` — name of the module where the controller will be generated
+- `controller` — name of the generated controller file (`Controller` is appended when missing)
+- `module` — name of the module where the controller will be generated (`Module` is appended when missing)
 
 ### Options
 
 - `--force` — overwrites an existing file at the same path. See more at:
   - [ControllerMakeCommand.php](https://github.com/laranex/better-laravel/blob/master/src/Commands/ControllerMakeCommand.php)
 
-### Serving Features
+### Serving features
 
 :::warning
 The controller must extend `Laranex\BetterLaravel\Cores\Controller` to use the `serve` method.
 :::
+
+`serve(Feature $feature): mixed` takes a feature instance, dispatches it synchronously and returns whatever the feature's `handle` method returns. Dependencies type-hinted on `handle` (such as a form request) are resolved from the container.
 
 ```php
 use App\Modules\BlogModule\Features\StoreBlogFeature;
@@ -39,9 +41,9 @@ class BlogController extends Controller
 {
     public function store()
     {
-        return $this->serve(StoreBlogFeature::class);
-        // OR
         return $this->serve(new StoreBlogFeature());
     }
 }
 ```
+
+`Cores\Controller` also uses Laravel's `ValidatesRequests` trait, so `$this->validate()` is available.

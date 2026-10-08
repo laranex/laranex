@@ -1,36 +1,135 @@
 <script setup lang="ts">
-import { data as packages } from '../../src/packages.data'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { data as categories } from '../../src/packages.data'
+
+/**
+ * Selected category slugs, kept in the `?category=` query (comma separated) so a filtered view can be shared.
+ */
+const selected = ref<string[]>([])
+
+const visibleCategories = computed(() =>
+  selected.value.length === 0 ? categories : categories.filter(({ slug }) => selected.value.includes(slug)),
+)
+
+function isSelected(slug: string): boolean {
+  return selected.value.includes(slug)
+}
+
+function toggle(slug: string): void {
+  selected.value = isSelected(slug) ? selected.value.filter((value) => value !== slug) : [...selected.value, slug]
+  syncUrl()
+}
+
+function clear(): void {
+  selected.value = []
+  syncUrl()
+}
+
+function syncUrl(): void {
+  const url = new URL(window.location.href)
+  const ordered = categories.map(({ slug }) => slug).filter((slug) => selected.value.includes(slug))
+
+  if (ordered.length === 0) {
+    url.searchParams.delete('category')
+  } else {
+    url.searchParams.set('category', ordered.join(','))
+  }
+
+  window.history.replaceState(window.history.state, '', url.toString().replace(/%2C/g, ','))
+}
+
+const root = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
+
+/**
+ * Reveal rows as they scroll into view. Rows stay visible when JavaScript, IntersectionObserver
+ * or motion is unavailable, because the hidden state only applies under `.lx-reveal-ready`.
+ */
+function observeRows(): void {
+  if (observer === null || root.value === null) {
+    return
+  }
+
+  root.value.querySelectorAll('.lx-registry-row:not(.is-visible)').forEach((row) => observer?.observe(row))
+}
+
+watch(visibleCategories, () => nextTick(observeRows))
+
+onBeforeUnmount(() => observer?.disconnect())
+
+onMounted(() => {
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  if (!reduceMotion && 'IntersectionObserver' in window && root.value !== null) {
+    observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible')
+            observer?.unobserve(entry.target)
+          }
+        })
+      },
+      { rootMargin: '0px 0px -8% 0px' },
+    )
+    root.value.classList.add('lx-reveal-ready')
+    observeRows()
+  }
+
+  const known = new Set(categories.map(({ slug }) => slug))
+  const requested = new URLSearchParams(window.location.search).get('category') ?? ''
+
+  selected.value = requested.split(',').map((slug) => slug.trim()).filter((slug) => known.has(slug))
+})
 </script>
 
 <template>
-  <section class="lx-packages">
+  <section id="projects" ref="root" class="lx-packages">
     <div class="lx-packages-inner">
-      <h2 class="lx-packages-heading">Packages</h2>
-      <div class="lx-packages-grid">
-        <div v-for="pkg in packages" :key="pkg.slug" class="lx-package-card">
-          <div class="lx-package-body">
-            <span class="lx-package-badge">{{ pkg.requirements.join(' · ') }}</span>
-            <h3 class="lx-package-name">{{ pkg.name }}</h3>
-            <p class="lx-package-desc">{{ pkg.description }}</p>
-          </div>
-
-          <div class="lx-package-actions">
-            <a :href="pkg.docsUrl" class="lx-btn lx-btn-brand">
-              <svg class="lx-btn-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-              </svg>
-              Documentation
-            </a>
-            <a :href="pkg.github" class="lx-btn lx-btn-alt" target="_blank" rel="noopener noreferrer">
-              <svg class="lx-btn-icon" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
-                <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
-              </svg>
-              GitHub
-            </a>
-          </div>
+      <div class="lx-packages-head">
+        <h2 class="lx-packages-heading">Projects</h2>
+        <div class="lx-packages-filters" role="group" aria-label="Filter projects by category">
+          <button type="button" class="lx-filter" :aria-pressed="selected.length === 0" @click="clear">All</button>
+          <button
+            v-for="category in categories"
+            :key="category.slug"
+            type="button"
+            class="lx-filter"
+            :aria-pressed="isSelected(category.slug)"
+            @click="toggle(category.slug)"
+          >
+            {{ category.name }}
+          </button>
         </div>
       </div>
+
+      <TransitionGroup name="lx-category" tag="div" class="lx-packages-list">
+      <section v-for="category in visibleCategories" :key="category.slug" class="lx-packages-category">
+        <h3 class="lx-packages-category-heading">{{ category.name }}</h3>
+        <ul class="lx-registry">
+          <li
+            v-for="(pkg, index) in category.packages"
+            :key="pkg.slug"
+            class="lx-registry-row"
+            :style="{ '--lx-delay': `${index * 60}ms` }"
+          >
+            <div class="lx-registry-main">
+              <a :href="pkg.docsUrl" class="lx-registry-name">{{ pkg.name }}</a>
+              <p class="lx-registry-desc">{{ pkg.description }}</p>
+              <p class="lx-registry-reqs">{{ pkg.requirements.join(', ') }}</p>
+            </div>
+            <div class="lx-registry-side">
+              <a :href="pkg.docsUrl" class="lx-link-btn">
+                Documentation
+              </a>
+              <a :href="pkg.github" class="lx-link-btn" target="_blank" rel="noopener noreferrer">
+                GitHub
+              </a>
+            </div>
+          </li>
+        </ul>
+      </section>
+      </TransitionGroup>
     </div>
   </section>
 </template>

@@ -5,16 +5,16 @@ description: Validate NRC input with the MyanmarNRC rule and parse it into the r
 
 # Usage
 
-## NRC Input Format
+## NRC input format
 
 The package works with ID-based NRCs, as sent from a form or an API client:
 
 ```
 STATE_ID-TOWNSHIP_ID-TYPE_ID-NUMBER
-1-1-1-123456
+12-284-1-123456
 ```
 
-The first three parts are the IDs of the state, township and type (from the database or the JSON file), and the last part is the 6-digit number.
+The first three parts are the IDs of the state, township and type (from the database or the JSON file), and the last part is the 6-digit number. The NRC must have exactly four `-` separated parts.
 
 ## Validation
 
@@ -26,21 +26,78 @@ $request->validate([
 ]);
 ```
 
-The error message comes from the package translations (`en` and `mm`).
+Pass `dbDriven` to choose the backend for this rule only:
+
+```php
+new MyanmarNRC(dbDriven: false); // validate against the JSON file
+```
+
+The error message comes from the package translations (`en` and `mm`). Override it with the usual custom messages array, keyed by the rule class:
+
+```php
+$request->validate(
+    ['nrc' => ['required', new MyanmarNRC]],
+    ['nrc.'.MyanmarNRC::class => 'Please enter a valid NRC.'],
+);
+```
 
 ## Parsing
 
 ```php
-use Laranex\LaravelMyanmarNRC\LaravelMyanmarNrcFacade as LaravelMyanmarNrc;
+use Laranex\LaravelMyanmarNRC\Facades\MyanmarNrc;
 
-LaravelMyanmarNrc::parseNRC('1-1-1-123456');             // "1/HAPANA(N)123456"
-LaravelMyanmarNrc::parseNRC('1-1-1-123456', lang: 'mm');  // "၁/ဟပန(နိုင်)၁၂၃၄၅၆"
+MyanmarNrc::parse('12-284-1-123456');             // "12/DAGAYA(N)123456"
+MyanmarNrc::parse('12-284-1-123456', lang: 'mm');  // "၁၂/ဒဂရ(နိုင်)၁၂၃၄၅၆"
+MyanmarNrc::isValid('12-284-1-123456');           // true
 ```
+
+`parse(string $nrc, ?bool $dbDriven = null, ?string $lang = null): string`
 
 | Argument | Default | Description |
 |---|---|---|
 | `$nrc` | | NRC in the ID format above |
-| `$dbDriven` | `false` | Use the database. The `db_driven` config value also enables it |
+| `$dbDriven` | config `db_driven` | Use the database (`true`) or the JSON file (`false`) |
 | `$lang` | config `locale` | `en` or `mm` |
 
-`parseNRC()` returns `State/Township(Type)Number` and throws an `Exception` (`Invalid NRC`) when the NRC is malformed, the township doesn't belong to the state, or an ID doesn't exist. `isValidMyanmarNRC($nrc)` returns a boolean instead.
+`parse()` returns `State/Township(Type)Number`. `isValid(string $nrc, ?bool $dbDriven = null): bool` returns a boolean instead.
+
+The facade resolves `Laranex\LaravelMyanmarNRC\MyanmarNrc`, which is bound as a singleton, so you can also inject it.
+
+## Exceptions
+
+| Exception | Thrown when |
+|---|---|
+| `InvalidNrcException` | The NRC is malformed, an ID doesn't exist, or the township doesn't belong to the state |
+| `UnsupportedLocaleException` | `$lang` is not `en` or `mm` |
+| `InvalidJsonFileException` | The JSON file is missing or doesn't contain `types` and `states` arrays |
+
+All three live in `Laranex\LaravelMyanmarNRC\Exceptions`. `InvalidNrcException` and `UnsupportedLocaleException` extend `InvalidArgumentException`; `InvalidJsonFileException` extends `RuntimeException`.
+
+## Data
+
+### Models
+
+The `Laranex\LaravelMyanmarNRC\Models` namespace has `State` (`nrc_states`), `Township` (`nrc_townships`) and `Type` (`nrc_types`):
+
+```php
+use Laranex\LaravelMyanmarNRC\Models\State;
+
+$state = State::query()->where('code', 12)->first();
+
+$state->townships;           // HasMany
+$state->townships[0]->state; // BelongsTo
+```
+
+### Repositories
+
+Both backends implement `Laranex\LaravelMyanmarNRC\Repositories\NrcRepository`, with `state(int $id)`, `township(int $id)` and `type(int $id)` returning a model or `null`:
+
+```php
+MyanmarNrc::repository()->township(284)?->code;      // backend from config
+MyanmarNrc::repository(false)->state(12)?->name_mm;  // JSON backend
+```
+
+| Class | Reads from |
+|---|---|
+| `DatabaseNrcRepository` | The NRC tables |
+| `JsonNrcRepository` | The configured JSON file. Also has `types()`, `states()` and `townships()`, which return every row as an array, and `path()` |

@@ -1,6 +1,6 @@
 ---
 title: Configuration
-description: Configure Laravel Refresh Token keys, table and expiry.
+description: Configure Laravel Refresh Token keys, table, model, key path and expiry.
 ---
 
 # Configuration
@@ -21,21 +21,31 @@ return [
 
 | Option | Description |
 |---|---|
-| `private_key` / `public_key` | Key contents (PEM). When empty, `oauth-private.key` and `oauth-public.key` are read from the key path |
-| `table` | Table that stores refresh tokens |
+| `private_key` / `public_key` | Key contents (PEM). Literal `\n` sequences are expanded. When empty, `refresh-token-private.key` and `refresh-token-public.key` are read from the key path |
+| `table` | Table that stores refresh tokens (used by the migration and the model) |
 
-## Overriding Defaults
+## Overriding defaults
 
-Call these static methods on `Laranex\RefreshToken\RefreshToken`, for example in a service provider's `boot` method:
+Call these static methods on `Laranex\RefreshToken\RefreshToken` (or the `RefreshToken` facade), for example in a service provider's `boot` method:
 
 | Method | Description |
 |---|---|
-| `useRefreshTokenModel(string $model)` | Use your own model for refresh tokens |
+| `useRefreshTokenModel(string $model)` | Use your own model for refresh tokens. It should extend `Laranex\RefreshToken\Models\RefreshToken` |
 | `loadKeysFrom(string $path)` | Key path: where key files are read and written (default: `storage_path()`) |
-| `refreshTokensExpireIn(DateTimeInterface $date)` | Set how long refresh tokens live (default: 1 year) |
+| `refreshTokensExpireIn(DateTimeInterface $date)` | Set how long refresh tokens live, as the interval between now and `$date` (default: 1 year) |
 
 ```php
 use Laranex\RefreshToken\RefreshToken;
 
 RefreshToken::refreshTokensExpireIn(now()->addDays(30));
+RefreshToken::loadKeysFrom(base_path('secrets'));
 ```
+
+Called without an argument, `refreshTokensExpireIn()` returns the current lifetime as a `DateInterval`.
+
+## Reading keys
+
+| Method | Returns |
+|---|---|
+| `keyPath(string $file)` | Absolute path of `$file` in the key path |
+| `keyContents('private'\|'public')` | The PEM key from config, or from `refresh-token-<type>.key` in the key path. Throws `MissingKeyException` when neither is set |

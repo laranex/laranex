@@ -32,7 +32,7 @@ Every config has a `sandbox` flag (default `true`) that selects the gateway's UA
 | `merchantCode` | `string` | | The `merch_code` KBZ issued |
 | `sandbox` | `bool` | `true` | Use the UAT endpoints |
 | `apiUrl` | `?string` | per `sandbox` | Override the API base URL, e.g. a proxy |
-| `pwaUrl` | `?string` | per `sandbox` | Override the PWA checkout URL. A trailing `#` or `#/` is normalised to `#/` |
+| `pwaUrl` | `?string` | per `sandbox` | Override the PWA checkout URL. A trailing `#` or `#/` is normalized to `#/` |
 
 ### WaveMoneyConfig
 
@@ -44,7 +44,7 @@ Every config has a `sandbox` flag (default `true`) that selects the gateway's UA
 | `timeToLiveSeconds` | `int` | `300` | How long the customer has to pay |
 | `sandbox` | `bool` | `true` | Use the test environment |
 | `baseUrl` | `?string` | per `sandbox` | Override the API base URL |
-| `authenticateUrl` | `?string` | per `sandbox` | Override the host the customer is redirected to (`https://testpayments.wavemoney.io` / `https://payments.wavemoney.io`, without the API port) |
+| `authenticateUrl` | `?string` | per `sandbox` | Override the host the customer is redirected to (`https://preprodpayments.wavemoney.io` / `https://payments.wavemoney.io`, without the API port) |
 
 ### AyaPayConfig
 
@@ -84,8 +84,8 @@ Every config has a `sandbox` flag (default `true`) that selects the gateway's UA
 |---|---|---|
 | KBZ Pay API | `http://api-uat.kbzpay.com/payment/gateway/uat` | `https://api.kbzpay.com/payment/gateway` |
 | KBZ Pay PWA | `https://static.kbzpay.com/pgw/uat/pwa/#/` | `https://wap.kbzpay.com/pgw/pwa/#/` |
-| Wave Money API | `https://testpayments.wavemoney.io:8107` | `https://payments.wavemoney.io` |
-| Wave Money authenticate redirect | `https://testpayments.wavemoney.io` | `https://payments.wavemoney.io` |
+| Wave Money API | `https://preprodpayments.wavemoney.io:8107` | `https://payments.wavemoney.io` |
+| Wave Money authenticate redirect | `https://preprodpayments.wavemoney.io` | `https://payments.wavemoney.io` |
 | AYA Payment Gateway | `https://uat-pgw.ayainnovation.com` | `https://pgw.ayainnovation.com` |
 | Yoma MMQR | `https://devapi.yomabank.net` | `https://paymenthubapi.yomabank.com` |
 | CyberSource | `https://testsecureacceptance.cybersource.com` | `https://secureacceptance.cybersource.com` |

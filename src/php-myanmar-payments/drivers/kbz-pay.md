@@ -7,11 +7,33 @@ description: Integrate KBZ Pay in plain PHP. PWA redirect, QR and in-app payment
 
 | Method | Flow | Returns |
 |---|---|---|
-| `$kbzPay->pwa($data)` | Redirect to the KBZ Pay PWA | [`RedirectPayment`](/php-myanmar-payments/payment-flows#redirect-payments) |
-| `$kbzPay->qr($data)` | Customer scans a QR | [`QrPayment`](/php-myanmar-payments/payment-flows#qr-payments) |
-| `$kbzPay->app($data)` | Your mobile app opens the KBZ Pay SDK | [`AppPayment`](/php-myanmar-payments/payment-flows#app-payments) |
-| `$kbzPay->status($orderId)` | Query an order | `PaymentStatusResult` |
-| `$kbzPay->handleCallback($request)` | Verify the notification | `PaymentCallback` |
+| `$kbzPay->pwa($data)` | Redirect to the KBZ Pay PWA | [`RedirectPayment`](#pwa-response) |
+| `$kbzPay->qr($data)` | Customer scans a QR | [`QrPayment`](#qr-response) |
+| `$kbzPay->app($data)` | Your mobile app opens the KBZ Pay SDK | [`AppPayment`](#app-response) |
+| `$kbzPay->status($orderId)` | Query an order | [`PaymentStatusResult`](#status-response) |
+| `$kbzPay->handleCallback($request)` | Verify the notification | [`PaymentCallback`](#handlecallback-response) |
+
+[Responses](#responses) shows what KBZ Pay puts in each result.
+
+## How it works
+
+Every KBZ Pay flow starts with the same precreate call and ends with KBZ's signed notification.
+
+<SequenceDiagram
+  title="KBZ Pay: precreate, pay, notify"
+  :participants="['Customer', 'Your app', 'KBZ Pay']"
+  :steps="[
+    { from: 'Your app', to: 'Your app', label: 'Pick the flow', detail: '$kbzPay->pwa() / qr() / app()' },
+    { from: 'Your app', to: 'KBZ Pay', label: 'Precreate the order', detail: 'PWAAPP / PAY_BY_QRCODE / APP' },
+    { from: 'KBZ Pay', to: 'Your app', label: 'prepay_id', detail: 'plus qrCode for QR', response: true },
+    { from: 'Your app', to: 'Customer', label: 'PWA URL, QR or signed order', detail: 'url / qrString / orderInfo + sign', response: true },
+    { from: 'Customer', to: 'KBZ Pay', label: 'Pay in the KBZ Pay app' },
+    { from: 'KBZ Pay', to: 'Your app', label: 'Notify callbackUrl', detail: 'signed JSON under Request' },
+    { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: '$kbzPay->handleCallback()' },
+    { from: 'Your app', to: 'KBZ Pay', label: 'Plain-text success', detail: 'within about 10 s, or KBZ retries', response: true },
+    { from: 'Your app', to: 'KBZ Pay', label: 'No notify? Query the order', detail: '$kbzPay->status($orderId)' },
+  ]"
+/>
 
 ## Initiating a Payment
 
@@ -78,6 +100,63 @@ $callback->acknowledgement()->send(); // plain-text "success"
 ```
 
 KBZ requires an HTTP 200 with the plain-text body `success`, answered within about 10 seconds. Otherwise it retries after 60 and 600 seconds; when no callback arrives, poll `status()`.
+
+## Responses
+
+What KBZ Pay puts in each property. See [Results](/php-myanmar-payments/references/results) and [PaymentCallback & Status](/php-myanmar-payments/references/payment-callback) for the full classes.
+
+### `pwa()` → `RedirectPayment` {#pwa-response}
+
+| Property | KBZ Pay value |
+|---|---|
+| `orderId` | Your `orderId` |
+| `url` | `{pwa_url}?appid=…&merch_code=…&nonce_str=…&prepay_id=…&timestamp=…&sign=…` |
+| `gatewayReference` | KBZ `prepay_id`. Always set |
+| `raw` | The `precreate` response: `result`, `code`, `msg`, `merch_order_id`, `prepay_id`, `nonce_str`, `sign_type`, `sign` |
+
+### `qr()` → `QrPayment` {#qr-response}
+
+| Property | KBZ Pay value |
+|---|---|
+| `orderId` | Your `orderId` |
+| `qrString` | KBZ `qrCode`, a payload to encode into a QR image. Always set |
+| `qrImage` | Always `null`, so `qrImageDataUri()` is `null` too |
+| `expiresAt` | Now + `timeoutMinutes`. `null` when you didn't set `timeoutMinutes` (KBZ then allows 120 minutes) |
+| `reference` | KBZ `prepay_id`. Always set |
+| `raw` | The `precreate` response, as for `pwa()` plus `qrCode` |
+
+### `app()` → `AppPayment` {#app-response}
+
+| Property | KBZ Pay value |
+|---|---|
+| `orderId` | Your `orderId` |
+| `orderInfo` | `appid=…&merch_code=…&nonce_str=…&prepay_id=…&timestamp=…` |
+| `sign` | SHA256 signature of `orderInfo`, uppercase hex |
+| `signType` | `SHA256` |
+| `raw` | The `precreate` response, as for `pwa()` |
+
+### `status()` → `PaymentStatusResult` {#status-response}
+
+| Property | KBZ Pay value |
+|---|---|
+| `orderId` | KBZ `merch_order_id` (your `orderId`). Always set |
+| `status` | `trade_status` mapped, see [Statuses](#statuses) |
+| `gatewayStatus` | KBZ `trade_status`, e.g. `PAY_SUCCESS` |
+| `gatewayReference` | KBZ `mm_order_id`. `null` until KBZ has created the payment |
+| `amount` | KBZ `total_amount`, e.g. `1000` |
+| `raw` | The `queryorder` response: `result`, `code`, `msg`, `merch_order_id`, `mm_order_id`, `total_amount`, `trans_currency`, `trade_status`, `trans_end_time`, `nonce_str`, `sign_type`, `sign` |
+
+### `handleCallback()` → `PaymentCallback` {#handlecallback-response}
+
+| Property / Method | KBZ Pay value |
+|---|---|
+| `orderId` | KBZ `merch_order_id` (your `orderId`) |
+| `status` | `trade_status` mapped, see [Statuses](#statuses) |
+| `gatewayStatus` | KBZ `trade_status`, e.g. `PAY_SUCCESS` |
+| `gatewayReference` | KBZ `mm_order_id` |
+| `amount` | KBZ `total_amount`, e.g. `1000` |
+| `raw` | The verified `Request`: `appid`, `notify_time`, `merch_code`, `merch_order_id`, `mm_order_id`, `total_amount`, `trans_currency`, `trade_status`, `trans_end_time`, `callback_info`, `nonce_str`, `sign_type`, `sign` |
+| `acknowledgement()` | HTTP `200`, body `success`, `Content-Type: text/plain` |
 
 ## Statuses
 

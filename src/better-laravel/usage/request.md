@@ -17,7 +17,7 @@ Generated request will be at `app/Domains/Blog/Requests/StoreBlogRequest.php`
 
 ### Arguments
 
-- `request` — name of the generated request file
+- `request` — name of the generated request file (`Request` is appended when missing)
 - `domain` — name of the domain where the request will be generated
 
 ### Options
@@ -27,6 +27,8 @@ Generated request will be at `app/Domains/Blog/Requests/StoreBlogRequest.php`
 
 ### Request
 
+`Laranex\BetterLaravel\Cores\Request` extends Laravel's `FormRequest`. Type-hint it on a feature's `handle` method to validate the incoming request before the feature runs. The generated `authorize` method returns `false`; change it before using the request.
+
 ```php
 use Laranex\BetterLaravel\Cores\Request;
 
@@ -34,12 +36,14 @@ class StoreBlogRequest extends Request
 {
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     public function rules(): array
     {
-        // your validation rules
+        return [
+            'title' => ['required', 'string', 'max:255'],
+        ];
     }
 }
 ```

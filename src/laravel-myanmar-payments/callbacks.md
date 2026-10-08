@@ -7,6 +7,26 @@ description: Verify gateway callbacks with handleCallback(), read a gateway-inde
 
 Every gateway notifies your server of the payment result. `handleCallback()` verifies the gateway's signature and returns a `PaymentCallback`. Pass it the Laravel request as is: signatures are checked against the exact body the gateway sent.
 
+::: tip Production setup
+For production, follow [Handling Webhooks (recommended)](/laravel-myanmar-payments/webhooks): verify, store the call, acknowledge immediately, then process it once in the background with retries. The example below handles everything inline to show the API.
+:::
+
+Every callback goes through the same steps; KBZ Pay is shown here.
+
+<SequenceDiagram
+  title="Handling a KBZ Pay callback"
+  :participants="['Your app', 'KBZ Pay']"
+  :steps="[
+    { from: 'KBZ Pay', to: 'Your app', label: 'Payment notification', detail: 'POST to callbackUrl' },
+    { from: 'Your app', to: 'Your app', label: 'Verify the signature', detail: 'kbzPay()->handleCallback()' },
+    { from: 'Your app', to: 'KBZ Pay', label: 'Invalid: 400, never fulfill', detail: 'SignatureVerificationException', response: true },
+    { from: 'Your app', to: 'Your app', label: 'Find the order', detail: 'by $callback->orderId' },
+    { from: 'Your app', to: 'Your app', label: 'Fulfill once', detail: 'skip if paid, match the amount' },
+    { from: 'Your app', to: 'KBZ Pay', label: 'Acknowledge: plain success', detail: 'acknowledge($callback)', response: true },
+    { from: 'KBZ Pay', to: 'Your app', label: 'No acknowledgement? Retry', detail: 'after 60 s, then 600 s' },
+  ]"
+/>
+
 ```php
 use Illuminate\Http\Request;
 use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
@@ -42,15 +62,29 @@ Every gateway's own status values are mapped onto one enum. The original value s
 | `PaymentStatus::Successful` | The customer paid. The only status that means money was collected. |
 | `PaymentStatus::Pending` | Still in progress or waiting on the customer. |
 | `PaymentStatus::Failed` | Attempted and failed or rejected. |
-| `PaymentStatus::Cancelled` | Cancelled or closed before completing. |
+| `PaymentStatus::Cancelled` | Canceled or closed before completing. |
 | `PaymentStatus::Expired` | The payment window ran out. |
-| `PaymentStatus::Unknown` | A status this package does not recognise yet. Inspect `gatewayStatus`. |
+| `PaymentStatus::Unknown` | A status this package does not recognize yet. Inspect `gatewayStatus`. |
 
 `$status->isFinal()` is `false` for `Pending` and `Unknown`. Unknown statuses never throw.
 
 Each gateway page lists its exact mapping.
 
 ## Status Checks
+
+When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Money and CyberSource have no status API.
+
+<SequenceDiagram
+  title="Checking the status when the callback is late"
+  :participants="['Your app', 'KBZ Pay']"
+  :steps="[
+    { from: 'Your app', to: 'Your app', label: 'Callback late or missing' },
+    { from: 'Your app', to: 'KBZ Pay', label: 'Ask for the order status', detail: 'kbzPay()->status($orderId)' },
+    { from: 'KBZ Pay', to: 'Your app', label: 'PaymentStatusResult', detail: 'trade_status, e.g. PAY_SUCCESS', response: true },
+    { from: 'Your app', to: 'Your app', label: 'Successful? Fulfill once', detail: 'same checks as the callback' },
+    { from: 'Your app', to: 'Your app', label: 'Not final? Check again later', detail: '$result->status->isFinal()' },
+  ]"
+/>
 
 When a callback is late or missing, ask the gateway directly. Status checks return a `PaymentStatusResult` with the same `status`, `gatewayStatus`, `gatewayReference` and `amount` fields.
 

@@ -15,7 +15,7 @@ composer require laranex/laravel-myanmar-payments
 
 Laravel's package auto-discovery registers the service provider and the `MyanmarPayments` facade (`Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments`).
 
-The package is a thin Laravel layer over [`laranex/php-myanmar-payments`](https://github.com/laranex/php-myanmar-payments), which Composer installs alongside it. The core talks to gateways through any PSR-18 HTTP client; in Laravel every call goes through the `Http` client, so `Http::fake()` works in your tests and no extra client is needed.
+The package is a thin Laravel layer over [`laranex/php-myanmar-payments`](https://github.com/laranex/php-myanmar-payments), which Composer installs alongside it. The core talks to gateways through any PSR-18 HTTP client; in Laravel every call goes through the `Http` client, so `Http::fake()` works in your tests and no extra client is needed. The package requires `guzzlehttp/guzzle` ^7.5, which Laravel's `Http` client runs on (Laravel 10 only suggests it), so Composer installs it for you.
 
 ## Publish Config
 
@@ -23,7 +23,7 @@ The package is a thin Laravel layer over [`laranex/php-myanmar-payments`](https:
 php artisan vendor:publish --tag="myanmar-payments-config"
 ```
 
-This creates `config/myanmar-payments.php`. Publishing is optional: every value is read from environment variables. See [Configuration](/laravel-myanmar-payments/configuration).
+This creates `config/myanmar-payments.php` (the `myanmar-payments` tag publishes the same file). Publishing is optional: every value is read from environment variables. See [Configuration](/laravel-myanmar-payments/configuration).
 
 ## Without Laravel
 

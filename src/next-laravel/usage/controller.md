@@ -17,19 +17,21 @@ Generated controller will be at `app/Modules/BlogModule/Http/Controllers/BlogCon
 
 ### Arguments
 
-- `controller` — name of the generated controller file
-- `module` — name of the module where the controller will be generated
+- `controller` — name of the generated controller file (`Controller` is appended when missing)
+- `module` — name of the module where the controller will be generated (`Module` is appended when missing)
 
 ### Options
 
 - `--force` — overwrites an existing file at the same path. See more at:
   - [ControllerMakeCommand.php](https://github.com/laranex/next-laravel/blob/master/src/Commands/ControllerMakeCommand.php)
 
-### Serving Features
+### Serving features
 
 :::warning
 The controller must extend `Laranex\NextLaravel\Cores\Controller` to use the `serve` method.
 :::
+
+`serve(string|object $feature, array $arguments = []): mixed` dispatches the feature synchronously and returns whatever its `handle` method returns. Pass an instance, or a class name together with the constructor arguments (positional or named). Dependencies type-hinted on `handle` (such as a form request) are resolved from the container.
 
 ```php
 use App\Modules\BlogModule\Features\StoreBlogFeature;
@@ -45,3 +47,5 @@ class BlogController extends Controller
     }
 }
 ```
+
+`Cores\Controller` also uses Laravel's `ValidatesRequests` trait, so `$this->validate()` is available.

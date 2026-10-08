@@ -44,7 +44,7 @@ public function kbzCallback(Request $request): Response
         query: $request->query->all(),
     ));
 
-    // fulfil the order ...
+    // fulfill the order ...
 
     $ack = $callback->acknowledgement();
 
@@ -58,6 +58,7 @@ Any framework built on PSR-7 (Slim, Mezzio, …) can pass its server request str
 
 ```php
 use Laranex\PhpMyanmarPayments\Http\CallbackRequest;
+use Laranex\PhpMyanmarPayments\KbzPay\KbzPay;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -74,7 +75,7 @@ final class KbzCallbackHandler implements RequestHandlerInterface
     {
         $callback = $this->kbzPay->handleCallback(CallbackRequest::fromPsr7($request));
 
-        // fulfil the order ...
+        // fulfill the order ...
 
         $ack = $callback->acknowledgement();
         $response = $this->responses->createResponse($ack->status);

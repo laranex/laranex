@@ -16,9 +16,9 @@ import (
 	"net/http"
 	"os"
 
-	myanmarpayments "github.com/laranex/go-myanmar-payments"
-	"github.com/laranex/go-myanmar-payments/ayapay"
-	"github.com/laranex/go-myanmar-payments/kbzpay"
+	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
+	"github.com/laranex/go-myanmar-payments/v4/ayapay"
+	"github.com/laranex/go-myanmar-payments/v4/kbzpay"
 )
 
 type server struct {
@@ -73,7 +73,7 @@ func (s *server) kbzCallback(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	// fulfil callback.OrderID when callback.IsSuccessful() and the amount matches
+	// fulfill callback.OrderID when callback.IsSuccessful() and the amount matches
 	callback.Acknowledgement.Write(w)
 }
 
@@ -91,7 +91,7 @@ func (s *server) ayaCallback(w http.ResponseWriter, r *http.Request) {
 	callback.Acknowledgement.Write(w)
 }
 
-// ayaReturn shows the right page; fulfilment still happens in ayaCallback.
+// ayaReturn shows the right page; fulfillment still happens in ayaCallback.
 func (s *server) ayaReturn(w http.ResponseWriter, r *http.Request) {
 	request, err := myanmarpayments.NewCallbackRequestFromHTTP(r)
 	if err != nil {
