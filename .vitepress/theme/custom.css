@@ -502,6 +502,30 @@ body {
   transition: color 0.2s, border-color 0.2s, background-color 0.2s;
 }
 
+.lx-count {
+  display: inline-block;
+  min-width: 1.6em;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 0.8em;
+  font-weight: 600;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--vp-c-text-2);
+  background: var(--vp-c-default-soft);
+}
+
+.lx-filter[aria-pressed='true'] .lx-count {
+  color: inherit;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.lx-packages-category-heading .lx-count {
+  vertical-align: middle;
+  font-family: var(--vp-font-family-base);
+}
+
 .lx-filter:hover {
   color: var(--vp-c-text-1);
   border-color: var(--lx-jade);

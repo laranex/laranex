@@ -116,6 +116,40 @@ export default defineConfig({
           ],
         },
       ],
+      '/node-myanmar-payments/': [
+        {
+          text: 'Getting Started',
+          items: [
+            { text: 'Introduction', link: '/node-myanmar-payments/introduction' },
+            { text: 'Installation', link: '/node-myanmar-payments/installation' },
+            { text: 'AI Agent Skill', link: '/node-myanmar-payments/ai-agent-skill' },
+            { text: 'Configuration', link: '/node-myanmar-payments/configuration' },
+            { text: 'Amounts', link: '/node-myanmar-payments/amounts' },
+            { text: 'Payment Flows', link: '/node-myanmar-payments/payment-flows' },
+            { text: 'Callbacks & Status', link: '/node-myanmar-payments/callbacks' },
+            { text: 'Handling Webhooks', link: '/node-myanmar-payments/webhooks' },
+            { text: 'Framework Integration', link: '/node-myanmar-payments/framework-integration' },
+          ],
+        },
+        {
+          text: 'Gateways',
+          items: [
+            { text: 'KBZ Pay', link: '/node-myanmar-payments/drivers/kbz-pay' },
+            { text: 'Wave Money', link: '/node-myanmar-payments/drivers/wave-money' },
+            { text: 'AYA Pay', link: '/node-myanmar-payments/drivers/aya-pay' },
+            { text: 'Yoma MMQR', link: '/node-myanmar-payments/drivers/yoma-mmqr' },
+            { text: 'CyberSource', link: '/node-myanmar-payments/drivers/cyber-source' },
+          ],
+        },
+        {
+          text: 'Reference',
+          items: [
+            { text: 'Results', link: '/node-myanmar-payments/references/results' },
+            { text: 'PaymentCallback & Status', link: '/node-myanmar-payments/references/payment-callback' },
+            { text: 'Errors', link: '/node-myanmar-payments/references/errors' },
+          ],
+        },
+      ],
       '/php-myanmar-payments/': [
         {
           text: 'Getting Started',
@@ -273,6 +307,8 @@ export default defineConfig({
             { text: 'Installation', link: '/goravel-money/installation' },
             { text: 'AI Agent Skill', link: '/goravel-money/ai-agent-skill' },
             { text: 'Usage', link: '/goravel-money/usage' },
+            { text: 'Arithmetic', link: '/goravel-money/arithmetic' },
+            { text: 'Columns', link: '/goravel-money/columns' },
           ],
         },
       ],

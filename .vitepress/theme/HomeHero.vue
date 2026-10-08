@@ -16,7 +16,8 @@ const words = ['Built', 'by', 'developers,', 'for', 'developers']
       </h1>
       <p class="lx-hero-lead lx-hero-fade" style="--lx-delay: 420ms">
         Laranex is an open source organization. Everything here is free to use, tested before it ships and
-        documented before we call it done.
+        documented before we call it done. Every project is built for humans and AI agents alike: clear docs
+        for you, and an agent skill so your coding agent uses it the right way.
       </p>
       <div class="lx-hero-actions lx-hero-fade" style="--lx-delay: 520ms">
         <a class="lx-btn lx-btn-brand lx-btn-lg" href="#projects">Explore the projects</a>

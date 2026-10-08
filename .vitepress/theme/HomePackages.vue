@@ -7,6 +7,8 @@ import { data as categories } from '../../src/packages.data'
  */
 const selected = ref<string[]>([])
 
+const totalCount = categories.reduce((total, { packages }) => total + packages.length, 0)
+
 const visibleCategories = computed(() =>
   selected.value.length === 0 ? categories : categories.filter(({ slug }) => selected.value.includes(slug)),
 )
@@ -89,7 +91,9 @@ onMounted(() => {
       <div class="lx-packages-head">
         <h2 class="lx-packages-heading">Projects</h2>
         <div class="lx-packages-filters" role="group" aria-label="Filter projects by category">
-          <button type="button" class="lx-filter" :aria-pressed="selected.length === 0" @click="clear">All</button>
+          <button type="button" class="lx-filter" :aria-pressed="selected.length === 0" @click="clear">
+            All <span class="lx-count">{{ totalCount }}</span>
+          </button>
           <button
             v-for="category in categories"
             :key="category.slug"
@@ -98,14 +102,16 @@ onMounted(() => {
             :aria-pressed="isSelected(category.slug)"
             @click="toggle(category.slug)"
           >
-            {{ category.name }}
+            {{ category.name }} <span class="lx-count">{{ category.packages.length }}</span>
           </button>
         </div>
       </div>
 
       <TransitionGroup name="lx-category" tag="div" class="lx-packages-list">
       <section v-for="category in visibleCategories" :key="category.slug" class="lx-packages-category">
-        <h3 class="lx-packages-category-heading">{{ category.name }}</h3>
+        <h3 class="lx-packages-category-heading">
+          {{ category.name }} <span class="lx-count">{{ category.packages.length }}</span>
+        </h3>
         <ul class="lx-registry">
           <li
             v-for="(pkg, index) in category.packages"
