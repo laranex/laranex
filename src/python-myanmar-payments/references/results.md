@@ -76,6 +76,6 @@ A `str` enum, so `payment.flow == "redirect"` works too.
 | `PaymentFlow.QR` | `qr` | `QrPayment` |
 | `PaymentFlow.APP` | `app` | `AppPayment` |
 
-`raw` values are plain Python values: JSON integers are `int`, other numbers an exact `Decimal`, never a `float`. Use `json.dumps(payment.raw, default=str)` to log them.
+`raw` values are plain Python values: every JSON number is its exact text as a `str` (`1000.50` stays `"1000.50"`), never a `float`, so `json.dumps(payment.raw)` logs them as is.
 
 Every result class takes its fields as keyword arguments, so you can build one in your own tests, e.g. `RedirectPayment(order_id="ORDER_1", url="https://…")`.

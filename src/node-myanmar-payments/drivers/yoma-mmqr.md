@@ -127,7 +127,7 @@ if (result.isSuccessful()) {
 
 ## Responses
 
-What Yoma MMQR puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `undefined`. `raw` holds plain JavaScript values (JSON numbers become `number`s).
+What Yoma MMQR puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `undefined`. `raw` holds plain JavaScript values, with JSON numbers kept as their exact text in a `string` (`1000.50` stays `"1000.50"`).
 
 ### `initiate()` → `QrPayment` {#initiate-response}
 
@@ -153,7 +153,7 @@ The same values as [`initiate()`](#initiate-response) for the `orderId` you pass
 | Field | Yoma MMQR value |
 |---|---|
 | `orderId` | Always `undefined`: Yoma only returns the reference |
-| `status` | `paymentStatus` mapped, see [Statuses](#statuses). `expired` for a `QR EXPIRED` error |
+| `status` | `paymentStatus` mapped case-insensitively, see [Statuses](#statuses). `expired` for a `QR EXPIRED` error |
 | `gatewayStatus` | Yoma `paymentStatus`, trimmed, e.g. `SUCCESS`. `QR EXPIRED` for an expired QR |
 | `gatewayReference` | Yoma `refLabel`, falling back to the reference you passed. Always set |
 | `amount` | Always `undefined`: Yoma's status response has no amount |
@@ -185,6 +185,8 @@ The same values as [`initiate()`](#initiate-response) for the `orderId` you pass
 
 Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in the [token cache](/node-myanmar-payments/configuration#token-cache), shares one token request between concurrent calls, and fetches a new token, retrying once, when Yoma answers `401`. The shared token request is bounded by the HTTP client timeout rather than one call's `signal`, so aborting one call never fails the others. `await yoma.forgetToken()` drops the cached token, e.g. after rotating the client secret.
 
+The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>`, the same key every Laranex SDK uses, so services in different languages can share one cache, for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits, so `28800.0` is 28800 seconds; a missing or non-positive value means 3600.
+
 ## Errors
 
 | Call | Throws | When |
@@ -193,6 +195,6 @@ Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in
 | `initiate()` | `ApiError` | The token request fails, Yoma answers with an HTTP error or an `errorCode` (e.g. `PAYMENT ALREADY EXISTS`), `checkOutStatus` isn't `true`, or there is no `qrString` or `refLabel` |
 | `renewQr()` | `ApiError` | As `initiate()`, without the checkout |
 | `status()` | `ApiError` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
-| `handleCallback()` | `SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong (when `webhookSecret` is set), `orderNumber` is missing, or `hashValue` doesn't match |
+| `handleCallback()` | `SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong (when `webhookSecret` is set), `orderNumber` is missing, `status` holds an object or array, or `hashValue` doesn't match |
 
 The async calls reject with these errors. Yoma reports business errors with HTTP 200 and an `errorCode`; `ApiError` carries it in `gatewayCode` and Yoma's `errorDescription` in `gatewayMessage`. When Yoma can't be reached, the request times out or the `signal` aborts, the calls throw `ApiError` with the original error as `cause`.

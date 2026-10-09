@@ -88,7 +88,7 @@ http.Redirect(w, r, payment.URL, http.StatusFound)
 | `Amount` | `myanmarpayments.Amount` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). Unset charges the sum of the items. Wave only accepts MMK |
 | `MerchantReferenceID` | `string` | No | Unique ID of this attempt. Empty means a random ID |
 
-`wavemoney.Item` has a `Name` and an `Amount` in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats; `data.ResolvedAmount()` returns the total that will be charged.
+`wavemoney.Item` has a `Name` and an `Amount` in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats; `data.ResolvedAmount()` returns the total that will be charged. Item names are sent as written: `<`, `>` and `&` are not escaped in the `items` JSON.
 
 ### Merchant Reference ID
 
@@ -128,12 +128,13 @@ callback.Acknowledgement.Write(w)
 
 ## Responses
 
-What Wave Money puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`; a field the gateway didn't send is `""`.
+What Wave Money puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`. A field the gateway didn't send is `""`. `Raw` holds plain Go values (JSON numbers become `json.Number`s), while the typed fields such as `Amount` keep the exact text Wave sent.
 
 ### `Initiate()` → `*myanmarpayments.RedirectPayment` {#initiate-response}
 
-| Field | Wave Money value |
+| Field / Method | Wave Money value |
 |---|---|
+| `Flow()` | `FlowRedirect` |
 | `OrderID` | Your `data.OrderID` |
 | `URL` | `{AuthenticateURL}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
 | `GatewayReference` | Wave `transaction_id`. Always set |
@@ -172,8 +173,8 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 
 | Call | Returns | When |
 |---|---|---|
-| `Initiate()` | `*InvalidPaymentDataError` | `data.Validate()` fails. Nothing is sent and `data` is left untouched |
+| `Initiate()` | `*InvalidPaymentDataError` | `data.Validate()` fails. Nothing is sent and `data` is left untouched. Item errors use `items.0.amount` keys |
 | `Initiate()` | `*APIError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
-| `HandleCallback()` | `*SignatureVerificationError` | `hashValue` doesn't match |
+| `HandleCallback()` | `*SignatureVerificationError` | `hashValue` doesn't match, or a hashed field holds an object or array |
 
 The error types live in the root `myanmarpayments` package. `HTTPStatus` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`GatewayCode` is `VALIDATION_ERROR`). When Wave can't be reached or `ctx` is canceled, `Initiate` returns `*APIError`, which unwraps to the cause (`errors.Is(err, context.DeadlineExceeded)`).

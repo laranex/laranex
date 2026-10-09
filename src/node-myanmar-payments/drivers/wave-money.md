@@ -111,7 +111,7 @@ try {
 
 ## Responses
 
-What Wave Money puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `undefined`. `raw` holds plain JavaScript values (JSON numbers become `number`s), while the typed fields such as `amount` keep the exact text Wave sent.
+What Wave Money puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `undefined`. `raw` holds plain JavaScript values, with JSON numbers kept as their exact text in a `string` (`1000.50` stays `"1000.50"`).
 
 ### `initiate()` → `RedirectPayment` {#initiate-response}
 
@@ -156,8 +156,8 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 
 | Call | Throws | When |
 |---|---|---|
-| `initiate()` | `InvalidPaymentDataError` | `WaveMoney.validate(data)` fails. Nothing is sent and `data` is left untouched |
+| `initiate()` | `InvalidPaymentDataError` | `WaveMoney.validate(data)` fails. Nothing is sent and `data` is left untouched. Item errors use `items.0.amount` keys |
 | `initiate()` | `ApiError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
-| `handleCallback()` | `SignatureVerificationError` | `hashValue` doesn't match |
+| `handleCallback()` | `SignatureVerificationError` | `hashValue` doesn't match, or a hashed field holds an object or array |
 
 The async calls reject with these errors. `httpStatus` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`gatewayCode` is `VALIDATION_ERROR`). When Wave can't be reached, the request times out or the `signal` aborts, `initiate()` throws `ApiError` with the original error as `cause`.

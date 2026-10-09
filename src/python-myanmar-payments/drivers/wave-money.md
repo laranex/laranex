@@ -123,7 +123,7 @@ def wave_callback(request):
         # callback.gateway_reference is Wave's transactionId
         ...
 
-    ack = callback.acknowledgement()
+    ack = callback.acknowledgement
     return HttpResponse(ack.body, status=ack.status, headers=ack.headers)
 ```
 
@@ -131,7 +131,7 @@ def wave_callback(request):
 
 ## Responses
 
-What Wave Money puts in each field. See [Results](/python-myanmar-payments/references/results) and [PaymentCallback & Status](/python-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `None`. `raw` holds plain Python values (JSON integers become `int` and other numbers an exact `Decimal`, never a `float`), while the typed fields such as `amount` keep the exact text Wave sent.
+What Wave Money puts in each field. See [Results](/python-myanmar-payments/references/results) and [PaymentCallback & Status](/python-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `None`. `raw` holds plain Python values; every JSON number is kept as its exact text in a `str` (`1000.50` stays `"1000.50"`), never a `float`.
 
 ### `initiate()` → `RedirectPayment` {#initiate-response}
 
@@ -155,7 +155,7 @@ The attempt's `merchant_reference_id` is not on the result: read it from `data.m
 | `gateway_reference` | Wave `transactionId` |
 | `amount` | Wave `amount`, e.g. `10000` |
 | `raw` | The verified body: `status`, `merchantId`, `orderId`, `merchantReferenceId`, `frontendResultUrl`, `backendResultUrl`, `initiatorMsisdn`, `amount`, `timeToLiveSeconds`, `paymentDescription`, `currency`, `additionalField1`–`5`, `transactionId`, `paymentRequestId`, `requestTime`, `hashValue` |
-| `acknowledgement()` | HTTP `200`, empty body, `Content-Type: text/plain` |
+| `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
 ## Statuses
 
@@ -178,6 +178,6 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 |---|---|---|
 | `initiate()` | `InvalidPaymentDataError` | `WaveMoney.validate(data)` fails. Nothing is sent and `data` is left untouched. Item errors use `items.0.amount` keys |
 | `initiate()` | `ApiError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
-| `handle_callback()` | `SignatureVerificationError` | `hashValue` doesn't match |
+| `handle_callback()` | `SignatureVerificationError` | `hashValue` doesn't match, or a hashed field holds an object or a list |
 
 `AsyncWaveMoney` raises the same errors. `http_status` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`gateway_code` is `VALIDATION_ERROR`). When Wave can't be reached or the request times out, `initiate()` raises `ApiError` with the original `httpx` error as `__cause__`.

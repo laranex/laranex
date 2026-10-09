@@ -16,8 +16,8 @@ Returned by every gateway's `handle_callback()` (and AYA's `verify_redirect()`) 
 | `gateway_status` | `str` | The gateway's own status value, unmapped |
 | `gateway_reference` | `str \| None` | The gateway's ID for the payment |
 | `amount` | `str \| None` | The amount the gateway reports, exactly as it sent it |
-| `raw` | `Mapping[str, Any]` | The verified payload, as plain Python values (`int` and `Decimal`, never `float`) |
-| `acknowledgement()` | `Acknowledgement` | The response the gateway expects |
+| `raw` | `Mapping[str, Any]` | The verified payload, as plain Python values; JSON numbers are their exact text as `str`, never `float` |
+| `acknowledgement` | `Acknowledgement` | The response the gateway expects |
 | `is_successful()` | `bool` | `status is PaymentStatus.SUCCESSFUL` |
 
 Build one yourself to test your own fulfillment code, with keyword arguments: `PaymentCallback(order_id=..., status=..., gateway_status=..., gateway_reference=None, amount=None, raw=None, acknowledgement=None)`. `status` takes a `PaymentStatus` or its string value, and `acknowledgement` defaults to `Acknowledgement.default()`.
@@ -59,7 +59,7 @@ Returned by `kbz.status()`, `aya.status()` and `yoma.status()`. A frozen datacla
 | `headers` | `Mapping[str, str]` | Headers with lowercase names; repeated headers joined with `, ` |
 | `query` | `Mapping[str, str]` | Query string values (the first of each) |
 | `header(name)` | `str \| None` | One header, case-insensitively |
-| `parsed_body()` | `dict[str, Any]` | The body decoded as JSON or a form; JSON numbers become `int` or `Decimal` |
+| `parsed_body()` | `dict[str, Any]` | The body decoded as JSON or a form; JSON numbers keep their exact text as `str` |
 | `input()` | `dict[str, Any]` | The body merged over the query string |
 | `query_input()` | `dict[str, Any]` | The query string merged over the body |
 

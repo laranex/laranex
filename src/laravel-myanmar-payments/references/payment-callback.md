@@ -18,9 +18,11 @@ Returned by every gateway's `handleCallback()` and by `ayaPay()->verifyRedirect(
 | `amount` | `?string` | The amount as the gateway sent it |
 | `raw` | `array` | The verified payload |
 | `isSuccessful()` | `bool` | `status === PaymentStatus::Successful` |
-| `acknowledgement()` | `Acknowledgement` | The response the gateway expects (`status`, `body`, `headers`) |
+| `acknowledgement` | `Acknowledgement` | The response the gateway expects (`status`, `body`, `headers`) |
 
 In Laravel, return `MyanmarPayments::acknowledge($callback)` to send the acknowledgement.
+
+Returned by `MyanmarPayments::handleCallback($gateway, $request)` too, for a gateway chosen by name.
 
 ## PaymentStatusResult
 

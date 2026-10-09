@@ -45,4 +45,4 @@ try {
 
 ## ConfigurationException
 
-The message names the gateway and the missing key, e.g. `The wave_money configuration is missing [merchant_id].`
+The message names the gateway and the missing key, e.g. `The wave_money configuration is missing [merchant_id].` `gateway` and `key` hold both.

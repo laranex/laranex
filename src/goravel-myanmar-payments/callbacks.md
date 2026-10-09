@@ -1,110 +1,148 @@
 ---
 title: Callbacks & Status
-description: Turn a Goravel request into the SDK's CallbackRequest, verify it with HandleCallback, answer with the gateway's acknowledgement, and check payment status when a callback is late.
+description: Verify gateway callbacks with HandleCallback, read a gateway-independent PaymentStatus, acknowledge the callback, and check payment status when a callback is late.
 ---
 
 # Callbacks & Status
 
-::: tip Recommended
-For production, store every callback and process it in a queued job: [Handling webhooks](/goravel-myanmar-payments/webhooks) shows the complete flow (migration, model, controller, job with retries, replay and pruning) built on the helpers on this page.
+Every gateway notifies your server of the payment result. `HandleCallback()` verifies the gateway's signature and returns a `*PaymentCallback`. Build its request with `payments.CallbackRequestFromContext(ctx)`: signatures are checked against the exact body the gateway sent.
+
+::: tip Production setup
+For production, follow [Handling Webhooks (recommended)](/goravel-myanmar-payments/webhooks): verify, store the call, acknowledge immediately, then process it once in the background with retries. The example below handles everything inline to show the API.
 :::
 
-This page covers the two helpers that connect Goravel to the SDK's callback handling, and the inline (low-level) way to use them.
+Every callback goes through the same steps; KBZ Pay is shown here.
 
-## CallbackRequestFromContext
-
-```go
-import payments "github.com/laranex/goravel-myanmar-payments/v4"
-
-// request is a *myanmarpayments.CallbackRequest
-request, err := payments.CallbackRequestFromContext(ctx)
-```
-
-It builds the SDK's [`CallbackRequest`](/go-myanmar-payments/callbacks#building-a-callbackrequest) from the current Goravel request: the raw body, the headers and the query string. Signatures are verified against what the gateway sent, so always build it from the real request, never from `ctx.Request().All()`.
-
-| Body | What you get |
-|---|---|
-| JSON (KBZ Pay, Wave Money, Yoma MMQR, AYA Pay) | The body byte for byte |
-| `application/x-www-form-urlencoded` or `multipart/form-data` (CyberSource, AYA Pay) | Goravel's gin driver parses form bodies before your handler runs, which consumes them. The body is rebuilt from the parsed form fields as urlencoded and `Content-Type` says so. These gateways sign field values, so the result verifies the same |
-
-## Acknowledge
-
-```go
-import payments "github.com/laranex/goravel-myanmar-payments/v4"
-
-return payments.Acknowledge(ctx, callback)
-```
-
-Gateways retry until they receive the response they expect. `Acknowledge` writes `callback.Acknowledgement` (status, body and headers) as the Goravel response: KBZ Pay gets HTTP 200 with a plain-text `success`, the other gateways an empty 200. A nil callback sends an empty 200.
-
-## Inline handling
+<SequenceDiagram
+  title="Handling a KBZ Pay callback"
+  :participants="['Your app', 'KBZ Pay']"
+  :steps="[
+    { from: 'KBZ Pay', to: 'Your app', label: 'Payment notification', detail: 'POST to CallbackURL' },
+    { from: 'Your app', to: 'Your app', label: 'Verify the signature', detail: 'kbz.HandleCallback(request)' },
+    { from: 'Your app', to: 'KBZ Pay', label: 'Invalid: 400, never fulfill', detail: '*SignatureVerificationError', response: true },
+    { from: 'Your app', to: 'Your app', label: 'Find the order', detail: 'by callback.OrderID' },
+    { from: 'Your app', to: 'Your app', label: 'Fulfill once', detail: 'skip if paid, match the amount' },
+    { from: 'Your app', to: 'KBZ Pay', label: 'Acknowledge: plain success', detail: 'payments.Acknowledge(ctx, callback)', response: true },
+    { from: 'KBZ Pay', to: 'Your app', label: 'No acknowledgement? Retry', detail: 'after 60 s, then 600 s' },
+  ]"
+/>
 
 ```go
 import (
-	"errors"
-
 	"github.com/goravel/framework/contracts/http"
-	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
 	payments "github.com/laranex/goravel-myanmar-payments/v4"
 	paymentsfacades "github.com/laranex/goravel-myanmar-payments/v4/facades"
 
 	"yourapp/app/facades"
+	"yourapp/app/models"
 )
 
-func (c *PaymentController) Callback(ctx http.Context) http.Response {
+facades.Route().Post("/payments/kbz/callback", func(
+	ctx http.Context,
+) http.Response {
 	request, err := payments.CallbackRequestFromContext(ctx)
 	if err != nil {
 		return ctx.Response().String(http.StatusBadRequest, "bad request")
 	}
-
 	kbz, err := paymentsfacades.MyanmarPayments().KbzPay()
 	if err != nil {
-		return ctx.Response().
-			String(http.StatusInternalServerError, "not configured")
+		return ctx.Response().String(http.StatusInternalServerError, "%s", err)
 	}
-
 	callback, err := kbz.HandleCallback(request)
-	var signatureError *myanmarpayments.SignatureVerificationError
-	if errors.As(err, &signatureError) {
-		facades.Log().
-			Error("rejected KBZ Pay callback: " + signatureError.Message)
-		return ctx.Response().String(http.StatusBadRequest, "invalid signature")
-	}
 	if err != nil {
-		return ctx.Response().String(http.StatusBadRequest, "invalid callback")
+		return ctx.Response().String(http.StatusBadRequest, "invalid")
 	}
 
-	if callback.IsSuccessful() {
-		// find the order by callback.OrderID, skip it if it is already paid,
-		// compare callback.Amount with the order total, then mark it paid
+	var order models.Order
+	err = facades.Orm().Query().
+		Where("reference", callback.OrderID).
+		FirstOrFail(&order)
+	if err != nil {
+		return ctx.Response().String(http.StatusNotFound, "unknown order")
+	}
+
+	// order.Amount is a string such as "10000"; compare strings, never floats
+	paid := callback.Amount == order.Amount
+
+	if callback.IsSuccessful() && !order.IsPaid() && paid {
+		order.MarkAsPaid(callback.GatewayReference)
 	}
 
 	return payments.Acknowledge(ctx, callback)
-}
+})
 ```
 
-`yourapp/app/facades` is the `facades` package Goravel generates in your app; replace `yourapp` with your module name. Register callback routes as `POST` without authentication or CSRF middleware. Every gateway's `HandleCallback` works the same way; see the SDK's [Callbacks & Status](/go-myanmar-payments/callbacks) for the `PaymentCallback` fields and the [driver pages](/go-myanmar-payments/drivers/kbz-pay) for each gateway's callback format.
+`yourapp/app/facades` is the `facades` package Goravel generates in your app; replace `yourapp` with your module name. Gateways post from their own servers, so keep callback routes free of CSRF and authentication middleware.
 
-`callback.Status` is gateway-independent: `myanmarpayments.StatusSuccessful` is the only status that means money was collected. `GatewayStatus` and `Raw` keep the gateway's own values for logging.
+## Callback Helpers
 
-## AYA Pay's browser return
+| Helper | What it does |
+|---|---|
+| `kbz.HandleCallback(request)` | Verifies the callback. Takes the SDK's `*myanmarpayments.CallbackRequest` |
+| `payments.CallbackRequestFromContext(ctx)` | Builds that request from the current Goravel request: the raw body, the headers and the query string |
+| `manager.HandleCallback(gateway, request)` | The same, by gateway name, for one route that serves every gateway; see [Handling Webhooks](/goravel-myanmar-payments/webhooks#route-and-controller) |
+| `manager.Gateway(name)` | The gateway for `kbz-pay`, `wave-money`, `aya-pay`, `yoma-mmqr` or `cyber-source` (`payments.GatewayNames()` lists them), as a `payments.CallbackHandler`. An unknown name returns an error wrapping `payments.ErrUnknownGateway` |
+| `payments.Acknowledge(ctx, callback)` | The response the gateway expects, written as the Goravel response. With a nil callback, an empty 200 |
+| `aya.VerifyRedirect(request)` | Verifies AYA's browser return; see [AYA Pay](/goravel-myanmar-payments/drivers/aya-pay) |
 
-AYA sends the customer back to your `ReturnURL` with a signed query string. Verify it to show the right page, and fulfill orders from the backend callback only:
+`manager` is `paymentsfacades.MyanmarPayments()`.
 
-```go
-import (
-	payments "github.com/laranex/goravel-myanmar-payments/v4"
-	paymentsfacades "github.com/laranex/goravel-myanmar-payments/v4/facades"
-)
+Signatures are computed over the exact bytes the gateway sent, so always build the request with `CallbackRequestFromContext`, never from `ctx.Request().All()`:
 
-request, err := payments.CallbackRequestFromContext(ctx)
-aya, err := paymentsfacades.MyanmarPayments().AyaPay()
-result, err := aya.VerifyRedirect(request)
-```
+| Body | What you get |
+|---|---|
+| JSON (KBZ Pay, Wave Money, Yoma MMQR) | The body byte for byte |
+| `application/x-www-form-urlencoded` or `multipart/form-data` (AYA Pay, CyberSource) | Goravel's gin driver parses form bodies before your handler runs, which consumes them. The body is rebuilt from the parsed form fields as urlencoded and `Content-Type` says so. These gateways sign field values, so the result verifies the same |
 
-## Checking status
+## Rules
 
-When a callback is late or missing, ask the gateway. KBZ Pay and AYA Pay take your order ID, Yoma MMQR the QR reference; Wave Money and CyberSource have no status API.
+- **Verify, then trust.** A callback that fails verification returns a `*myanmarpayments.SignatureVerificationError`. Never act on its payload; it carries the unverified data in `Raw` for logging only.
+- **Check the amount.** Compare `callback.Amount` (as the gateway sent it, a string) with your order before fulfilling. A gateway may format it differently from your order (`10000` or `10000.00`); the `sameAmount()` helper in [Handling Webhooks](/goravel-myanmar-payments/webhooks#job) compares decimal strings exactly.
+- **Be idempotent.** Gateways retry and may deliver the same callback more than once.
+- **Acknowledge.** `payments.Acknowledge(ctx, callback)` returns the response the gateway expects, e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
+
+## PaymentStatus
+
+Every gateway's own status values are mapped onto one type. The original value stays in `callback.GatewayStatus`.
+
+| Constant | Meaning |
+|---|---|
+| `myanmarpayments.StatusSuccessful` | The customer paid. The only status that means money was collected. |
+| `myanmarpayments.StatusPending` | Still in progress or waiting on the customer. |
+| `myanmarpayments.StatusFailed` | Attempted and failed or rejected. |
+| `myanmarpayments.StatusCanceled` | Canceled or closed before completing. |
+| `myanmarpayments.StatusExpired` | The payment window ran out. |
+| `myanmarpayments.StatusUnknown` | A status this package does not recognize yet. Inspect `GatewayStatus`. |
+
+`status.IsFinal()` is `false` for `StatusPending` and `StatusUnknown`. Unknown statuses never return an error.
+
+Each gateway page lists its exact mapping.
+
+## Status Checks
+
+When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Money and CyberSource have no status API.
+
+<SequenceDiagram
+  title="Checking the status when the callback is late"
+  :participants="['Your app', 'KBZ Pay']"
+  :steps="[
+    { from: 'Your app', to: 'Your app', label: 'Callback late or missing' },
+    { from: 'Your app', to: 'KBZ Pay', label: 'Ask for the order status', detail: 'kbz.Status(ctx, orderID)' },
+    { from: 'KBZ Pay', to: 'Your app', label: 'PaymentStatusResult', detail: 'trade_status, e.g. PAY_SUCCESS', response: true },
+    { from: 'Your app', to: 'Your app', label: 'Successful? Fulfill once', detail: 'same checks as the callback' },
+    { from: 'Your app', to: 'Your app', label: 'Not final? Check again later', detail: 'result.Status.IsFinal()' },
+  ]"
+/>
+
+When a callback is late or missing, ask the gateway directly. Status checks return a `*PaymentStatusResult` with the same `Status`, `GatewayStatus`, `GatewayReference` and `Amount` fields.
+
+| Gateway | Call |
+|---|---|
+| KBZ Pay | `KbzPay()` → `Status(ctx, orderID)` |
+| AYA Payment Gateway | `AyaPay()` → `Status(ctx, orderID)` |
+| Yoma MMQR | `YomaMmqr()` → `Status(ctx, payment.Reference)` |
+| Wave Money | No status API: rely on the callback |
+| CyberSource | No status API: rely on the callback |
 
 ```go
 import (
@@ -113,10 +151,12 @@ import (
 	paymentsfacades "github.com/laranex/goravel-myanmar-payments/v4/facades"
 )
 
-kbz, _ := paymentsfacades.MyanmarPayments().KbzPay()
-// result is a *myanmarpayments.PaymentStatusResult
+kbz, err := paymentsfacades.MyanmarPayments().KbzPay()
 result, err := kbz.Status(ctx, fmt.Sprintf("ORDER_%d", order.ID))
+
 if err == nil && result.IsSuccessful() {
-	// fulfill, exactly as from a callback
+	// ...
 }
 ```
+
+See [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for every field.

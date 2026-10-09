@@ -1,37 +1,35 @@
 ---
-title: Handling webhooks (recommended)
-description: The recommended way to handle payment callbacks in Goravel. Verify with the package, store the raw request in your own table, acknowledge at once, then process each order status once in a queued job with retries, replays and pruning.
+title: Handling Webhooks (recommended)
+description: The recommended way to handle gateway webhooks in a Goravel app - verify, store, acknowledge, then process once in a queued job with retries, a lock and replay.
 ---
 
-# Handling webhooks (recommended)
+# Handling Webhooks (recommended)
 
-Gateways deliver payment results as server-to-server callbacks (webhooks). They retry until they get the acknowledgement they expect, can deliver the same result more than once, and give you only a few seconds to answer. The flow below handles all of that and leaves a record you can debug and replay:
+The package verifies a webhook and builds the acknowledgement; what you do with it lives in your app. The flow below is the one we recommend for production: it answers the gateway fast, never loses a notification, and fulfills each order exactly once even when the gateway retries.
 
-1. **Receive**: verify the callback with the package, then store the raw request (body, headers, query) in your own table. Bad signatures are stored as `rejected` for debugging and never processed.
-2. **Acknowledge** at once with `payments.Acknowledge`, before any business logic runs.
-3. **Process once** in a queued job: skip a gateway + order + status that was already processed, lock the order against concurrent workers, record attempts and the last error.
-4. **Retry** with backoff on failure. Failed rows stay for debugging; replay them with a command and prune old rows on a schedule.
-
-The package itself stores nothing: everything on this page is application code you copy into your app and adapt. The Laranex playground app runs this exact code under its tests.
+1. **Verify** the webhook with `paymentsfacades.MyanmarPayments().HandleCallback(gateway, request)`.
+2. **Store** the raw call in your own table, including rejected ones for debugging.
+3. **Acknowledge** right away with `payments.Acknowledge(ctx, callback)`, so the gateway stops retrying.
+4. **Process once** in a queued job: skip what is already processed, lock the order, retry with backoff, keep the last error.
 
 <SequenceDiagram
-  title="A stored webhook, from delivery to fulfillment"
-  :participants="['Gateway', 'Webhook route', 'Database', 'Queue job', 'Your logic']"
+  title="Verify, store, acknowledge, process once"
+  :participants="['Gateway', 'Your app', 'Queue worker']"
   :steps="[
-    { from: 'Gateway', to: 'Webhook route', label: 'POST /payments/webhooks/kbzpay', detail: 'payment notification' },
-    { from: 'Webhook route', to: 'Webhook route', label: 'Verify the signature', detail: 'gateway.HandleCallback(request)' },
-    { from: 'Webhook route', to: 'Database', label: 'Store the raw request', detail: 'received, or rejected for a bad signature' },
-    { from: 'Webhook route', to: 'Gateway', label: 'Acknowledge at once', detail: 'payments.Acknowledge(ctx, callback)', response: true },
-    { from: 'Webhook route', to: 'Queue job', label: 'Dispatch', detail: 'ProcessPaymentWebhook(id)' },
-    { from: 'Queue job', to: 'Database', label: 'Lock the order, skip duplicates', detail: 'gateway + order + status already processed?' },
-    { from: 'Queue job', to: 'Your logic', label: 'Verify again and fulfill once', detail: 'compare the amount, mark the order paid' },
-    { from: 'Queue job', to: 'Database', label: 'Processed, or retry with backoff', detail: 'failed after 5 attempts; replay later' },
+    { from: 'Gateway', to: 'Your app', label: 'Webhook', detail: 'POST /webhooks/payments/{gateway}' },
+    { from: 'Your app', to: 'Your app', label: 'Verify the signature', detail: 'HandleCallback(gateway, request)' },
+    { from: 'Your app', to: 'Gateway', label: 'Invalid: store as rejected, 400', detail: '*SignatureVerificationError', response: true },
+    { from: 'Your app', to: 'Your app', label: 'Store the call', detail: 'facades.Orm().Query().Create()' },
+    { from: 'Your app', to: 'Queue worker', label: 'Dispatch the job', detail: 'ProcessPaymentWebhook' },
+    { from: 'Your app', to: 'Gateway', label: 'Acknowledge immediately', detail: 'payments.Acknowledge(ctx, callback)', response: true },
+    { from: 'Queue worker', to: 'Queue worker', label: 'Lock the order, skip duplicates', detail: 'facades.Cache().Lock(), status' },
+    { from: 'Queue worker', to: 'Queue worker', label: 'Fulfill once, or retry with backoff', detail: 'ShouldRetry(), attempts, last_error' },
   ]"
 />
 
-The examples import your application's packages as `yourapp/app/...`; replace `yourapp` with your module name.
+None of this is part of the package: copy the code into your app and adapt the fulfillment to your own `Order` model. It needs a real queue connection (`database` or Redis) with a running worker, and a cache store that supports locks. The examples import your application's packages as `yourapp/app/...`; replace `yourapp` with your module name.
 
-## 1. Migration
+## Migration
 
 `database/migrations/20261008120000_create_payment_webhooks_table.go`, registered in `bootstrap/migrations.go`:
 
@@ -90,9 +88,9 @@ func (r *M20261008120000CreatePaymentWebhooksTable) Down() error {
 }
 ```
 
-## 2. Model
+## Model
 
-`app/models/payment_webhook.go`. The raw body is kept byte for byte, so a stored row can always be verified again:
+`app/models/payment_webhook.go`. The raw body is kept byte for byte, so a stored row can always be verified again. Old rows are pruned on a schedule, see [Replay and Prune](#replay-and-prune).
 
 ```go
 package models
@@ -179,68 +177,23 @@ func (w *PaymentWebhook) Fill(callback *myanmarpayments.PaymentCallback) {
 }
 ```
 
-## 3. Verifying any gateway
+## Route and Controller
 
-`app/services/payment_callbacks.go` maps the gateway name in the URL to the package's gateways. Each `HandleCallback` verifies the signature and returns the typed callback:
+One route serves every gateway. Gateways post from their own servers, so register it in `routes/web.go` without authentication or CSRF middleware:
 
 ```go
-package services
-
 import (
-	"errors"
-
-	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
-	paymentsfacades "github.com/laranex/goravel-myanmar-payments/v4/facades"
+	"yourapp/app/facades"
+	"yourapp/app/http/controllers"
 )
 
-// ErrUnknownGateway is returned for a gateway name the app does not accept.
-var ErrUnknownGateway = errors.New("unknown payment gateway")
-
-// VerifyPaymentCallback verifies a callback with the named gateway.
-func VerifyPaymentCallback(
-	gateway string,
-	request *myanmarpayments.CallbackRequest,
-) (*myanmarpayments.PaymentCallback, error) {
-	manager := paymentsfacades.MyanmarPayments()
-
-	switch gateway {
-	case "kbzpay":
-		g, err := manager.KbzPay()
-		if err != nil {
-			return nil, err
-		}
-		return g.HandleCallback(request)
-	case "wave-money":
-		g, err := manager.WaveMoney()
-		if err != nil {
-			return nil, err
-		}
-		return g.HandleCallback(request)
-	case "aya-pay":
-		g, err := manager.AyaPay()
-		if err != nil {
-			return nil, err
-		}
-		return g.HandleCallback(request)
-	case "yoma-mmqr":
-		g, err := manager.YomaMmqr()
-		if err != nil {
-			return nil, err
-		}
-		return g.HandleCallback(request)
-	case "cyber-source":
-		g, err := manager.CyberSource()
-		if err != nil {
-			return nil, err
-		}
-		return g.HandleCallback(request)
-	default:
-		return nil, ErrUnknownGateway
-	}
-}
+facades.Route().Post(
+	"/webhooks/payments/{gateway}",
+	controllers.NewPaymentWebhookController().Store,
+)
 ```
 
-## 4. Route and controller
+Use `https://shop.test/webhooks/payments/kbz-pay` as the gateway's callback URL: pass it as `CallbackURL` when you start a payment (KBZ Pay, Wave Money, CyberSource) or register it in the gateway's merchant portal (AYA Pay, Yoma MMQR). The names are the ones `payments.GatewayNames()` returns: `kbz-pay`, `wave-money`, `aya-pay`, `yoma-mmqr`, `cyber-source`.
 
 `app/http/controllers/payment_webhook_controller.go`:
 
@@ -254,11 +207,11 @@ import (
 	"github.com/goravel/framework/contracts/http"
 	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
 	payments "github.com/laranex/goravel-myanmar-payments/v4"
+	paymentsfacades "github.com/laranex/goravel-myanmar-payments/v4/facades"
 
 	"yourapp/app/facades"
 	"yourapp/app/jobs"
 	"yourapp/app/models"
-	"yourapp/app/services"
 )
 
 // PaymentWebhookController receives gateway callbacks the recommended way:
@@ -269,7 +222,7 @@ func NewPaymentWebhookController() *PaymentWebhookController {
 	return &PaymentWebhookController{}
 }
 
-// Store handles POST /payments/webhooks/{gateway}.
+// Store handles POST /webhooks/payments/{gateway}.
 func (r *PaymentWebhookController) Store(ctx http.Context) http.Response {
 	gateway := ctx.Request().Route("gateway")
 	request, err := payments.CallbackRequestFromContext(ctx)
@@ -278,11 +231,12 @@ func (r *PaymentWebhookController) Store(ctx http.Context) http.Response {
 	}
 
 	webhook := models.NewPaymentWebhook(gateway, ctx.Request().Ip(), request)
-	callback, err := services.VerifyPaymentCallback(gateway, request)
+	callback, err := paymentsfacades.MyanmarPayments().
+		HandleCallback(gateway, request)
 
 	var signatureError *myanmarpayments.SignatureVerificationError
 	switch {
-	case errors.Is(err, services.ErrUnknownGateway):
+	case errors.Is(err, payments.ErrUnknownGateway):
 		return ctx.Response().String(http.StatusNotFound, "unknown gateway")
 	case errors.As(err, &signatureError):
 		// Keep rejected deliveries for debugging; they are never processed.
@@ -318,20 +272,15 @@ func (r *PaymentWebhookController) Store(ctx http.Context) http.Response {
 }
 ```
 
-Register it in `routes/web.go` without authentication or CSRF middleware; gateways call it from their servers:
+## Job
 
-```go
-facades.Route().Post(
-	"/payments/webhooks/{gateway}",
-	controllers.NewPaymentWebhookController().Store,
-)
-```
+The job is where the order is fulfilled. It is safe to run more than once:
 
-Use `https://shop.test/payments/webhooks/<gateway>` as the callback URL: pass it as `CallbackURL` when you start a payment (KBZ Pay, Wave Money, CyberSource) or register it in the gateway's merchant portal (AYA Pay, Yoma MMQR). The gateway names are the ones `VerifyPaymentCallback` accepts: `kbzpay`, `wave-money`, `aya-pay`, `yoma-mmqr`, `cyber-source`.
+- **Lock:** `facades.Cache().Lock()` lets one worker at a time process a given order. Use a shared cache store (Redis, database) when you run several workers.
+- **Idempotent:** a row that is already processed, or another processed row with the same gateway, order and gateway status, is skipped; the order itself is checked again inside a transaction.
+- **Retries:** `ShouldRetry` retries failures with the `webhookBackoff` delays up to `MaxWebhookAttempts`; every attempt is counted and the last error is kept. After the last attempt the row is `failed`.
 
-## 5. Queue job
-
-`app/jobs/process_payment_webhook.go`. Replace `FulfillPayment` with your business logic:
+`app/jobs/process_payment_webhook.go`:
 
 ```go
 package jobs
@@ -339,15 +288,17 @@ package jobs
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/goravel/framework/contracts/database/orm"
 	"github.com/goravel/framework/contracts/queue"
 	"github.com/goravel/framework/support/carbon"
 	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
+	paymentsfacades "github.com/laranex/goravel-myanmar-payments/v4/facades"
 
 	"yourapp/app/facades"
 	"yourapp/app/models"
-	"yourapp/app/services"
 )
 
 // MaxWebhookAttempts is how many times a stored webhook is processed before
@@ -363,20 +314,53 @@ var webhookBackoff = []time.Duration{
 // later.
 var errWebhookLocked = errors.New("another worker is processing this order")
 
-// FulfillPayment is the app's business logic for a verified callback. Replace
-// it with your own: find the order by callback.OrderID, compare
-// callback.Amount, mark it paid. It runs at most once per gateway + order +
-// gateway status.
+// FulfillPayment is the app's business logic for a verified callback: it
+// marks the order paid once. It runs at most once per gateway + order +
+// gateway status; adapt it to your own Order model.
 var FulfillPayment = func(
 	webhook *models.PaymentWebhook,
 	callback *myanmarpayments.PaymentCallback,
 ) error {
-	facades.Log().Info(fmt.Sprintf(
-		"[%s] order %s is %s (%s)",
-		webhook.Gateway, callback.OrderID, callback.Status, callback.Amount,
-	))
+	if !callback.IsSuccessful() {
+		return nil // record failures, cancellations, ... as your app needs
+	}
 
-	return nil
+	return facades.Orm().Transaction(func(tx orm.Query) error {
+		var order models.Order
+		err := tx.LockForUpdate().
+			Where("number = ?", callback.OrderID).
+			FirstOrFail(&order)
+		if err != nil {
+			return err
+		}
+		if order.PaidAt != nil {
+			return nil
+		}
+		if !sameAmount(callback.Amount, order.Amount) {
+			return fmt.Errorf(
+				"paid %s, expected %s for order %s",
+				callback.Amount, order.Amount, order.Number,
+			)
+		}
+
+		order.PaidAt = carbon.NewDateTime(carbon.Now())
+		order.GatewayReference = callback.GatewayReference
+
+		return tx.Save(&order)
+	})
+}
+
+// sameAmount compares decimal strings, so "10000", "10000.0" and "10000.00"
+// are equal.
+func sameAmount(paid, expected string) bool {
+	normalize := func(amount string) string {
+		if strings.Contains(amount, ".") {
+			amount = strings.TrimRight(strings.TrimRight(amount, "0"), ".")
+		}
+		return amount
+	}
+
+	return normalize(paid) == normalize(expected)
 }
 
 // ProcessPaymentWebhook processes a stored payment webhook once, with retries.
@@ -482,7 +466,7 @@ func (r *ProcessPaymentWebhook) Handle(args ...any) error {
 
 // process verifies the stored request again and runs the business logic.
 func process(webhook *models.PaymentWebhook) error {
-	callback, err := services.VerifyPaymentCallback(
+	callback, err := paymentsfacades.MyanmarPayments().HandleCallback(
 		webhook.Gateway, webhook.CallbackRequest(),
 	)
 	if err != nil {
@@ -493,14 +477,9 @@ func process(webhook *models.PaymentWebhook) error {
 }
 ```
 
-- **Once per order status.** Gateways retry and resend, so every delivery is stored but only the first of each gateway + order + gateway status is processed. A later status of the same order (for example `WAIT_PAY`, then `PAY_SUCCESS`) is processed on its own.
-- **One worker per order.** `facades.Cache().Lock` keeps two workers from handling the same order at the same time. Use a shared cache store (Redis, database) when you run several workers.
-- **Retries.** `ShouldRetry` makes the queue worker retry with the `webhookBackoff` delays up to `MaxWebhookAttempts`. The row keeps `attempts` and `last_error`; after the last attempt it is `failed`.
-- **Fulfill idempotently anyway.** Check the order's state inside `FulfillPayment` (skip an order that is already paid) and compare `callback.Amount` with the order total before marking it paid.
+The sample assumes an `orders` table with a unique `number`, the `amount` as a decimal string, and nullable `paid_at` and `gateway_reference`.
 
-## 6. Register the job, the replay command and pruning
-
-`bootstrap/payment_webhooks.go`:
+Register the job, the replay command and the pruning schedule in `bootstrap/payment_webhooks.go`:
 
 ```go
 package bootstrap
@@ -560,11 +539,11 @@ return foundation.Setup().
 	Create()
 ```
 
-Process jobs with a real queue connection (`database` or Redis) and a running worker, as described in Goravel's queue documentation. With the `sync` driver the job runs inside the request and is not retried: fine for local development and tests, not for production.
+With the `sync` queue driver the job runs inside the request and is not retried: fine for local development and tests, not for production.
 
-## 7. Replaying
+## Replay and Prune
 
-`app/console/commands/replay_payment_webhooks.go` re-dispatches stored webhooks after you fix the cause of a failure:
+A failed row keeps `last_error` and the status `failed`. After fixing the cause, process it again with `app/console/commands/replay_payment_webhooks.go`:
 
 ```go
 package commands
@@ -649,15 +628,13 @@ func (r *ReplayPaymentWebhooks) Handle(ctx console.Context) error {
 ./artisan payments:webhooks:replay --failed  # every failed webhook
 ```
 
-## Debugging
-
-Every delivery is a row, so the database answers most questions:
+The schedule above deletes rows older than 90 days. Every delivery is a row, so the database answers most questions:
 
 ```sql
 -- What happened to an order?
 SELECT id, status, gateway_status, attempts, last_error, created_at
 FROM payment_webhooks
-WHERE gateway = 'kbzpay' AND order_id = 'ORDER_1'
+WHERE gateway = 'kbz-pay' AND order_id = 'ORDER_1'
 ORDER BY id;
 
 -- What is failing?
@@ -674,32 +651,39 @@ ORDER BY id DESC
 LIMIT 20;
 ```
 
-To inspect a stored delivery in code, verify it again: `services.VerifyPaymentCallback(webhook.Gateway, webhook.CallbackRequest())` returns the same typed callback the controller saw.
+To inspect a stored delivery in code, verify it again: `paymentsfacades.MyanmarPayments().HandleCallback(webhook.Gateway, webhook.CallbackRequest())` returns the same typed callback the controller saw.
 
 ## Testing
 
 With the `sync` queue the job runs inside the request, so a feature test can post a signed callback and assert on the row:
 
 ```go
+import (
+	"bytes"
+	"encoding/json"
+
+	"github.com/laranex/go-myanmar-payments/v4/kbzpay"
+
+	"yourapp/app/facades"
+	"yourapp/app/models"
+)
+
 func (s *PaymentWebhooksTestSuite) TestKbzPayWebhook() {
 	fields := map[string]any{
-		"appid":          "kp-app",
-		"merch_code":     "200001",
 		"merch_order_id": "ORDER_1",
 		"mm_order_id":    "MM1",
 		"total_amount":   "10000",
-		"trans_currency": "MMK",
 		"trade_status":   "PAY_SUCCESS",
 		"nonce_str":      "n",
 		"sign_type":      "SHA256",
 	}
-	// "kbz-secret" is the app key of your test config
-	fields["sign"] = kbzpay.NewSigner("kbz-secret").Sign(fields)
+	// "test-app-key" is KBZ_PAY_APP_KEY in your test configuration
+	fields["sign"] = kbzpay.NewSigner("test-app-key").Sign(fields)
 	body, _ := json.Marshal(map[string]any{"Request": fields})
 
 	response, err := s.Http(s.T()).
 		WithHeader("Content-Type", "application/json").
-		Post("/payments/webhooks/kbzpay", bytes.NewReader(body))
+		Post("/webhooks/payments/kbz-pay", bytes.NewReader(body))
 	s.Require().NoError(err)
 	response.AssertOk()
 
@@ -710,8 +694,4 @@ func (s *PaymentWebhooksTestSuite) TestKbzPayWebhook() {
 }
 ```
 
-Post the same body twice to test duplicates, a modified body to test rejection, and call `(&jobs.ProcessPaymentWebhook{}).Handle(id)` directly to test retries. See [Testing](/goravel-myanmar-payments/testing) for faking gateway HTTP calls.
-
-## Handling callbacks inline
-
-For a prototype you can verify and fulfill inside the request instead; see [Callbacks](/goravel-myanmar-payments/callbacks). You lose the stored record, the retries and the replays, and slow business logic can make the gateway time out and resend.
+Post the same body twice to test duplicates, a modified body to test rejection, and call `(&jobs.ProcessPaymentWebhook{}).Handle(id)` directly to test retries. To sign other gateways' payloads, compute the signature in the test with your sandbox secret, as described on each gateway's page.

@@ -5,7 +5,7 @@ description: Verify gateway callbacks with handleCallback, read a gateway-indepe
 
 # Callbacks & Status
 
-Every gateway notifies your server of the payment result. `handleCallback` takes a `CallbackRequest`, verifies the gateway's signature and returns a `PaymentCallback`. It is synchronous: verifying needs no network call.
+Every gateway notifies your server of the payment result. `handleCallback` takes a `CallbackRequest`, verifies the gateway's signature and returns a `PaymentCallback`. It is synchronous, never awaited: verifying needs no network call.
 
 ::: tip Production setup
 For production, follow [Handling Webhooks (recommended)](/node-myanmar-payments/webhooks): verify, store the call, acknowledge immediately, then process it once in the background with retries. The example below handles everything inline to show the API.
@@ -30,30 +30,36 @@ Every callback goes through the same steps; KBZ Pay is shown here.
 ```ts
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import {
+  Amount,
   CallbackRequest,
   SignatureVerificationError,
+  type PaymentCallback,
 } from '@laranex/myanmar-payments';
+
+import { orders } from './orders.js';
 
 async function kbzCallback(
   req: IncomingMessage,
   res: ServerResponse,
 ): Promise<void> {
-  let callback;
+  const request = await CallbackRequest.fromNodeRequest(req);
+  let callback: PaymentCallback;
   try {
-    callback = kbz.handleCallback(await CallbackRequest.fromNodeRequest(req));
+    callback = kbz.handleCallback(request);
   } catch (error) {
-    if (error instanceof SignatureVerificationError) {
-      console.warn(`rejected KBZ callback: ${error.message}`);
-    }
+    if (!(error instanceof SignatureVerificationError)) throw error;
+    console.warn(`rejected KBZ callback: ${error.message}`);
     res.writeHead(400).end('invalid callback');
     return;
   }
 
-  const order = await orders.find(callback.orderId);
-  const paid = order.amount.equals(callback.amount);
-  if (callback.isSuccessful() && !order.paid && paid) {
-    await orders.markPaid(order, callback.gatewayReference);
-  }
+  await orders.transaction(async (tx) => {
+    const order = await tx.findForUpdate(callback.orderId);
+    const paid = Amount.parse(order.amount).equals(callback.amount);
+    if (callback.isSuccessful() && order.paidAt === null && paid) {
+      await tx.markPaid(order, callback.gatewayReference);
+    }
+  });
 
   // KBZ Pay: HTTP 200 with plain-text "success"
   callback.acknowledgement.send(res);
@@ -62,44 +68,54 @@ async function kbzCallback(
 
 ## Building a CallbackRequest
 
-Signatures are checked against what the gateway actually sent, so build the request from the real incoming request.
+Signatures are checked against what the gateway actually sent, so build the request from the real incoming request: the raw body, the headers and the query string. Never rebuild it from parsed input such as Express's `req.body` after `express.json()`: a JSON number such as `1000.50` would come back as `1000.5` and break a signature over the exact text.
 
 | Factory | Use when |
 |---|---|
 | `await CallbackRequest.fromNodeRequest(req)` | `node:http`, Express (`req`), Koa (`ctx.req`, without a body parser). Reads the raw body from the stream, or from `req.rawBody` / `req.body` when middleware captured it as text or bytes |
 | `await CallbackRequest.fromWebRequest(request)` | A Fetch API `Request`: Next.js route handlers, Hono, Bun, Deno, Cloudflare Workers. Reads a clone, so the request stays readable |
+| `CallbackRequest.from({ body, headers, query })` | Every other server: pass the raw body (`string`, `Buffer`, `Uint8Array` or `ArrayBuffer`), the headers (an object or `[name, value]` pairs) and the query string (`string`, `URLSearchParams` or an object). All three are optional |
 | `CallbackRequest.fromJson(payload, headers?)` | Replaying a payload you stored as decoded JSON, e.g. from a queue or a failed-callback table |
-| `CallbackRequest.from({ body, headers, query })` | Fastify and any other server: pass the raw body (string or bytes), headers and query (string, `URLSearchParams` or object) |
 
-When a body parser such as `express.json()` already consumed the stream, `fromNodeRequest` encodes the parsed `req.body` again as JSON or a form. That usually verifies, but a JSON number such as `1000.50` comes back as `1000.5` and breaks a signature over the exact text, so prefer [`express.raw()` on callback routes](/node-myanmar-payments/framework-integration#express).
+| Framework | `body` | `headers` | `query` |
+|---|---|---|---|
+| `node:http`, Express | `fromNodeRequest(req)` reads all three | | |
+| Fastify | `request.body` (kept as a string, see [Fastify](/node-myanmar-payments/framework-integration#fastify)) | `request.headers` | `request.query` |
+| Next.js, Hono, Bun, Deno | `fromWebRequest(request)` reads all three | | |
+
+When a body parser such as `express.json()` already consumed the stream, `fromNodeRequest` encodes the parsed `req.body` again as JSON or a form. That usually verifies, but a JSON number such as `1000.50` comes back as `1000.5`, so prefer [`express.raw()` on callback routes](/node-myanmar-payments/framework-integration#express).
 
 | Member | Description |
 |---|---|
+| `rawBody` | The raw body as a `Uint8Array`, exactly as received |
 | `body` | The raw body, decoded as UTF-8 |
-| `headers` | Headers with lowercase names |
+| `headers` | Headers with lowercase names; repeated headers are joined with `, ` |
 | `query` | Query string values (the first of each) |
 | `header(name)` | One header, case-insensitively, or `undefined` |
-| `parsedBody()` | The body decoded as JSON or a urlencoded form |
+| `parsedBody()` | The body decoded as JSON or a urlencoded form; JSON numbers keep their exact text as `string`s (`1000.50` stays `"1000.50"`) |
 | `input()` | The parsed body merged over the query string |
 | `queryInput()` | The query string merged over the parsed body |
 
 ## Rules
 
-- **Verify, then trust.** A callback that fails verification throws `SignatureVerificationError`. Never act on its payload; `raw` carries the unverified data for logging only.
+- **Verify, then trust.** A callback that fails verification throws `SignatureVerificationError`, and so does one whose signed or hashed field holds an object or array instead of a single value, since no gateway signs nested values. Never act on its payload; `raw` carries the unverified data for logging only.
 - **Check the amount.** Compare `callback.amount` (the exact text the gateway sent) with your order before fulfilling, e.g. with `Amount.equals`.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 - **Acknowledge.** `callback.acknowledgement` holds the response the gateway expects (`status`, `body`, `headers`), e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
 
 ## Acknowledging
 
-| Method | Use with |
-|---|---|
-| `acknowledgement.send(res)` | A `node:http` `ServerResponse` or Express `res`: sets the status and headers and ends the response |
-| `acknowledgement.toResponse()` | Fetch servers: returns a `Response` to return from a Next.js route handler, Hono or Bun |
+`callback.acknowledgement` is an `Acknowledgement` with `status`, `body` and `headers`. Write them with your framework's response API:
 
-For other frameworks, write `status`, `headers` and `body` yourself, e.g. with Fastify: `reply.code(ack.status).headers(ack.headers).send(ack.body)`.
+| Framework | Response |
+|---|---|
+| `node:http`, Express | `ack.send(res)`: sets the status and headers and ends the response |
+| Fastify | `reply.code(ack.status).headers(ack.headers).send(ack.body)` |
+| Next.js, Hono, Bun, Deno | `return ack.toResponse()`, a Fetch API `Response` |
 
 `Acknowledgement.default()` is the empty `200 text/plain` response most gateways expect.
+
+Gateway callbacks are server-to-server posts: exclude these routes from any CSRF protection your framework applies.
 
 ## PaymentStatus
 
@@ -114,7 +130,7 @@ Every gateway's own status values are mapped onto one string union. The original
 | `PaymentStatus.Expired` | `expired` | The payment window ran out. |
 | `PaymentStatus.Unknown` | `unknown` | A status this package does not recognize yet. Inspect `gatewayStatus`. |
 
-`PaymentStatus.isFinal(status)` is `false` for `pending` and `unknown`. Unknown statuses never throw.
+Statuses are plain strings, so `callback.status === 'successful'` works. `PaymentStatus.isFinal(status)` is `false` for `pending` and `unknown`. Unknown statuses never throw.
 
 Each gateway page lists its exact mapping.
 
@@ -138,25 +154,29 @@ Status checks return a `PaymentStatusResult` with the same `status`, `gatewaySta
 
 | Gateway | Call |
 |---|---|
-| KBZ Pay | `await kbz.status(orderId)` |
-| AYA Payment Gateway | `await aya.status(orderId)` |
-| Yoma MMQR | `await yoma.status(payment.reference)` |
+| KBZ Pay | `kbz.status(orderId)` |
+| AYA Payment Gateway | `aya.status(orderId)` |
+| Yoma MMQR | `yoma.status(payment.reference)` |
 | Wave Money | No status API: rely on the callback |
 | CyberSource | No status API: rely on the callback |
+
+Every status call is async: `await` it.
 
 ```ts
 import { ApiError } from '@laranex/myanmar-payments';
 
+let result;
 try {
-  const result = await kbz.status('ORDER_1');
-  if (result.isSuccessful()) {
-    // ...
-  }
+  result = await kbz.status('ORDER_1');
 } catch (error) {
   if (error instanceof ApiError) {
     console.error(`KBZ ${error.gatewayCode}: ${error.gatewayMessage}`);
   }
   throw error;
+}
+
+if (result.isSuccessful()) {
+  // ...
 }
 ```
 

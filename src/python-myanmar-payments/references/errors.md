@@ -43,10 +43,10 @@ except ApiError as error:
 | `gateway_code` | `str \| None` | The gateway's own error code, e.g. `ORDER_ID_USED`, `09`, `PAYMENT ALREADY EXISTS` |
 | `gateway_message` | `str \| None` | The gateway's own error message |
 | `http_status` | `int` | The response status, `0` when no response was received |
-| `raw` | `Mapping[str, Any]` | The decoded response body (`{}` when there was none) |
+| `raw` | `Mapping[str, Any]` | The decoded response body, JSON numbers as their exact text (`{}` when there was none) |
 | `__cause__` | `BaseException \| None` | The underlying network error, if any |
 
-For a call that could not reach the gateway, `str(error)` is `Could not reach <url>: …` and `__cause__` is the `httpx` error, e.g. an `httpx.ConnectError` or `httpx.TimeoutException`.
+When the gateway sends an error code without a message, `str(error)` ends with the bracketed code, e.g. `KBZ Pay precreate failed: [ORDER_ID_USED]`. For a call that could not reach the gateway, `str(error)` is `Could not reach <url>: …` and `__cause__` is the `httpx` error, e.g. an `httpx.ConnectError` or `httpx.TimeoutException`.
 
 ## SignatureVerificationError
 

@@ -134,7 +134,7 @@ def kbz_callback(request):
         # callback.gateway_reference is KBZ's mm_order_id
         ...
 
-    ack = callback.acknowledgement()  # plain-text "success"
+    ack = callback.acknowledgement  # plain-text "success"
     return HttpResponse(ack.body, status=ack.status, headers=ack.headers)
 ```
 
@@ -154,7 +154,7 @@ if result.is_successful():
 
 ## Responses
 
-What KBZ Pay puts in each field. See [Results](/python-myanmar-payments/references/results) and [PaymentCallback & Status](/python-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `None`. `raw` holds plain Python values (JSON integers become `int` and other numbers an exact `Decimal`, never a `float`), while the typed fields such as `amount` keep the exact text KBZ sent.
+What KBZ Pay puts in each field. See [Results](/python-myanmar-payments/references/results) and [PaymentCallback & Status](/python-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `None`. `raw` holds plain Python values; every JSON number is kept as its exact text in a `str` (`1000.50` stays `"1000.50"`), never a `float`.
 
 ### `pwa()` → `RedirectPayment` {#pwa-response}
 
@@ -212,7 +212,7 @@ What KBZ Pay puts in each field. See [Results](/python-myanmar-payments/referenc
 | `gateway_reference` | KBZ `mm_order_id` |
 | `amount` | KBZ `total_amount`, e.g. `10000` |
 | `raw` | The verified `Request`: `appid`, `notify_time`, `merch_code`, `merch_order_id`, `mm_order_id`, `total_amount`, `trans_currency`, `trade_status`, `trans_end_time`, `callback_info`, `nonce_str`, `sign_type`, `sign` |
-| `acknowledgement()` | HTTP `200`, body `success`, `Content-Type: text/plain` |
+| `acknowledgement` | HTTP `200`, body `success`, `Content-Type: text/plain` |
 
 ## Statuses
 
@@ -227,7 +227,7 @@ What KBZ Pay puts in each field. See [Results](/python-myanmar-payments/referenc
 
 ## Signing
 
-KBZ signs requests, the in-app `order_info` and notifications the same way: every non-empty field except `sign` and `sign_type`, sorted by key, joined as raw `key=value` pairs, with `&key=<app key>` appended, hashed with SHA-256 and uppercased. The package signs every request and verifies every notification for you; `kbz.signer` (a `KbzPaySigner`, also exported from `python_myanmar_payments`) exposes the same signature for custom calls: `sign_string(fields)`, `sign(fields)` and `verify(fields)`.
+KBZ signs requests, the in-app `order_info` and notifications the same way: every non-empty single-value field except `sign` and `sign_type`, sorted by key, joined as raw `key=value` pairs, with `&key=<app key>` appended, hashed with SHA-256 and uppercased. The package signs every request and verifies every notification for you; `kbz.signer` (a `KbzPaySigner`, also exported from `python_myanmar_payments`) exposes the same signature for custom calls: `sign_string(fields)`, `sign(fields)` and `verify(fields)`.
 
 ## Errors
 
@@ -237,6 +237,6 @@ KBZ signs requests, the in-app `order_info` and notifications the same way: ever
 | `pwa()`, `qr()`, `app()` | `ApiError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, or without a `prepay_id` |
 | `qr()` | `ApiError` | KBZ returns no `qrCode` |
 | `status()` | `ApiError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, e.g. for an unknown order |
-| `handle_callback()` | `SignatureVerificationError` | `sign` doesn't match |
+| `handle_callback()` | `SignatureVerificationError` | `sign` doesn't match, or a field holds an object or a list |
 
 `AsyncKbzPay` raises the same errors. `ApiError` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `gateway_code` and its `msg` in `gateway_message`. When KBZ can't be reached or the request times out, the calls raise `ApiError` with the original `httpx` error as `__cause__`.

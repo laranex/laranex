@@ -143,11 +143,37 @@ return [
 ];
 ```
 
+## HTTP Client
+
+```php
+'http' => [
+    'timeout' => env('MYANMAR_PAYMENTS_HTTP_TIMEOUT', 30),
+],
+```
+
+Gateway calls go through Laravel's `Http` client, so `Http::fake()` intercepts them in tests and request events fire for them; see [Testing](/laravel-myanmar-payments/testing). `timeout` is in seconds and applies to gateway calls only. When a gateway can't be reached, the call throws `ApiException` with `httpStatus` `0`.
+
 ## Auto-submit Form Route
+
+```php
+'form_route' => [
+    'enabled'     => true,
+    'path'        => 'myanmar-payments/form',
+    'middleware'  => ['web'],
+    'ttl_minutes' => 30,
+],
+```
 
 AYA Pay and CyberSource need the customer's browser to POST a signed form. The package registers a `GET myanmar-payments/form` route (named `myanmar-payments.form`) that renders that form and submits it, and sets `FormPayment::$autoSubmitUrl` to an encrypted link to it. Links expire after `ttl_minutes`; an invalid or expired link answers `410 Gone`. The page is sent with `Cache-Control: no-store`.
 
-Set `form_route.enabled` to `false` to drop the route and build the form yourself, see [Form Payments](/laravel-myanmar-payments/payment-flows#form-payments).
+| Key | Meaning |
+|---|---|
+| `enabled` | Register the route. When `false`, `autoSubmitUrl` is `null`; build the form yourself, see [Form Payments](/laravel-myanmar-payments/payment-flows#form-payments) |
+| `path` | The route path |
+| `middleware` | Middleware for the route, e.g. rate limiting. Don't add authentication: the customer may arrive from a gateway or another device |
+| `ttl_minutes` | How long a link stays valid |
+
+Links are encrypted with `APP_KEY` and start with your app's URL (`APP_URL`, or the current request's host).
 
 ## Cache
 

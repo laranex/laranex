@@ -7,7 +7,7 @@ description: NestJS Myanmar Payments is built for humans and AI agents. Install 
 
 NestJS Myanmar Payments is built for humans and AI agents. These docs are written for developers, and the package also ships an agent skill: a short guide that teaches coding agents such as Claude Code, Codex and Cursor how to install, configure and use NestJS Myanmar Payments the way it's meant to be used.
 
-## Installing the skill
+## With any agent
 
 ```bash
 npx skills add laranex/nestjs-myanmar-payments
@@ -17,9 +17,9 @@ Or copy `skills/nestjs-myanmar-payments` from the [repository](https://github.co
 
 ## What the skill covers
 
-Accept KBZ Pay, Wave Money, AYA Pay, Yoma MMQR and CyberSource payments in a NestJS app with @laranex/nestjs-myanmar-payments: module, injectable service, verified callbacks on Express or Fastify, the auto-submit form route and fakes in tests.
+Integrate Myanmar payment gateways (KBZ Pay, Wave Money, AYA Pay, Yoma MMQR, CyberSource) in a NestJS app with @laranex/nestjs-myanmar-payments.
 
-It is written from the package source and kept in the repository next to the code; a test checks that every class, decorator and method it names exists, so agents follow the same API, configuration and conventions these docs describe.
+It is written from the package source and kept in the repository next to the code, so agents follow the same API, configuration and conventions these docs describe.
 
 ## Keeping it current
 

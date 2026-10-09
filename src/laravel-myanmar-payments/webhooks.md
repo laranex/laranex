@@ -7,7 +7,7 @@ description: The recommended way to handle gateway webhooks in a Laravel app - v
 
 The package verifies a webhook and builds the acknowledgement; what you do with it lives in your app. The flow below is the one we recommend for production: it answers the gateway fast, never loses a notification, and fulfills each order exactly once even when the gateway retries.
 
-1. **Verify** the webhook with `handleCallback()`.
+1. **Verify** the webhook with `MyanmarPayments::handleCallback($gateway, $request)`.
 2. **Store** the raw call in your own table, including rejected ones for debugging.
 3. **Acknowledge** right away with `MyanmarPayments::acknowledge($callback)`, so the gateway stops retrying.
 4. **Process once** in a queued job: skip what is already processed, lock the order, retry with backoff, keep the last error.
@@ -117,7 +117,7 @@ Route::post('/webhooks/payments/{gateway}', PaymentWebhookController::class)
     ->name('payments.webhook');
 ```
 
-Use `route('payments.webhook', 'kbz-pay')` as the gateway's callback URL.
+Use `route('payments.webhook', 'kbz-pay')` as the gateway's callback URL. The names are the ones `MyanmarPayments::gateways()` returns.
 
 ```php
 namespace App\Http\Controllers;
@@ -129,7 +129,6 @@ use Illuminate\Http\Response;
 use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
 use Laranex\LaravelMyanmarPayments\Http\CallbackResponse;
 use Laranex\PhpMyanmarPayments\Exceptions\SignatureVerificationException;
-use Laranex\PhpMyanmarPayments\Results\PaymentCallback;
 
 class PaymentWebhookController extends Controller
 {
@@ -144,7 +143,7 @@ class PaymentWebhookController extends Controller
         ];
 
         try {
-            $callback = $this->verify($gateway, $request);
+            $callback = MyanmarPayments::handleCallback($gateway, $request);
         } catch (SignatureVerificationException $e) {
             PaymentWebhook::create($raw + [
                 'verified' => false,
@@ -166,19 +165,6 @@ class PaymentWebhookController extends Controller
         ProcessPaymentWebhook::dispatch($webhook);
 
         return MyanmarPayments::acknowledge($callback);
-    }
-
-    private function verify(string $gateway, Request $request): PaymentCallback
-    {
-        $driver = match ($gateway) {
-            'kbz-pay' => MyanmarPayments::kbzPay(),
-            'wave-money' => MyanmarPayments::waveMoney(),
-            'aya-pay' => MyanmarPayments::ayaPay(),
-            'yoma-mmqr' => MyanmarPayments::yomaMmqr(),
-            'cyber-source' => MyanmarPayments::cyberSource(),
-        };
-
-        return $driver->handleCallback($request);
     }
 }
 ```
@@ -203,6 +189,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Laranex\PhpMyanmarPayments\Amount;
 use Laranex\PhpMyanmarPayments\Enums\PaymentStatus;
 use RuntimeException;
 use Throwable;
@@ -282,11 +269,14 @@ class ProcessPaymentWebhook implements ShouldQueue
                 return;
             }
 
-            $paid = (string) $webhook->amount;
-
-            if (! $this->sameAmount($paid, $order->amount)) {
+            // Yoma MMQR's callback carries no amount; its amount was fixed
+            // at checkout.
+            if (
+                $webhook->amount !== null
+                && ! Amount::parse($order->amount)->equals($webhook->amount)
+            ) {
                 throw new RuntimeException(
-                    "Paid {$paid}, expected {$order->amount}"
+                    "Paid {$webhook->amount}, expected {$order->amount}"
                     ." for order {$order->number}.",
                 );
             }
@@ -296,18 +286,6 @@ class ProcessPaymentWebhook implements ShouldQueue
                 'gateway_reference' => $webhook->gateway_reference,
             ]);
         });
-    }
-
-    /**
-     * Compares decimal strings, so "1000", "1000.0" and "1000.00" are equal.
-     */
-    private function sameAmount(string $paid, string $expected): bool
-    {
-        $normalize = fn (string $amount): string => str_contains($amount, '.')
-            ? rtrim(rtrim($amount, '0'), '.')
-            : $amount;
-
-        return $normalize($paid) === $normalize($expected);
     }
 
     public function failed(Throwable $e): void

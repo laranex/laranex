@@ -68,7 +68,7 @@ return response()->json($payment->toArray());
 | Parameter | Type | Required | Rules |
 |---|---|---|---|
 | `orderId` | `string` | Yes | Unique per order. Letters, digits and `_` only, at most 40 characters |
-| `amount` | `Amount\|int` | Yes | Kyat, greater than 0, at most 2 decimal places, e.g. `10000` or `Amount::parse('1000.50')`. KBZ only accepts MMK |
+| `amount` | `Amount\|int` | Yes | Kyat, greater than 0, at most 2 decimal places, e.g. `10000` or `Amount::parse('10000.50')`. KBZ only accepts MMK |
 | `callbackUrl` | `string` | Yes | Public URL KBZ posts the result to. At most 512 characters, no query string |
 | `title` | `?string` | No | Product name shown to the customer |
 | `timeoutMinutes` | `?int` | No | 1 to 120. `null` leaves it to KBZ (120) |
@@ -179,9 +179,9 @@ What KBZ Pay puts in each property. See [Results](/laravel-myanmar-payments/refe
 | `gatewayReference` | KBZ `mm_order_id` |
 | `amount` | KBZ `total_amount`, e.g. `10000` |
 | `raw` | The verified `Request`: `appid`, `notify_time`, `merch_code`, `merch_order_id`, `mm_order_id`, `total_amount`, `trans_currency`, `trade_status`, `trans_end_time`, `callback_info`, `nonce_str`, `sign_type`, `sign` |
-| `acknowledgement()` | HTTP `200`, body `success`, `Content-Type: text/plain` |
+| `acknowledgement` | HTTP `200`, body `success`, `Content-Type: text/plain` |
 
-`MyanmarPayments::acknowledge($callback)` turns `acknowledgement()` into a `CallbackResponse` (`Responsable`). `handleCallback()` accepts an `Illuminate\Http\Request` or a `CallbackRequest`.
+`MyanmarPayments::acknowledge($callback)` turns `acknowledgement` into a `CallbackResponse` (`Responsable`). `handleCallback()` accepts an `Illuminate\Http\Request` or a `CallbackRequest`.
 
 ## Statuses
 
@@ -196,7 +196,7 @@ What KBZ Pay puts in each property. See [Results](/laravel-myanmar-payments/refe
 
 ## Signing
 
-KBZ signs requests, the in-app `orderInfo` and notifications the same way: every non-empty field except `sign` and `sign_type`, sorted by key, joined as raw `key=value` pairs, with `&key=<app key>` appended, hashed with SHA-256 and uppercased. The package signs every request and verifies every notification for you; its signer is internal, so there is no public API for custom calls.
+KBZ signs requests, the in-app `orderInfo` and notifications the same way: every non-empty field except `sign` and `sign_type`, sorted by key, joined as raw `key=value` pairs, with `&key=<app key>` appended, hashed with SHA-256 and uppercased. The package signs every request and verifies every notification for you. The SDK exposes the signer as `kbzPay()->signer` (a `KbzPaySigner`) for custom calls and test fixtures.
 
 ## Errors
 

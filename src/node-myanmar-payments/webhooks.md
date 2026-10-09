@@ -9,7 +9,7 @@ The package verifies a webhook and builds the acknowledgement; what you do with 
 
 1. **Verify** the webhook with `handleCallback`.
 2. **Store** the raw call in your own table, including rejected ones for debugging.
-3. **Acknowledge** right away with `callback.acknowledgement.send(res)`, so the gateway stops retrying.
+3. **Acknowledge** right away with `callback.acknowledgement`, so the gateway stops retrying.
 4. **Process once** in a background worker: claim the row, skip what is already fulfilled, retry with backoff, keep the last error.
 
 <SequenceDiagram
@@ -20,13 +20,13 @@ The package verifies a webhook and builds the acknowledgement; what you do with 
     { from: 'HTTP handler', to: 'HTTP handler', label: 'Verify the signature', detail: 'gateway.handleCallback(request)' },
     { from: 'HTTP handler', to: 'Gateway', label: 'Invalid: store as rejected, 400', detail: 'SignatureVerificationError', response: true },
     { from: 'HTTP handler', to: 'HTTP handler', label: 'Store the call', detail: 'INSERT INTO payment_webhooks' },
-    { from: 'HTTP handler', to: 'Gateway', label: 'Acknowledge immediately', detail: 'callback.acknowledgement.send(res)', response: true },
+    { from: 'HTTP handler', to: 'Gateway', label: 'Acknowledge immediately', detail: 'callback.acknowledgement', response: true },
     { from: 'Worker', to: 'Worker', label: 'Claim the next row', detail: 'locked_until, attempts + 1' },
     { from: 'Worker', to: 'Worker', label: 'Fulfill once, or retry with backoff', detail: 'paid_at IS NULL, available_at' },
   ]"
 />
 
-None of this is part of the package: copy the code into your app and adapt the fulfillment to your own orders table. The sample uses `node:http` and the built-in `node:sqlite` module (`DatabaseSync`, available without a flag from Node.js 22.13). On Node.js 20, use [`better-sqlite3`](https://www.npmjs.com/package/better-sqlite3), whose `prepare().run()/get()` API is the same; with PostgreSQL or MySQL, use your driver's async queries and placeholders.
+None of this is part of the package: copy the code into your app and adapt the fulfillment to your own orders table. The sample uses the built-in `node:sqlite` module (`DatabaseSync`, available without a flag from Node.js 22.13) and is framework-independent; on Node.js 20, use [`better-sqlite3`](https://www.npmjs.com/package/better-sqlite3), whose `prepare().run()/get()` API is the same. With PostgreSQL or MySQL, use your driver's placeholders and the same queries, or express them with your ORM.
 
 ## Table
 
@@ -56,10 +56,12 @@ CREATE INDEX payment_webhooks_order
 
 ## Handler
 
+`handle` takes the gateway name and the `CallbackRequest`, and returns the `Acknowledgement` to send, including the `400` for a rejected call, so every framework writes the answer the same way:
+
 ```ts
-import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { DatabaseSync } from 'node:sqlite';
 import {
+  Acknowledgement,
   CallbackRequest,
   SignatureVerificationError,
   type PaymentCallback,
@@ -83,18 +85,12 @@ export class Webhooks {
   ) {}
 
   /** Verifies, stores and acknowledges. Processing happens in work(). */
-  async handle(
-    name: string,
-    req: IncomingMessage,
-    res: ServerResponse,
-  ): Promise<void> {
+  handle(name: string, request: CallbackRequest): Acknowledgement {
     const gateway = this.gateways[name];
     if (gateway === undefined) {
-      res.writeHead(404).end();
-      return;
+      return new Acknowledgement({ status: 404 });
     }
 
-    const request = await CallbackRequest.fromNodeRequest(req);
     const headers = JSON.stringify(request.headers);
     const time = now();
 
@@ -113,8 +109,7 @@ export class Webhooks {
            VALUES (?, 0, ?, ?, ?, ?, ?)`,
         )
         .run(name, request.body, headers, error.message, time, time);
-      res.writeHead(400).end('invalid signature');
-      return;
+      return new Acknowledgement({ status: 400, body: 'invalid signature' });
     }
 
     try {
@@ -139,11 +134,10 @@ export class Webhooks {
         );
     } catch {
       // Not stored: answer 500 so the gateway retries later.
-      res.writeHead(500).end('try again');
-      return;
+      return new Acknowledgement({ status: 500, body: 'try again' });
     }
 
-    callback.acknowledgement.send(res);
+    return callback.acknowledgement;
   }
 }
 ```
@@ -157,6 +151,8 @@ export class Webhooks {
 - **Retries:** a failure keeps `last_error` and waits `BACKOFF` before the next attempt, up to `MAX_ATTEMPTS`.
 
 ```ts
+import { Amount } from '@laranex/myanmar-payments';
+
 const MAX_ATTEMPTS = 5;
 const LOCK_SECONDS = 120;
 /** The wait before each retry, in seconds. */
@@ -264,11 +260,11 @@ export class Webhooks {
     if (order.paid_at !== null) {
       return; // already fulfilled by an earlier webhook
     }
-    // Yoma MMQR callbacks carry no amount: Yoma fixed it when the order was
-    // checked out.
+    // Yoma MMQR callbacks carry no amount: Yoma fixed it when the order
+    // was checked out.
     if (
       webhook.amount !== null &&
-      normalizeAmount(webhook.amount) !== normalizeAmount(order.amount)
+      !Amount.parse(order.amount).equals(webhook.amount)
     ) {
       throw new Error(
         `paid ${webhook.amount}, expected ${order.amount}` +
@@ -286,24 +282,24 @@ export class Webhooks {
       .run(now(), webhook.gateway_reference, webhook.order_id);
   }
 }
-
-/** Makes "1000", "1000.0" and "1000.00" compare equal. */
-function normalizeAmount(amount: string): string {
-  return amount.includes('.')
-    ? amount.replace(/0+$/, '').replace(/\.$/, '')
-    : amount;
-}
 ```
 
-The sample assumes an `orders` table with a unique `number`, the `amount` as a decimal string, and nullable `paid_at` and `gateway_reference`. With an async driver, make `processNext` and `fulfill` `async` and `await` each query; the logic stays the same.
+The sample assumes an `orders` table with a unique `number`, the `amount` as decimal text, and nullable `paid_at` and `gateway_reference`. `Amount.equals` makes `1000`, `1000.0` and `1000.00` compare equal. With an async database driver, make `processNext` and `fulfill` `async` and `await` each query; the logic stays the same.
 
 ## Wiring It Up
+
+With `node:http`, one route serves every gateway and the same process runs the worker; any other framework builds the `CallbackRequest` and writes the `Acknowledgement` the same way (see [Framework Integration](/node-myanmar-payments/framework-integration)):
 
 ```ts
 import { createServer } from 'node:http';
 import { DatabaseSync } from 'node:sqlite';
-import { KbzPay } from '@laranex/myanmar-payments/kbz-pay';
-import { WaveMoney } from '@laranex/myanmar-payments/wave-money';
+import {
+  CallbackRequest,
+  KbzPay,
+  WaveMoney,
+} from '@laranex/myanmar-payments';
+
+import { Webhooks } from './webhooks.js';
 
 const db = new DatabaseSync('payments.sqlite');
 const webhooks = new Webhooks(db, {
@@ -311,15 +307,14 @@ const webhooks = new Webhooks(db, {
   'wave-money': WaveMoney.fromEnv(process.env),
 });
 
-createServer((req, res) => {
+createServer(async (req, res) => {
   const match = /^\/webhooks\/payments\/([\w-]+)$/.exec(req.url ?? '');
-  if (req.method === 'POST' && match) {
-    webhooks
-      .handle(match[1] as string, req, res)
-      .catch(() => res.writeHead(500).end());
+  if (req.method !== 'POST' || match === null) {
+    res.writeHead(404).end();
     return;
   }
-  res.writeHead(404).end();
+  const request = await CallbackRequest.fromNodeRequest(req);
+  webhooks.handle(match[1] as string, request).send(res);
 }).listen(8080);
 
 const controller = new AbortController();
@@ -327,7 +322,7 @@ void webhooks.work(controller.signal);
 process.on('SIGTERM', () => controller.abort());
 ```
 
-Use `https://shop.test/webhooks/payments/kbz-pay` (and so on) as each gateway's callback URL.
+Use `https://shop.test/webhooks/payments/kbz-pay` (and so on) as each gateway's callback URL. In production, run the worker as its own process instead (`webhooks.work(new AbortController().signal)` from a separate script or a systemd service), or call `processNext()` from BullMQ, a cron job or another job runner.
 
 ## Replay and Prune
 
@@ -338,6 +333,8 @@ UPDATE payment_webhooks
 SET attempts = 0, available_at = 0, last_error = NULL
 WHERE id = 42;
 ```
+
+To run a stored call through verification again, e.g. after rotating a key, rebuild it from the stored body and headers: `CallbackRequest.from({ body: row.body, headers: JSON.parse(row.headers) })`.
 
 Delete old processed and rejected rows once a day; failed rows stay until you replay or delete them:
 

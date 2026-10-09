@@ -125,7 +125,7 @@ def cybersource_callback(request):
         # callback.gateway_reference is CyberSource's transaction_id
         ...
 
-    ack = callback.acknowledgement()
+    ack = callback.acknowledgement
     return HttpResponse(ack.body, status=ack.status, headers=ack.headers)
 ```
 
@@ -175,7 +175,7 @@ What CyberSource puts in each field. See [Results](/python-myanmar-payments/refe
 | `gateway_reference` | CyberSource `transaction_id`. `None` when it is not signed |
 | `amount` | CyberSource `auth_amount`, falling back to `req_amount` when it is missing or empty, e.g. `10000`. Signed values only |
 | `raw` | The signed fields of the verified post plus `signature`, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `auth_amount`, `auth_code`, `req_reference_number`, `req_amount`, `req_currency`, `req_transaction_uuid`, `signed_field_names`, `signed_date_time`. Unsigned fields are left out |
-| `acknowledgement()` | HTTP `200`, empty body, `Content-Type: text/plain` |
+| `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
 ## Statuses
 
@@ -192,6 +192,6 @@ What CyberSource puts in each field. See [Results](/python-myanmar-payments/refe
 | Call | Raises | When |
 |---|---|---|
 | `initiate()` | `InvalidPaymentDataError` | `CyberSource.validate(data)` fails. Nothing is signed |
-| `handle_callback()` | `SignatureVerificationError` | `signature` doesn't match, a field listed in `signed_field_names` is missing, or `decision` or `req_reference_number` isn't signed |
+| `handle_callback()` | `SignatureVerificationError` | `signature` doesn't match, a field listed in `signed_field_names` is missing or holds an object or a list, or `decision` or `req_reference_number` isn't signed |
 
 CyberSource makes no HTTP calls, so nothing raises `ApiError`.

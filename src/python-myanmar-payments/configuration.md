@@ -5,7 +5,7 @@ description: Configure Python Myanmar Payments with one config class per gateway
 
 # Configuration
 
-Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes keyword arguments. Gateways take the config object, and a missing credential raises a `ConfigurationError` naming it:
+Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes keyword arguments. Gateways take the config object or a mapping of its keyword arguments (`KbzPay({"app_id": "...", ...})`), and a missing credential raises a `ConfigurationError` naming it:
 
 ```python
 from python_myanmar_payments import ConfigurationError, KbzPay, KbzPayConfig
@@ -24,7 +24,7 @@ kbz = KbzPay(config)
 
 ## Sandbox and Production
 
-Every config has a `sandbox` argument that defaults to `True`, so a forgotten setting never sends real payments. Pass `sandbox=False` together with production credentials when you go live.
+Every config has a `sandbox` argument that defaults to `True`, so a forgotten setting never sends real payments. Pass `sandbox=False` together with production credentials when you go live. `sandbox` also takes text, read like `*_SANDBOX`: `"false"`, `"0"`, `"f"`, `"no"` or `"off"` (in any case) selects production, and anything else keeps the sandbox.
 
 URL arguments are optional overrides; leave them unset to use the endpoint matching `sandbox`. Each config object exposes the URL actually used as an attribute (`config.api_url`, `config.base_url`, …).
 
@@ -37,7 +37,7 @@ URL arguments are optional overrides; leave them unset to use the endpoint match
 | `app_id` | `str` | Yes | `appid` issued by KBZ |
 | `app_key` | `str` | Yes | Secret key used to sign requests |
 | `merchant_code` | `str` | Yes | `merch_code` issued by KBZ |
-| `sandbox` | `bool` | No | `True` (default) uses UAT |
+| `sandbox` | `bool \| str` | No | `True` (default) uses UAT |
 | `api_url` | `str` | No | Override the API base URL |
 | `pwa_url` | `str` | No | Override the PWA checkout URL. Normalized to end with `/`, e.g. `…/pwa/#/` |
 
@@ -49,7 +49,7 @@ URL arguments are optional overrides; leave them unset to use the endpoint match
 | `secret_key` | `str` | Yes | Hash secret key issued by Wave |
 | `merchant_name` | `str` | Yes | Shown on Wave's payment page |
 | `time_to_live_seconds` | `int` | No | Seconds the customer has to pay. Unset or not a positive integer means 300 |
-| `sandbox` | `bool` | No | `True` (default) uses the test host |
+| `sandbox` | `bool \| str` | No | `True` (default) uses the test host |
 | `base_url` | `str` | No | Override the API base URL |
 | `authenticate_url` | `str` | No | Override the host the customer is redirected to |
 
@@ -59,7 +59,7 @@ URL arguments are optional overrides; leave them unset to use the endpoint match
 |---|---|---|---|
 | `app_key` | `str` | Yes | Public application key |
 | `app_secret` | `str` | Yes | Secret used for checksums |
-| `sandbox` | `bool` | No | `True` (default) uses UAT |
+| `sandbox` | `bool \| str` | No | `True` (default) uses UAT |
 | `base_url` | `str` | No | Override the gateway base URL |
 
 ### YomaMmqrConfig
@@ -71,7 +71,7 @@ URL arguments are optional overrides; leave them unset to use the endpoint match
 | `client_secret` | `str` | Yes | OAuth client secret |
 | `webhook_hash_key` | `str` | Yes | Hash key issued by Yoma for verifying callbacks. A missing one is reported as `webhook_hashkey` |
 | `webhook_secret` | `str` | No | When set, callbacks must carry it in `X-Webhook-Secret` |
-| `sandbox` | `bool` | No | `True` (default) uses UAT |
+| `sandbox` | `bool \| str` | No | `True` (default) uses UAT |
 | `base_url` | `str` | No | Override the API base URL |
 | `api_version` | `str` | No | The `{version}` path segment, default `v1rc` (`YomaMmqrConfig.DEFAULT_API_VERSION`) |
 
@@ -82,7 +82,7 @@ URL arguments are optional overrides; leave them unset to use the endpoint match
 | `profile_id` | `str` | Yes | Secure Acceptance profile ID |
 | `access_key` | `str` | Yes | Profile access key |
 | `secret_key` | `str` | Yes | Profile secret key used to sign fields |
-| `sandbox` | `bool` | No | `True` (default) uses the test environment |
+| `sandbox` | `bool \| str` | No | `True` (default) uses the test environment |
 | `base_url` | `str` | No | Override the Secure Acceptance base URL |
 
 ## Default Endpoints
@@ -186,7 +186,7 @@ payments.wave_money()
 from_env = MyanmarPayments.from_env()
 ```
 
-The keyword arguments `kbz_pay`, `wave_money`, `aya_pay`, `yoma_mmqr` and `cyber_source` take the config objects, and the facade also takes the `http_client`, `timeout` and `token_cache` options below, shared by every gateway it builds. `payments.cyber_source()` returns the one `CyberSource` class.
+The keyword arguments `kbz_pay`, `wave_money`, `aya_pay`, `yoma_mmqr` and `cyber_source` take the config objects or mappings of their keyword arguments, and the facade also takes the `http_client`, `timeout` and `token_cache` options below, shared by every gateway it builds. `payments.cyber_source()` returns the one `CyberSource` class.
 
 `AsyncMyanmarPayments` is the async twin: same arguments, but `kbz_pay()` returns an `AsyncKbzPay`, `wave_money()` an `AsyncWaveMoney` and so on, and `http_client` takes an `httpx.AsyncClient`.
 
@@ -233,7 +233,7 @@ A failed request (connection error, timeout, invalid URL) raises an `ApiError` w
 
 ## Token Cache
 
-Yoma MMQR authenticates with an OAuth access token that lasts hours. `YomaMmqr` keeps it in a `TokenCache`, a protocol with three methods:
+Yoma MMQR authenticates with an OAuth access token that lasts hours. `YomaMmqr` keeps it in a `TokenCache`, under a key derived from the base URL and client ID that every Laranex payments SDK shares (see [Access Tokens](/python-myanmar-payments/drivers/yoma-mmqr#access-tokens)). `TokenCache` is a protocol with three methods:
 
 ```python
 from typing import Protocol

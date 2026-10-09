@@ -126,7 +126,7 @@ if (result.isSuccessful()) {
 
 ## Responses
 
-What KBZ Pay puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `undefined`. `raw` holds plain JavaScript values (JSON numbers become `number`s), while the typed fields such as `amount` keep the exact text KBZ sent.
+What KBZ Pay puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `undefined`. `raw` holds plain JavaScript values, with JSON numbers kept as their exact text in a `string` (`1000.50` stays `"1000.50"`).
 
 ### `pwa()` → `RedirectPayment` {#pwa-response}
 
@@ -209,6 +209,6 @@ KBZ signs requests, the in-app `orderInfo` and notifications the same way: every
 | `pwa()`, `qr()`, `app()` | `ApiError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, or without a `prepay_id` |
 | `qr()` | `ApiError` | KBZ returns no `qrCode` |
 | `status()` | `ApiError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, e.g. for an unknown order |
-| `handleCallback()` | `SignatureVerificationError` | `sign` doesn't match |
+| `handleCallback()` | `SignatureVerificationError` | `sign` doesn't match, or a field holds an object or array |
 
 The async calls reject with these errors. `ApiError` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `gatewayCode` and its `msg` in `gatewayMessage`. When KBZ can't be reached, the request times out or the `signal` aborts, the calls throw `ApiError` with the original error as `cause`.

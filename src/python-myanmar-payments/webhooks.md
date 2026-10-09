@@ -9,7 +9,7 @@ The package verifies a webhook and builds the acknowledgement; what you do with 
 
 1. **Verify** the webhook with `handle_callback`.
 2. **Store** the raw call in your own table, including rejected ones for debugging.
-3. **Acknowledge** right away with `callback.acknowledgement()`, so the gateway stops retrying.
+3. **Acknowledge** right away with `callback.acknowledgement`, so the gateway stops retrying.
 4. **Process once** in a background worker: claim the row, skip what is already fulfilled, retry with backoff, keep the last error.
 
 <SequenceDiagram
@@ -20,7 +20,7 @@ The package verifies a webhook and builds the acknowledgement; what you do with 
     { from: 'HTTP handler', to: 'HTTP handler', label: 'Verify the signature', detail: 'gateway.handle_callback(request)' },
     { from: 'HTTP handler', to: 'Gateway', label: 'Invalid: store as rejected, 400', detail: 'SignatureVerificationError', response: true },
     { from: 'HTTP handler', to: 'HTTP handler', label: 'Store the call', detail: 'INSERT INTO payment_webhooks' },
-    { from: 'HTTP handler', to: 'Gateway', label: 'Acknowledge immediately', detail: 'callback.acknowledgement()', response: true },
+    { from: 'HTTP handler', to: 'Gateway', label: 'Acknowledge immediately', detail: 'callback.acknowledgement', response: true },
     { from: 'Worker', to: 'Worker', label: 'Claim the next row', detail: 'locked_until, attempts + 1' },
     { from: 'Worker', to: 'Worker', label: 'Fulfill once, or retry with backoff', detail: 'paid_at IS NULL, available_at' },
   ]"
@@ -160,7 +160,7 @@ class Webhooks:
             # Not stored: answer 500 so the gateway retries later.
             return Acknowledgement(status=500, body="try again")
 
-        return callback.acknowledgement()
+        return callback.acknowledgement
 ```
 
 ## Worker
@@ -285,7 +285,7 @@ class Webhooks:
         )
 ```
 
-The sample assumes an `orders` table with a unique `number`, the `amount` as decimal text, and nullable `paid_at` and `gateway_reference`. `Amount.equals` makes `1000`, `1000.0` and `1000.00` compare equal. With an async database driver, make `process_next` and `fulfill` coroutines and `await` each query; the logic stays the same.
+The sample assumes an `orders` table with a unique `number`, the `amount` as decimal text, and nullable `paid_at` and `gateway_reference`. `Amount.equals` makes `1000`, `01000` and `1000.00` compare equal. With an async database driver, make `process_next` and `fulfill` coroutines and `await` each query; the logic stays the same.
 
 ## Wiring It Up
 
