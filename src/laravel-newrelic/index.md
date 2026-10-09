@@ -1,6 +1,6 @@
 ---
 name: Laravel New Relic
-description: "New Relic for Laravel: ship logs to New Relic Logs and report each Octane request and queue job as a transaction."
+description: "New Relic for Laravel: ship logs to New Relic Logs and report each Octane request as a named transaction."
 requirements:
   - PHP ^8.1
   - Laravel ^10.0|^11.0|^12.0|^13.0

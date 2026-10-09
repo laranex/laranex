@@ -1,6 +1,6 @@
 ---
 title: Usage
-description: Configure the newrelic log channel, the Logs API host and the Octane and queue transaction listeners.
+description: Configure the newrelic log channel, the Logs API host and the Octane transaction listeners, and see how queue jobs are reported.
 ---
 
 # Usage
@@ -21,9 +21,8 @@ Log::channel('newrelic')->error('Payment failed', ['exception' => $e]);
 |---|---|---|---|
 | `license_key` | `NEW_RELIC_LICENSE_KEY` (or `NEW_RELIC_API_KEY`) | `null` | License (ingest) key for the Logs API. Falls back to the agent's `newrelic.license` INI value. |
 | `host` | `NEW_RELIC_LOG_HOST` | `null` | Logs API host. When empty, it is picked from the license key's region. |
-| `app_name` | `NEW_RELIC_APP_NAME` | `null` | APM application that Octane and queue transactions are reported to. Falls back to the agent's `newrelic.appname` INI value. |
+| `app_name` | `NEW_RELIC_APP_NAME` | `null` | APM application that Octane transactions are reported to. Falls back to the agent's `newrelic.appname` INI value. |
 | `transactions.octane` | `NEW_RELIC_OCTANE_TRANSACTIONS` | `true` | One web transaction per Octane request, named after its route. Cast to a boolean. |
-| `transactions.queue` | `NEW_RELIC_QUEUE_TRANSACTIONS` | `true` | One background transaction per queue job, processed or failed. Cast to a boolean. |
 | `transport.timeout` | `NEW_RELIC_LOG_TIMEOUT` | `5` | Seconds to wait for the Logs API, for both the connection and the whole request. |
 | `transport.retries` | `NEW_RELIC_LOG_RETRIES` | `3` | Attempts before a failed Logs API request is given up. |
 
@@ -73,14 +72,13 @@ The request and user are resolved per record, so they stay correct on Octane.
 
 ## Transactions
 
-Long-running processes would otherwise report as one endless transaction. The package splits them per unit of work. The listeners are registered automatically whether or not Octane is installed (events that never fire cost nothing), and every agent call does nothing when the agent is not loaded:
+An Octane worker would otherwise report as one endless transaction. The package splits it per request. The listeners are registered automatically whether or not Octane is installed (events that never fire cost nothing), and every agent call does nothing when the agent is not loaded:
 
 | Event | Listener | Effect |
 |---|---|---|
 | Octane `RequestReceived` | `Listeners\StartWebTransaction` | Start a new transaction and mark it as a web transaction |
 | Octane `RequestTerminated` | `Listeners\NameWebTransaction`, then `Listeners\EndTransaction` | Name the transaction after the request's route, then end it |
 | Octane `WorkerStarting` | `Listeners\EndTransaction` | End the transaction the worker booted in |
-| Queue `JobProcessed`, `JobExceptionOccurred` | `Listeners\RestartBackgroundTransaction` | End the transaction, start a new one and mark it as a background job |
 
 ::: warning New Relic does not officially support Octane yet
 The New Relic PHP agent supports [Apache with mod_php and PHP-FPM](https://docs.newrelic.com/docs/apm/agents/php-agent/getting-started/php-agent-compatibility-requirements/) as web servers. Octane servers are not on that list: thread-safe (ZTS) PHP builds such as FrankenPHP are not supported, and Swoole support is [on New Relic's roadmap](https://github.com/newrelic/newrelic-php-agent/issues/1041). The Octane listeners make the agent report one transaction per request in a long-running worker, but results depend on your server and agent version, so check them in New Relic before you rely on them.
@@ -101,20 +99,29 @@ Before ending it, `NameWebTransaction` names the transaction with `newrelic_name
 
 Route names that Laravel generates for cached unnamed routes (`generated::...`) are skipped. Only Octane requests are named: PHP-FPM and other classic requests keep the agent's own naming, and turning `transactions.octane` off turns naming off as well.
 
-### Application name and switches
+### Queue jobs
 
-New transactions are reported to `newrelic.app_name`, or to the agent's `newrelic.appname` INI value when it is empty. With neither set, no transaction is started.
+Queue jobs need nothing from the package. The New Relic PHP agent instruments Laravel's queue worker itself (it wraps `Illuminate\Queue\Worker::process()`): for every job it ends the worker's idle transaction, starts a background transaction named `JobClass (connection)` (for example `App\Jobs\SendInvoice (redis)`), records the job's exception on it when the job fails, and ends it when the job is done. Time spent waiting for the next job goes into a separate transaction that the agent discards.
 
-Turn either group off with `NEW_RELIC_OCTANE_TRANSACTIONS=false` / `NEW_RELIC_QUEUE_TRANSACTIONS=false`, or in `config/newrelic.php`:
+The package still sends the buffered log records after every queue job (`JobProcessed` and `JobExceptionOccurred`), so a worker doesn't hold its logs until it exits.
+
+::: tip Don't restart transactions around queue jobs
+Queue event listeners and job middleware run inside the agent's job transaction. Ending or starting a transaction there (as v1 of this package did) cuts the job's named transaction short and leaves a duplicate, unnamed one.
+:::
+
+### Application name and switch
+
+New Octane transactions are reported to `newrelic.app_name`, or to the agent's `newrelic.appname` INI value when it is empty. With neither set, no transaction is started.
+
+Turn the Octane listeners off with `NEW_RELIC_OCTANE_TRANSACTIONS=false`, or in `config/newrelic.php`:
 
 ```php
 'transactions' => [
-    'octane' => true,
-    'queue' => false,
+    'octane' => false,
 ],
 ```
 
-The `transactions` switches only control these listeners. The buffered log records are still sent after each Octane request and queue job.
+The switch only controls these listeners. The buffered log records are still sent after each Octane request and queue job.
 
 ## Without the agent
 
