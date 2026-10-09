@@ -129,14 +129,6 @@ onMounted(() => {
               <p class="lx-registry-desc">{{ pkg.description }}</p>
               <p class="lx-registry-reqs">{{ pkg.requirements.join(', ') }}</p>
             </div>
-            <div class="lx-registry-side">
-              <a :href="pkg.docsUrl" class="lx-link-btn">
-                Documentation
-              </a>
-              <a :href="pkg.github" class="lx-link-btn" target="_blank" rel="noopener noreferrer">
-                GitHub
-              </a>
-            </div>
           </li>
         </ul>
       </section>
