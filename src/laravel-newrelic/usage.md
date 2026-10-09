@@ -22,7 +22,7 @@ Log::channel('newrelic')->error('Payment failed', ['exception' => $e]);
 | `license_key` | `NEW_RELIC_LICENSE_KEY` (or `NEW_RELIC_API_KEY`) | `null` | License (ingest) key for the Logs API. Falls back to the agent's `newrelic.license` INI value. |
 | `host` | `NEW_RELIC_LOG_HOST` | `null` | Logs API host. When empty, it is picked from the license key's region. |
 | `app_name` | `NEW_RELIC_APP_NAME` | `null` | APM application that Octane and queue transactions are reported to. Falls back to the agent's `newrelic.appname` INI value. |
-| `transactions.octane` | `NEW_RELIC_OCTANE_TRANSACTIONS` | `true` | One web transaction per Octane request. Cast to a boolean. |
+| `transactions.octane` | `NEW_RELIC_OCTANE_TRANSACTIONS` | `true` | One web transaction per Octane request, named after its route. Cast to a boolean. |
 | `transactions.queue` | `NEW_RELIC_QUEUE_TRANSACTIONS` | `true` | One background transaction per queue job, processed or failed. Cast to a boolean. |
 | `transport.timeout` | `NEW_RELIC_LOG_TIMEOUT` | `5` | Seconds to wait for the Logs API, for both the connection and the whole request. |
 | `transport.retries` | `NEW_RELIC_LOG_RETRIES` | `3` | Attempts before a failed Logs API request is given up. |
@@ -77,9 +77,31 @@ Long-running processes would otherwise report as one endless transaction. The pa
 
 | Event | Listener | Effect |
 |---|---|---|
-| Octane `WorkerStarting`, `RequestTerminated` | `Listeners\EndTransaction` | End the current transaction |
 | Octane `RequestReceived` | `Listeners\StartWebTransaction` | Start a new transaction and mark it as a web transaction |
+| Octane `RequestTerminated` | `Listeners\NameWebTransaction`, then `Listeners\EndTransaction` | Name the transaction after the request's route, then end it |
+| Octane `WorkerStarting` | `Listeners\EndTransaction` | End the transaction the worker booted in |
 | Queue `JobProcessed`, `JobExceptionOccurred` | `Listeners\RestartBackgroundTransaction` | End the transaction, start a new one and mark it as a background job |
+
+::: warning New Relic does not officially support Octane yet
+The New Relic PHP agent supports [Apache with mod_php and PHP-FPM](https://docs.newrelic.com/docs/apm/agents/php-agent/getting-started/php-agent-compatibility-requirements/) as web servers. Octane servers are not on that list: thread-safe (ZTS) PHP builds such as FrankenPHP are not supported, and Swoole support is [on New Relic's roadmap](https://github.com/newrelic/newrelic-php-agent/issues/1041). The Octane listeners make the agent report one transaction per request in a long-running worker, but results depend on your server and agent version, so check them in New Relic before you rely on them.
+:::
+
+### Octane transactions
+
+An Octane worker boots Laravel once and then serves many requests, so without these listeners the agent records the whole worker as a single transaction. The package ends the boot transaction when the worker starts, starts a web transaction when a request arrives, and ends it when the request terminates.
+
+Before ending it, `NameWebTransaction` names the transaction with `newrelic_name_transaction()`. Under Octane the agent's own Laravel route naming often never runs (its hooks are installed when the application boots inside a recorded transaction, which an Octane worker often doesn't have), so transactions would otherwise all be named after the worker script. The name follows the agent's Laravel order (route name, then controller action) and falls back to the route's pattern, never the request URL, so URLs with IDs don't create a separate name each:
+
+| Matched route | Transaction name |
+|---|---|
+| Named route (`->name('blogs.show')`) | `blogs.show` |
+| Unnamed controller route | `App\Http\Controllers\BlogController@show` |
+| Unnamed closure route | The HTTP method and the route URI pattern, for example `GET /blogs/{blog}` |
+| No route (a 404, an `Octane::route()` route, or a response sent by middleware before routing) | `unknown` |
+
+Route names that Laravel generates for cached unnamed routes (`generated::...`) are skipped. Only Octane requests are named: PHP-FPM and other classic requests keep the agent's own naming, and turning `transactions.octane` off turns naming off as well.
+
+### Application name and switches
 
 New transactions are reported to `newrelic.app_name`, or to the agent's `newrelic.appname` INI value when it is empty. With neither set, no transaction is started.
 
