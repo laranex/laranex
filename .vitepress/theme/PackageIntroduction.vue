@@ -14,6 +14,11 @@ const pkg = computed(() => {
 <template>
   <div v-if="pkg">
     <h1>{{ pkg.name }}</h1>
+    <p class="pkg-badges">
+      <a v-for="badge in pkg.badges" :key="badge.alt" :href="badge.href" target="_blank" rel="noopener noreferrer">
+        <img :src="badge.src" :alt="badge.alt" height="20" />
+      </a>
+    </p>
     <p class="pkg-description">{{ pkg.description }}</p>
 
     <h2>Requirements</h2>
@@ -31,3 +36,22 @@ const pkg = computed(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.pkg-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 0;
+}
+
+.pkg-badges a {
+  display: inline-flex;
+  line-height: 0;
+}
+
+.pkg-badges img {
+  height: 20px;
+  width: auto;
+}
+</style>
