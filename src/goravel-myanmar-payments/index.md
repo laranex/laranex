@@ -10,5 +10,5 @@ install: go get github.com/laranex/goravel-myanmar-payments/v4
 head:
   - - meta
     - http-equiv: refresh
-      content: '0;url=./introduction.html'
+      content: '0;url=/goravel-myanmar-payments/introduction.html'
 ---

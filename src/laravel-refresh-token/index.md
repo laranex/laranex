@@ -10,5 +10,5 @@ github: https://github.com/laranex/laravel-refresh-token
 head:
   - - meta
     - http-equiv: refresh
-      content: '0;url=./introduction.html'
+      content: '0;url=/laravel-refresh-token/introduction.html'
 ---

@@ -9,5 +9,5 @@ github: https://github.com/laranex/laravel-biometric-auth
 head:
   - - meta
     - http-equiv: refresh
-      content: '0;url=./introduction.html'
+      content: '0;url=/laravel-biometric-auth/introduction.html'
 ---
