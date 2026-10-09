@@ -78,10 +78,6 @@ return redirect()->away($payment->url);
 
 Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: Wave marks `orderId` as optional in callbacks, while `merchantReferenceId` is always present. Read it from `$data->merchantReferenceId`.
 
-### Sandbox Host
-
-Wave's sandbox API is `https://preprodpayments.wavemoney.io:8107`, while the customer-facing authenticate page is served without the port, at `https://preprodpayments.wavemoney.io/authenticate`. The package uses both hosts by default; set `wave_money.base_url` and `wave_money.authenticate_url` (`WAVE_MONEY_BASE_URL`, `WAVE_MONEY_AUTHENTICATE_URL`) if Wave gives you others.
-
 ## Handling Callbacks
 
 ```php

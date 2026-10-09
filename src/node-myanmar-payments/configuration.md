@@ -99,10 +99,6 @@ URL options are optional overrides; leave them unset to use the endpoint matchin
 
 The URLs are static constants on the config classes, e.g. `KbzPayConfig.SANDBOX_API_URL`, `KbzPayConfig.PRODUCTION_PWA_URL`, `WaveMoneyConfig.SANDBOX_AUTHENTICATE_URL`, `YomaMmqrConfig.PRODUCTION_URL`.
 
-::: warning Wave sandbox host
-Wave's sandbox API listens on port 8107 (`https://preprodpayments.wavemoney.io:8107`), but it serves the customer-facing authenticate page without the port, at `https://preprodpayments.wavemoney.io/authenticate`. The package uses both hosts for you. If Wave gives you different hosts, set `baseUrl` and `authenticateUrl` (or `WAVE_MONEY_BASE_URL` and `WAVE_MONEY_AUTHENTICATE_URL`).
-:::
-
 ## From Environment Variables
 
 Every config class and gateway has `fromEnv(env)`, which defaults to `process.env`. The variable names match the [Laravel package](/laravel-myanmar-payments/configuration), so one `.env` file works for both.

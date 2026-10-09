@@ -97,10 +97,6 @@ URL fields are optional overrides; leave them empty to use the endpoint matching
 
 The URLs are exported constants, e.g. `kbzpay.SandboxAPIURL`, `kbzpay.ProductionPWAURL`, `wavemoney.SandboxAuthenticateURL`, `yomammqr.ProductionURL`.
 
-::: warning Wave sandbox host
-The test host in Wave's documentation, `preprodpayments.wavemoney.io`, no longer resolves in DNS (October 2026). If Wave gives you another test host, set `BaseURL` and `AuthenticateURL` (or `WAVE_MONEY_BASE_URL` and `WAVE_MONEY_AUTHENTICATE_URL`).
-:::
-
 ## From Environment Variables
 
 Every gateway package has `ConfigFromEnv`, which takes a lookup function such as `os.Getenv`. The variable names match the [Laravel package](/laravel-myanmar-payments/configuration), so one `.env` file works for both.
