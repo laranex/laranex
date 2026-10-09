@@ -85,10 +85,6 @@ res.writeHead(302, { Location: payment.url }).end();
 
 Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: Wave marks `orderId` as optional in callbacks, while `merchantReferenceId` is always present. `initiate()` writes the generated ID to `data.merchantReferenceId` once `data` passes validation, so keep a reference to the object you pass.
 
-### Sandbox Host
-
-Wave's sandbox API is `https://preprodpayments.wavemoney.io:8107`, while the customer-facing authenticate page is served without the port, at `https://preprodpayments.wavemoney.io/authenticate`. The package uses both hosts by default; set `baseUrl` and `authenticateUrl` in `WaveMoneyConfig` if Wave gives you others.
-
 ## Handling Callbacks
 
 ```ts

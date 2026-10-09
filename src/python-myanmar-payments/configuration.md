@@ -99,10 +99,6 @@ URL arguments are optional overrides; leave them unset to use the endpoint match
 
 The URLs are class constants on the config classes, e.g. `KbzPayConfig.SANDBOX_API_URL`, `KbzPayConfig.PRODUCTION_PWA_URL`, `WaveMoneyConfig.SANDBOX_AUTHENTICATE_URL`, `YomaMmqrConfig.PRODUCTION_URL`.
 
-::: warning Wave sandbox host
-Wave's sandbox API listens on port 8107 (`https://preprodpayments.wavemoney.io:8107`), but it serves the customer-facing authenticate page without the port, at `https://preprodpayments.wavemoney.io/authenticate`. The package uses both hosts for you. If Wave gives you different hosts, set `base_url` and `authenticate_url` (or `WAVE_MONEY_BASE_URL` and `WAVE_MONEY_AUTHENTICATE_URL`).
-:::
-
 ## From Environment Variables
 
 Every config class and gateway has `from_env(env=None)`, which reads `os.environ` by default and takes any mapping instead, such as a `dict` in tests. The variable names match the [Laravel package](/laravel-myanmar-payments/configuration), so one `.env` file works for both.
@@ -225,7 +221,6 @@ with MyanmarPayments.from_env() as payments:
     result = payments.kbz_pay().status("ORDER_1")
     print(result.status)
 
-
 async def check() -> None:
     async with AsyncMyanmarPayments.from_env() as payments:
         result = await payments.kbz_pay().status("ORDER_1")
@@ -243,7 +238,6 @@ Yoma MMQR authenticates with an OAuth access token that lasts hours. `YomaMmqr` 
 ```python
 from typing import Protocol
 
-
 class TokenCache(Protocol):
     def get(self, key: str) -> str | None: ...
 
@@ -259,7 +253,6 @@ The default is a thread-safe `MemoryTokenCache`, which lives as long as the proc
 import redis
 from python_myanmar_payments import YomaMmqr
 
-
 class RedisTokenCache:
     def __init__(self, client: redis.Redis) -> None:
         self.client = client
@@ -273,7 +266,6 @@ class RedisTokenCache:
 
     def delete(self, key: str) -> None:
         self.client.delete(key)
-
 
 yoma = YomaMmqr.from_env(token_cache=RedisTokenCache(redis.Redis()))
 ```
