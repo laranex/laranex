@@ -284,6 +284,41 @@ export default defineConfig({
           ],
         },
       ],
+      '/python-myanmar-payments/': [
+        {
+          text: 'Getting Started',
+          items: [
+            { text: 'Introduction', link: '/python-myanmar-payments/introduction' },
+            { text: 'Installation', link: '/python-myanmar-payments/installation' },
+            { text: 'AI Agent Skill', link: '/python-myanmar-payments/ai-agent-skill' },
+            { text: 'Configuration', link: '/python-myanmar-payments/configuration' },
+            { text: 'Amounts', link: '/python-myanmar-payments/amounts' },
+            { text: 'Payment Flows', link: '/python-myanmar-payments/payment-flows' },
+            { text: 'Callbacks & Status', link: '/python-myanmar-payments/callbacks' },
+            { text: 'Handling Webhooks', link: '/python-myanmar-payments/webhooks' },
+            { text: 'Framework Integration', link: '/python-myanmar-payments/framework-integration' },
+            { text: 'Testing', link: '/python-myanmar-payments/testing' },
+          ],
+        },
+        {
+          text: 'Gateways',
+          items: [
+            { text: 'KBZ Pay', link: '/python-myanmar-payments/drivers/kbz-pay' },
+            { text: 'Wave Money', link: '/python-myanmar-payments/drivers/wave-money' },
+            { text: 'AYA Pay', link: '/python-myanmar-payments/drivers/aya-pay' },
+            { text: 'Yoma MMQR', link: '/python-myanmar-payments/drivers/yoma-mmqr' },
+            { text: 'CyberSource', link: '/python-myanmar-payments/drivers/cyber-source' },
+          ],
+        },
+        {
+          text: 'Reference',
+          items: [
+            { text: 'Results', link: '/python-myanmar-payments/references/results' },
+            { text: 'PaymentCallback & Status', link: '/python-myanmar-payments/references/payment-callback' },
+            { text: 'Errors', link: '/python-myanmar-payments/references/errors' },
+          ],
+        },
+      ],
       '/php-myanmar-payments/': [
         {
           text: 'Getting Started',

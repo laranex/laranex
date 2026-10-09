@@ -68,6 +68,17 @@ function badges(install: string, github: string): PackageBadge[] {
     ]
   }
 
+  if (tool === 'pip') {
+    const name = target.replace(/[<>=!~[;@ ].*$/, '')
+
+    return [
+      { alt: 'PyPI', src: `https://img.shields.io/pypi/v/${name}.svg?style=flat-square`, href: `https://pypi.org/project/${name}/` },
+      tests,
+      { alt: 'Python', src: `https://img.shields.io/pypi/pyversions/${name}.svg?style=flat-square`, href: `https://pypi.org/project/${name}/` },
+      { alt: 'License', src: 'https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square', href: license },
+    ]
+  }
+
   return [
     { alt: 'Latest Version on Packagist', src: `https://img.shields.io/packagist/v/${target}.svg?style=flat-square`, href: `https://packagist.org/packages/${target}` },
     tests,
