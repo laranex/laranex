@@ -6,8 +6,4 @@ requirements:
   - Laravel ^10.0|^11.0|^12.0|^13.0
   - phpseclib ^3.0.57|^4.0
 github: https://github.com/laranex/laravel-biometric-auth
-head:
-  - - meta
-    - http-equiv: refresh
-      content: '0;url=/laravel-biometric-auth/introduction.html'
 ---

@@ -6,8 +6,4 @@ requirements:
   - Any PSR-18 HTTP client and PSR-17 factories (e.g. Guzzle)
   - Any PSR-16 cache (optional, for Yoma MMQR tokens)
 github: https://github.com/laranex/php-myanmar-payments
-head:
-  - - meta
-    - http-equiv: refresh
-      content: '0;url=/php-myanmar-payments/introduction.html'
 ---

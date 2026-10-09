@@ -8,8 +8,5 @@ requirements:
   - ext-curl
   - New Relic PHP agent (optional)
 github: https://github.com/laranex/laravel-newrelic
-head:
-  - - meta
-    - http-equiv: refresh
-      content: '0;url=/laravel-newrelic/introduction.html'
+license: Apache-2.0
 ---

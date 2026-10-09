@@ -7,8 +7,4 @@ requirements:
   - moneyphp/money ^4.0
   - ext-intl (optional, for locale-aware formatting)
 github: https://github.com/laranex/laravel-money
-head:
-  - - meta
-    - http-equiv: refresh
-      content: '0;url=/laravel-money/introduction.html'
 ---

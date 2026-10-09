@@ -6,8 +6,4 @@ requirements:
   - Goravel 1.18+
 github: https://github.com/laranex/goravel-money
 install: go get github.com/laranex/goravel-money/v4
-head:
-  - - meta
-    - http-equiv: refresh
-      content: '0;url=/goravel-money/introduction.html'
 ---

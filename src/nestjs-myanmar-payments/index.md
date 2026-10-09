@@ -7,8 +7,4 @@ requirements:
   - Node Myanmar Payments v4 (installed automatically)
 github: https://github.com/laranex/nestjs-myanmar-payments
 install: npm install @laranex/nestjs-myanmar-payments@next
-head:
-  - - meta
-    - http-equiv: refresh
-      content: '0;url=/nestjs-myanmar-payments/introduction.html'
 ---

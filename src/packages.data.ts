@@ -1,5 +1,6 @@
 import { createContentLoader } from 'vitepress'
 import packageCategories from './packages.categories.json'
+import { installCommand } from '../.vitepress/package-meta'
 
 const placement = new Map<string, { category: number; rank: number }>(
   packageCategories.categories.flatMap(({ packages }, category) =>
@@ -88,7 +89,7 @@ export default createContentLoader('*/index.md', {
       .map(({ url, frontmatter }): PackageData => {
         const slug = url.replace(/^\//, '').replace(/\/$/, '')
         const github = (frontmatter.github as string) || ''
-        const install = (frontmatter.install as string) || `composer require laranex/${slug}`
+        const install = installCommand(slug, frontmatter.install)
 
         return {
           slug,
@@ -96,7 +97,7 @@ export default createContentLoader('*/index.md', {
           description: (frontmatter.description as string) || '',
           requirements: (frontmatter.requirements as string[]) || [],
           github,
-          docsUrl: `/${slug}/introduction.html`,
+          docsUrl: `/${slug}/introduction`,
           install,
           badges: badges(install, github),
         }

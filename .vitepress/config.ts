@@ -1,12 +1,131 @@
-import { defineConfig, type HeadConfig } from 'vitepress'
+import { readdirSync, readFileSync, existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import matter from 'gray-matter'
+import { defineConfig, type HeadConfig, type PageData } from 'vitepress'
+import { installCommand, programmingLanguage } from './package-meta'
+
+/** The site's public origin. Change this one line when moving to a custom domain. */
+const hostname = 'https://laranex.vercel.app'
+
+const siteTitle = 'Laranex'
+const siteDescription = 'Laranex is an open source organization, built by developers for developers.'
+const homeTitle = 'Laranex — Open source, built by developers for developers'
+const ogImage = { url: `${hostname}/og-image.png`, width: '1200', height: '630', alt: 'Laranex — Built by developers for developers.' }
+
+interface PackageMeta {
+  slug: string
+  name: string
+  description: string
+  github: string
+  language: string
+  license: string
+}
+
+/** Each package's front matter from `src/<slug>/index.md`, read once at config time. */
+const packages = new Map<string, PackageMeta>(
+  (() => {
+    const srcDir = fileURLToPath(new URL('../src', import.meta.url))
+
+    return readdirSync(srcDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && existsSync(`${srcDir}/${entry.name}/index.md`))
+      .map((entry) => ({ slug: entry.name, data: matter(readFileSync(`${srcDir}/${entry.name}/index.md`, 'utf8')).data }))
+      .filter(({ data }) => data.name)
+      .map(({ slug, data }): [string, PackageMeta] => [
+        slug,
+        {
+          slug,
+          name: data.name,
+          description: data.description || '',
+          github: data.github || '',
+          language: programmingLanguage(installCommand(slug, data.install)),
+          license: data.license || 'MIT',
+        },
+      ])
+  })(),
+)
+
+function packageOf(relativePath: string): PackageMeta | undefined {
+  return packages.get(relativePath.split('/')[0])
+}
+
+/** The absolute, clean URL of a page: `foo/index.md` → `/foo/`, `foo/bar.md` → `/foo/bar`. */
+function canonicalUrl(relativePath: string): string {
+  return `${hostname}/${relativePath.replace(/(^|\/)index\.md$/, '$1').replace(/\.md$/, '')}`
+}
+
+function jsonLd(data: Record<string, unknown>): HeadConfig {
+  return ['script', { type: 'application/ld+json' }, JSON.stringify(data).replace(/</g, '\\u003c')]
+}
+
+const organization = {
+  '@type': 'Organization',
+  '@id': `${hostname}/#organization`,
+  name: siteTitle,
+  url: `${hostname}/`,
+  logo: `${hostname}/logo.svg`,
+  sameAs: ['https://github.com/laranex'],
+}
+
+function structuredData(pageData: PageData, url: string): HeadConfig[] {
+  if (pageData.relativePath === 'index.md') {
+    return [
+      jsonLd({
+        '@context': 'https://schema.org',
+        '@graph': [
+          { '@type': 'WebSite', '@id': `${hostname}/#website`, name: siteTitle, url: `${hostname}/`, description: siteDescription, publisher: { '@id': organization['@id'] } },
+          organization,
+        ],
+      }),
+    ]
+  }
+
+  const pkg = packageOf(pageData.relativePath)
+
+  if (!pkg) {
+    return []
+  }
+
+  const introduction = `${hostname}/${pkg.slug}/introduction`
+  const crumbs = [
+    { name: siteTitle, item: `${hostname}/` },
+    { name: pkg.name, item: introduction },
+    ...(url === introduction ? [] : [{ name: pageData.title, item: url }]),
+  ]
+
+  return [
+    jsonLd({
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareSourceCode',
+      name: pkg.name,
+      description: pkg.description,
+      url: introduction,
+      codeRepository: pkg.github,
+      programmingLanguage: pkg.language,
+      license: `https://spdx.org/licenses/${pkg.license}.html`,
+      author: organization,
+    }),
+    jsonLd({
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: crumbs.map((crumb, index) => ({ '@type': 'ListItem', position: index + 1, ...crumb })),
+    }),
+  ]
+}
 
 export default defineConfig({
-  title: 'Laranex',
-  titleTemplate: ':title — Laranex',
-  description: 'Laranex is an open source organization, built by developers for developers.',
+  title: siteTitle,
+  titleTemplate: `:title — ${siteTitle}`,
+  description: siteDescription,
   base: '/',
-  cleanUrls: false,
+  cleanUrls: true,
+  lastUpdated: true,
   srcDir: 'src',
+
+  sitemap: {
+    hostname,
+    // Package `index.md` pages only carry front matter; Vercel redirects them to the introduction.
+    transformItems: (items) => items.filter(({ url }) => !packages.has(url.replace(/\/$/, ''))),
+  },
 
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
@@ -14,33 +133,47 @@ export default defineConfig({
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
     ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
     ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap' }],
-    ['meta', { property: 'og:site_name', content: 'Laranex' }],
+    ['meta', { property: 'og:site_name', content: siteTitle }],
     ['meta', { property: 'og:type', content: 'website' }],
-    ['meta', { name: 'twitter:card', content: 'summary' }],
+    ['meta', { property: 'og:image', content: ogImage.url }],
+    ['meta', { property: 'og:image:width', content: ogImage.width }],
+    ['meta', { property: 'og:image:height', content: ogImage.height }],
+    ['meta', { property: 'og:image:alt', content: ogImage.alt }],
+    ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+    ['meta', { name: 'twitter:image', content: ogImage.url }],
   ],
 
-  transformHead({ pageData }) {
-    const heads: HeadConfig[] = []
+  /**
+   * Package pages read "<Page> — <Package> — Laranex" and fall back to the package's own description.
+   */
+  transformPageData(pageData) {
+    const pkg = packageOf(pageData.relativePath)
 
-    const isHome = pageData.relativePath === 'index.md'
+    if (!pkg) {
+      return
+    }
 
-    const title = isHome
-      ? 'Laranex — Open source, built by developers for developers'
-      : pageData.frontmatter.title
-        ? `${pageData.frontmatter.title} — Laranex`
-        : 'Laranex'
+    pageData.titleTemplate = `:title — ${pkg.name} — ${siteTitle}`
 
-    const description =
-      pageData.frontmatter.description ||
-      'Laranex is an open source organization, built by developers for developers.'
+    if (!pageData.frontmatter.description) {
+      pageData.description = pkg.description
+    }
+  },
 
-    heads.push(['meta', { property: 'og:title', content: title }])
-    heads.push(['meta', { property: 'og:description', content: description }])
-    heads.push(['meta', { name: 'twitter:title', content: title }])
-    heads.push(['meta', { name: 'twitter:description', content: description }])
-    heads.push(['meta', { name: 'description', content: description }])
+  transformHead({ pageData, title, description }) {
+    const url = canonicalUrl(pageData.relativePath)
+    const pageTitle = pageData.relativePath === 'index.md' ? homeTitle : title
+    const pageDescription = description || siteDescription
 
-    return heads
+    return [
+      ['link', { rel: 'canonical', href: url }],
+      ['meta', { property: 'og:url', content: url }],
+      ['meta', { property: 'og:title', content: pageTitle }],
+      ['meta', { property: 'og:description', content: pageDescription }],
+      ['meta', { name: 'twitter:title', content: pageTitle }],
+      ['meta', { name: 'twitter:description', content: pageDescription }],
+      ...structuredData(pageData, url),
+    ]
   },
 
   themeConfig: {

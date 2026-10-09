@@ -7,8 +7,4 @@ requirements:
   - Go Myanmar Payments v4 (installed automatically)
 github: https://github.com/laranex/goravel-myanmar-payments
 install: go get github.com/laranex/goravel-myanmar-payments/v4
-head:
-  - - meta
-    - http-equiv: refresh
-      content: '0;url=/goravel-myanmar-payments/introduction.html'
 ---

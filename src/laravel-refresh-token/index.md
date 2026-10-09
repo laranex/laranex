@@ -8,8 +8,4 @@ requirements:
   - ext-sodium
   - lcobucci/jwt ^5.0
 github: https://github.com/laranex/laravel-refresh-token
-head:
-  - - meta
-    - http-equiv: refresh
-      content: '0;url=/laravel-refresh-token/introduction.html'
 ---
