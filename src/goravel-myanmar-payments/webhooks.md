@@ -57,7 +57,9 @@ func (r *M20261008120000CreatePaymentWebhooksTable) Up() error {
 		return nil
 	}
 
-	return facades.Schema().Create("payment_webhooks", func(table schema.Blueprint) {
+	return facades.Schema().Create("payment_webhooks", func(
+		table schema.Blueprint,
+	) {
 		table.ID()
 		table.String("gateway", 32)
 		table.String("order_id").Nullable()
@@ -107,15 +109,20 @@ import (
 
 // Statuses of a stored payment webhook.
 const (
-	WebhookReceived   = "received"   // stored and verified, waiting for the job
-	WebhookRejected   = "rejected"   // failed signature verification; never processed
-	WebhookProcessing = "processing" // a job is working on it
-	WebhookProcessed  = "processed"  // done, or a duplicate of a processed delivery
-	WebhookFailed     = "failed"     // every attempt failed; replay it after fixing the cause
+	// WebhookReceived: stored and verified, waiting for the job.
+	WebhookReceived = "received"
+	// WebhookRejected: failed signature verification; never processed.
+	WebhookRejected = "rejected"
+	// WebhookProcessing: a job is working on it.
+	WebhookProcessing = "processing"
+	// WebhookProcessed: done, or a duplicate of a processed delivery.
+	WebhookProcessed = "processed"
+	// WebhookFailed: every attempt failed; replay it after fixing the cause.
+	WebhookFailed = "failed"
 )
 
-// PaymentWebhook is one delivery of a gateway callback, stored exactly as received
-// so it can be debugged and replayed.
+// PaymentWebhook is one delivery of a gateway callback, stored exactly as
+// received so it can be debugged and replayed.
 type PaymentWebhook struct {
 	orm.Model
 	Gateway          string           `json:"gateway"`
@@ -136,7 +143,10 @@ type PaymentWebhook struct {
 }
 
 // NewPaymentWebhook stores the raw request of a delivery.
-func NewPaymentWebhook(gateway, ip string, request *myanmarpayments.CallbackRequest) PaymentWebhook {
+func NewPaymentWebhook(
+	gateway, ip string,
+	request *myanmarpayments.CallbackRequest,
+) PaymentWebhook {
 	headers, _ := json.Marshal(request.Header)
 	query, _ := json.Marshal(request.Query)
 
@@ -187,7 +197,10 @@ import (
 var ErrUnknownGateway = errors.New("unknown payment gateway")
 
 // VerifyPaymentCallback verifies a callback with the named gateway.
-func VerifyPaymentCallback(gateway string, request *myanmarpayments.CallbackRequest) (*myanmarpayments.PaymentCallback, error) {
+func VerifyPaymentCallback(
+	gateway string,
+	request *myanmarpayments.CallbackRequest,
+) (*myanmarpayments.PaymentCallback, error) {
 	manager := paymentsfacades.MyanmarPayments()
 
 	switch gateway {
@@ -248,8 +261,8 @@ import (
 	"yourapp/app/services"
 )
 
-// PaymentWebhookController receives gateway callbacks the recommended way: verify,
-// store the raw request, acknowledge at once, process in a queued job.
+// PaymentWebhookController receives gateway callbacks the recommended way:
+// verify, store the raw request, acknowledge at once, process in a queued job.
 type PaymentWebhookController struct{}
 
 func NewPaymentWebhookController() *PaymentWebhookController {
@@ -276,23 +289,29 @@ func (r *PaymentWebhookController) Store(ctx http.Context) http.Response {
 		webhook.Status = models.WebhookRejected
 		webhook.SignatureError = signatureError.Message
 		if err := facades.Orm().Query().Create(&webhook); err != nil {
-			facades.Log().Error(fmt.Sprintf("store rejected %s webhook: %v", gateway, err))
+			facades.Log().Error(
+				fmt.Sprintf("store rejected %s webhook: %v", gateway, err),
+			)
 		}
 		return ctx.Response().String(http.StatusBadRequest, "invalid signature")
 	case err != nil:
 		// e.g. missing credentials: answer 500 so the gateway retries later
-		return ctx.Response().String(http.StatusInternalServerError, "cannot verify the callback")
+		return ctx.Response().
+			String(http.StatusInternalServerError, "cannot verify the callback")
 	}
 
 	webhook.Fill(callback)
 	if err := facades.Orm().Query().Create(&webhook); err != nil {
 		// Not stored: let the gateway retry instead of acknowledging.
-		return ctx.Response().String(http.StatusInternalServerError, "cannot store the callback")
+		return ctx.Response().
+			String(http.StatusInternalServerError, "cannot store the callback")
 	}
 
 	if err := jobs.DispatchPaymentWebhook(webhook.ID); err != nil {
 		// Stored: acknowledge anyway and replay it later.
-		facades.Log().Error(fmt.Sprintf("dispatch %s webhook %d: %v", gateway, webhook.ID, err))
+		facades.Log().Error(
+			fmt.Sprintf("dispatch %s webhook %d: %v", gateway, webhook.ID, err),
+		)
 	}
 
 	return payments.Acknowledge(ctx, callback)
@@ -302,10 +321,13 @@ func (r *PaymentWebhookController) Store(ctx http.Context) http.Response {
 Register it in `routes/web.go` without authentication or CSRF middleware; gateways call it from their servers:
 
 ```go
-facades.Route().Post("/payments/webhooks/{gateway}", controllers.NewPaymentWebhookController().Store)
+facades.Route().Post(
+	"/payments/webhooks/{gateway}",
+	controllers.NewPaymentWebhookController().Store,
+)
 ```
 
-Use `https://your-app.com/payments/webhooks/<gateway>` as the callback URL: pass it as `CallbackURL` when you start a payment (KBZ Pay, Wave Money, CyberSource) or register it in the gateway's merchant portal (AYA Pay, Yoma MMQR). The gateway names are the ones `VerifyPaymentCallback` accepts: `kbzpay`, `wave-money`, `aya-pay`, `yoma-mmqr`, `cyber-source`.
+Use `https://shop.test/payments/webhooks/<gateway>` as the callback URL: pass it as `CallbackURL` when you start a payment (KBZ Pay, Wave Money, CyberSource) or register it in the gateway's merchant portal (AYA Pay, Yoma MMQR). The gateway names are the ones `VerifyPaymentCallback` accepts: `kbzpay`, `wave-money`, `aya-pay`, `yoma-mmqr`, `cyber-source`.
 
 ## 5. Queue job
 
@@ -328,20 +350,31 @@ import (
 	"yourapp/app/services"
 )
 
-// MaxWebhookAttempts is how many times a stored webhook is processed before it is failed.
+// MaxWebhookAttempts is how many times a stored webhook is processed before
+// it is failed.
 const MaxWebhookAttempts = 5
 
 // webhookBackoff is the wait before each retry.
-var webhookBackoff = []time.Duration{10 * time.Second, time.Minute, 5 * time.Minute, 15 * time.Minute}
+var webhookBackoff = []time.Duration{
+	10 * time.Second, time.Minute, 5 * time.Minute, 15 * time.Minute,
+}
 
-// errWebhookLocked means another worker is processing the same order; retry later.
+// errWebhookLocked means another worker is processing the same order; retry
+// later.
 var errWebhookLocked = errors.New("another worker is processing this order")
 
-// FulfillPayment is the app's business logic for a verified callback. Replace it with
-// your own: find the order by callback.OrderID, compare callback.Amount, mark it paid.
-// It runs at most once per gateway + order + gateway status.
-var FulfillPayment = func(webhook *models.PaymentWebhook, callback *myanmarpayments.PaymentCallback) error {
-	facades.Log().Info(fmt.Sprintf("[%s] order %s is %s (%s)", webhook.Gateway, callback.OrderID, callback.Status, callback.Amount))
+// FulfillPayment is the app's business logic for a verified callback. Replace
+// it with your own: find the order by callback.OrderID, compare
+// callback.Amount, mark it paid. It runs at most once per gateway + order +
+// gateway status.
+var FulfillPayment = func(
+	webhook *models.PaymentWebhook,
+	callback *myanmarpayments.PaymentCallback,
+) error {
+	facades.Log().Info(fmt.Sprintf(
+		"[%s] order %s is %s (%s)",
+		webhook.Gateway, callback.OrderID, callback.Status, callback.Amount,
+	))
 
 	return nil
 }
@@ -351,7 +384,9 @@ type ProcessPaymentWebhook struct{}
 
 // DispatchPaymentWebhook queues the processing of a stored webhook.
 func DispatchPaymentWebhook(id uint) error {
-	return facades.Queue().Job(&ProcessPaymentWebhook{}, []queue.Arg{{Type: "uint", Value: id}}).Dispatch()
+	args := []queue.Arg{{Type: "uint", Value: id}}
+
+	return facades.Queue().Job(&ProcessPaymentWebhook{}, args).Dispatch()
 }
 
 // Signature The name and signature of the job.
@@ -360,7 +395,10 @@ func (r *ProcessPaymentWebhook) Signature() string {
 }
 
 // ShouldRetry retries with backoff until MaxWebhookAttempts.
-func (r *ProcessPaymentWebhook) ShouldRetry(_ error, attempt int) (bool, time.Duration) {
+func (r *ProcessPaymentWebhook) ShouldRetry(
+	_ error,
+	attempt int,
+) (bool, time.Duration) {
 	if attempt >= MaxWebhookAttempts {
 		return false, 0
 	}
@@ -372,28 +410,37 @@ func (r *ProcessPaymentWebhook) ShouldRetry(_ error, attempt int) (bool, time.Du
 func (r *ProcessPaymentWebhook) Handle(args ...any) error {
 	id, ok := args[0].(uint)
 	if !ok {
-		return fmt.Errorf("process_payment_webhook: expected a uint id, got %T", args[0])
+		return fmt.Errorf(
+			"process_payment_webhook: expected a uint id, got %T", args[0],
+		)
 	}
 
 	var webhook models.PaymentWebhook
 	if err := facades.Orm().Query().FindOrFail(&webhook, id); err != nil {
 		return err
 	}
-	if webhook.Status == models.WebhookProcessed || webhook.Status == models.WebhookRejected {
+	if webhook.Status == models.WebhookProcessed ||
+		webhook.Status == models.WebhookRejected {
 		return nil
 	}
 
 	// One worker per order at a time.
-	lock := facades.Cache().Lock("payment-webhook:"+webhook.Gateway+":"+webhook.OrderID, time.Minute)
+	key := "payment-webhook:" + webhook.Gateway + ":" + webhook.OrderID
+	lock := facades.Cache().Lock(key, time.Minute)
 	if !lock.Get() {
 		return errWebhookLocked
 	}
 	defer lock.Release()
 
-	// Process once per gateway + order + gateway status: gateways retry and resend.
+	// Process once per gateway + order + gateway status: gateways retry and
+	// resend.
 	duplicate, err := facades.Orm().Query().Model(&models.PaymentWebhook{}).
-		Where("gateway = ? AND order_id = ? AND gateway_status = ? AND status = ? AND id <> ?",
-			webhook.Gateway, webhook.OrderID, webhook.GatewayStatus, models.WebhookProcessed, webhook.ID).
+		Where(
+			"gateway = ? AND order_id = ? AND gateway_status = ?"+
+				" AND status = ? AND id <> ?",
+			webhook.Gateway, webhook.OrderID, webhook.GatewayStatus,
+			models.WebhookProcessed, webhook.ID,
+		).
 		Exists()
 	if err != nil {
 		return err
@@ -435,7 +482,9 @@ func (r *ProcessPaymentWebhook) Handle(args ...any) error {
 
 // process verifies the stored request again and runs the business logic.
 func process(webhook *models.PaymentWebhook) error {
-	callback, err := services.VerifyPaymentCallback(webhook.Gateway, webhook.CallbackRequest())
+	callback, err := services.VerifyPaymentCallback(
+		webhook.Gateway, webhook.CallbackRequest(),
+	)
 	if err != nil {
 		return err
 	}
@@ -487,8 +536,12 @@ func Schedule() []schedule.Event {
 		// Prune stored payment webhooks after 90 days.
 		facades.Schedule().Call(func() {
 			cutoff := carbon.Now().SubDays(90)
-			if _, err := facades.Orm().Query().Where("created_at < ?", cutoff).Delete(&models.PaymentWebhook{}); err != nil {
-				facades.Log().Error(fmt.Sprintf("prune payment webhooks: %v", err))
+			_, err := facades.Orm().Query().
+				Where("created_at < ?", cutoff).
+				Delete(&models.PaymentWebhook{})
+			if err != nil {
+				facades.Log().
+					Error(fmt.Sprintf("prune payment webhooks: %v", err))
 			}
 		}).Daily(),
 	}
@@ -528,7 +581,8 @@ import (
 	"yourapp/app/models"
 )
 
-// ReplayPaymentWebhooks re-dispatches stored webhooks: one by id, or every failed one.
+// ReplayPaymentWebhooks re-dispatches stored webhooks: one by ID, or every
+// failed one.
 type ReplayPaymentWebhooks struct{}
 
 // Signature The name and signature of the console command.
@@ -546,7 +600,10 @@ func (r *ReplayPaymentWebhooks) Extend() command.Extend {
 	return command.Extend{
 		ArgsUsage: "[id]",
 		Flags: []command.Flag{
-			&command.BoolFlag{Name: "failed", Usage: "replay every failed webhook"},
+			&command.BoolFlag{
+				Name:  "failed",
+				Usage: "replay every failed webhook",
+			},
 		},
 	}
 }
@@ -569,16 +626,18 @@ func (r *ReplayPaymentWebhooks) Handle(ctx console.Context) error {
 	}
 	for _, webhook := range webhooks {
 		// A replay starts over: reset the status and attempts.
-		if _, err := facades.Orm().Query().Model(&webhook).Update(map[string]any{
+		_, err := facades.Orm().Query().Model(&webhook).Update(map[string]any{
 			"status": models.WebhookReceived, "attempts": 0, "failed_at": nil,
-		}); err != nil {
+		})
+		if err != nil {
 			return err
 		}
 		if err := jobs.DispatchPaymentWebhook(webhook.ID); err != nil {
 			ctx.Error(fmt.Sprintf("webhook %d: %v", webhook.ID, err))
 			continue
 		}
-		ctx.Info("Replayed webhook " + strconv.FormatUint(uint64(webhook.ID), 10))
+		id := strconv.FormatUint(uint64(webhook.ID), 10)
+		ctx.Info("Replayed webhook " + id)
 	}
 
 	return nil
@@ -597,13 +656,22 @@ Every delivery is a row, so the database answers most questions:
 ```sql
 -- What happened to an order?
 SELECT id, status, gateway_status, attempts, last_error, created_at
-FROM payment_webhooks WHERE gateway = 'kbzpay' AND order_id = 'ORDER_1' ORDER BY id;
+FROM payment_webhooks
+WHERE gateway = 'kbzpay' AND order_id = 'ORDER_1'
+ORDER BY id;
 
 -- What is failing?
-SELECT gateway, last_error, COUNT(*) FROM payment_webhooks WHERE status = 'failed' GROUP BY gateway, last_error;
+SELECT gateway, last_error, COUNT(*)
+FROM payment_webhooks
+WHERE status = 'failed'
+GROUP BY gateway, last_error;
 
 -- Who sent a bad signature?
-SELECT id, gateway, ip, signature_error, created_at FROM payment_webhooks WHERE status = 'rejected' ORDER BY id DESC LIMIT 20;
+SELECT id, gateway, ip, signature_error, created_at
+FROM payment_webhooks
+WHERE status = 'rejected'
+ORDER BY id DESC
+LIMIT 20;
 ```
 
 To inspect a stored delivery in code, verify it again: `services.VerifyPaymentCallback(webhook.Gateway, webhook.CallbackRequest())` returns the same typed callback the controller saw.
@@ -615,10 +683,18 @@ With the `sync` queue the job runs inside the request, so a feature test can pos
 ```go
 func (s *PaymentWebhooksTestSuite) TestKbzPayWebhook() {
 	fields := map[string]any{
-		"appid": "kp-app", "merch_code": "200001", "merch_order_id": "ORDER_1", "mm_order_id": "MM1",
-		"total_amount": "1000", "trans_currency": "MMK", "trade_status": "PAY_SUCCESS", "nonce_str": "n", "sign_type": "SHA256",
+		"appid":          "kp-app",
+		"merch_code":     "200001",
+		"merch_order_id": "ORDER_1",
+		"mm_order_id":    "MM1",
+		"total_amount":   "10000",
+		"trans_currency": "MMK",
+		"trade_status":   "PAY_SUCCESS",
+		"nonce_str":      "n",
+		"sign_type":      "SHA256",
 	}
-	fields["sign"] = kbzpay.NewSigner("kbz-secret").Sign(fields) // the app key of your test config
+	// "kbz-secret" is the app key of your test config
+	fields["sign"] = kbzpay.NewSigner("kbz-secret").Sign(fields)
 	body, _ := json.Marshal(map[string]any{"Request": fields})
 
 	response, err := s.Http(s.T()).
@@ -628,7 +704,8 @@ func (s *PaymentWebhooksTestSuite) TestKbzPayWebhook() {
 	response.AssertOk()
 
 	var webhook models.PaymentWebhook
-	s.Require().NoError(facades.Orm().Query().Where("order_id = ?", "ORDER_1").First(&webhook))
+	query := facades.Orm().Query().Where("order_id = ?", "ORDER_1")
+	s.Require().NoError(query.First(&webhook))
 	s.Equal(models.WebhookProcessed, webhook.Status)
 }
 ```

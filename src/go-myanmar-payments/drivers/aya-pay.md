@@ -7,7 +7,7 @@ description: Integrate the AYA Payment Gateway in Go. One hosted checkout for AY
 
 The AYA Payment Gateway is one hosted checkout for AYA Pay, other wallets (KBZ Pay, WavePay, UAB Pay, CB Pay…) and cards (VISA, Mastercard, JCB).
 
-| Method | Flow | Returns |
+| Call | What it does | Returns |
 |---|---|---|
 | `aya.Services(ctx)` | List the channels enabled for your account | [`[]ayapay.Service`](#services-response) |
 | `aya.Initiate(data)` | Signed form posted to AYA | [`*FormPayment`](#initiate-response) |
@@ -15,7 +15,7 @@ The AYA Payment Gateway is one hosted checkout for AYA Pay, other wallets (KBZ P
 | `aya.HandleCallback(request)` | Verify the backend callback | [`*PaymentCallback`](#handlecallback-response) |
 | `aya.VerifyRedirect(request)` | Verify the customer's return | [`*PaymentCallback`](#verifyredirect-response) |
 
-[Responses](#responses) shows what AYA puts in each result.
+[Responses](#responses) shows what AYA Pay puts in each result.
 
 ## How it works
 
@@ -44,7 +44,10 @@ AYA posts the result to your callback URL and also signs the query string it add
 ```go
 import "github.com/laranex/go-myanmar-payments/v4/ayapay"
 
-aya, err := ayapay.New(ayapay.Config{AppKey: "...", AppSecret: "..."}, nil)
+aya, err := ayapay.New(ayapay.Config{
+	AppKey:    "...",
+	AppSecret: "...",
+}, nil)
 if err != nil {
 	return err
 }
@@ -54,59 +57,85 @@ if err != nil {
 	return err
 }
 for _, service := range services {
-	// Name "AYA Pay", Key "aya_pay" (pass as Channel), ImageURL (logo),
-	// Methods []ayapay.Method{ayapay.MethodQR, ayapay.MethodNoti}
-	fmt.Println(service.Name, service.Key, service.Supports(ayapay.MethodQR))
+	// service.Name: "AYA Pay"
+	// service.Key: "aya_pay", pass it as Channel
+	// service.ImageURL: the channel's logo
+	// service.Methods: []ayapay.Method{ayapay.MethodQR, ayapay.MethodNoti}
+	if service.Supports(ayapay.MethodQR) {
+		// offer the QR method
+	}
 }
 ```
 
-Methods the gateway lists that this package does not know yet are kept in `service.UnknownMethods`.
+Methods AYA lists that this package doesn't know yet are kept in `service.UnknownMethods`.
 
 | `ayapay.Method` | Value | Customer |
 |---|---|---|
-| `MethodWeb` | `WEB` | Pays on a hosted web page (cards) |
-| `MethodQR` | `QR` | Scans a QR with the wallet app |
-| `MethodNoti` | `NOTI` | Approves a push notification in the wallet app |
+| `ayapay.MethodWeb` | `WEB` | Pays on a hosted web page (cards) |
+| `ayapay.MethodQR` | `QR` | Scans a QR with the wallet app |
+| `ayapay.MethodNoti` | `NOTI` | Approves a push notification in the wallet app |
 
 ## Initiating a Payment
 
 ```go
-payment, err := aya.Initiate(ayapay.PaymentData{
-	OrderID:   "ORDER" + orderID,
-	Amount:    myanmarpayments.Kyat(8000),
-	Channel:   "aya_pay",
-	Method:    ayapay.MethodQR,
-	ReturnURL: "https://shop.test/payments/aya/return",
-})
+import (
+	"fmt"
+	"io"
+
+	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
+	"github.com/laranex/go-myanmar-payments/v4/ayapay"
+)
+
+data := ayapay.PaymentData{
+	OrderID:     fmt.Sprintf("ORDER_%d", order.ID),
+	Amount:      myanmarpayments.Kyat(10000),
+	Channel:     "aya_pay",
+	Method:      ayapay.MethodQR,
+	ReturnURL:   "https://shop.test/payments/aya/return",
+	Description: fmt.Sprintf("Order #%d", order.ID),
+}
+
+payment, err := aya.Initiate(data)
 if err != nil {
 	return err
 }
-w.Header().Set("Content-Type", "text/html; charset=utf-8")
-io.WriteString(w, payment.HTML()) // posts the signed form to AYA on load
-```
 
-`Initiate` only signs the fields, so it takes no context. AYA expects the form as `multipart/form-data`; `payment.Enctype` carries it if you [render the form yourself](/go-myanmar-payments/payment-flows#form-payments).
+// The page posts the signed form to AYA on load.
+w.Header().Set("Content-Type", "text/html; charset=utf-8")
+io.WriteString(w, payment.HTML())
+```
 
 ### ayapay.PaymentData
 
 | Field | Type | Required | Rules |
 |---|---|---|---|
 | `OrderID` | `string` | Yes | Unique, 6 to 40 characters (`merchOrderId`) |
-| `Amount` | `myanmarpayments.Amount` | Yes | Whole kyat, greater than 0 (AYA documents no decimals). AYA only accepts MMK (`104`) |
+| `Amount` | `myanmarpayments.Amount` | Yes | Whole kyat, greater than 0, e.g. `Kyat(10000)`. AYA documents no decimals and only accepts MMK (`104`) |
 | `Channel` | `string` | Yes | A key from `Services` |
 | `Method` | `ayapay.Method` | Yes | `MethodWeb`, `MethodQR` or `MethodNoti` |
-| `ReturnURL` | `string` | No | Valid URL. Empty uses the URL registered with AYA |
+| `ReturnURL` | `string` | No | Absolute http or https URL. Empty uses the URL registered with AYA |
 | `Description` | `string` | No | Shown to the customer |
 | `UserRefs` | `[]string` | No | Up to 5 of your own values, echoed back in the callback |
+
+### Form Encoding
+
+AYA expects the form as `multipart/form-data`. `payment.Enctype` carries it; use it if you [render the form yourself](/go-myanmar-payments/payment-flows#form-payments).
 
 ## Handling Callbacks
 
 AYA posts to the callback URL registered with them.
 
 ```go
+import (
+	"net/http"
+
+	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
+)
+
+// POST /payments/aya/callback
 request, err := myanmarpayments.NewCallbackRequestFromHTTP(r)
 if err != nil {
-	http.Error(w, err.Error(), http.StatusBadRequest)
+	http.Error(w, "invalid callback", http.StatusBadRequest)
 	return
 }
 callback, err := aya.HandleCallback(request)
@@ -114,9 +143,12 @@ if err != nil {
 	http.Error(w, "invalid callback", http.StatusBadRequest)
 	return
 }
+
 if callback.IsSuccessful() {
-	// callback.OrderID (merchOrderId), callback.GatewayReference (tranId), callback.Amount
+	// callback.OrderID is your merchOrderId
+	// callback.GatewayReference is AYA's tranId
 }
+
 callback.Acknowledgement.Write(w)
 ```
 
@@ -127,92 +159,124 @@ AYA signs only the fields present in its payload (wallet payments leave out the 
 AYA signs the query string it adds when sending the customer back, so the return page can show the right message:
 
 ```go
-request, _ := myanmarpayments.NewCallbackRequestFromHTTP(r)
+import (
+	"io"
+	"net/http"
+
+	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
+)
+
+// GET /payments/aya/return
+request, err := myanmarpayments.NewCallbackRequestFromHTTP(r)
+if err != nil {
+	http.Error(w, "invalid return", http.StatusBadRequest)
+	return
+}
 result, err := aya.VerifyRedirect(request)
-if err == nil && result.IsSuccessful() {
+if err != nil {
+	http.Error(w, "invalid return", http.StatusBadRequest)
+	return
+}
+
+if result.IsSuccessful() {
 	io.WriteString(w, "Thank you, your payment was received.")
+	return
+}
+io.WriteString(w, "Payment "+string(result.Status)+".")
+```
+
+A `+` in the base64 `payload` that reached you as a space (an unencoded query string) is read back as `+` before decoding; the checksum is still verified. Still fulfill orders from the backend callback.
+
+## Status Checks
+
+```go
+import "fmt"
+
+result, err := aya.Status(ctx, fmt.Sprintf("ORDER_%d", order.ID))
+if err != nil {
+	return err
+}
+
+if result.IsSuccessful() {
+	// result.GatewayReference is AYA's tranId
 }
 ```
 
-Still fulfill orders from the backend callback.
+`Status` takes your `OrderID`. An order AYA doesn't know returns `*myanmarpayments.APIError` (`20` Transaction not found).
 
 ## Responses
 
-What AYA puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`; a field the gateway didn't send is `""`. Network failures and a canceled `ctx` return `*APIError`, which unwraps to the cause (`errors.Is(err, context.DeadlineExceeded)`).
-
-AYA's signed payload carries, in this order and only when they apply: `merchOrderId`, `tranId`, `amount`, `currencyCode` (AYA spells it `currenyCode`), `statusCode`, `paymentCardNumber`, `paymentMobileNumber`, `cardTypeName`, `cardExpiryDate`, `nameOnCard`, `approvalCode`, `tranRef`, `userRef1` to `userRef5`, `description`, `dateTime`. Wallet payments leave out the card fields.
+What AYA Pay puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`; a field the gateway didn't send is `""`.
 
 ### `Services()` → `[]ayapay.Service` {#services-response}
 
 `ayapay.Service` is AYA-only, so it is listed in full here.
 
-| Field / Method | Type | AYA value |
-|---|---|---|
-| `Name` | `string` | AYA `name`, e.g. `AYA Pay`. Falls back to `Key` |
-| `Key` | `string` | AYA `key`: pass it as `PaymentData.Channel`, e.g. `aya_pay`, `kbz_pay`, `visa`. Always set |
-| `ImageURL` | `string` | AYA `image_url`, the channel's logo |
-| `Methods` | `[]ayapay.Method` | The listed methods this package knows: `MethodWeb` (`WEB`), `MethodQR` (`QR`), `MethodNoti` (`NOTI`) |
-| `UnknownMethods` | `[]string` | Listed methods this package does not know yet. `nil` when there are none |
-| `Supports(method)` | `bool` | Whether `Methods` contains `method` |
+| Field / Method | AYA Pay value |
+|---|---|
+| `Name` | AYA `name`, e.g. `AYA Pay`. Falls back to `Key` |
+| `Key` | AYA `key`, e.g. `aya_pay`, `kbz_pay`, `visa`. Pass it as `Channel`. Always set |
+| `ImageURL` | AYA `image_url`, the channel's logo. `""` when AYA sends none |
+| `Methods` | `[]ayapay.Method` this package knows, e.g. `[]ayapay.Method{ayapay.MethodQR, ayapay.MethodNoti}` |
+| `UnknownMethods` | `[]string` of methods AYA listed that this package doesn't know yet. Usually `nil` |
+| `Supports(method)` | Whether `Methods` contains `method` |
 
-Entries without a `key` are skipped. Errors: `*APIError` (AYA `status` not `00`).
+Entries AYA sends without a `key` are skipped.
 
 ### `Initiate()` → `*myanmarpayments.FormPayment` {#initiate-response}
 
-| Field / Method | AYA value |
+| Field / Method | AYA Pay value |
 |---|---|
 | `OrderID` | Your `data.OrderID` |
-| `Action` | `{BaseURL}/v1/payment/request` |
-| `Fields` | The signed fields below, in signing order |
+| `Action` | `{BaseURL}/v1/payment/request`, e.g. `https://uat-pgw.ayainnovation.com/v1/payment/request` |
+| `Fields` | The signed fields below, in signing order. Post them unchanged |
 | `Enctype` | `multipart/form-data` |
-| `HTML()` | A page that posts the fields to `Action` as `multipart/form-data` on load |
+| `HTML()` | A full HTML page that posts `Fields` to `Action` on load |
 
 | Form field | Value |
 |---|---|
 | `merchOrderId` | `data.OrderID` |
-| `amount` | `data.Amount`, whole kyat, e.g. `8000` |
+| `amount` | `data.Amount`, e.g. `10000` |
 | `appKey` | `Config.AppKey` |
-| `timestamp` | Unix seconds |
-| `userRef1` … `userRef5` | `data.UserRefs`, `""` when unset |
-| `description` | `data.Description` |
+| `timestamp` | Unix time in seconds |
+| `userRef1` … `userRef5` | `data.UserRefs`, `""` when unused |
+| `description` | `data.Description`, `""` when unset |
 | `currencyCode` | `104` (MMK) |
-| `channel` | `data.Channel` |
+| `channel` | `data.Channel`, e.g. `aya_pay` |
 | `method` | `data.Method`, e.g. `QR` |
 | `overrideFrontendRedirectUrl` | `data.ReturnURL`, `""` when unset |
 | `checkSum` | HMAC-SHA256 of the values above joined with `:` |
 
-`Initiate` makes no HTTP call. Errors: `*InvalidPaymentDataError` only.
+`Initiate` makes no HTTP call, so it takes no context. `FormPayment` has no `Raw`: nothing is sent to AYA until the customer's browser posts the form.
 
 ### `Status()` → `*myanmarpayments.PaymentStatusResult` {#status-response}
 
-| Field | AYA value |
+| Field | AYA Pay value |
 |---|---|
 | `OrderID` | AYA `merchOrderId`, falling back to the `orderID` you passed. Always set |
 | `Status` | `statusCode` mapped, see [Statuses](#statuses) |
 | `GatewayStatus` | AYA `statusCode`, trimmed, e.g. `00` |
 | `GatewayReference` | AYA `tranId` |
-| `Amount` | AYA `amount`, e.g. `8000` |
-| `Raw` | The verified, decoded enquiry payload (keys above) |
+| `Amount` | AYA `amount`, e.g. `10000` |
+| `Raw` | The verified, decoded enquiry payload: `merchOrderId`, `tranId`, `amount`, `currencyCode`, `statusCode`, `paymentCardNumber`, `paymentMobileNumber`, `cardTypeName`, `cardExpiryDate`, `nameOnCard`, `approvalCode`, `tranRef`, `userRef1`–`5`, `description`, `dateTime` |
 
-Errors: `*APIError` (AYA `status` not `00`, e.g. `20` Transaction not found), `*SignatureVerificationError` (the enquiry's `checkSum` does not match).
+AYA leaves out the fields that don't apply (wallet payments have no card fields), so `Raw` only has the keys AYA sent. Some payloads spell `currencyCode` as `currenyCode`.
 
 ### `HandleCallback()` → `*myanmarpayments.PaymentCallback` {#handlecallback-response}
 
-| Field | AYA value |
+| Field | AYA Pay value |
 |---|---|
 | `OrderID` | AYA `merchOrderId` (your `OrderID`) |
 | `Status` | `statusCode` mapped, see [Statuses](#statuses) |
 | `GatewayStatus` | AYA `statusCode`, trimmed, e.g. `00` |
 | `GatewayReference` | AYA `tranId` |
-| `Amount` | AYA `amount`, e.g. `8000` |
-| `Raw` | The verified, decoded payload (keys above) |
+| `Amount` | AYA `amount`, e.g. `10000` |
+| `Raw` | The verified, decoded payload, with the same keys as `Status()` |
 | `Acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
-
-Errors: `*SignatureVerificationError` when `payload` is missing or not base64 JSON, or `checkSum` does not match.
 
 ### `VerifyRedirect()` → `*myanmarpayments.PaymentCallback` {#verifyredirect-response}
 
-The same values as `HandleCallback()`, read from the signed `payload` and `checkSum` AYA adds to your return URL (query string first, then the body). A `+` in the base64 `payload` that arrived as a space (an unencoded query string) is mapped back before decoding; the checksum is still verified. `Acknowledgement` is set but there is nothing to acknowledge: render your return page instead. Errors: `*SignatureVerificationError`.
+The same values as [`HandleCallback()`](#handlecallback-response), read from the signed `payload` and `checkSum` AYA adds to your return URL (query string first, then the body). There is nothing to acknowledge: render your own page.
 
 ## Statuses
 
@@ -226,4 +290,12 @@ The same values as `HandleCallback()`, read from the signed `payload` and `check
 
 ## Errors
 
-`Services` and `Status` return `*myanmarpayments.APIError` when AYA's `status` is not `00`, e.g. `20` Transaction not found, `09` Duplicate order ID.
+| Call | Returns | When |
+|---|---|---|
+| `Initiate()` | `*InvalidPaymentDataError` | `data.Validate()` fails. Nothing is signed |
+| `Services()` | `*APIError` | AYA answers with an HTTP error or a `status` other than `00` |
+| `Status()` | `*APIError` | AYA answers with an HTTP error or a `status` other than `00`, e.g. `20` Transaction not found |
+| `Status()` | `*SignatureVerificationError` | The enquiry payload's `checkSum` doesn't match |
+| `HandleCallback()`, `VerifyRedirect()` | `*SignatureVerificationError` | `payload` is missing or not base64 JSON, or `checkSum` doesn't match |
+
+The error types live in the root `myanmarpayments` package. `*APIError` carries AYA's `status` (e.g. `20` Transaction not found, `09` Duplicate order ID) in `GatewayCode` and its `message` in `GatewayMessage`. When AYA can't be reached or `ctx` is canceled, the calls return `*APIError`, which unwraps to the cause (`errors.Is(err, context.DeadlineExceeded)`).

@@ -50,7 +50,8 @@ CREATE TABLE IF NOT EXISTS payment_webhooks (
   processed_at INTEGER NULL,
   created_at INTEGER NOT NULL
 );
-CREATE INDEX IF NOT EXISTS payment_webhooks_order ON payment_webhooks (gateway, order_id, status);
+CREATE INDEX IF NOT EXISTS payment_webhooks_order
+  ON payment_webhooks (gateway, order_id, status);
 ```
 
 Your orders table needs the order number, the amount as a decimal string and a nullable `paid_at`; the sample's is `orders (number, gateway, amount, gateway_reference, paid_at, created_at)`.
@@ -65,8 +66,9 @@ import { DatabaseSync } from 'node:sqlite';
 export const DATABASE = Symbol('DATABASE');
 
 /**
- * Opens the playground database and creates its tables: the orders the checkout routes create and
- * the payment_webhooks table of the recommended webhook flow.
+ * Opens the playground database and creates its tables: the orders the
+ * checkout routes create and the payment_webhooks table of the recommended
+ * webhook flow.
  *
  * @param path A file path, or ':memory:' for tests.
  */
@@ -90,7 +92,7 @@ export function openDatabase(path = ':memory:'): DatabaseSync {
       status VARCHAR(16) NULL,              -- PaymentStatus value
       gateway_status VARCHAR(64) NULL,
       gateway_reference VARCHAR(128) NULL,
-      amount VARCHAR(32) NULL,              -- as the gateway sent it, never a float
+      amount VARCHAR(32) NULL,              -- as sent, never a float
       verified SMALLINT NOT NULL,
       body TEXT NOT NULL,                   -- the raw request body
       headers TEXT NOT NULL,                -- JSON
@@ -101,7 +103,8 @@ export function openDatabase(path = ':memory:'): DatabaseSync {
       processed_at INTEGER NULL,
       created_at INTEGER NOT NULL
     );
-    CREATE INDEX IF NOT EXISTS payment_webhooks_order ON payment_webhooks (gateway, order_id, status);
+    CREATE INDEX IF NOT EXISTS payment_webhooks_order
+      ON payment_webhooks (gateway, order_id, status);
   `);
   return db;
 }
@@ -132,7 +135,10 @@ import { Controller, NotFoundException, Param, Post } from '@nestjs/common';
 
 import { WebhooksService } from './webhooks.service.js';
 
-/** One callback endpoint per gateway: verify, store, acknowledge; the worker processes it. */
+/**
+ * One callback endpoint per gateway: verify, store, acknowledge; the worker
+ * processes it.
+ */
 @Controller('payments/callback')
 export class WebhooksController {
   constructor(private readonly webhooks: WebhooksService) {}
@@ -146,7 +152,8 @@ export class WebhooksController {
     if (!(GATEWAY_NAMES as readonly string[]).includes(gateway)) {
       throw new NotFoundException();
     }
-    // Returning the callback answers with the acknowledgement the gateway expects.
+    // Returning the callback answers with the acknowledgement the gateway
+    // expects.
     return this.webhooks.receive(gateway as GatewayName, request);
   }
 }
@@ -184,7 +191,10 @@ import { DATABASE, now } from '../database.js';
 
 /** Attempts before a stored webhook is left for a manual replay. */
 export const MAX_ATTEMPTS = 5;
-/** Seconds a worker owns a claimed row; a crashed worker's claim expires after this. */
+/**
+ * Seconds a worker owns a claimed row; a crashed worker's claim expires after
+ * this.
+ */
 export const LOCK_FOR = 120;
 /** Seconds to wait before each retry. */
 export const BACKOFF = [10, 60, 300, 900];
@@ -200,9 +210,10 @@ interface StoredWebhook {
 }
 
 /**
- * The recommended webhook flow, as app code: verify, store, acknowledge immediately, then
- * process each stored call once in a background worker with retries. The package never stores
- * webhooks; this is the sample from the docs, wired into the playground.
+ * The recommended webhook flow, as app code: verify, store, acknowledge
+ * immediately, then process each stored call once in a background worker with
+ * retries. The package never stores webhooks; this is the sample from the
+ * docs, wired into the playground.
  */
 @Injectable()
 export class WebhooksService
@@ -218,8 +229,8 @@ export class WebhooksService
   ) {}
 
   /**
-   * Verifies and stores a callback. Returns the verified callback, whose acknowledgement the
-   * controller sends; processing happens in the worker.
+   * Verifies and stores a callback. Returns the verified callback, whose
+   * acknowledgement the controller sends; processing happens in the worker.
    */
   async receive(
     gateway: GatewayName,
@@ -238,7 +249,9 @@ export class WebhooksService
       // Rejected calls are kept for debugging, never processed.
       this.db
         .prepare(
-          `INSERT INTO payment_webhooks (gateway, verified, body, headers, last_error, available_at, created_at)
+          `INSERT INTO payment_webhooks
+             (gateway, verified, body, headers, last_error, available_at,
+              created_at)
            VALUES (?, 0, ?, ?, ?, ?, ?)`,
         )
         .run(gateway, request.body, headers, error.message, time, time);
@@ -250,7 +263,8 @@ export class WebhooksService
       this.db
         .prepare(
           `INSERT INTO payment_webhooks
-             (gateway, order_id, status, gateway_status, gateway_reference, amount, verified, body, headers, available_at, created_at)
+             (gateway, order_id, status, gateway_status, gateway_reference,
+              amount, verified, body, headers, available_at, created_at)
            VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`,
         )
         .run(
@@ -274,7 +288,8 @@ export class WebhooksService
     }
 
     this.logger.log(
-      `[${gateway}] callback verified order=${callback.orderId} status=${callback.status} amount=${callback.amount ?? ''}`,
+      `[${gateway}] callback verified order=${callback.orderId}` +
+        ` status=${callback.status} amount=${callback.amount ?? ''}`,
     );
     return callback;
   }
@@ -307,7 +322,10 @@ export class WebhooksService
     }
   }
 
-  /** Processes every row that is due right now. Returns how many were attempted. */
+  /**
+   * Processes every row that is due right now. Returns how many were
+   * attempted.
+   */
   async drain(): Promise<number> {
     let count = 0;
     while (await this.processNext()) {
@@ -317,16 +335,18 @@ export class WebhooksService
   }
 
   /**
-   * Claims and processes the next due row. Safe to run in several workers or processes: the
-   * claim is an UPDATE that only one of them wins.
+   * Claims and processes the next due row. Safe to run in several workers or
+   * processes: the claim is an UPDATE that only one of them wins.
    */
   async processNext(): Promise<boolean> {
     const time = now();
     const webhook = this.db
       .prepare(
-        `SELECT id, gateway, order_id, status, gateway_reference, amount, attempts
+        `SELECT id, gateway, order_id, status, gateway_reference, amount,
+                attempts
          FROM payment_webhooks
-         WHERE verified = 1 AND processed_at IS NULL AND attempts < ? AND available_at <= ?
+         WHERE verified = 1 AND processed_at IS NULL AND attempts < ?
+           AND available_at <= ?
            AND (locked_until IS NULL OR locked_until < ?)
          ORDER BY id LIMIT 1`,
       )
@@ -338,7 +358,8 @@ export class WebhooksService
     const claim = this.db
       .prepare(
         `UPDATE payment_webhooks SET locked_until = ?, attempts = attempts + 1
-         WHERE id = ? AND processed_at IS NULL AND (locked_until IS NULL OR locked_until < ?)`,
+         WHERE id = ? AND processed_at IS NULL
+           AND (locked_until IS NULL OR locked_until < ?)`,
       )
       .run(time + LOCK_FOR, webhook.id, time);
     if (claim.changes !== 1) {
@@ -351,35 +372,48 @@ export class WebhooksService
       const delay = BACKOFF[Math.min(webhook.attempts, BACKOFF.length - 1)];
       this.db
         .prepare(
-          'UPDATE payment_webhooks SET last_error = ?, available_at = ?, locked_until = NULL WHERE id = ?',
+          `UPDATE payment_webhooks
+           SET last_error = ?, available_at = ?, locked_until = NULL
+           WHERE id = ?`,
         )
         .run((error as Error).message, now() + delay, webhook.id);
+      const message = (error as Error).message;
       this.logger.warn(
-        `[${webhook.gateway}] webhook ${webhook.id} failed: ${(error as Error).message}`,
+        `[${webhook.gateway}] webhook ${webhook.id} failed: ${message}`,
       );
       return true;
     }
 
     this.db
       .prepare(
-        'UPDATE payment_webhooks SET processed_at = ?, last_error = NULL, locked_until = NULL WHERE id = ?',
+        `UPDATE payment_webhooks
+         SET processed_at = ?, last_error = NULL, locked_until = NULL
+         WHERE id = ?`,
       )
       .run(now(), webhook.id);
     return true;
   }
 
-  /** Queues a stored webhook again, e.g. after fixing the cause of its last error. */
+  /**
+   * Queues a stored webhook again, e.g. after fixing the cause of its last
+   * error.
+   */
   replay(id: number): boolean {
     const result = this.db
       .prepare(
-        `UPDATE payment_webhooks SET attempts = 0, available_at = ?, locked_until = NULL, last_error = NULL
+        `UPDATE payment_webhooks
+         SET attempts = 0, available_at = ?, locked_until = NULL,
+             last_error = NULL
          WHERE id = ? AND verified = 1 AND processed_at IS NULL`,
       )
       .run(now(), id);
     return result.changes === 1;
   }
 
-  /** Deletes processed and rejected webhooks older than `days`. Returns how many were removed. */
+  /**
+   * Deletes processed and rejected webhooks older than `days`. Returns how
+   * many were removed.
+   */
   prune(days = 30): number {
     const before = now() - days * 86400;
     const result = this.db
@@ -413,14 +447,17 @@ export class WebhooksService
       !Amount.parse(order.amount).equals(webhook.amount)
     ) {
       throw new Error(
-        `paid ${webhook.amount}, expected ${order.amount} for order ${webhook.order_id}`,
+        `paid ${webhook.amount}, expected ${order.amount}` +
+          ` for order ${webhook.order_id}`,
       );
     }
 
-    // The paid_at IS NULL condition keeps this idempotent even if two webhooks for one order run at once.
+    // The paid_at IS NULL condition keeps this idempotent even if two
+    // webhooks for one order run at once.
     this.db
       .prepare(
-        'UPDATE orders SET paid_at = ?, gateway_reference = ? WHERE number = ? AND paid_at IS NULL',
+        `UPDATE orders SET paid_at = ?, gateway_reference = ?
+         WHERE number = ? AND paid_at IS NULL`,
       )
       .run(now(), webhook.gateway_reference, webhook.order_id);
   }
@@ -488,6 +525,10 @@ prune(): void {
 Post signed callbacks with supertest and run the worker by hand:
 
 ```ts
+import request from 'supertest';
+
+import { WebhooksService } from '../src/webhooks/webhooks.service.js';
+
 const app = moduleRef.createNestApplication({ rawBody: true });
 await app.init();
 

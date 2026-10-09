@@ -5,15 +5,16 @@ description: Integrate Yoma Bank MMQR in Go. Ready-made QR images, QR renewal, s
 
 # Yoma MMQR
 
-| Method | Flow | Returns |
+Yoma MMQR is Yoma Bank's MMQR gateway: it issues ready-made QR images that customers scan with any MMQR wallet.
+
+| Call | What it does | Returns |
 |---|---|---|
 | `yoma.Initiate(ctx, data)` | Check out the order and generate its first QR | [`*QrPayment`](#initiate-response) |
 | `yoma.RenewQR(ctx, orderID)` | Generate a new QR for a checked-out order | [`*QrPayment`](#renewqr-response) |
 | `yoma.Status(ctx, reference)` | Check a QR's payment status | [`*PaymentStatusResult`](#status-response) |
 | `yoma.HandleCallback(request)` | Verify the callback | [`*PaymentCallback`](#handlecallback-response) |
-| `yoma.ForgetToken()` | Drop the cached access token, e.g. after rotating the client secret | nothing |
 
-[Responses](#responses) shows what Yoma puts in each result.
+[Responses](#responses) shows what Yoma MMQR puts in each result.
 
 ## How it works
 
@@ -26,7 +27,7 @@ Yoma checks each order out once, then issues QR codes that each stay payable for
     { from: 'Your app', to: 'Yoma MMQR', label: 'Get a token unless cached', detail: 'POST /token, then cached' },
     { from: 'Your app', to: 'Yoma MMQR', label: 'Check out the order', detail: 'yoma.Initiate(ctx, data)' },
     { from: 'Your app', to: 'Yoma MMQR', label: 'Generate the QR', detail: 'qr/generate: QR + refLabel' },
-    { from: 'Your app', to: 'Customer', label: 'Show the QR for 120 s', detail: 'QRImage, a base64 PNG', response: true },
+    { from: 'Your app', to: 'Customer', label: 'Show the QR for 120 s', detail: 'payment.QRImageDataURI(&quot;&quot;)', response: true },
     { from: 'Your app', to: 'Yoma MMQR', label: 'Expired? Renew the QR', detail: 'yoma.RenewQR(ctx, orderID)' },
     { from: 'Customer', to: 'Yoma MMQR', label: 'Scan with an MMQR wallet' },
     { from: 'Yoma MMQR', to: 'Your app', label: 'Payment callback', detail: 'orderNumber, status, hashValue' },
@@ -39,12 +40,19 @@ Yoma checks each order out once, then issues QR codes that each stay payable for
 
 ```go
 import (
+	"fmt"
+
 	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
 	"github.com/laranex/go-myanmar-payments/v4/yomammqr"
 )
 
 yoma, err := yomammqr.New(
-	yomammqr.Config{MerchantID: "...", ClientID: "...", ClientSecret: "...", WebhookHashKey: "..."},
+	yomammqr.Config{
+		MerchantID:     "...",
+		ClientID:       "...",
+		ClientSecret:   "...",
+		WebhookHashKey: "...",
+	},
 	nil, // default HTTP client
 	nil, // in-memory token cache; share this gateway across requests
 )
@@ -52,52 +60,48 @@ if err != nil {
 	return err
 }
 
-payment, err := yoma.Initiate(ctx, yomammqr.PaymentData{
-	OrderID:     "ORD-" + orderID,
+data := yomammqr.PaymentData{
+	OrderID:     fmt.Sprintf("ORDER_%d", order.ID),
 	Amount:      myanmarpayments.Kyat(10000),
-	Description: "Order #" + orderID,
-})
+	Description: fmt.Sprintf("Order #%d", order.ID),
+}
+
+payment, err := yoma.Initiate(ctx, data)
 if err != nil {
 	return err
 }
-saveQRReference(orderID, payment.Reference)
-// <img src="{{.QR}}"> with template.URL(payment.QRImageDataURI(""))
-```
 
-`QRImage` is an already rendered base64 PNG of the payment slip: display it as is, no QR library needed.
+// Store payment.Reference with the order for status checks.
+
+src := payment.QRImageDataURI("")
+fmt.Fprintf(w, `<img src="%s" alt="Scan with any MMQR wallet">`, src)
+```
 
 ### yomammqr.PaymentData
 
 | Field | Type | Required | Rules |
 |---|---|---|---|
 | `OrderID` | `string` | Yes | Unique order number, at most 20 characters |
-| `Amount` | `myanmarpayments.Amount` | Yes | Whole kyat, greater than 0 (Yoma documents no decimals or currency) |
+| `Amount` | `myanmarpayments.Amount` | Yes | Whole kyat, greater than 0, e.g. `Kyat(10000)`. Yoma documents no decimals or currency |
 | `Description` | `string` | Yes | At most 50 characters |
 
-## QR Lifetime and Renewal
+### QR Image
 
-A QR is payable for 120 seconds (`yomammqr.QRLifetime`); `payment.ExpiresAt` tells you when. Yoma accepts each order number **once**, so never call `Initiate` again for the same order. Renew the QR instead:
-
-```go
-payment, err := yoma.RenewQR(ctx, "ORD-"+orderID)
-```
-
-Each renewal retires the previous `Reference`; only the newest one answers status checks.
-
-## Status Checks
-
-```go
-result, err := yoma.Status(ctx, payment.Reference)
-```
-
-An expired QR returns `StatusExpired` (with `GatewayStatus` `QR EXPIRED`) instead of an error. `result.OrderID` is empty here because Yoma only returns the reference.
+`QRImage` is an already rendered base64 PNG of the payment slip: display it as is, no QR library needed.
 
 ## Handling Callbacks
 
 ```go
+import (
+	"net/http"
+
+	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
+)
+
+// POST /payments/yoma/callback
 request, err := myanmarpayments.NewCallbackRequestFromHTTP(r)
 if err != nil {
-	http.Error(w, err.Error(), http.StatusBadRequest)
+	http.Error(w, "invalid callback", http.StatusBadRequest)
 	return
 }
 callback, err := yoma.HandleCallback(request)
@@ -105,9 +109,11 @@ if err != nil {
 	http.Error(w, "invalid callback", http.StatusBadRequest)
 	return
 }
+
 if callback.IsSuccessful() {
-	// callback.OrderID is your order number
+	// callback.OrderID is your orderNumber
 }
+
 callback.Acknowledgement.Write(w)
 ```
 
@@ -117,44 +123,75 @@ The callback URL is registered with Yoma, not sent per order. When `WebhookSecre
 Yoma's specification does not name the hash algorithm; HMAC-SHA256 is inferred from its sample. Confirm it with Yoma before going live.
 :::
 
+## QR Lifetime and Renewal
+
+A QR is payable for 120 seconds (`yomammqr.QRLifetime`); `payment.ExpiresAt` tells you when. Yoma accepts each order number **once**, so never call `Initiate` again for the same order. Renew the QR instead:
+
+```go
+import "fmt"
+
+payment, err := yoma.RenewQR(ctx, fmt.Sprintf("ORDER_%d", order.ID))
+if err != nil {
+	return err
+}
+
+// Store the new payment.Reference: the previous one stops working.
+```
+
+Each renewal retires the previous `Reference`; only the newest one answers status checks.
+
+## Status Checks
+
+```go
+// reference is the payment.Reference you stored
+result, err := yoma.Status(ctx, reference)
+if err != nil {
+	return err
+}
+
+if result.IsSuccessful() {
+	// the QR was paid
+}
+```
+
+`Status` takes the QR's `Reference`, not your `OrderID`. An expired QR returns `StatusExpired` instead of an error.
+
 ## Responses
 
-What Yoma puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`; a field the gateway didn't send is `""`. Network failures and a canceled `ctx` return `*APIError`, which unwraps to the cause (`errors.Is(err, context.DeadlineExceeded)`).
+What Yoma MMQR puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`; a field the gateway didn't send is `""`.
 
 ### `Initiate()` → `*myanmarpayments.QrPayment` {#initiate-response}
 
-| Field / Method | Yoma value |
+| Field / Method | Yoma MMQR value |
 |---|---|
-| `OrderID` | Your `data.OrderID` |
+| `OrderID` | Your `data.OrderID` (Yoma `orderNumber`) |
 | `QRString` | Always `""` |
-| `QRImage` | Yoma `qrString`, a base64 PNG to display as is. Always set |
+| `QRImage` | Yoma `qrString`, a base64 PNG of the payment slip. Always set |
 | `ExpiresAt` | Now + 120 seconds (`yomammqr.QRLifetime`). Always set |
-| `Reference` | Yoma `refLabel`: pass it to `Status`. Always set |
-| `Raw` | The `qr/generate` response, including `qrString` and `refLabel` |
+| `Reference` | Yoma `refLabel`, e.g. `100000083331`. Pass it to `Status`. Always set |
+| `Raw` | The `qr/generate` response: `refLabel`, `qrString`, `errorCode` (`nil`), `errorDescription` |
 | `QRImageDataURI("")` | `data:image/png;base64,…` |
 
-`Initiate` checks the order out (`payment/checkout`) and then calls `RenewQR`, so this is the first QR. Errors: `*InvalidPaymentDataError` (no request sent), `*APIError` (token request failed, HTTP error, an `errorCode` even on HTTP 200, e.g. `PAYMENT ALREADY EXISTS`, `checkOutStatus` not `true`, or no `qrString` / `refLabel`).
+`Initiate` checks the order out (`payment/checkout`), then generates its first QR; the result comes from the generate call.
 
 ### `RenewQR()` → `*myanmarpayments.QrPayment` {#renewqr-response}
 
-The same values as `Initiate()` for the `orderID` you passed, with a new `QRImage`, `Reference` and `ExpiresAt`. The previous `Reference` stops working. Errors: `*APIError`, as `Initiate()`.
+The same values as [`Initiate()`](#initiate-response) for the `orderID` you passed, with a new `QRImage`, `Reference` and `ExpiresAt`. The previous `Reference` stops answering status checks.
 
 ### `Status()` → `*myanmarpayments.PaymentStatusResult` {#status-response}
 
-| Field | Yoma value |
+| Field | Yoma MMQR value |
 |---|---|
 | `OrderID` | Always `""`: Yoma only returns the reference |
 | `Status` | `paymentStatus` mapped, see [Statuses](#statuses). `StatusExpired` for a `QR EXPIRED` error |
 | `GatewayStatus` | Yoma `paymentStatus`, trimmed, e.g. `SUCCESS`. `QR EXPIRED` for an expired QR |
 | `GatewayReference` | Yoma `refLabel`, falling back to the reference you passed. Always set |
 | `Amount` | Always `""`: Yoma's status response has no amount |
-| `Raw` | The `payment/check-status` response, including `paymentStatus` and `refLabel` (or `errorCode`) |
-
-Errors: `*APIError` (token request failed, HTTP error, or any `errorCode` other than `QR EXPIRED`).
+| `Raw` | The `payment/check-status` response: `refLabel`, `paymentStatus`, `errorCode`, `errorDescription` |
 
 ### `HandleCallback()` → `*myanmarpayments.PaymentCallback` {#handlecallback-response}
 
-| Field | Yoma value |
+| Field | Yoma MMQR value |
 |---|---|
 | `OrderID` | Yoma `orderNumber` (your `OrderID`) |
 | `Status` | `status` mapped case-insensitively, see [Statuses](#statuses) |
@@ -163,8 +200,6 @@ Errors: `*APIError` (token request failed, HTTP error, or any `errorCode` other 
 | `Amount` | Always `""`: Yoma's callback has no amount |
 | `Raw` | The verified body: `orderNumber`, `status`, `hashValue` |
 | `Acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
-
-Errors: `*SignatureVerificationError` when `X-Webhook-Secret` is missing or wrong (with `WebhookSecret` set), `orderNumber` is missing, or `hashValue` does not match.
 
 ## Statuses
 
@@ -178,8 +213,16 @@ Errors: `*SignatureVerificationError` when `X-Webhook-Secret` is missing or wron
 
 ## Access Tokens
 
-Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in the [token cache](/go-myanmar-payments/configuration#token-cache) and fetches a new one, retrying once, when Yoma answers `401`.
+Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in the [token cache](/go-myanmar-payments/configuration#token-cache) and fetches a new one, retrying once, when Yoma answers `401`. `yoma.ForgetToken()` drops the cached token, e.g. after rotating the client secret.
 
 ## Errors
 
-Yoma reports business errors with HTTP 200 and an `errorCode`; the package returns `*myanmarpayments.APIError` for them, e.g. `PAYMENT ALREADY EXISTS` when an order is checked out twice.
+| Call | Returns | When |
+|---|---|---|
+| `Initiate()` | `*InvalidPaymentDataError` | `data.Validate()` fails. Nothing is sent |
+| `Initiate()` | `*APIError` | The token request fails, Yoma answers with an HTTP error or an `errorCode` (e.g. `PAYMENT ALREADY EXISTS`), `checkOutStatus` isn't `true`, or there is no `qrString` or `refLabel` |
+| `RenewQR()` | `*APIError` | As `Initiate()`, without the checkout |
+| `Status()` | `*APIError` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
+| `HandleCallback()` | `*SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong (when `WebhookSecret` is set), `orderNumber` is missing, or `hashValue` doesn't match |
+
+The error types live in the root `myanmarpayments` package. Yoma reports business errors with HTTP 200 and an `errorCode`; `*APIError` carries it in `GatewayCode` and Yoma's `errorDescription` in `GatewayMessage`. When Yoma can't be reached or `ctx` is canceled, the calls return `*APIError`, which unwraps to the cause (`errors.Is(err, context.DeadlineExceeded)`).

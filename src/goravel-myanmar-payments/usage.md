@@ -27,22 +27,36 @@ Each gateway is built from the [configuration](/goravel-myanmar-payments/configu
 
 `paymentsfacades.MyanmarPayments()` panics only when the service provider is not registered. Outside Goravel's facades, `payments.Registered()` and `payments.Resolve(app)` return the manager with an error instead.
 
-Goravel's `http.Context` is a `context.Context`, so pass `ctx` straight to gateway calls that hit the network. Amounts are exact [`myanmarpayments.Amount`](/go-myanmar-payments/amounts) values such as `myanmarpayments.Kyat(1000)` or `myanmarpayments.MustParseAmount("1000.50")`.
+Goravel's `http.Context` is a `context.Context`, so pass `ctx` straight to gateway calls that hit the network. Amounts are exact [`myanmarpayments.Amount`](/go-myanmar-payments/amounts) values such as `myanmarpayments.Kyat(10000)` or `myanmarpayments.MustParseAmount("10000.50")`.
 
 ## Redirect payments (KBZ Pay PWA, Wave Money)
 
 ```go
+import (
+	"fmt"
+
+	"github.com/goravel/framework/contracts/http"
+	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
+	"github.com/laranex/go-myanmar-payments/v4/wavemoney"
+	paymentsfacades "github.com/laranex/goravel-myanmar-payments/v4/facades"
+)
+
 func (c *CheckoutController) Wave(ctx http.Context) http.Response {
+	order := findOrder(ctx) // your own order lookup
+
 	wave, err := paymentsfacades.MyanmarPayments().WaveMoney()
 	if err != nil {
 		return paymentError(ctx, err)
 	}
 	data := &wavemoney.PaymentData{
-		OrderID:     order.Number,
+		OrderID:     fmt.Sprintf("ORDER_%d", order.ID),
 		CallbackURL: "https://shop.test/payments/callback/wave-money",
-		ReturnURL:   "https://shop.test/orders/" + order.Number,
-		Description: "Order " + order.Number,
-		Items:       []wavemoney.Item{{Name: "Tea", Amount: myanmarpayments.Kyat(1000)}},
+		ReturnURL:   fmt.Sprintf("https://shop.test/orders/%d", order.ID),
+		Description: fmt.Sprintf("Order #%d", order.ID),
+		Items: []wavemoney.Item{
+			{Name: "Product A", Amount: myanmarpayments.Kyat(6000)},
+			{Name: "Product B", Amount: myanmarpayments.Kyat(4000)},
+		},
 	}
 	payment, err := wave.Initiate(ctx, data)
 	if err != nil {
@@ -58,16 +72,38 @@ KBZ Pay's `PWA` works the same way with `kbzpay.PaymentData`. See [KBZ Pay](/go-
 ## QR and in-app payments
 
 ```go
+import (
+	"fmt"
+
+	"github.com/goravel/framework/contracts/http"
+	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
+	"github.com/laranex/go-myanmar-payments/v4/kbzpay"
+	"github.com/laranex/go-myanmar-payments/v4/yomammqr"
+	paymentsfacades "github.com/laranex/goravel-myanmar-payments/v4/facades"
+)
+
 kbz, _ := paymentsfacades.MyanmarPayments().KbzPay()
-qr, err := kbz.QR(ctx, kbzpay.PaymentData{OrderID: "ORDER_1", Amount: myanmarpayments.Kyat(1000), CallbackURL: callbackURL})
+data := kbzpay.PaymentData{
+	OrderID:     fmt.Sprintf("ORDER_%d", order.ID),
+	Amount:      myanmarpayments.Kyat(10000),
+	CallbackURL: "https://shop.test/payments/callback/kbzpay",
+}
+
+qr, err := kbz.QR(ctx, data)
 // qr.QRString: encode it into a QR image
 
-app, err := kbz.App(ctx, kbzpay.PaymentData{...})
-return ctx.Response().Json(http.StatusOK, app) // orderId, orderInfo, sign, signType for the mobile SDK
+app, err := kbz.App(ctx, data)
+// orderId, orderInfo, sign and signType for the mobile SDK
+return ctx.Response().Json(http.StatusOK, app)
 
 yoma, _ := paymentsfacades.MyanmarPayments().YomaMmqr()
-payment, err := yoma.Initiate(ctx, yomammqr.PaymentData{OrderID: "ORD-20261008", Amount: myanmarpayments.Kyat(1000), Description: "Order"})
-// <img src="{{ payment.QRImageDataURI("") }}">, payable until payment.ExpiresAt; renew with yoma.RenewQR(ctx, orderID)
+payment, err := yoma.Initiate(ctx, yomammqr.PaymentData{
+	OrderID:     fmt.Sprintf("ORDER_%d", order.ID),
+	Amount:      myanmarpayments.Kyat(10000),
+	Description: fmt.Sprintf("Order #%d", order.ID),
+})
+// <img src="{{ payment.QRImageDataURI("") }}">, payable until
+// payment.ExpiresAt; renew it with yoma.RenewQR(ctx, payment.OrderID)
 ```
 
 ## Form payments (AYA Pay and CyberSource)
@@ -75,23 +111,37 @@ payment, err := yoma.Initiate(ctx, yomammqr.PaymentData{OrderID: "ORD-20261008",
 AYA Pay and CyberSource sign a form that the customer's browser must POST to the gateway. Hand the form to `payments.AutoSubmitURL` and redirect to the link it returns:
 
 ```go
+import (
+	"fmt"
+
+	"github.com/goravel/framework/contracts/http"
+	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
+	"github.com/laranex/go-myanmar-payments/v4/ayapay"
+	payments "github.com/laranex/goravel-myanmar-payments/v4"
+	paymentsfacades "github.com/laranex/goravel-myanmar-payments/v4/facades"
+)
+
 func (c *CheckoutController) Aya(ctx http.Context) http.Response {
+	order := findOrder(ctx) // your own order lookup
+
 	aya, err := paymentsfacades.MyanmarPayments().AyaPay()
 	if err != nil {
 		return paymentError(ctx, err)
 	}
 	form, err := aya.Initiate(ayapay.PaymentData{
-		OrderID:   "ORD123456",
-		Amount:    myanmarpayments.Kyat(1000),
-		Channel:   "aya_pay",
-		Method:    ayapay.MethodQR,
-		ReturnURL: "https://shop.test/payments/aya-pay/done",
+		OrderID:     fmt.Sprintf("ORDER_%d", order.ID),
+		Amount:      myanmarpayments.Kyat(10000),
+		Channel:     "aya_pay",
+		Method:      ayapay.MethodQR,
+		ReturnURL:   "https://shop.test/payments/aya-pay/done",
+		Description: fmt.Sprintf("Order #%d", order.ID),
 	})
 	if err != nil {
 		return paymentError(ctx, err)
 	}
 
-	link, err := payments.AutoSubmitURL(form) // or paymentsfacades.MyanmarPayments().AutoSubmitURL(form)
+	// or paymentsfacades.MyanmarPayments().AutoSubmitURL(form)
+	link, err := payments.AutoSubmitURL(form)
 	if err != nil {
 		return paymentError(ctx, err)
 	}
@@ -111,7 +161,8 @@ The Go SDK has no auto-submit URL of its own; this is the Goravel counterpart of
 Without the route you can still serve the form yourself:
 
 ```go
-return ctx.Response().Data(http.StatusOK, "text/html; charset=utf-8", []byte(form.HTML()))
+html := []byte(form.HTML())
+return ctx.Response().Data(http.StatusOK, "text/html; charset=utf-8", html)
 ```
 
 `Manager.ResolveFormPayment(payload)` and `Manager.ServeForm(ctx)` expose the route's internals if you register your own route.
@@ -119,6 +170,8 @@ return ctx.Response().Data(http.StatusOK, "text/html; charset=utf-8", []byte(for
 After paying, AYA sends the customer to `ReturnURL` with a signed query string. Verify it with `aya.VerifyRedirect` to show the result, and fulfill the order from the backend callback ([Handling webhooks](/goravel-myanmar-payments/webhooks)):
 
 ```go
+import payments "github.com/laranex/goravel-myanmar-payments/v4"
+
 request, err := payments.CallbackRequestFromContext(ctx)
 result, err := aya.VerifyRedirect(request)
 ```
@@ -128,21 +181,39 @@ result, err := aya.VerifyRedirect(request)
 The SDK's [errors](/go-myanmar-payments/references/errors) come back unchanged. A handler can map them onto HTTP statuses:
 
 ```go
+import (
+	"errors"
+
+	"github.com/goravel/framework/contracts/http"
+	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
+)
+
 func paymentError(ctx http.Context, err error) http.Response {
 	var (
 		invalid       *myanmarpayments.InvalidPaymentDataError
 		apiError      *myanmarpayments.APIError
 		configuration *myanmarpayments.ConfigurationError
 	)
+	response := ctx.Response()
 	switch {
 	case errors.As(err, &invalid):
-		return ctx.Response().Json(http.StatusUnprocessableEntity, http.Json{"message": err.Error(), "errors": invalid.Errors})
+		return response.Json(http.StatusUnprocessableEntity, http.Json{
+			"message": err.Error(),
+			"errors":  invalid.Errors,
+		})
 	case errors.As(err, &apiError):
-		return ctx.Response().Json(http.StatusBadGateway, http.Json{"message": err.Error(), "gatewayCode": apiError.GatewayCode})
+		return response.Json(http.StatusBadGateway, http.Json{
+			"message":     err.Error(),
+			"gatewayCode": apiError.GatewayCode,
+		})
 	case errors.As(err, &configuration):
-		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"message": err.Error()})
+		return response.Json(http.StatusInternalServerError, http.Json{
+			"message": err.Error(),
+		})
 	default:
-		return ctx.Response().Json(http.StatusInternalServerError, http.Json{"message": err.Error()})
+		return response.Json(http.StatusInternalServerError, http.Json{
+			"message": err.Error(),
+		})
 	}
 }
 ```

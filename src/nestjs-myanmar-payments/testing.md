@@ -15,16 +15,22 @@ Pass a fake `fetch` (or an SDK `HttpClient`) in the module options. Every gatewa
 import { Test } from '@nestjs/testing';
 import { MyanmarPaymentsModule } from '@laranex/nestjs-myanmar-payments';
 
+const body = {
+  Response: { result: 'SUCCESS', code: '0', prepay_id: 'PREPAY123' },
+};
 const fetch = async (url: string | URL | Request): Promise<Response> =>
-  new Response(
-    JSON.stringify({ Response: { result: 'SUCCESS', code: '0', prepay_id: 'PREPAY123' } }),
-    { headers: { 'Content-Type': 'application/json' } },
-  );
+  new Response(JSON.stringify(body), {
+    headers: { 'Content-Type': 'application/json' },
+  });
 
 const moduleRef = await Test.createTestingModule({
   imports: [
     MyanmarPaymentsModule.forRoot({
-      env: { KBZ_PAY_APP_ID: 'kp123', KBZ_PAY_APP_KEY: 'kbz-secret', KBZ_PAY_MERCHANT_CODE: '100001' },
+      env: {
+        KBZ_PAY_APP_ID: 'kp123',
+        KBZ_PAY_APP_KEY: 'kbz-secret',
+        KBZ_PAY_MERCHANT_CODE: '100001',
+      },
       fetch,
     }),
   ],
@@ -35,6 +41,9 @@ const moduleRef = await Test.createTestingModule({
 Passing `env` as a record keeps the test independent of the machine's environment. When your app registers the module with `forRootAsync()`, override the options instead:
 
 ```ts
+import { MYANMAR_PAYMENTS_OPTIONS } from '@laranex/nestjs-myanmar-payments';
+import { Test } from '@nestjs/testing';
+
 Test.createTestingModule({ imports: [AppModule] })
   .overrideProvider(MYANMAR_PAYMENTS_OPTIONS)
   .useValue({ env: testEnv, fetch });
@@ -56,7 +65,7 @@ await app.init();
 const fields: Record<string, string> = {
   merch_order_id: 'ORDER_1',
   mm_order_id: 'MM1',
-  total_amount: '1000.00',
+  total_amount: '10000.00',
   trade_status: 'PAY_SUCCESS',
   sign_type: 'SHA256',
 };
@@ -82,7 +91,7 @@ const callback = new PaymentCallback({
   orderId: 'ORDER_1',
   status: 'successful',
   gatewayStatus: 'PAY_SUCCESS',
-  amount: '1000.00',
+  amount: '10000.00',
 });
 await orders.fulfill(callback);
 ```

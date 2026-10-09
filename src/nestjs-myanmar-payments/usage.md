@@ -33,6 +33,7 @@ Each gateway is built on first use and reused, so Yoma's access token and the HT
 ```ts
 import { KbzPay } from '@laranex/myanmar-payments';
 import { InjectKbzPay } from '@laranex/nestjs-myanmar-payments';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class KbzCheckout {
@@ -44,7 +45,7 @@ export class KbzCheckout {
 
 ## Amounts
 
-Amounts are exact: `Amount.kyat(1000)`, `Amount.parse('1000.50')` or a whole-number `number`/`bigint`. Floats are rejected, and decimals are accepted only where the gateway allows them (KBZ Pay up to 2 places, CyberSource). See [Amounts](/node-myanmar-payments/amounts).
+Amounts are exact: `Amount.kyat(10000)`, `Amount.parse('10000.50')` or a whole-number `number`/`bigint`. Floats are rejected, and decimals are accepted only where the gateway allows them (KBZ Pay up to 2 places, CyberSource). See [Amounts](/node-myanmar-payments/amounts).
 
 ## Redirect Payments (KBZ Pay PWA, Wave Money)
 
@@ -55,11 +56,12 @@ import { Get, Redirect } from '@nestjs/common';
 @Get('kbz-pay')
 @Redirect()
 async kbzPay(): Promise<{ url: string }> {
-  const payment = await this.payments.kbzPay().pwa({
-    orderId: 'ORDER_1',
-    amount: Amount.kyat(1000),
+  const data = {
+    orderId: `ORDER_${order.id}`,
+    amount: Amount.kyat(10000),
     callbackUrl: 'https://shop.test/payments/callback/kbz-pay',
-  });
+  };
+  const payment = await this.payments.kbzPay().pwa(data);
   return { url: payment.url };
 }
 ```
@@ -69,14 +71,31 @@ async kbzPay(): Promise<{ url: string }> {
 ## QR and App Payments
 
 ```ts
+import {
+  Amount,
+  type AppPayment,
+  type QrPayment,
+} from '@laranex/myanmar-payments';
+import { Get } from '@nestjs/common';
+
 @Get('kbz-pay/qr')
 async qr(): Promise<QrPayment> {
-  return this.payments.kbzPay().qr({ orderId: 'ORDER_2', amount: 1000, callbackUrl });
+  const data = {
+    orderId: `ORDER_${order.id}`,
+    amount: Amount.kyat(10000),
+    callbackUrl: 'https://shop.test/payments/callback/kbz-pay',
+  };
+  return this.payments.kbzPay().qr(data);
 }
 
 @Get('kbz-pay/app')
 async app(): Promise<AppPayment> {
-  return this.payments.kbzPay().app({ orderId: 'ORDER_3', amount: 1000, callbackUrl });
+  const data = {
+    orderId: `ORDER_${order.id}`,
+    amount: Amount.kyat(10000),
+    callbackUrl: 'https://shop.test/payments/callback/kbz-pay',
+  };
+  return this.payments.kbzPay().app(data);
 }
 ```
 
@@ -87,9 +106,17 @@ Returning the result serializes it as JSON. `yomaMmqr().initiate(data)` returns 
 `ayaPay().initiate(data)` and `cyberSource().initiate(data)` sign a form the customer's browser must POST to the gateway. They make no network call. Either send the SDK's auto-submitting page yourself:
 
 ```ts
+import { Amount } from '@laranex/myanmar-payments';
+import { Get, Header } from '@nestjs/common';
+
 @Get('cyber-source')
 @Header('Content-Type', 'text/html; charset=utf-8')
 cyberSource(): string {
+  const data = {
+    orderId: `ORDER_${order.id}`,
+    amount: Amount.kyat(10000),
+    callbackUrl: 'https://shop.test/payments/callback/cyber-source',
+  };
   return this.payments.cyberSource().initiate(data).toHtml();
 }
 ```
@@ -97,14 +124,18 @@ cyberSource(): string {
 or redirect to the module's form route, which is handy when the payment is started from an API call or a mobile app:
 
 ```ts
+import { Amount } from '@laranex/myanmar-payments';
+import { Get, Redirect } from '@nestjs/common';
+
 @Get('cyber-source')
 @Redirect()
 cyberSource(): { url: string } {
-  const payment = this.payments.cyberSource().initiate({
-    orderId: 'ORD-1',
-    amount: Amount.parse('10.50'),
+  const data = {
+    orderId: `ORDER_${order.id}`,
+    amount: Amount.kyat(10000),
     callbackUrl: 'https://shop.test/payments/callback/cyber-source',
-  });
+  };
+  const payment = this.payments.cyberSource().initiate(data);
   return { url: this.payments.autoSubmitUrl(payment) };
 }
 ```
@@ -116,7 +147,7 @@ AYA needs a channel: list the merchant's channels with `await this.payments.ayaP
 ## Status Checks
 
 ```ts
-const result = await this.payments.kbzPay().status('ORDER_1');
+const result = await this.payments.kbzPay().status(`ORDER_${order.id}`);
 if (result.isSuccessful()) {
   // paid
 }
@@ -129,7 +160,11 @@ if (result.isSuccessful()) {
 The SDK throws `InvalidPaymentDataError` (with `errors` per field) before any request for invalid data, `ApiError` (`gatewayCode`, `gatewayMessage`, `httpStatus`) for gateway failures, and `ConfigurationError` for missing credentials. All of them extend `PaymentError`, so one exception filter can answer them:
 
 ```ts
-import { ApiError, InvalidPaymentDataError, PaymentError } from '@laranex/myanmar-payments';
+import {
+  ApiError,
+  InvalidPaymentDataError,
+  PaymentError,
+} from '@laranex/myanmar-payments';
 import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
 
 @Catch(PaymentError)
@@ -137,7 +172,11 @@ export class PaymentErrorsFilter implements ExceptionFilter {
   catch(error: PaymentError, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse();
     const status =
-      error instanceof InvalidPaymentDataError ? 422 : error instanceof ApiError ? 502 : 500;
+      error instanceof InvalidPaymentDataError
+        ? 422
+        : error instanceof ApiError
+          ? 502
+          : 500;
     response.status(status).json({ error: error.message });
   }
 }

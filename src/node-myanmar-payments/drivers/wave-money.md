@@ -5,14 +5,16 @@ description: Integrate Wave Money (WavePay) in Node.js. Redirect payments with t
 
 # Wave Money
 
-| Method | Flow | Returns |
+Wave Money's payment gateway sends the customer to a Wave payment page to pay with their WavePay wallet.
+
+| Call | What it does | Returns |
 |---|---|---|
 | `await wave.initiate(data)` | Redirect to Wave's payment page | [`RedirectPayment`](#initiate-response) |
 | `wave.handleCallback(request)` | Verify the callback | [`PaymentCallback`](#handlecallback-response) |
 
-[Responses](#responses) shows what Wave puts in each result.
+Wave Money has no status API in this package: the callback is the only payment result.
 
-Wave has no status API: the callback is the only payment result.
+[Responses](#responses) shows what Wave Money puts in each result.
 
 ## How it works
 
@@ -36,61 +38,75 @@ Wave sends the customer back to your return URL and posts the result to your cal
 ## Initiating a Payment
 
 ```ts
-import { Amount } from '@laranex/myanmar-payments';
-import { WaveMoney, type WaveMoneyPaymentData } from '@laranex/myanmar-payments/wave-money';
+import {
+  WaveMoney,
+  type WaveMoneyPaymentData,
+} from '@laranex/myanmar-payments/wave-money';
 
-const wave = new WaveMoney({ merchantId: '...', secretKey: '...', merchantName: 'My Shop' });
+const wave = new WaveMoney({
+  merchantId: '...',
+  secretKey: '...',
+  merchantName: 'My Shop',
+});
 
 const data: WaveMoneyPaymentData = {
-  orderId,
+  orderId: `ORDER_${order.id}`,
   callbackUrl: 'https://shop.test/payments/wave/callback',
-  returnUrl: `https://shop.test/orders/${orderId}`,
-  description: `Order #${orderId}`,
+  returnUrl: `https://shop.test/orders/${order.id}`,
+  description: `Order #${order.id}`,
   items: [
-    { name: 'Product A', amount: Amount.kyat(3000) },
-    { name: 'Product B', amount: Amount.kyat(2000) },
+    { name: 'Product A', amount: 6000 },
+    { name: 'Product B', amount: 4000 },
   ],
 };
 
 const payment = await wave.initiate(data);
-await saveWaveReference(orderId, data.merchantReferenceId); // filled in by initiate()
+
+// Store data.merchantReferenceId with the order: initiate() filled it in.
+
 res.writeHead(302, { Location: payment.url }).end();
 ```
-
-`initiate()` writes the generated `merchantReferenceId` onto the `data` object you pass, so keep a reference to it.
-
-::: warning Wave sandbox host
-Wave's sandbox API is `https://preprodpayments.wavemoney.io:8107`, while the customer-facing authenticate page is served without the port, at `https://preprodpayments.wavemoney.io/authenticate`. The package uses both hosts by default; set `baseUrl` and `authenticateUrl` in `WaveMoneyConfig` if Wave gives you others.
-:::
 
 ### WaveMoneyPaymentData
 
 | Field | Type | Required | Rules |
 |---|---|---|---|
-| `orderId` | `string` | Yes | Your order id. One order can have several payment attempts |
+| `orderId` | `string` | Yes | Your order ID. One order can have several payment attempts |
 | `callbackUrl` | `string` | Yes | Absolute http or https URL that Wave posts the result to. Wave may require HTTPS with a CA-issued certificate in production |
 | `returnUrl` | `string` | Yes | Absolute http or https URL Wave sends the customer back to. Not proof of payment |
 | `description` | `string` | Yes | Shown to the customer |
-| `items` | `WaveMoneyItem[]` | Yes | At least one item, each with a `name` and an `amount` in whole kyat greater than 0 |
-| `amount` | `Amount \| number \| bigint` | No | Whole kyat (Wave does not accept decimals), greater than 0. Leave it unset to charge the sum of the items. Wave only accepts MMK |
-| `merchantReferenceId` | `string` | No | Unique id of this attempt. Empty means a random id |
+| `items` | `WaveMoneyItem[]` | Yes | At least one item |
+| `amount` | `Amount \| number \| bigint` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). Unset charges the sum of the items. Wave only accepts MMK |
+| `merchantReferenceId` | `string` | No | Unique ID of this attempt. Unset or empty means a random ID |
 
-`WaveMoney.resolvedAmount(data)` returns the total that will be charged; items are summed with exact `bigint` arithmetic. `WaveMoney.validate(data)` runs before the request and throws `InvalidPaymentDataError`.
+`WaveMoneyItem` has a `name` and an `amount` in whole kyat, greater than 0. The items are summed with exact `bigint` arithmetic, never floats; `WaveMoney.resolvedAmount(data)` returns the total that will be charged.
 
 ### Merchant Reference ID
 
-Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random id, and **store it** after `initiate()`: Wave marks `orderId` as optional in callbacks, while `merchantReferenceId` is always present.
+Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: Wave marks `orderId` as optional in callbacks, while `merchantReferenceId` is always present. `initiate()` writes the generated ID to `data.merchantReferenceId` once `data` passes validation, so keep a reference to the object you pass.
+
+### Sandbox Host
+
+Wave's sandbox API is `https://preprodpayments.wavemoney.io:8107`, while the customer-facing authenticate page is served without the port, at `https://preprodpayments.wavemoney.io/authenticate`. The package uses both hosts by default; set `baseUrl` and `authenticateUrl` in `WaveMoneyConfig` if Wave gives you others.
 
 ## Handling Callbacks
 
 ```ts
+import { CallbackRequest } from '@laranex/myanmar-payments';
+
+// POST /payments/wave/callback
 try {
-  const callback = wave.handleCallback(await CallbackRequest.fromNodeRequest(req));
+  const request = await CallbackRequest.fromNodeRequest(req);
+  const callback = wave.handleCallback(request);
+
   if (callback.isSuccessful()) {
-    // callback.orderId, callback.raw.merchantReferenceId, callback.gatewayReference (Wave transactionId)
+    // callback.orderId is your orderId
+    // callback.raw.merchantReferenceId is the attempt's reference
+    // callback.gatewayReference is Wave's transactionId
   }
+
   callback.acknowledgement.send(res);
-} catch (error) {
+} catch {
   res.writeHead(400).end('invalid callback');
 }
 ```
@@ -99,33 +115,31 @@ try {
 
 ## Responses
 
-What Wave puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. On error the method throws (the promise rejects); a field the gateway didn't send is `undefined`. `raw` holds plain JavaScript values (JSON numbers become `number`s), while the typed fields such as `amount` keep the exact text Wave sent. Network failures, timeouts and an aborted `signal` throw `ApiError` with the original error as `cause`.
+What Wave Money puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `undefined`. `raw` holds plain JavaScript values (JSON numbers become `number`s), while the typed fields such as `amount` keep the exact text Wave sent.
 
 ### `initiate()` → `RedirectPayment` {#initiate-response}
 
-| Field | Wave value |
+| Field | Wave Money value |
 |---|---|
 | `flow` | `'redirect'` |
 | `orderId` | Your `data.orderId` |
-| `url` | `{authenticateUrl}/authenticate?transaction_id=…` (no port), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
+| `url` | `{authenticateUrl}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
 | `gatewayReference` | Wave `transaction_id`. Always set |
 | `raw` | Wave's `/payment` response: `message` (`success`), `transaction_id` |
 
-Once `data` passes validation, `initiate()` writes the generated reference to `data.merchantReferenceId` when you left it empty; invalid data is left untouched. Errors: `InvalidPaymentDataError` (no request sent), `ApiError` (HTTP error, `message` not `success`, or no `transaction_id`).
+The attempt's `merchantReferenceId` is not on the result: read it from `data.merchantReferenceId`.
 
 ### `handleCallback()` → `PaymentCallback` {#handlecallback-response}
 
-| Field | Wave value |
+| Field | Wave Money value |
 |---|---|
 | `orderId` | Wave `orderId`, falling back to `merchantReferenceId` when it is missing, null or empty |
 | `status` | `status` mapped, see [Statuses](#statuses) |
 | `gatewayStatus` | Wave `status`, trimmed, e.g. `PAYMENT_CONFIRMED` |
 | `gatewayReference` | Wave `transactionId` |
-| `amount` | Wave `amount`, e.g. `5000` |
+| `amount` | Wave `amount`, e.g. `10000` |
 | `raw` | The verified body: `status`, `merchantId`, `orderId`, `merchantReferenceId`, `frontendResultUrl`, `backendResultUrl`, `initiatorMsisdn`, `amount`, `timeToLiveSeconds`, `paymentDescription`, `currency`, `additionalField1`–`5`, `transactionId`, `paymentRequestId`, `requestTime`, `hashValue` |
 | `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
-
-Read the attempt's reference with `callback.raw.merchantReferenceId`. Errors: `SignatureVerificationError` when `hashValue` does not match.
 
 ## Statuses
 
@@ -144,4 +158,10 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 
 ## Errors
 
-A rejected request throws `ApiError`; `httpStatus` tells them apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`gatewayCode` is `VALIDATION_ERROR`).
+| Call | Throws | When |
+|---|---|---|
+| `initiate()` | `InvalidPaymentDataError` | `WaveMoney.validate(data)` fails. Nothing is sent and `data` is left untouched |
+| `initiate()` | `ApiError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
+| `handleCallback()` | `SignatureVerificationError` | `hashValue` doesn't match |
+
+The async calls reject with these errors. `httpStatus` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`gatewayCode` is `VALIDATION_ERROR`). When Wave can't be reached, the request times out or the `signal` aborts, `initiate()` throws `ApiError` with the original error as `cause`.

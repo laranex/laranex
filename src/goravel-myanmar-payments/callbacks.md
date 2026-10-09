@@ -14,7 +14,10 @@ This page covers the two helpers that connect Goravel to the SDK's callback hand
 ## CallbackRequestFromContext
 
 ```go
-request, err := payments.CallbackRequestFromContext(ctx) // *myanmarpayments.CallbackRequest
+import payments "github.com/laranex/goravel-myanmar-payments/v4"
+
+// request is a *myanmarpayments.CallbackRequest
+request, err := payments.CallbackRequestFromContext(ctx)
 ```
 
 It builds the SDK's [`CallbackRequest`](/go-myanmar-payments/callbacks#building-a-callbackrequest) from the current Goravel request: the raw body, the headers and the query string. Signatures are verified against what the gateway sent, so always build it from the real request, never from `ctx.Request().All()`.
@@ -27,6 +30,8 @@ It builds the SDK's [`CallbackRequest`](/go-myanmar-payments/callbacks#building-
 ## Acknowledge
 
 ```go
+import payments "github.com/laranex/goravel-myanmar-payments/v4"
+
 return payments.Acknowledge(ctx, callback)
 ```
 
@@ -35,6 +40,17 @@ Gateways retry until they receive the response they expect. `Acknowledge` writes
 ## Inline handling
 
 ```go
+import (
+	"errors"
+
+	"github.com/goravel/framework/contracts/http"
+	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
+	payments "github.com/laranex/goravel-myanmar-payments/v4"
+	paymentsfacades "github.com/laranex/goravel-myanmar-payments/v4/facades"
+
+	"yourapp/app/facades"
+)
+
 func (c *PaymentController) Callback(ctx http.Context) http.Response {
 	request, err := payments.CallbackRequestFromContext(ctx)
 	if err != nil {
@@ -43,13 +59,15 @@ func (c *PaymentController) Callback(ctx http.Context) http.Response {
 
 	kbz, err := paymentsfacades.MyanmarPayments().KbzPay()
 	if err != nil {
-		return ctx.Response().String(http.StatusInternalServerError, "not configured")
+		return ctx.Response().
+			String(http.StatusInternalServerError, "not configured")
 	}
 
 	callback, err := kbz.HandleCallback(request)
 	var signatureError *myanmarpayments.SignatureVerificationError
 	if errors.As(err, &signatureError) {
-		facades.Log().Error("rejected KBZ Pay callback: " + signatureError.Message)
+		facades.Log().
+			Error("rejected KBZ Pay callback: " + signatureError.Message)
 		return ctx.Response().String(http.StatusBadRequest, "invalid signature")
 	}
 	if err != nil {
@@ -65,7 +83,7 @@ func (c *PaymentController) Callback(ctx http.Context) http.Response {
 }
 ```
 
-Register callback routes as `POST` without authentication or CSRF middleware. Every gateway's `HandleCallback` works the same way; see the SDK's [Callbacks & Status](/go-myanmar-payments/callbacks) for the `PaymentCallback` fields and the [driver pages](/go-myanmar-payments/drivers/kbz-pay) for each gateway's callback format.
+`yourapp/app/facades` is the `facades` package Goravel generates in your app; replace `yourapp` with your module name. Register callback routes as `POST` without authentication or CSRF middleware. Every gateway's `HandleCallback` works the same way; see the SDK's [Callbacks & Status](/go-myanmar-payments/callbacks) for the `PaymentCallback` fields and the [driver pages](/go-myanmar-payments/drivers/kbz-pay) for each gateway's callback format.
 
 `callback.Status` is gateway-independent: `myanmarpayments.StatusSuccessful` is the only status that means money was collected. `GatewayStatus` and `Raw` keep the gateway's own values for logging.
 
@@ -74,6 +92,11 @@ Register callback routes as `POST` without authentication or CSRF middleware. Ev
 AYA sends the customer back to your `ReturnURL` with a signed query string. Verify it to show the right page, and fulfill orders from the backend callback only:
 
 ```go
+import (
+	payments "github.com/laranex/goravel-myanmar-payments/v4"
+	paymentsfacades "github.com/laranex/goravel-myanmar-payments/v4/facades"
+)
+
 request, err := payments.CallbackRequestFromContext(ctx)
 aya, err := paymentsfacades.MyanmarPayments().AyaPay()
 result, err := aya.VerifyRedirect(request)
@@ -81,11 +104,18 @@ result, err := aya.VerifyRedirect(request)
 
 ## Checking status
 
-When a callback is late or missing, ask the gateway. KBZ Pay and AYA Pay take your order id, Yoma MMQR the QR reference; Wave Money and CyberSource have no status API.
+When a callback is late or missing, ask the gateway. KBZ Pay and AYA Pay take your order ID, Yoma MMQR the QR reference; Wave Money and CyberSource have no status API.
 
 ```go
+import (
+	"fmt"
+
+	paymentsfacades "github.com/laranex/goravel-myanmar-payments/v4/facades"
+)
+
 kbz, _ := paymentsfacades.MyanmarPayments().KbzPay()
-result, err := kbz.Status(ctx, "ORDER_1") // *myanmarpayments.PaymentStatusResult
+// result is a *myanmarpayments.PaymentStatusResult
+result, err := kbz.Status(ctx, fmt.Sprintf("ORDER_%d", order.ID))
 if err == nil && result.IsSuccessful() {
 	// fulfill, exactly as from a callback
 }
