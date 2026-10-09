@@ -12,12 +12,12 @@ use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
 use Laranex\PhpMyanmarPayments\Amount;
 use Laranex\PhpMyanmarPayments\KbzPay\KbzPayPaymentData;
 
-Amount::kyat(1000);       // whole amount
-Amount::parse('1000.50'); // decimal amount
+Amount::kyat(10000);       // whole amount
+Amount::parse('10000.50'); // decimal amount
 
 $payment = MyanmarPayments::kbzPay()->pwa(new KbzPayPaymentData(
-    orderId: 'ORDER_1',
-    amount: Amount::parse('1000.50'), // or simply 1000
+    orderId: 'ORDER_'.$order->id,
+    amount: Amount::parse('10000.50'), // or simply 10000
     callbackUrl: route('payments.kbz.callback'),
 ));
 ```
@@ -27,12 +27,12 @@ $payment = MyanmarPayments::kbzPay()->pwa(new KbzPayPaymentData(
 | Constructor | Accepts |
 |---|---|
 | `Amount::kyat(int $amount)` | A whole amount, 0 or more. Works for whole units of any currency |
-| `Amount::parse(string $amount)` | Plain digits with an optional decimal part: `1000`, `1000.50`, `0.5`. Leading zeros of the whole part are dropped (`007.50` becomes `7.50`); the fraction is kept exactly |
+| `Amount::parse(string $amount)` | Plain digits with an optional decimal part: `10000`, `10000.50`, `0.5`. Leading zeros of the whole part are dropped (`007.50` becomes `7.50`); the fraction is kept exactly |
 | `Amount::from(Amount\|int $amount)` | An `Amount` as is, or an `int` through `kyat()`. The payment data classes use it |
 
 `parse()` rejects signs, exponents, spaces and thousands separators (`-1`, `1e5`, ` 10`, `1,000`, `10.`, `.5`), and both constructors reject negatives, by throwing `InvalidPaymentDataException` with an `amount` error.
 
-An `Amount` exposes `toString()` (as given without leading zeros, also via `(string) $amount`), `decimalPlaces()`, `wholePart()`, `isZero()` and `isPositive()`. The payment data classes always store an `Amount`, so `$data->amount` is an `Amount` even when you passed an `int`.
+An `Amount` exposes `toString()` (as given without leading zeros, also via `(string) $amount` and `json_encode()`, which writes a string), `decimalPlaces()`, `wholePart()`, `isZero()`, `isPositive()` and `equals($other)`, which compares with another `Amount` or a decimal string, ignoring leading zeros and trailing fractional zeros; text that is not a plain decimal is never equal. The payment data classes always store an `Amount`, so `$data->amount` is an `Amount` even when you passed an `int`.
 
 ## Gateway Rules
 
@@ -46,6 +46,6 @@ Each gateway checks the amount against its official documentation when the payme
 | Yoma MMQR | No | Greater than 0 |
 | CyberSource | Any | 0 or more, at most 15 characters, any ISO 4217 currency |
 
-A violation throws `InvalidPaymentDataException`, e.g. `Wave Money does not accept decimal amounts.`
+A violation throws `InvalidPaymentDataException`, e.g. `Wave Money does not accept decimal amounts; the amount field must be a whole number.`
 
 Amounts reported back by gateways (`PaymentCallback::$amount`, `PaymentStatusResult::$amount`) stay plain strings: they are the raw values the gateway sent. Compare them with your order before fulfilling.

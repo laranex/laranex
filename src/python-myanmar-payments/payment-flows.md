@@ -14,7 +14,7 @@ Starting a payment always follows the same pattern: build the gateway's payment 
 | `QrPayment` | Show the QR to the customer | `kbz.qr`, `yoma.initiate`, `yoma.renew_qr` |
 | `AppPayment` | Return the signed payload to your mobile app | `kbz.app` |
 
-Every method validates the payment data first and raises `InvalidPaymentDataError` before any request is sent. The customer finishing on the gateway's side is never proof of payment: fulfill orders from the verified [callback](/python-myanmar-payments/callbacks) or a status check.
+Every method validates the payment data first and raises `InvalidPaymentDataError` before any request is sent. Call the gateway's `validate()` yourself (e.g. `KbzPay.validate(data)`) to check a request earlier, e.g. while handling a form. The customer finishing on the gateway's side is never proof of payment: fulfill orders from the verified [callback](/python-myanmar-payments/callbacks) or a status check.
 
 The samples on this page and the gateway pages are Django views using the sync classes; [Framework Integration](/python-myanmar-payments/framework-integration) shows Flask and FastAPI, and the async classes take the same calls with `await`.
 
@@ -49,7 +49,7 @@ kbz = KbzPay.from_env()
 def checkout(request):
     data = KbzPayPaymentData(
         order_id="ORDER_1",
-        amount=Amount.kyat(1000),
+        amount=Amount.kyat(10000),
         callback_url="https://shop.test/payments/kbz/callback",
     )
     payment = kbz.pwa(data)

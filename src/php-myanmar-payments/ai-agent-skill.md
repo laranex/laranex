@@ -13,11 +13,11 @@ PHP Myanmar Payments is built for humans and AI agents. These docs are written f
 npx skills add laranex/php-myanmar-payments
 ```
 
-Or copy `skills/php-myanmar-payments` from the [repository](https://github.com/laranex/php-myanmar-payments) into your project's `.claude/skills` or `.agents/skills` folder.
+Or copy `skills/php-myanmar-payments` from the [repository](https://github.com/laranex/php-myanmar-payments) into your project's `.claude/skills` or `.agents/skills` folder. The folder is also included in the Composer package, under `vendor/laranex/php-myanmar-payments/skills/php-myanmar-payments`.
 
 ## What the skill covers
 
-Integrate Myanmar payment gateways (KBZ Pay, Wave Money, AYA Pay, Yoma MMQR, CyberSource) in plain PHP or any non-Laravel framework with laranex/php-myanmar-payments.
+Integrate Myanmar payment gateways (KBZ Pay, Wave Money, AYA Pay, Yoma MMQR, CyberSource) in plain PHP or any non-Laravel framework with `laranex/php-myanmar-payments`.
 
 It is written from the package source and kept in the repository next to the code, so agents follow the same API, configuration and conventions these docs describe.
 

@@ -5,7 +5,7 @@ description: Verify gateway callbacks with HandleCallback, read a gateway-indepe
 
 # Callbacks & Status
 
-Every gateway notifies your server of the payment result. `HandleCallback` takes a `*myanmarpayments.CallbackRequest`, verifies the gateway's signature and returns a `*myanmarpayments.PaymentCallback`.
+Every gateway notifies your server of the payment result. `HandleCallback` takes a `*myanmarpayments.CallbackRequest`, verifies the gateway's signature and returns a `*myanmarpayments.PaymentCallback`. It takes no context: verifying needs no network call.
 
 ::: tip Production setup
 For production, follow [Handling Webhooks (recommended)](/go-myanmar-payments/webhooks): verify, store the call, acknowledge immediately, then process it once in the background with retries. The example below handles everything inline to show the API.
@@ -17,7 +17,7 @@ Every callback goes through the same steps; KBZ Pay is shown here.
   title="Handling a KBZ Pay callback"
   :participants="['Your app', 'KBZ Pay']"
   :steps="[
-    { from: 'KBZ Pay', to: 'Your app', label: 'Payment notification', detail: 'POST to callbackUrl' },
+    { from: 'KBZ Pay', to: 'Your app', label: 'Payment notification', detail: 'POST to CallbackURL' },
     { from: 'Your app', to: 'Your app', label: 'Verify the signature', detail: 'kbz.HandleCallback(request)' },
     { from: 'Your app', to: 'KBZ Pay', label: 'Invalid: 400, never fulfill', detail: '*SignatureVerificationError', response: true },
     { from: 'Your app', to: 'Your app', label: 'Find the order', detail: 'by callback.OrderID' },
@@ -28,27 +28,62 @@ Every callback goes through the same steps; KBZ Pay is shown here.
 />
 
 ```go
-func (h *handlers) kbzCallback(w http.ResponseWriter, r *http.Request) {
+package shop
+
+import (
+	"database/sql"
+	"log"
+	"net/http"
+	"time"
+
+	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
+	"github.com/laranex/go-myanmar-payments/v4/kbzpay"
+)
+
+type Handlers struct {
+	DB  *sql.DB
+	KBZ *kbzpay.Gateway
+}
+
+func (h *Handlers) KBZCallback(w http.ResponseWriter, r *http.Request) {
 	request, err := myanmarpayments.NewCallbackRequestFromHTTP(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "invalid callback", http.StatusBadRequest)
 		return
 	}
-
-	callback, err := h.kbz.HandleCallback(request)
+	callback, err := h.KBZ.HandleCallback(request)
 	if err != nil {
-		var sigErr *myanmarpayments.SignatureVerificationError
-		if errors.As(err, &sigErr) {
-			log.Printf("rejected KBZ callback: %s", sigErr.Message)
-		}
+		log.Printf("rejected KBZ callback: %v", err)
 		http.Error(w, "invalid callback", http.StatusBadRequest)
 		return
 	}
 
-	order := h.orders.Find(callback.OrderID)
-	paid := callback.Amount == order.Amount.String()
-	if callback.IsSuccessful() && !order.Paid && paid {
-		h.orders.MarkPaid(order, callback.GatewayReference)
+	var amount string
+	var paidAt sql.NullInt64
+	err = h.DB.QueryRowContext(r.Context(),
+		`SELECT amount, paid_at FROM orders WHERE number = ?`,
+		callback.OrderID,
+	).Scan(&amount, &paidAt)
+	if err != nil {
+		http.Error(w, "try again", http.StatusInternalServerError)
+		return
+	}
+	order, err := myanmarpayments.ParseAmount(amount)
+	if err != nil {
+		http.Error(w, "try again", http.StatusInternalServerError)
+		return
+	}
+	paid := order.Equals(callback.Amount)
+	if callback.IsSuccessful() && !paidAt.Valid && paid {
+		// paid_at IS NULL keeps a duplicate callback from fulfilling twice
+		_, err = h.DB.ExecContext(r.Context(), `UPDATE orders
+			SET paid_at = ?, gateway_reference = ?
+			WHERE number = ? AND paid_at IS NULL`,
+			time.Now().Unix(), callback.GatewayReference, callback.OrderID)
+		if err != nil {
+			http.Error(w, "try again", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	// KBZ Pay: HTTP 200 with plain-text "success"
@@ -58,49 +93,65 @@ func (h *handlers) kbzCallback(w http.ResponseWriter, r *http.Request) {
 
 ## Building a CallbackRequest
 
-Signatures are checked against the exact bytes the gateway sent, so build the request from the real incoming request.
+Signatures are checked against what the gateway actually sent, so build the request from the real incoming request: the raw body bytes, the headers and the query string. Never rebuild it from parsed input such as `r.ParseForm()` values, a struct decoded with `json.Unmarshal` or Gin's `c.ShouldBind`: a JSON number such as `1000.50` would come back as `1000.5` and break a signature over the exact text.
 
 | Constructor | Use when |
 |---|---|
-| `myanmarpayments.NewCallbackRequestFromHTTP(r)` | A `net/http` handler: reads the body once, keeps the headers and query. The body of `r` is restored so it can still be read |
+| `myanmarpayments.NewCallbackRequestFromHTTP(r)` | Every framework that exposes an `*http.Request`: reads the body once and keeps the headers and query. The body of `r` is restored, so it can still be read |
+| `myanmarpayments.NewCallbackRequest(body, header, query)` | Any other server: pass the raw body bytes, an `http.Header` and `url.Values`. `nil` header and query are allowed |
 | `myanmarpayments.NewCallbackRequestFromJSON(payload, header)` | Replaying a payload you stored as decoded JSON, e.g. from a queue or a failed-callback table |
-| `myanmarpayments.NewCallbackRequest(body, header, query)` | Any other server: pass the raw body bytes, headers and query values |
 
-`request.HeaderValue(name)` is case-insensitive, `ParsedBody()` decodes a JSON or form body (JSON numbers are kept as `json.Number`), `Input()` merges the body over the query string, and `QueryInput()` merges the query string over the body.
+| Framework | `*http.Request` |
+|---|---|
+| `net/http`, chi | `r` |
+| Gin | `c.Request` |
+| Echo | `c.Request()` |
+
+| Member | Description |
+|---|---|
+| `Body` | The raw body as `[]byte`, exactly as received |
+| `Header` | The request headers, an `http.Header` |
+| `Query` | The query string values, `url.Values` |
+| `HeaderValue(name)` | One header, case-insensitively, or `""` |
+| `ParsedBody()` | The body decoded as JSON (when it is a JSON object) or a urlencoded form (the first value of a repeated key; a malformed pair is skipped); JSON numbers become `json.Number`, which keeps their exact text |
+| `Input()` | The parsed body merged over the query string |
+| `QueryInput()` | The query string merged over the parsed body |
 
 ## Rules
 
-- **Verify, then trust.** A callback that fails verification returns `*myanmarpayments.SignatureVerificationError`. Never act on its payload; `Raw` carries the unverified data for logging only.
-- **Check the amount.** Compare `callback.Amount` (as the gateway sent it, a string) with your order before fulfilling.
+- **Verify, then trust.** A callback that fails verification returns `*myanmarpayments.SignatureVerificationError`, and so does one whose signed or hashed field holds an object or array instead of a single value, since no gateway signs nested values. Never act on its payload; `Raw` carries the unverified data for logging only.
+- **Check the amount.** Compare `callback.Amount` (the exact text the gateway sent) with your order before fulfilling, e.g. with `Amount.Equals`.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 - **Acknowledge.** `callback.Acknowledgement` holds the response the gateway expects (`Status`, `Body`, `Headers`), e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
 
 ## Acknowledging
 
-`Acknowledgement.Write` sets the headers, writes the status (200 when unset) and the body:
+`callback.Acknowledgement` is an `Acknowledgement` with `Status`, `Body` and `Headers`. `Write` sets the headers, then writes the status (`200` when it is `0`) and the body to any `http.ResponseWriter`:
 
-```go
-if err := callback.Acknowledgement.Write(w); err != nil {
-	log.Printf("write acknowledgement: %v", err)
-}
-```
+| Framework | Response |
+|---|---|
+| `net/http`, chi | `callback.Acknowledgement.Write(w)` |
+| Gin | `callback.Acknowledgement.Write(c.Writer)` |
+| Echo | `callback.Acknowledgement.Write(c.Response())` |
 
 `myanmarpayments.DefaultAcknowledgement()` is the empty `200 text/plain` response most gateways expect.
 
+Gateway callbacks are server-to-server posts: exclude these routes from CSRF protection (e.g. `gorilla/csrf` middleware).
+
 ## PaymentStatus
 
-Every gateway's own status values are mapped onto one type. The original value stays in `callback.GatewayStatus`.
+Every gateway's own status values are mapped onto one `string` type. The original value stays in `callback.GatewayStatus`.
 
-| Constant | Meaning |
-|---|---|
-| `StatusSuccessful` | The customer paid. The only status that means money was collected. |
-| `StatusPending` | Still in progress or waiting on the customer. |
-| `StatusFailed` | Attempted and failed or rejected. |
-| `StatusCanceled` | Canceled or closed before completing. |
-| `StatusExpired` | The payment window ran out. |
-| `StatusUnknown` | A status this package does not recognize yet. Inspect `GatewayStatus`. |
+| Constant | Value | Meaning |
+|---|---|---|
+| `StatusSuccessful` | `successful` | The customer paid. The only status that means money was collected. |
+| `StatusPending` | `pending` | Still in progress or waiting on the customer. |
+| `StatusFailed` | `failed` | Attempted and failed or rejected. |
+| `StatusCanceled` | `canceled` | Canceled or closed before completing. |
+| `StatusExpired` | `expired` | The payment window ran out. |
+| `StatusUnknown` | `unknown` | A status this package does not recognize yet. Inspect `GatewayStatus`. |
 
-`status.IsFinal()` is `false` for `StatusPending` and `StatusUnknown`. Unknown statuses never return an error.
+`PaymentStatus` is a `string` type, so `callback.Status == "successful"` works and `string(callback.Status)` is the value. `status.IsFinal()` is `false` for `StatusPending` and `StatusUnknown`. Unknown statuses never return an error.
 
 Each gateway page lists its exact mapping.
 
@@ -120,7 +171,7 @@ When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Money and Cyber
   ]"
 />
 
-When a callback is late or missing, ask the gateway directly. Status checks return a `*myanmarpayments.PaymentStatusResult` with the same `Status`, `GatewayStatus`, `GatewayReference` and `Amount` fields.
+Status checks return a `*myanmarpayments.PaymentStatusResult` with the same `Status`, `GatewayStatus`, `GatewayReference` and `Amount` fields.
 
 | Gateway | Call |
 |---|---|
@@ -139,6 +190,7 @@ if err != nil {
 	}
 	return err
 }
+
 if result.IsSuccessful() {
 	// ...
 }

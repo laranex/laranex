@@ -237,9 +237,9 @@ AYA leaves out the fields that don't apply (wallet payments have no card fields)
 | `gatewayReference` | AYA `tranId` |
 | `amount` | AYA `amount`, e.g. `10000` |
 | `raw` | The verified, decoded payload, with the same keys as `status()` |
-| `acknowledgement()` | HTTP `200`, empty body, `Content-Type: text/plain` |
+| `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
-`MyanmarPayments::acknowledge($callback)` turns `acknowledgement()` into a `CallbackResponse` (`Responsable`).
+`MyanmarPayments::acknowledge($callback)` turns `acknowledgement` into a `CallbackResponse` (`Responsable`).
 
 ### `verifyRedirect()` → `PaymentCallback` {#verifyredirect-response}
 

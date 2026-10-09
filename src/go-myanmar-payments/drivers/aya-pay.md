@@ -185,7 +185,7 @@ if result.IsSuccessful() {
 io.WriteString(w, "Payment "+string(result.Status)+".")
 ```
 
-A `+` in the base64 `payload` that reached you as a space (an unencoded query string) is read back as `+` before decoding; the checksum is still verified. Still fulfill orders from the backend callback.
+`payload` may be standard base64 with or without its `=` padding; partial padding, the URL-safe alphabet, line breaks and payloads that aren't UTF-8 JSON are rejected. A `+` in the base64 `payload` that reached you as a space (an unencoded query string) is read back as `+` before decoding; the checksum is still verified. Still fulfill orders from the backend callback.
 
 ## Status Checks
 
@@ -206,7 +206,7 @@ if result.IsSuccessful() {
 
 ## Responses
 
-What AYA Pay puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`; a field the gateway didn't send is `""`.
+What AYA Pay puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`. A field the gateway didn't send is `""`. `Raw` holds plain Go values (JSON numbers become `json.Number`s), while the typed fields such as `Amount` keep the exact text AYA sent.
 
 ### `Services()` → `[]ayapay.Service` {#services-response}
 
@@ -227,6 +227,7 @@ Entries AYA sends without a `key` are skipped.
 
 | Field / Method | AYA Pay value |
 |---|---|
+| `Flow()` | `FlowForm` |
 | `OrderID` | Your `data.OrderID` |
 | `Action` | `{BaseURL}/v1/payment/request`, e.g. `https://uat-pgw.ayainnovation.com/v1/payment/request` |
 | `Fields` | The signed fields below, in signing order. Post them unchanged |
@@ -296,6 +297,6 @@ The same values as [`HandleCallback()`](#handlecallback-response), read from the
 | `Services()` | `*APIError` | AYA answers with an HTTP error or a `status` other than `00` |
 | `Status()` | `*APIError` | AYA answers with an HTTP error or a `status` other than `00`, e.g. `20` Transaction not found |
 | `Status()` | `*SignatureVerificationError` | The enquiry payload's `checkSum` doesn't match |
-| `HandleCallback()`, `VerifyRedirect()` | `*SignatureVerificationError` | `payload` is missing or not base64 JSON, or `checkSum` doesn't match |
+| `HandleCallback()`, `VerifyRedirect()` | `*SignatureVerificationError` | `payload` is missing or not base64 JSON, a signed field holds an object or array, or `checkSum` doesn't match |
 
 The error types live in the root `myanmarpayments` package. `*APIError` carries AYA's `status` (e.g. `20` Transaction not found, `09` Duplicate order ID) in `GatewayCode` and its `message` in `GatewayMessage`. When AYA can't be reached or `ctx` is canceled, the calls return `*APIError`, which unwraps to the cause (`errors.Is(err, context.DeadlineExceeded)`).

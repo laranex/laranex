@@ -22,7 +22,7 @@ Every callback goes through the same steps; KBZ Pay is shown here.
     { from: 'Your app', to: 'KBZ Pay', label: 'Invalid: 400, never fulfill', detail: 'SignatureVerificationError', response: true },
     { from: 'Your app', to: 'Your app', label: 'Find the order', detail: 'by callback.order_id' },
     { from: 'Your app', to: 'Your app', label: 'Fulfill once', detail: 'skip if paid, match the amount' },
-    { from: 'Your app', to: 'KBZ Pay', label: 'Acknowledge: plain success', detail: 'callback.acknowledgement()', response: true },
+    { from: 'Your app', to: 'KBZ Pay', label: 'Acknowledge: plain success', detail: 'callback.acknowledgement', response: true },
     { from: 'KBZ Pay', to: 'Your app', label: 'No acknowledgement? Retry', detail: 'after 60 s, then 600 s' },
   ]"
 />
@@ -64,7 +64,7 @@ def kbz_callback(request):
             order.mark_paid(callback.gateway_reference)
 
     # KBZ Pay: HTTP 200 with plain-text "success"
-    ack = callback.acknowledgement()
+    ack = callback.acknowledgement
     return HttpResponse(ack.body, status=ack.status, headers=ack.headers)
 ```
 
@@ -90,20 +90,20 @@ Signatures are checked against what the gateway actually sent, so build the requ
 | `headers` | Headers with lowercase names; repeated headers are joined with `, ` |
 | `query` | Query string values (the first of each) |
 | `header(name)` | One header, case-insensitively, or `None` |
-| `parsed_body()` | The body decoded as JSON or a urlencoded form; JSON numbers become `int` or `Decimal` |
+| `parsed_body()` | The body decoded as JSON or a urlencoded form; JSON numbers keep their exact text as `str` (`1000.50` stays `"1000.50"`) |
 | `input()` | The parsed body merged over the query string |
 | `query_input()` | The query string merged over the parsed body |
 
 ## Rules
 
-- **Verify, then trust.** A callback that fails verification raises `SignatureVerificationError`. Never act on its payload; `raw` carries the unverified data for logging only.
+- **Verify, then trust.** A callback that fails verification raises `SignatureVerificationError`, and so does one whose signed or hashed field holds an object or a list instead of a single value, since no gateway signs nested values. Never act on its payload; `raw` carries the unverified data for logging only.
 - **Check the amount.** Compare `callback.amount` (the exact text the gateway sent) with your order before fulfilling, e.g. with `Amount.equals`.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
-- **Acknowledge.** `callback.acknowledgement()` returns the response the gateway expects (`status`, `body`, `headers`), e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
+- **Acknowledge.** `callback.acknowledgement` holds the response the gateway expects (`status`, `body`, `headers`), e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
 
 ## Acknowledging
 
-`callback.acknowledgement()` returns an `Acknowledgement` with `status`, `body` and `headers`. Write them with your framework's response class:
+`callback.acknowledgement` is an `Acknowledgement` with `status`, `body` and `headers`. Write them with your framework's response class:
 
 | Framework | Response |
 |---|---|

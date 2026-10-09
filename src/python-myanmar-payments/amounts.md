@@ -27,7 +27,7 @@ Payment data accepts the same inputs directly (`amount=1000`, `amount="1000.50"`
 
 `Amount.kyat` takes an `int` of any size. Negative values, `bool`s and anything that isn't an `int` raise. `Amount.of` also takes a finite, non-negative `Decimal` and keeps its exact digits (`Decimal("1000.50")` is `1000.50`).
 
-They raise an `InvalidPaymentDataError` with an `amount` entry, so bad user input surfaces like any other invalid field:
+They raise an `InvalidPaymentDataError` with an `amount` entry, e.g. `The amount field must be a number such as 1000 or 1000.50, got "1,000".`, so bad user input surfaces like any other invalid field:
 
 ```python
 from python_myanmar_payments import Amount, InvalidPaymentDataError
@@ -52,7 +52,7 @@ except InvalidPaymentDataError as error:
 | `amount.whole_part()` | The digits before the decimal point |
 | `amount.is_zero()` | The amount equals zero |
 | `amount.is_positive()` | The amount is greater than zero |
-| `amount.equals(other)` | Same value, ignoring trailing fractional zeros (`1000` equals `1000.00`); takes an `Amount` or a `str`; `None` is never equal |
+| `amount.equals(other)` | Same value, ignoring leading zeros of the whole part and trailing fractional zeros (`1000` equals `01000` and `1000.00`); takes an `Amount` or a `str`. Text that isn't plain digits, and `None`, is never equal |
 | `amount == other` | The same comparison between two `Amount`s; `Amount`s are hashable and immutable |
 
 ## Gateway Rules

@@ -7,17 +7,9 @@ description: Laravel Money is built for humans and AI agents. Install its agent 
 
 Laravel Money is built for humans and AI agents. These docs are written for developers, and the package also ships an agent skill: a short guide that teaches coding agents such as Claude Code, Codex and Cursor how to install, configure and use Laravel Money the way it's meant to be used.
 
-## With Laravel Boost
+## Installing the skill
 
-If your app uses [Laravel Boost](https://github.com/laravel/boost), the skill is installed for you:
-
-```bash
-php artisan boost:install
-```
-
-Already set up? Run `php artisan boost:update` after updating Laravel Money to refresh it.
-
-## With any other agent
+If your app uses [Laravel Boost](https://github.com/laravel/boost), the skill is installed for you by `php artisan boost:install`; run `php artisan boost:update` after updating Laravel Money to refresh it. With any other agent:
 
 ```bash
 npx skills add laranex/laravel-money
@@ -27,9 +19,9 @@ Or copy `skills/laravel-money` from the [repository](https://github.com/laranex/
 
 ## What the skill covers
 
-Work with money in a Laravel app using laranex/laravel-money: the immutable Laranex\LaravelMoney\Money value object, Eloquent casts (AsMoney), exact arithmetic, percentages, allocation, rounding and formatting with the correct precision for every currency.
+Work with money in a Laravel app using laranex/laravel-money: the immutable `Laranex\LaravelMoney\Money` value object, Eloquent casts, exact arithmetic, percentages, allocation, rounding and formatting with the correct precision for every currency.
 
-It is written from the package source and kept in the repository next to the code, so agents follow the same API, configuration and conventions these docs describe.
+It covers when to use the package, installing and configuring it, building money, calculating, formatting and serializing, storing amounts in the database, handling errors, testing your app and what to avoid. It is written from the package source and kept in the repository next to the code, so agents follow the same API, configuration and conventions these docs describe.
 
 ## Keeping it current
 

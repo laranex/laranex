@@ -92,9 +92,9 @@ json.NewEncoder(w).Encode(app)
 |---|---|---|---|
 | `OrderID` | `string` | Yes | Unique per order. Letters, digits and `_` only, at most 40 characters |
 | `Amount` | `myanmarpayments.Amount` | Yes | Kyat, greater than 0, at most 2 decimal places, e.g. `Kyat(10000)` or `MustParseAmount("1000.50")`. KBZ only accepts MMK |
-| `CallbackURL` | `string` | Yes | Public URL KBZ posts the result to. At most 512 characters, no query string |
+| `CallbackURL` | `string` | Yes | Public URL KBZ posts the result to. Absolute http or https URL, at most 512 characters, no query string |
 | `Title` | `string` | No | Product name shown to the customer |
-| `TimeoutMinutes` | `int` | No | 1 to 120. `0` leaves it to KBZ (120) |
+| `TimeoutMinutes` | `*int` | No | An integer from 1 to 120, e.g. `minutes := 30` then `TimeoutMinutes: &minutes`. `nil` leaves it to KBZ (120); `0` is rejected |
 | `CallbackInfo` | `string` | No | Free text echoed back in the callback, at most 512 characters once URL-encoded |
 
 ### PWA Notes
@@ -155,12 +155,13 @@ if result.IsSuccessful() {
 
 ## Responses
 
-What KBZ Pay puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`; a field the gateway didn't send is `""`.
+What KBZ Pay puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`. A field the gateway didn't send is `""`. `Raw` holds plain Go values (JSON numbers become `json.Number`s), while the typed fields such as `Amount` keep the exact text KBZ sent.
 
 ### `PWA()` → `*myanmarpayments.RedirectPayment` {#pwa-response}
 
-| Field | KBZ Pay value |
+| Field / Method | KBZ Pay value |
 |---|---|
+| `Flow()` | `FlowRedirect` |
 | `OrderID` | Your `data.OrderID` |
 | `URL` | `{PWAURL}?appid=…&merch_code=…&nonce_str=…&prepay_id=…&timestamp=…&sign=…` |
 | `GatewayReference` | KBZ `prepay_id`. Always set |
@@ -170,18 +171,20 @@ What KBZ Pay puts in each field. See [Results](/go-myanmar-payments/references/r
 
 | Field / Method | KBZ Pay value |
 |---|---|
+| `Flow()` | `FlowQR` |
 | `OrderID` | Your `data.OrderID` |
 | `QRString` | KBZ `qrCode`, a payload to encode into a QR image. Always set |
 | `QRImage` | Always `""` |
-| `ExpiresAt` | Now + `TimeoutMinutes`. The zero time when `TimeoutMinutes` is `0` (KBZ then allows 120 minutes) |
+| `ExpiresAt` | Now + `TimeoutMinutes`. The zero time when `TimeoutMinutes` is `nil` (KBZ then allows 120 minutes) |
 | `Reference` | KBZ `prepay_id`. Always set |
 | `Raw` | The `precreate` response, as for `PWA()` plus `qrCode` |
 | `QRImageDataURI("")` | Always `""`, as `QRImage` is |
 
 ### `App()` → `*myanmarpayments.AppPayment` {#app-response}
 
-| Field | KBZ Pay value |
+| Field / Method | KBZ Pay value |
 |---|---|
+| `Flow()` | `FlowApp` |
 | `OrderID` | Your `data.OrderID` |
 | `OrderInfo` | `appid=…&merch_code=…&nonce_str=…&prepay_id=…&timestamp=…` |
 | `Sign` | SHA-256 signature of `OrderInfo`, uppercase hex. See [Signing](#signing) |
@@ -224,7 +227,7 @@ What KBZ Pay puts in each field. See [Results](/go-myanmar-payments/references/r
 
 ## Signing
 
-KBZ signs requests, the in-app `orderInfo` and notifications the same way: every non-empty field except `sign` and `sign_type`, sorted by key, joined as raw `key=value` pairs, with `&key=<app key>` appended, hashed with SHA-256 and uppercased. The package signs every request and verifies every notification for you; `kbzpay.NewSigner(appKey)` exposes the same signature for custom calls: `SignString(fields)`, `Sign(fields)` and `Verify(fields)`.
+KBZ signs requests, the in-app `orderInfo` and notifications the same way: every non-empty field except `sign` and `sign_type`, sorted by key, joined as raw `key=value` pairs, with `&key=<app key>` appended, hashed with SHA-256 and uppercased. The package signs every request and verifies every notification for you; `kbz.Signer()` (a `kbzpay.Signer`; build one with `kbzpay.NewSigner(appKey)`) exposes the same signature for custom calls: `SignString(fields)`, `Sign(fields)` and `Verify(fields)`.
 
 ## Errors
 
@@ -234,6 +237,6 @@ KBZ signs requests, the in-app `orderInfo` and notifications the same way: every
 | `PWA()`, `QR()`, `App()` | `*APIError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, or without a `prepay_id` |
 | `QR()` | `*APIError` | KBZ returns no `qrCode` |
 | `Status()` | `*APIError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, e.g. for an unknown order |
-| `HandleCallback()` | `*SignatureVerificationError` | `sign` doesn't match |
+| `HandleCallback()` | `*SignatureVerificationError` | `sign` doesn't match, or a field holds an object or array |
 
 The error types live in the root `myanmarpayments` package. `*APIError` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `GatewayCode` and its `msg` in `GatewayMessage`. When KBZ can't be reached or `ctx` is canceled, the calls return `*APIError`, which unwraps to the cause (`errors.Is(err, context.DeadlineExceeded)`).

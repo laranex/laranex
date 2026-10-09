@@ -1,82 +1,96 @@
 ---
 title: Configuration
-description: Configure PHP Myanmar Payments with typed config objects or one configuration array. Each gateway has a sandbox switch; inject your own PSR-18 client and PSR-16 cache.
+description: Configure PHP Myanmar Payments with one config class per gateway or from environment variables. Sandbox is the default; pass your own PSR-18 client and PSR-16 cache.
 ---
 
 # Configuration
 
-Each gateway is built from a typed config object. Only the gateways you use need credentials.
+Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes named arguments. Gateways take the config object or an array of its snake_case keys, and a missing or blank credential throws a `ConfigurationException` naming it:
 
 ```php
+use Laranex\PhpMyanmarPayments\Exceptions\ConfigurationException;
 use Laranex\PhpMyanmarPayments\KbzPay\KbzPay;
 use Laranex\PhpMyanmarPayments\KbzPay\KbzPayConfig;
 
-$kbzPay = new KbzPay(new KbzPayConfig(
-    appId: getenv('KBZ_PAY_APP_ID'),
-    appKey: getenv('KBZ_PAY_APP_KEY'),
-    merchantCode: getenv('KBZ_PAY_MERCHANT_CODE'),
-    sandbox: true,
-));
+try {
+    $config = new KbzPayConfig(
+        appId: '...',
+        appKey: '',
+        merchantCode: '...',
+    );
+} catch (ConfigurationException $e) {
+    // e.g. kbz_pay "app_key"
+    error_log("missing {$e->gateway} setting \"{$e->key}\"");
+    throw $e;
+}
+
+$kbz = new KbzPay($config);
 ```
 
-Every config has a `sandbox` flag (default `true`) that selects the gateway's UAT endpoints. Set it to `false` together with production credentials when you go live. URL parameters are optional overrides.
+`$e->getMessage()` reads `The kbz_pay configuration is missing [app_key].`
 
-## Config Classes
+## Sandbox and Production
+
+Every config has a `sandbox` argument that defaults to `true`, so a forgotten setting never sends real payments. Pass `sandbox: false` together with production credentials when you go live.
+
+URL arguments are optional overrides; leave them unset (or blank) to use the endpoint matching `sandbox`. Each config object exposes the URL actually used as a read-only property (`$config->apiUrl`, `$config->baseUrl`, …).
+
+## Config Options
 
 ### KbzPayConfig
 
-| Parameter | Type | Default | Description |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| `appId` | `string` | | The `appid` KBZ issued for your merchant app |
-| `appKey` | `string` | | The secret key used to sign requests |
-| `merchantCode` | `string` | | The `merch_code` KBZ issued |
-| `sandbox` | `bool` | `true` | Use the UAT endpoints |
-| `apiUrl` | `?string` | per `sandbox` | Override the API base URL, e.g. a proxy |
-| `pwaUrl` | `?string` | per `sandbox` | Override the PWA checkout URL. A trailing `#` or `#/` is normalized to `#/` |
+| `appId` | `string` | Yes | `appid` issued by KBZ |
+| `appKey` | `string` | Yes | Secret key used to sign requests |
+| `merchantCode` | `string` | Yes | `merch_code` issued by KBZ |
+| `sandbox` | `bool` | No | `true` (default) uses UAT |
+| `apiUrl` | `?string` | No | Override the API base URL |
+| `pwaUrl` | `?string` | No | Override the PWA checkout URL. Normalized to end with `/`, e.g. `…/pwa/#/` |
 
 ### WaveMoneyConfig
 
-| Parameter | Type | Default | Description |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| `merchantId` | `string` | | The merchant id Wave issued |
-| `secretKey` | `string` | | The hash secret key Wave issued |
-| `merchantName` | `string` | | Your business name, shown on Wave's payment page |
-| `timeToLiveSeconds` | `int` | `300` | How long the customer has to pay. Zero or less falls back to `300` |
-| `sandbox` | `bool` | `true` | Use the test environment |
-| `baseUrl` | `?string` | per `sandbox` | Override the API base URL |
-| `authenticateUrl` | `?string` | per `sandbox` | Override the host the customer is redirected to (`https://preprodpayments.wavemoney.io` / `https://payments.wavemoney.io`, without the API port) |
+| `merchantId` | `string` | Yes | Merchant ID issued by Wave |
+| `secretKey` | `string` | Yes | Hash secret key issued by Wave |
+| `merchantName` | `string` | Yes | Shown on Wave's payment page |
+| `timeToLiveSeconds` | `int` | No | Seconds the customer has to pay. Unset, zero or less means 300 |
+| `sandbox` | `bool` | No | `true` (default) uses the test host |
+| `baseUrl` | `?string` | No | Override the API base URL |
+| `authenticateUrl` | `?string` | No | Override the host the customer is redirected to |
 
 ### AyaPayConfig
 
-| Parameter | Type | Default | Description |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| `appKey` | `string` | | The public application key |
-| `appSecret` | `string` | | The secret used to sign requests and verify callbacks |
-| `sandbox` | `bool` | `true` | Use the UAT environment |
-| `baseUrl` | `?string` | per `sandbox` | Override the gateway base URL |
+| `appKey` | `string` | Yes | Public application key |
+| `appSecret` | `string` | Yes | Secret used for checksums |
+| `sandbox` | `bool` | No | `true` (default) uses UAT |
+| `baseUrl` | `?string` | No | Override the gateway base URL |
 
 ### YomaMmqrConfig
 
-| Parameter | Type | Default | Description |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| `merchantId` | `string` | | The merchant id Yoma issued |
-| `clientId` | `string` | | OAuth client id |
-| `clientSecret` | `string` | | OAuth client secret |
-| `webhookHashKey` | `string` | | The hash key Yoma issued for verifying callbacks |
-| `webhookSecret` | `?string` | `null` | When set, callbacks must carry it in `X-Webhook-Secret` |
-| `sandbox` | `bool` | `true` | Use the UAT environment |
-| `baseUrl` | `?string` | per `sandbox` | Override the API base URL |
-| `apiVersion` | `string` | `v1rc` | The `{version}` segment of the API paths |
+| `merchantId` | `string` | Yes | Merchant ID issued by Yoma |
+| `clientId` | `string` | Yes | OAuth client ID |
+| `clientSecret` | `string` | Yes | OAuth client secret |
+| `webhookHashKey` | `string` | Yes | Hash key issued by Yoma for verifying callbacks. A missing one is reported as `webhook_hashkey` |
+| `webhookSecret` | `?string` | No | When set, callbacks must carry it in `X-Webhook-Secret` |
+| `sandbox` | `bool` | No | `true` (default) uses UAT |
+| `baseUrl` | `?string` | No | Override the API base URL |
+| `apiVersion` | `string` | No | The `{version}` path segment, default `v1rc` |
 
 ### CyberSourceConfig
 
-| Parameter | Type | Default | Description |
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| `profileId` | `string` | | The Secure Acceptance profile id |
-| `accessKey` | `string` | | The profile's access key |
-| `secretKey` | `string` | | The profile's secret key, used to sign fields |
-| `sandbox` | `bool` | `true` | Use the test environment |
-| `baseUrl` | `?string` | per `sandbox` | Override the Secure Acceptance base URL |
+| `profileId` | `string` | Yes | Secure Acceptance profile ID |
+| `accessKey` | `string` | Yes | Profile access key |
+| `secretKey` | `string` | Yes | Profile secret key used to sign fields |
+| `sandbox` | `bool` | No | `true` (default) uses the test environment |
+| `baseUrl` | `?string` | No | Override the Secure Acceptance base URL |
 
 ## Default Endpoints
 
@@ -90,23 +104,67 @@ Every config has a `sandbox` flag (default `true`) that selects the gateway's UA
 | Yoma MMQR | `https://devapi.yomabank.net` | `https://paymenthubapi.yomabank.com` |
 | CyberSource | `https://testsecureacceptance.cybersource.com` | `https://secureacceptance.cybersource.com` |
 
-The URLs are also available as constants, e.g. `KbzPayConfig::SANDBOX_API_URL`, `WaveMoneyConfig::PRODUCTION_URL`.
+The URLs are class constants on the config classes, e.g. `KbzPayConfig::SANDBOX_API_URL`, `KbzPayConfig::PRODUCTION_PWA_URL`, `WaveMoneyConfig::SANDBOX_AUTHENTICATE_URL`, `YomaMmqrConfig::PRODUCTION_URL`.
 
-## From an Array
+## From Environment Variables
 
-Every config class has `fromArray()`, which reads snake_case keys. It is convenient when credentials come from a config file or environment.
+Every config class and gateway has `fromEnv($env = null)`, which reads `getenv()` merged with `$_ENV` by default and takes any array instead, such as one in tests. The variable names match the [Laravel package](/laravel-myanmar-payments/configuration), so one `.env` file works for both.
 
 ```php
-$config = KbzPayConfig::fromArray([
-    'app_id' => getenv('KBZ_PAY_APP_ID'),
-    'app_key' => getenv('KBZ_PAY_APP_KEY'),
-    'merchant_code' => getenv('KBZ_PAY_MERCHANT_CODE'),
-    // "true"/"false" strings are accepted
-    'sandbox' => getenv('KBZ_PAY_SANDBOX'),
-]);
+use Laranex\PhpMyanmarPayments\KbzPay\KbzPay;
+use Laranex\PhpMyanmarPayments\KbzPay\KbzPayConfig;
+
+$kbz = KbzPay::fromEnv();
+// or
+$config = KbzPayConfig::fromEnv();
+$kbz = new KbzPay($config);
 ```
 
-`sandbox` accepts booleans and the strings `true`, `1`, `t`, `yes`, `on` or `false`, `0`, `f`, `no`, `off` in any case. Anything else, including an empty or missing value, keeps the sandbox.
+```env
+# KBZ Pay
+KBZ_PAY_SANDBOX=true
+KBZ_PAY_APP_ID=
+KBZ_PAY_APP_KEY=
+KBZ_PAY_MERCHANT_CODE=
+KBZ_PAY_BASE_URL=                     # optional override
+KBZ_PAY_PWA_BASE_REDIRECT_URL=        # optional override
+
+# Wave Money
+WAVE_MONEY_SANDBOX=true
+WAVE_MONEY_MERCHANT_ID=
+WAVE_MONEY_SECRET_KEY=
+WAVE_MONEY_MERCHANT_NAME=             # falls back to APP_NAME
+WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS=300
+WAVE_MONEY_BASE_URL=                  # optional override
+WAVE_MONEY_AUTHENTICATE_URL=          # optional override
+
+# AYA Payment Gateway (AYA_PGW_* names are read too)
+AYA_PAY_SANDBOX=true
+AYA_PAY_APP_KEY=
+AYA_PAY_APP_SECRET=
+AYA_PAY_BASE_URL=                     # optional override
+
+# Yoma MMQR
+YOMA_MMQR_SANDBOX=true
+YOMA_MMQR_MERCHANT_ID=
+YOMA_MMQR_CLIENT_ID=
+YOMA_MMQR_CLIENT_SECRET=
+YOMA_MMQR_WEBHOOK_HASHKEY=
+YOMA_MMQR_WEBHOOK_SECRET=             # optional
+YOMA_MMQR_BASE_URL=                   # optional override
+YOMA_MMQR_API_VERSION=v1rc
+
+# CyberSource
+CYBER_SOURCE_SANDBOX=true
+CYBER_SOURCE_PROFILE_ID=
+CYBER_SOURCE_ACCESS_KEY=
+CYBER_SOURCE_SECRET_KEY=
+CYBER_SOURCE_BASE_URL=                # optional override
+```
+
+`*_SANDBOX=false` (or `0`, `f`, `no`, `off`, in any case) selects production. Unset or unrecognized values mean sandbox. The package never reads files itself: load the `.env` file with your framework or with [`vlucas/phpdotenv`](https://github.com/vlucas/phpdotenv) before calling `fromEnv()`.
+
+Credentials from a config file go through `fromArray()`, which reads the same settings as snake_case keys:
 
 | Config class | Keys |
 |---|---|
@@ -116,67 +174,85 @@ $config = KbzPayConfig::fromArray([
 | `YomaMmqrConfig` | `merchant_id`, `client_id`, `client_secret`, `webhook_hashkey`, `webhook_secret`, `sandbox`, `base_url`, `api_version` |
 | `CyberSourceConfig` | `profile_id`, `access_key`, `secret_key`, `sandbox`, `base_url` |
 
-A missing required key throws `ConfigurationException` naming it, e.g. `The kbz_pay configuration is missing [app_key].`
+`sandbox` takes a `bool` or the same text as `*_SANDBOX`. A `time_to_live_in_seconds` that is not integer text means 300.
 
-## One Entry Point
+## One Object for Every Gateway
 
-`MyanmarPayments` builds every gateway from one array, keyed by gateway. Gateways are created on first use, so only the ones you call need configuring.
+`MyanmarPayments` builds each gateway from its config, on first use, and reuses it. Only the gateways you call need to be configured:
 
 ```php
+use Laranex\PhpMyanmarPayments\KbzPay\KbzPayConfig;
 use Laranex\PhpMyanmarPayments\MyanmarPayments;
 
 $payments = new MyanmarPayments([
-    'kbz_pay' => [
-        'app_id' => '...',
-        'app_key' => '...',
-        'merchant_code' => '...',
-    ],
-    'wave_money' => [
-        'merchant_id' => '...',
-        'secret_key' => '...',
-        'merchant_name' => 'My Shop',
-    ],
-    'aya_pay' => ['app_key' => '...', 'app_secret' => '...'],
+    'kbz_pay' => new KbzPayConfig(
+        appId: '...',
+        appKey: '...',
+        merchantCode: '...',
+    ),
     'yoma_mmqr' => [
         'merchant_id' => '...',
         'client_id' => '...',
         'client_secret' => '...',
         'webhook_hashkey' => '...',
     ],
-    'cyber_source' => [
-        'profile_id' => '...',
-        'access_key' => '...',
-        'secret_key' => '...',
-    ],
-], httpClient: $httpClient, cache: $cache); // both optional
+]);
 
-$payments->kbzPay();      // KbzPay
-$payments->waveMoney();   // WaveMoney
-$payments->ayaPay();      // AyaPay
-$payments->yomaMmqr();    // YomaMmqr
-$payments->cyberSource(); // CyberSource
+$payments->kbzPay(); // KbzPay, the same instance on every call
+// throws ConfigurationException:
+// The wave_money configuration is missing [merchant_id].
+$payments->waveMoney();
+
+// reads each gateway's variables on first use
+$fromEnv = MyanmarPayments::fromEnv();
 ```
+
+The keys `kbz_pay`, `wave_money`, `aya_pay`, `yoma_mmqr` and `cyber_source` take a config object or the array `fromArray()` reads, and the facade also takes the `httpClient` and `cache` arguments below, shared by every gateway it builds. `$payments->cyberSource()` returns the one `CyberSource` class.
 
 ## HTTP Client
 
-Gateways that call an API accept any PSR-18 client as their second argument. Without one, an installed client is discovered.
+Gateways that call an API take any PSR-18 client as their second argument:
+
+| Argument | Type | Description |
+|---|---|---|
+| `httpClient` | `?Psr\Http\Client\ClientInterface` | Sends every request. Use it for proxies, tracing, retries, timeouts or test doubles. Without one, the gateway uses Guzzle with a 30 second timeout when Guzzle is installed, and otherwise discovers an installed PSR-18 client |
 
 ```php
-$kbzPay = new KbzPay($config, $httpClient);
-$waveMoney = new WaveMoney($waveConfig, $httpClient);
-$ayaPay = new AyaPay($ayaConfig, $httpClient);
+use GuzzleHttp\Client;
+use Laranex\PhpMyanmarPayments\KbzPay\KbzPay;
+use Laranex\PhpMyanmarPayments\KbzPay\KbzPayConfig;
+
+$client = new Client([
+    'timeout' => 10,
+    'proxy' => 'http://proxy.internal:3128',
+]);
+
+$kbz = new KbzPay(KbzPayConfig::fromEnv(), $client);
 ```
 
-Request and stream objects are created with discovered PSR-17 factories, so a PSR-7 implementation such as `guzzlehttp/psr7` or `nyholm/psr7` must be installed. Guzzle ships one.
+`fromEnv()` takes the same client: `KbzPay::fromEnv(null, $client)`.
 
-`CyberSource` takes only its config: it signs a form and never calls an API.
+A client you pass owns the timeout: set it on that client. Request and stream objects are created with discovered PSR-17 factories, so a PSR-7 implementation such as `guzzlehttp/psr7` or `nyholm/psr7` must be installed. Guzzle ships one.
 
-## Cache
+A failed request (connection error, timeout) throws an `ApiException` whose `getPrevious()` is the client's original exception.
 
-Yoma MMQR authenticates with an OAuth token that lasts hours. `YomaMmqr` keeps it in a PSR-16 cache, its third argument:
+`CyberSource` takes only its config: it only signs fields and makes no HTTP calls.
+
+## Token Cache
+
+Yoma MMQR authenticates with an OAuth access token that lasts hours. `YomaMmqr` keeps it in a [PSR-16](https://www.php-fig.org/psr/psr-16/) cache, its third argument:
 
 ```php
-$yomaMmqr = new YomaMmqr($yomaConfig, $httpClient, $cache);
+use Laranex\PhpMyanmarPayments\YomaMmqr\YomaMmqr;
+use Laranex\PhpMyanmarPayments\YomaMmqr\YomaMmqrConfig;
+use Symfony\Component\Cache\Adapter\RedisAdapter;
+use Symfony\Component\Cache\Psr16Cache;
+
+$cache = new Psr16Cache(new RedisAdapter(
+    RedisAdapter::createConnection('redis://localhost'),
+));
+
+$yoma = new YomaMmqr(YomaMmqrConfig::fromEnv(), null, $cache);
 ```
 
-Without a cache it falls back to an in-memory `ArrayCache` that only lives for the current PHP process, so every request fetches a new token. Pass a shared cache (Redis, APCu, filesystem) in production. `$yomaMmqr->forgetToken()` drops a cached token, e.g. after rotating the client secret.
+The default is an in-memory `ArrayCache` that only lives for the current PHP process, so with PHP-FPM every request fetches a new token. Pass a shared cache (Redis, APCu, filesystem) in production. Pass `cache` to `MyanmarPayments` to share one cache with the Yoma gateway it builds. The token is stored under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>`, the same key in every Laranex SDK, so services in different languages can share one cache. `$yoma->forgetToken()` drops a cached token, e.g. after rotating the client secret.

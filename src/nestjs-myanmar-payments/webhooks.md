@@ -1,35 +1,35 @@
 ---
 title: Handling Webhooks (recommended)
-description: The recommended way to handle payment callbacks in NestJS. Verify with the package, store the raw call in your own table, acknowledge at once, then process each one once in a background worker with a lock, retries, replay and pruning.
+description: The recommended way to handle gateway webhooks in a NestJS app - verify, store, acknowledge, then process once in a background worker with retries, a lock and replay.
 ---
 
 # Handling Webhooks (recommended)
 
-Gateways deliver payment results as server-to-server callbacks (webhooks). They retry until they get the acknowledgement they expect, can deliver the same result more than once, and give you only a few seconds to answer. The flow below handles all of that and leaves a record you can debug and replay:
+The package verifies a webhook and builds the acknowledgement; what you do with it lives in your app. The flow below is the one we recommend for production: it answers the gateway fast, never loses a notification, and fulfills each order exactly once even when the gateway retries.
 
-1. **Verify** the callback with the package (`@RawCallback()` and `MyanmarPaymentsService.handleCallback()`).
-2. **Store** the raw call in your own table. Bad signatures are stored as rejected for debugging and never processed.
-3. **Acknowledge** at once by returning the callback from an `@AcknowledgeCallback()` handler, before any business logic runs.
-4. **Process once** in a background worker: claim the row with a lock, skip orders that are already fulfilled, compare the amount, retry with backoff and keep the last error. Replay failed rows and prune old ones.
+1. **Verify** the webhook with `this.payments.handleCallback(gateway, request)`.
+2. **Store** the raw call in your own table, including rejected ones for debugging.
+3. **Acknowledge** right away by returning the callback from an `@AcknowledgeCallback()` handler, so the gateway stops retrying.
+4. **Process once** in a background worker: skip what is already processed, lock the order, retry with backoff, keep the last error.
 
 <SequenceDiagram
   title="Verify, store, acknowledge, process once"
-  :participants="['Gateway', 'WebhooksController', 'Database', 'Worker']"
+  :participants="['Gateway', 'Your app', 'Queue worker']"
   :steps="[
-    { from: 'Gateway', to: 'WebhooksController', label: 'POST /payments/callback/kbz-pay', detail: 'payment notification' },
-    { from: 'WebhooksController', to: 'WebhooksController', label: 'Verify the signature', detail: 'payments.handleCallback(gateway, request)' },
-    { from: 'WebhooksController', to: 'Database', label: 'Invalid: store as rejected', detail: 'verified = 0, last_error' },
-    { from: 'WebhooksController', to: 'Gateway', label: 'Invalid: 400', detail: 'BadRequestException', response: true },
-    { from: 'WebhooksController', to: 'Database', label: 'Store the verified call', detail: 'INSERT INTO payment_webhooks' },
-    { from: 'WebhooksController', to: 'Gateway', label: 'Acknowledge at once', detail: '@AcknowledgeCallback(): return callback', response: true },
-    { from: 'Worker', to: 'Database', label: 'Claim the next due row', detail: 'locked_until, attempts + 1' },
-    { from: 'Worker', to: 'Database', label: 'Fulfill once, or retry with backoff', detail: 'paid_at IS NULL, available_at' },
+    { from: 'Gateway', to: 'Your app', label: 'Webhook', detail: 'POST /webhooks/payments/:gateway' },
+    { from: 'Your app', to: 'Your app', label: 'Verify the signature', detail: 'handleCallback(gateway, request)' },
+    { from: 'Your app', to: 'Gateway', label: 'Invalid: store as rejected, 400', detail: 'SignatureVerificationError', response: true },
+    { from: 'Your app', to: 'Your app', label: 'Store the call', detail: 'INSERT INTO payment_webhooks' },
+    { from: 'Your app', to: 'Queue worker', label: 'Dispatch the job', detail: 'available_at = now' },
+    { from: 'Your app', to: 'Gateway', label: 'Acknowledge immediately', detail: '@AcknowledgeCallback()', response: true },
+    { from: 'Queue worker', to: 'Queue worker', label: 'Lock the order, skip duplicates', detail: 'locked_until, paid_at IS NULL' },
+    { from: 'Queue worker', to: 'Queue worker', label: 'Fulfill once, or retry with backoff', detail: 'MAX_ATTEMPTS, BACKOFF, last_error' },
   ]"
 />
 
-The package itself stores nothing: everything on this page is application code you copy into your app and adapt. The sample uses the built-in `node:sqlite` module (`DatabaseSync`, Node.js 22.13+) so it runs without extra dependencies; with TypeORM, Prisma, MikroORM or another database, keep the same columns and the same conditional `UPDATE`s. The Laranex NestJS playground app runs this exact code under its end-to-end tests. For a queue instead of the in-process worker, run `processNext()` from a BullMQ processor; the claim logic stays the same.
+None of this is part of the package: copy the code into your app and adapt the fulfillment to your own orders. The sample uses the built-in `node:sqlite` module (`DatabaseSync`, Node.js 22.13+) so it runs without extra dependencies; with TypeORM, Prisma, MikroORM or another database, keep the same columns and the same conditional `UPDATE`s. The worker runs in-process; for a queue, run `processNext()` from a BullMQ processor, and the claim logic stays the same.
 
-## Table
+## Migration
 
 ```sql
 CREATE TABLE IF NOT EXISTS payment_webhooks (
@@ -54,19 +54,21 @@ CREATE INDEX IF NOT EXISTS payment_webhooks_order
   ON payment_webhooks (gateway, order_id, status);
 ```
 
-Your orders table needs the order number, the amount as a decimal string and a nullable `paid_at`; the sample's is `orders (number, gateway, amount, gateway_reference, paid_at, created_at)`.
+The sample assumes an `orders` table with a unique `number`, the `amount` as a decimal string, and nullable `paid_at` and `gateway_reference`.
 
-## Database Provider
+## Model
+
+The sample keeps no entity classes: a small provider opens the database and creates both tables. With an ORM, this is where your entities and repositories go.
 
 ```ts
 // src/database.ts
 import { DatabaseSync } from 'node:sqlite';
 
-/** Injection token of the playground's SQLite database. */
+/** Injection token of the app's SQLite database. */
 export const DATABASE = Symbol('DATABASE');
 
 /**
- * Opens the playground database and creates its tables: the orders the
+ * Opens the app database and creates its tables: the orders the
  * checkout routes create and the payment_webhooks table of the recommended
  * webhook flow.
  *
@@ -115,9 +117,9 @@ export function now(): number {
 }
 ```
 
-## Controller
+## Route and Controller
 
-The app must be created with `rawBody: true` (see [Installation](/nestjs-myanmar-payments/installation#keep-the-raw-body)).
+One route serves every gateway. Gateways post from their own servers, so keep it free of authentication guards and CSRF checks. The app must be created with `rawBody: true` (see [Installation](/nestjs-myanmar-payments/installation#keep-the-raw-body)).
 
 ```ts
 // src/webhooks/webhooks.controller.ts
@@ -135,11 +137,8 @@ import { Controller, NotFoundException, Param, Post } from '@nestjs/common';
 
 import { WebhooksService } from './webhooks.service.js';
 
-/**
- * One callback endpoint per gateway: verify, store, acknowledge; the worker
- * processes it.
- */
-@Controller('payments/callback')
+/** One route for every gateway: verify, store, acknowledge. */
+@Controller('webhooks/payments')
 export class WebhooksController {
   constructor(private readonly webhooks: WebhooksService) {}
 
@@ -159,7 +158,15 @@ export class WebhooksController {
 }
 ```
 
-## Service and Worker
+Use `https://shop.test/webhooks/payments/kbz-pay` (and `wave-money`, `aya-pay`, `yoma-mmqr`, `cyber-source`) as the gateway's callback URL.
+
+## Job
+
+The worker is where the order is fulfilled. It is safe to run more than once:
+
+- **Lock:** each row is claimed with a conditional `UPDATE`, so one worker at a time processes it, even across instances.
+- **Idempotent:** a row that is already processed is skipped, and `UPDATE orders ... WHERE paid_at IS NULL` checks the order itself again.
+- **Retries:** `MAX_ATTEMPTS` and `BACKOFF` retry failures; every attempt is counted and the last error is kept.
 
 ```ts
 // src/webhooks/webhooks.service.ts
@@ -212,8 +219,7 @@ interface StoredWebhook {
 /**
  * The recommended webhook flow, as app code: verify, store, acknowledge
  * immediately, then process each stored call once in a background worker with
- * retries. The package never stores webhooks; this is the sample from the
- * docs, wired into the playground.
+ * retries. The package never stores webhooks.
  */
 @Injectable()
 export class WebhooksService
@@ -469,7 +475,7 @@ export class WebhooksService
 - `UPDATE orders ... WHERE paid_at IS NULL` keeps fulfillment idempotent even when two webhooks for one order are processed at once.
 - A row that fails `MAX_ATTEMPTS` times keeps `last_error` and stays unprocessed until you replay it.
 
-## Wiring It Up
+Register the controller, the worker and the database in your module, and call `app.enableShutdownHooks()` in `main.ts` so the worker stops cleanly:
 
 ```ts
 // src/app.module.ts
@@ -501,11 +507,9 @@ import { WebhooksService } from './webhooks/webhooks.service.js';
 export class AppModule {}
 ```
 
-Use `https://shop.test/payments/callback/kbz-pay` (and so on for `wave-money`, `aya-pay`, `yoma-mmqr`, `cyber-source`) as each gateway's callback URL, and call `app.enableShutdownHooks()` in `main.ts` so the worker stops cleanly.
-
 ## Replay and Prune
 
-After fixing the cause of a failure (a missing order, a bug in your fulfillment), queue the row again; the worker picks it up on its next run:
+A failed row keeps `last_error` and `processed_at = NULL`. After fixing the cause, process it again; the worker picks it up on its next run:
 
 ```ts
 webhooks.replay(42); // true when a verified, unprocessed row was found
@@ -520,25 +524,27 @@ prune(): void {
 }
 ```
 
-## Testing It
+## Testing
 
-Post signed callbacks with supertest and run the worker by hand:
+Post a signed callback with supertest to check that the webhook is stored and acknowledged, then run the worker yourself:
 
 ```ts
 import request from 'supertest';
 
 import { WebhooksService } from '../src/webhooks/webhooks.service.js';
 
-const app = moduleRef.createNestApplication({ rawBody: true });
-await app.init();
+it('stores, acknowledges and processes a webhook', async () => {
+  const app = moduleRef.createNestApplication({ rawBody: true });
+  await app.init();
 
-const response = await request(app.getHttpServer())
-  .post('/payments/callback/kbz-pay')
-  .set('Content-Type', 'application/json')
-  .send(signedKbzCallback);
-expect(response.text).toBe('success');
+  await request(app.getHttpServer())
+    .post('/webhooks/payments/wave-money')
+    .set('Content-Type', 'application/json')
+    .send(JSON.stringify(signedWavePayload))
+    .expect(200);
 
-expect(await app.get(WebhooksService).drain()).toBe(1);
+  expect(await app.get(WebhooksService).drain()).toBe(1);
+});
 ```
 
-See [Testing](/nestjs-myanmar-payments/testing) for building signed callbacks.
+Set `WEBHOOK_WORKER_INTERVAL_MS=0` in tests so only `drain()` processes rows. To send a signed payload, compute the gateway's signature in the test with your sandbox secret, as described on each gateway's page and in [Testing](/nestjs-myanmar-payments/testing#sending-signed-callbacks).

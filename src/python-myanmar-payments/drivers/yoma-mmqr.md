@@ -118,7 +118,7 @@ def yoma_callback(request):
         # callback.order_id is your orderNumber
         ...
 
-    ack = callback.acknowledgement()
+    ack = callback.acknowledgement
     return HttpResponse(ack.body, status=ack.status, headers=ack.headers)
 ```
 
@@ -150,7 +150,7 @@ if result.is_successful():
 
 ## Responses
 
-What Yoma MMQR puts in each field. See [Results](/python-myanmar-payments/references/results) and [PaymentCallback & Status](/python-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `None`. `raw` holds plain Python values (JSON integers become `int` and other numbers an exact `Decimal`, never a `float`).
+What Yoma MMQR puts in each field. See [Results](/python-myanmar-payments/references/results) and [PaymentCallback & Status](/python-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `None`. `raw` holds plain Python values; every JSON number is kept as its exact text in a `str` (`1000.50` stays `"1000.50"`), never a `float`.
 
 ### `initiate()` → `QrPayment` {#initiate-response}
 
@@ -192,7 +192,7 @@ The same values as [`initiate()`](#initiate-response) for the `order_id` you pas
 | `gateway_reference` | Always `None`: Yoma's callback has no reference |
 | `amount` | Always `None`: Yoma's callback has no amount |
 | `raw` | The verified body: `orderNumber`, `status`, `hashValue` |
-| `acknowledgement()` | HTTP `200`, empty body, `Content-Type: text/plain` |
+| `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
 ## Statuses
 
@@ -208,6 +208,8 @@ The same values as [`initiate()`](#initiate-response) for the `order_id` you pas
 
 Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in the [token cache](/python-myanmar-payments/configuration#token-cache) (passed as `token_cache=`), shares one token request between concurrent calls (a thread lock on `YomaMmqr`, an `asyncio.Lock` on `AsyncYomaMmqr`), and fetches a new token, retrying once, when Yoma answers `401`. `yoma.forget_token()` (awaited on `AsyncYomaMmqr`) drops the cached token, e.g. after rotating the client secret.
 
+The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(base_url|client_id)>`, the same key every Laranex SDK uses, so services in different languages can share one cache, for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits, so `28800.0` is 28800 seconds; a missing or non-positive value means 3600.
+
 ## Errors
 
 | Call | Raises | When |
@@ -216,6 +218,6 @@ Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in
 | `initiate()` | `ApiError` | The token request fails, Yoma answers with an HTTP error or an `errorCode` (e.g. `PAYMENT ALREADY EXISTS`), `checkOutStatus` isn't `true`, or there is no `qrString` or `refLabel` |
 | `renew_qr()` | `ApiError` | As `initiate()`, without the checkout |
 | `status()` | `ApiError` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
-| `handle_callback()` | `SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong (when `webhook_secret` is set), `orderNumber` is missing, or `hashValue` doesn't match |
+| `handle_callback()` | `SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong (when `webhook_secret` is set), `orderNumber` is missing, `status` holds an object or a list, or `hashValue` doesn't match |
 
 `AsyncYomaMmqr` raises the same errors. Yoma reports business errors with HTTP 200 and an `errorCode`; `ApiError` carries it in `gateway_code` and Yoma's `errorDescription` in `gateway_message`. When Yoma can't be reached or the request times out, the calls raise `ApiError` with the original `httpx` error as `__cause__`.

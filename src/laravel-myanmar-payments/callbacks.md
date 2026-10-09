@@ -36,7 +36,7 @@ Route::post('/payments/kbz/callback', function (Request $request) {
 
     $order = Order::where('reference', $callback->orderId)->firstOrFail();
 
-    // $order->amount is a string such as "1000"; compare strings, never floats
+    // $order->amount is a string such as "10000"; compare strings, never floats
     $paid = $callback->amount === $order->amount;
 
     if ($callback->isSuccessful() && ! $order->isPaid() && $paid) {
@@ -49,10 +49,22 @@ Route::post('/payments/kbz/callback', function (Request $request) {
 
 Gateways post from their own servers, so exclude callback routes from CSRF verification.
 
+## Callback Helpers
+
+| Helper | What it does |
+|---|---|
+| `kbzPay()->handleCallback($request)` | Verifies the callback. Takes the Laravel `Request` as is, or the SDK's `CallbackRequest` |
+| `MyanmarPayments::handleCallback($gateway, $request)` | The same, by gateway name, for one route that serves every gateway; see [Handling Webhooks](/laravel-myanmar-payments/webhooks#route-and-controller) |
+| `MyanmarPayments::gateway($name)` | The gateway for `kbz-pay`, `wave-money`, `aya-pay`, `yoma-mmqr` or `cyber-source` (`gateways()` lists them). An unknown name throws `InvalidArgumentException` |
+| `MyanmarPayments::acknowledge($callback)` | The response the gateway expects, as a `Responsable`. Without a callback, an empty 200 |
+| `ayaPay()->verifyRedirect($request)` | Verifies AYA's browser return; see [AYA Pay](/laravel-myanmar-payments/drivers/aya-pay) |
+
+Signatures are computed over the exact bytes the gateway sent; the package reads them from `$request->getContent()`, so don't rewrite the body in middleware before the callback route.
+
 ## Rules
 
 - **Verify, then trust.** A callback that fails verification throws `SignatureVerificationException`. Never act on its payload; it carries the unverified data in `$e->raw` for logging only.
-- **Check the amount.** Compare `$callback->amount` (as the gateway sent it, a string) with your order before fulfilling. A gateway may format it differently from your order (`1000` or `1000.00`); the `sameAmount()` helper in [Handling Webhooks](/laravel-myanmar-payments/webhooks#job) compares decimal strings exactly.
+- **Check the amount.** Compare `$callback->amount` (as the gateway sent it, a string) with your order before fulfilling. A gateway may format it differently from your order (`10000` or `10000.00`); `Amount::parse($order->amount)->equals($callback->amount)` compares decimal strings exactly.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 - **Acknowledge.** `MyanmarPayments::acknowledge($callback)` returns the response the gateway expects, e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
 
@@ -100,7 +112,7 @@ When a callback is late or missing, ask the gateway directly. Status checks retu
 | CyberSource | No status API: rely on the callback |
 
 ```php
-$result = MyanmarPayments::kbzPay()->status('ORDER_1');
+$result = MyanmarPayments::kbzPay()->status('ORDER_'.$order->id);
 
 if ($result->isSuccessful()) {
     // ...

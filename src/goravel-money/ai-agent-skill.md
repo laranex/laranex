@@ -17,9 +17,9 @@ Or copy `skills/goravel-money` from the [repository](https://github.com/laranex/
 
 ## What the skill covers
 
-Handle money in a Goravel application with github.com/laranex/goravel-money/v4: exact Money values of any size in integer minor units, strict parsing, arithmetic with rounding modes, percentages, allocation, locale-aware formatting, configurable JSON, and ORM column types.
+Work with money in a Goravel app using github.com/laranex/goravel-money/v4: the immutable `money.Money` value type, ORM column types, exact arithmetic, percentages, allocation, rounding and formatting with the correct precision for every currency.
 
-It is written from the package source and kept in the repository next to the code, so agents follow the same API, configuration and conventions these docs describe.
+It covers when to use the package, installing and configuring it, building money, calculating, formatting and serializing, storing amounts in the database, handling errors, testing your app and what to avoid. It is written from the package source and kept in the repository next to the code, so agents follow the same API, configuration and conventions these docs describe.
 
 ## Keeping it current
 

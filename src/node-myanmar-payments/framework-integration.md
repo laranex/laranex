@@ -1,80 +1,81 @@
 ---
 title: Framework Integration
-description: Use Node Myanmar Payments with Express, Fastify, Next.js route handlers and Hono. Create gateways once, read the raw callback body, and send the acknowledgement.
+description: Use Node Myanmar Payments with Express, Fastify, Next.js route handlers and Hono. Create gateways once, build the CallbackRequest from the raw body, and send the acknowledgement.
 ---
 
 # Framework Integration
 
-The package needs only two things from your framework: the incoming request for callbacks and a way to write the acknowledgement. Create each gateway once at startup (or one `MyanmarPayments`) and share it across requests, so Yoma's token cache stays warm.
+The package needs only two things from your framework: the raw incoming request for callbacks and a way to write the acknowledgement. Create each gateway once at startup (or one `MyanmarPayments`) and share it across requests, so Yoma's token cache stays warm.
 
 | Framework | Build the request | Acknowledge |
 |---|---|---|
-| `node:http` | `CallbackRequest.fromNodeRequest(req)` | `callback.acknowledgement.send(res)` |
-| Express | `CallbackRequest.fromNodeRequest(req)` | `callback.acknowledgement.send(res)` |
+| `node:http`, Express | `await CallbackRequest.fromNodeRequest(req)` | `callback.acknowledgement.send(res)` |
 | Fastify | `CallbackRequest.from({ body, headers, query })` | `reply.code(ack.status).headers(ack.headers).send(ack.body)` |
-| Next.js, Hono, Bun, Deno | `CallbackRequest.fromWebRequest(request)` | `return callback.acknowledgement.toResponse()` |
+| Next.js, Hono, Bun, Deno | `await CallbackRequest.fromWebRequest(request)` | `return callback.acknowledgement.toResponse()` |
 
-Gateway callbacks are server-to-server posts: exclude these routes from any CSRF protection your middleware applies.
+Gateway callbacks are server-to-server posts: exclude these routes from any CSRF protection your framework applies.
 
 ## Express
 
-Register the callback routes with `express.raw()` (or before any global `express.json()`), so the package reads the exact body the gateway sent:
+Create the facade once, e.g. in `payments.ts`, and register the callback routes with `express.raw()` (or before any global `express.json()`), so the package reads the exact body the gateway sent:
 
 ```ts
+// payments.ts
+import { MyanmarPayments } from '@laranex/myanmar-payments';
+
+export const payments = MyanmarPayments.fromEnv(process.env);
+```
+
+```ts
+// app.ts
 import express from 'express';
 import {
-  ApiError,
   Amount,
+  ApiError,
+  AyaPayMethod,
   CallbackRequest,
   InvalidPaymentDataError,
-  MyanmarPayments,
   SignatureVerificationError,
 } from '@laranex/myanmar-payments';
 
-const payments = MyanmarPayments.fromEnv(process.env);
+import { payments } from './payments.js';
+
 const app = express();
-
-app.get('/checkout/:orderId', async (req, res, next) => {
-  try {
-    const payment = payments.ayaPay().initiate({
-      orderId: `ORDER${req.params.orderId}`,
-      amount: Amount.kyat(8000),
-      channel: 'aya_pay',
-      method: 'QR',
-      returnUrl: 'https://shop.test/payments/aya/return',
-    });
-    res.type('html').send(payment.toHtml());
-  } catch (error) {
-    next(error);
-  }
-});
-
 const raw = express.raw({ type: '*/*' });
 
-app.post('/payments/callback/kbz', raw, async (req, res, next) => {
-  try {
-    const request = await CallbackRequest.fromNodeRequest(req);
-    const callback = payments.kbzPay().handleCallback(request);
-    // fulfill callback.orderId when callback.isSuccessful()
-    // and the amount matches
-    callback.acknowledgement.send(res);
-  } catch (error) {
-    next(error);
-  }
+app.get('/checkout/:orderId', (req, res) => {
+  const payment = payments.ayaPay().initiate({
+    orderId: `ORDER_${req.params.orderId}`,
+    amount: Amount.kyat(10000),
+    channel: 'aya_pay',
+    method: AyaPayMethod.Qr,
+    returnUrl: 'https://shop.test/payments/aya/return',
+  });
+  res.type('html').send(payment.toHtml());
 });
 
-app.get('/payments/aya/return', async (req, res, next) => {
-  try {
-    const request = await CallbackRequest.fromNodeRequest(req);
-    const result = payments.ayaPay().verifyRedirect(request);
-    res.send(
-      result.isSuccessful()
-        ? 'Thank you, your payment was received.'
-        : `Payment ${result.status}.`,
-    );
-  } catch (error) {
-    next(error);
-  }
+app.post('/payments/kbz/callback', raw, async (req, res) => {
+  const request = await CallbackRequest.fromNodeRequest(req);
+  const callback = payments.kbzPay().handleCallback(request);
+  // fulfill callback.orderId when callback.isSuccessful()
+  // and the amount matches
+  callback.acknowledgement.send(res);
+});
+
+app.get('/payments/aya/return', async (req, res) => {
+  const request = await CallbackRequest.fromNodeRequest(req);
+  const result = payments.ayaPay().verifyRedirect(request);
+  res.send(
+    result.isSuccessful()
+      ? 'Thank you, your payment was received.'
+      : `Payment ${result.status}.`,
+  );
+});
+
+app.get('/payments/kbz/status/:orderId', async (req, res) => {
+  const orderId = `ORDER_${req.params.orderId}`;
+  const result = await payments.kbzPay().status(orderId);
+  res.json({ status: result.status });
 });
 
 app.use((
@@ -98,6 +99,8 @@ app.use((
   next(error);
 });
 ```
+
+Express 5 passes errors thrown in `async` handlers to the error handler; on Express 4, wrap each handler in `try`/`catch` and call `next(error)`.
 
 `fromNodeRequest` reads the buffer `express.raw()` leaves in `req.body`. If a global `express.json()` or `express.urlencoded()` already parsed the body, it encodes `req.body` again as JSON or a form. That usually verifies, but a JSON number such as `1000.50` comes back as `1000.5` and breaks a signature over the exact text, so `express.raw()` on callback routes is the safer setup.
 
@@ -124,7 +127,7 @@ app.addContentTypeParser(
   (request, body, done) => done(null, body),
 );
 
-app.post('/payments/callback/:gateway', async (request, reply) => {
+app.post('/payments/wave/callback', async (request, reply) => {
   const callbackRequest = CallbackRequest.from({
     body: request.body as string,
     headers: request.headers,
@@ -133,6 +136,8 @@ app.post('/payments/callback/:gateway', async (request, reply) => {
 
   try {
     const callback = payments.waveMoney().handleCallback(callbackRequest);
+    // fulfill callback.orderId when callback.isSuccessful()
+    // and the amount matches
     const ack = callback.acknowledgement;
     return reply.code(ack.status).headers(ack.headers).send(ack.body);
   } catch (error) {
@@ -151,7 +156,7 @@ Register the parser inside a plugin scoped to the callback routes when the rest 
 In an App Router route handler, read the Fetch `Request` and return the acknowledgement as a `Response`:
 
 ```ts
-// app/payments/callback/kbz/route.ts
+// app/payments/kbz/callback/route.ts
 import {
   CallbackRequest,
   SignatureVerificationError,
@@ -160,13 +165,11 @@ import {
 import { payments } from '@/lib/payments';
 
 export async function POST(request: Request): Promise<Response> {
+  const callbackRequest = await CallbackRequest.fromWebRequest(request);
   try {
-    const callbackRequest = await CallbackRequest.fromWebRequest(request);
     const callback = payments.kbzPay().handleCallback(callbackRequest);
-    if (callback.isSuccessful()) {
-      // compare callback.amount with the order,
-      // then fulfill callback.orderId once
-    }
+    // fulfill callback.orderId when callback.isSuccessful()
+    // and the amount matches
     return callback.acknowledgement.toResponse();
   } catch (error) {
     if (error instanceof SignatureVerificationError) {
@@ -185,8 +188,8 @@ import { payments } from '@/lib/payments';
 export async function GET(): Promise<Response> {
   const payment = await payments.kbzPay().pwa({
     orderId: 'ORDER_1',
-    amount: Amount.kyat(1000),
-    callbackUrl: 'https://shop.test/payments/callback/kbz',
+    amount: Amount.kyat(10000),
+    callbackUrl: 'https://shop.test/payments/kbz/callback',
   });
   return Response.redirect(payment.url, 302);
 }
@@ -209,9 +212,9 @@ import {
 const payments = MyanmarPayments.fromEnv(process.env);
 const app = new Hono();
 
-app.post('/payments/callback/yoma', async (c) => {
+app.post('/payments/yoma/callback', async (c) => {
+  const request = await CallbackRequest.fromWebRequest(c.req.raw);
   try {
-    const request = await CallbackRequest.fromWebRequest(c.req.raw);
     const callback = payments.yomaMmqr().handleCallback(request);
     return callback.acknowledgement.toResponse();
   } catch (error) {
@@ -223,10 +226,11 @@ app.post('/payments/callback/yoma', async (c) => {
 });
 
 app.get('/payments/yoma/:orderId', async (c) => {
+  const orderId = c.req.param('orderId');
   const payment = await payments.yomaMmqr().initiate({
-    orderId: c.req.param('orderId'),
-    amount: 1000,
-    description: 'Order',
+    orderId: `ORDER_${orderId}`,
+    amount: 10000,
+    description: `Order #${orderId}`,
   });
   return c.html(`<img src="${payment.qrImageDataUri()}" alt="Scan to pay">`);
 });
@@ -234,40 +238,10 @@ app.get('/payments/yoma/:orderId', async (c) => {
 
 `fromWebRequest` reads a clone of the request, so the body stays readable for later middleware.
 
-## Other Servers
+## Other Frameworks
 
-For any other server, build the request from its parts with `CallbackRequest.from({ body, headers, query })` (the body as a string, `Buffer` or `Uint8Array`), then write `acknowledgement.status`, `headers` and `body` with your server's response API.
+For any other framework, build the request from its parts with `CallbackRequest.from({ body, headers, query })` (the raw body as a `string`, `Buffer` or `Uint8Array`, the headers as an object or `[name, value]` pairs, the query string as a `string`, `URLSearchParams` or an object), then write `ack.status`, `ack.headers` and `ack.body` with your framework's response API.
 
 ## Testing Your App
 
-Pass a fake `fetch` to any gateway to answer with canned responses, without network access:
-
-```ts
-const fetch = async (url: string, init: RequestInit): Promise<Response> =>
-  Response.json({
-    Response: {
-      result: 'SUCCESS',
-      code: '0',
-      prepay_id: 'PREPAY_1',
-      qrCode: 'qr',
-    },
-  });
-
-const kbz = new KbzPay(
-  { appId: 'kp1', appKey: 'key', merchantCode: '100001' },
-  { fetch },
-);
-```
-
-To test your own fulfillment code, build a `PaymentCallback` yourself instead of going through a gateway:
-
-```ts
-import { PaymentCallback } from '@laranex/myanmar-payments';
-
-const callback = new PaymentCallback({
-  orderId: 'ORDER_1',
-  status: 'successful',
-  gatewayStatus: 'PAY_SUCCESS',
-  amount: '1000',
-});
-```
+See [Testing](/node-myanmar-payments/testing) to replace the gateways' HTTP calls with a fake `fetch` or undici's `MockAgent`, replay signed callbacks and build `PaymentCallback` objects for your own code.

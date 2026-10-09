@@ -58,7 +58,7 @@ def callback_request(request) -> CallbackRequest:
 def checkout(request, order_id: int):
     data = AyaPayPaymentData(
         order_id=f"ORDER_{order_id}",
-        amount=Amount.kyat(8000),
+        amount=Amount.kyat(10000),
         channel="aya_pay",
         method=AyaPayMethod.QR,
         return_url="https://shop.test/payments/aya/return",
@@ -79,7 +79,7 @@ def kbz_callback(request):
         return HttpResponse("invalid signature", status=400)
     # fulfill callback.order_id when callback.is_successful()
     # and the amount matches
-    ack = callback.acknowledgement()
+    ack = callback.acknowledgement
     return HttpResponse(ack.body, status=ack.status, headers=ack.headers)
 
 
@@ -106,6 +106,20 @@ def kbz_status(request, order_id: int):
     return JsonResponse({"status": result.status})
 ```
 
+```python
+# shop/urls.py
+from django.urls import path
+
+from shop import views
+
+urlpatterns = [
+    path("checkout/<int:order_id>", views.checkout),
+    path("payments/kbz/callback", views.kbz_callback),
+    path("payments/aya/return", views.aya_return),
+    path("payments/kbz/status/<int:order_id>", views.kbz_status),
+]
+```
+
 Read `request.body` before anything touches `request.POST` (once Django parsed a multipart body, the raw bytes are gone), and never rebuild the request from `request.POST` or `json.loads()`.
 
 ### Async Views
@@ -129,7 +143,7 @@ from shop.payments import async_payments
 async def kbz_checkout(request, order_id: int):
     data = KbzPayPaymentData(
         order_id=f"ORDER_{order_id}",
-        amount=Amount.kyat(1000),
+        amount=Amount.kyat(10000),
         callback_url="https://shop.test/payments/kbz/callback",
     )
     payment = await async_payments.kbz_pay().pwa(data)
@@ -163,12 +177,12 @@ def callback_request() -> CallbackRequest:
     )
 
 
-@app.post("/payments/callback/wave")
+@app.post("/payments/wave/callback")
 def wave_callback() -> Response:
     callback = payments.wave_money().handle_callback(callback_request())
     # fulfill callback.order_id when callback.is_successful()
     # and the amount matches
-    ack = callback.acknowledgement()
+    ack = callback.acknowledgement
     return Response(ack.body, status=ack.status, headers=dict(ack.headers))
 
 
@@ -213,7 +227,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(lifespan=lifespan)
 
 
-@app.post("/payments/callback/yoma")
+@app.post("/payments/yoma/callback")
 async def yoma_callback(request: Request) -> Response:
     callback_request = CallbackRequest(
         body=await request.body(),
@@ -225,7 +239,7 @@ async def yoma_callback(request: Request) -> Response:
         callback = payments.yoma_mmqr().handle_callback(callback_request)
     except SignatureVerificationError:
         return Response("invalid signature", status_code=400)
-    ack = callback.acknowledgement()
+    ack = callback.acknowledgement
     return Response(ack.body, status_code=ack.status, headers=dict(ack.headers))
 
 
@@ -233,9 +247,9 @@ async def yoma_callback(request: Request) -> Response:
 async def yoma_checkout(order_id: str, request: Request) -> str:
     payments: AsyncMyanmarPayments = request.app.state.payments
     data = YomaMmqrPaymentData(
-        order_id=order_id,
-        amount=1000,
-        description="Order",
+        order_id=f"ORDER_{order_id}",
+        amount=10000,
+        description=f"Order #{order_id}",
     )
     payment = await payments.yoma_mmqr().initiate(data)
     return f'<img src="{payment.qr_image_data_uri()}" alt="Scan to pay">'

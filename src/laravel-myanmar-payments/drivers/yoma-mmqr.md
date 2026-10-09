@@ -167,9 +167,9 @@ The same values as [`initiate()`](#initiate-response) for the `orderId` you pass
 | `gatewayReference` | Always `null`: Yoma's callback has no reference |
 | `amount` | Always `null`: Yoma's callback has no amount |
 | `raw` | The verified body: `orderNumber`, `status`, `hashValue` |
-| `acknowledgement()` | HTTP `200`, empty body, `Content-Type: text/plain` |
+| `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
-`MyanmarPayments::acknowledge($callback)` turns `acknowledgement()` into a `CallbackResponse` (`Responsable`). `handleCallback()` accepts an `Illuminate\Http\Request` or a `CallbackRequest`.
+`MyanmarPayments::acknowledge($callback)` turns `acknowledgement` into a `CallbackResponse` (`Responsable`). `handleCallback()` accepts an `Illuminate\Http\Request` or a `CallbackRequest`.
 
 ## Statuses
 

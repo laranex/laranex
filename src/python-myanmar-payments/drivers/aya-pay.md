@@ -142,7 +142,7 @@ def aya_callback(request):
         # callback.gateway_reference is AYA's tranId
         ...
 
-    ack = callback.acknowledgement()
+    ack = callback.acknowledgement
     return HttpResponse(ack.body, status=ack.status, headers=ack.headers)
 ```
 
@@ -174,7 +174,7 @@ def aya_return(request):
     return HttpResponse(f"Payment {result.status}.")
 ```
 
-A `+` in the base64 `payload` that reached you as a space (an unencoded query string) is read back as `+` before decoding; the checksum is still verified. Still fulfill orders from the backend callback.
+A `+` in the base64 `payload` that reached you as a space (an unencoded query string) is read back as `+` before decoding; the checksum is still verified. The `payload` may carry its `=` padding or leave it out; partial padding, the URL-safe alphabet, line breaks and text that isn't UTF-8 are rejected. Still fulfill orders from the backend callback.
 
 ## Status Checks
 
@@ -190,7 +190,7 @@ if result.is_successful():
 
 ## Responses
 
-What AYA Pay puts in each field. See [Results](/python-myanmar-payments/references/results) and [PaymentCallback & Status](/python-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `None`. `raw` holds plain Python values (JSON integers become `int` and other numbers an exact `Decimal`, never a `float`), while the typed fields such as `amount` keep the exact text AYA sent.
+What AYA Pay puts in each field. See [Results](/python-myanmar-payments/references/results) and [PaymentCallback & Status](/python-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `None`. `raw` holds plain Python values; every JSON number is kept as its exact text in a `str` (`1000.50` stays `"1000.50"`), never a `float`.
 
 ### `services()` → `list[AyaPayService]` {#services-response}
 
@@ -257,7 +257,7 @@ AYA leaves out the fields that don't apply (wallet payments have no card fields)
 | `gateway_reference` | AYA `tranId` |
 | `amount` | AYA `amount`, e.g. `10000` |
 | `raw` | The verified, decoded payload, with the same keys as `status()` |
-| `acknowledgement()` | HTTP `200`, empty body, `Content-Type: text/plain` |
+| `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
 ### `verify_redirect()` → `PaymentCallback` {#verify-redirect-response}
 
@@ -281,6 +281,6 @@ The same values as [`handle_callback()`](#handle-callback-response), read from t
 | `services()` | `ApiError` | AYA answers with an HTTP error or a `status` other than `00` |
 | `status()` | `ApiError` | AYA answers with an HTTP error or a `status` other than `00`, e.g. `20` Transaction not found |
 | `status()` | `SignatureVerificationError` | The enquiry payload's `checkSum` doesn't match |
-| `handle_callback()`, `verify_redirect()` | `SignatureVerificationError` | `payload` is missing or not base64 JSON, or `checkSum` doesn't match |
+| `handle_callback()`, `verify_redirect()` | `SignatureVerificationError` | `payload` is missing or not base64 JSON, a signed field holds an object or a list, or `checkSum` doesn't match |
 
 `AsyncAyaPay` raises the same errors. `ApiError` carries AYA's `status` (e.g. `20` Transaction not found, `09` Duplicate order ID) in `gateway_code` and its `message` in `gateway_message`. When AYA can't be reached or the request times out, the calls raise `ApiError` with the original `httpx` error as `__cause__`.

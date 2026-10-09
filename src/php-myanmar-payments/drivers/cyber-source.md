@@ -72,9 +72,9 @@ echo $payment->toHtml();
 | `callbackUrl` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters; CyberSource may require HTTPS in production |
 | `returnUrl` | `?string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `cancelUrl` | `?string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
-| `currency` | `string` | No | Any three-letter uppercase ISO 4217 code, default `MMK` |
-| `transactionType` | `CyberSourceTransactionType` | No | `Sale` (default), `Authorization`, `SaleAndCreateToken` or `AuthorizationAndCreateToken` |
-| `locale` | `string` | No | Hosted page language as a CyberSource locale code such as `en-us`, default `en-us` |
+| `currency` | `string` | No | Any three-letter uppercase ISO 4217 code. Defaults to `MMK`, also when blank |
+| `transactionType` | `CyberSourceTransactionType` | No | `CyberSourceTransactionType::Sale` (`'sale'`, the default), `::Authorization` (`'authorization'`), `::SaleAndCreateToken` (`'sale,create_payment_token'`) or `::AuthorizationAndCreateToken` (`'authorization,create_payment_token'`) |
+| `locale` | `string` | No | Hosted page language as a CyberSource locale code such as `en-us`. Defaults to `en-us`, also when blank |
 
 ### Amounts and Currencies
 
@@ -97,6 +97,7 @@ try {
     $callback = $cyberSource->handleCallback(CallbackRequest::fromGlobals());
 } catch (SignatureVerificationException) {
     http_response_code(400);
+    echo 'invalid callback';
     exit;
 }
 
@@ -105,44 +106,43 @@ if ($callback->isSuccessful()) {
     // $callback->gatewayReference is CyberSource's transaction_id
 }
 
-$callback->acknowledgement()->send();
+$callback->acknowledgement->send();
 ```
 
 Only signed fields are trusted: `decision` and `req_reference_number` must be listed in `signed_field_names`, `transaction_id` and the amount are read only when they are signed, and `raw` keeps only the signed fields plus `signature`. An unsigned extra field, such as `decision=ACCEPT` added to a re-posted checkout form, can't change the result.
 
 ## Responses
 
-What CyberSource puts in each property. See [Results](/php-myanmar-payments/references/results) and [PaymentCallback & Status](/php-myanmar-payments/references/payment-callback) for the full classes.
+What CyberSource puts in each property. See [Results](/php-myanmar-payments/references/results) and [PaymentCallback & Status](/php-myanmar-payments/references/payment-callback) for the full classes. A property the gateway didn't send is `null`. CyberSource posts form fields, so every `raw` value is a `string`, exactly as sent.
 
 ### `initiate()` → `FormPayment` {#initiate-response}
 
 | Property / Method | CyberSource value |
 |---|---|
-| `orderId` | Your `orderId` |
-| `action` | `{base_url}/pay`, e.g. `https://testsecureacceptance.cybersource.com/pay` |
-| `fields` | The signed fields below. Post them unchanged |
+| `flow()` | `PaymentFlow::Form` |
+| `orderId` | Your `$data->orderId` |
+| `action` | `{baseUrl}/pay`, e.g. `https://testsecureacceptance.cybersource.com/pay` |
+| `fields` | The signed fields below, in signing order. Post them unchanged |
 | `enctype` | `application/x-www-form-urlencoded` |
 | `autoSubmitUrl` | `null` in plain PHP until you call `withAutoSubmitUrl()` |
 | `withAutoSubmitUrl($url)` | Returns a copy with `autoSubmitUrl` set |
 | `toHtml()` | A full HTML page that posts `fields` to `action` on load |
 
-`fields`, all signed, in this order:
-
 | Form field | Value |
 |---|---|
-| `access_key` | Your configured access key |
-| `profile_id` | Your configured profile ID |
+| `access_key` | `$config->accessKey` |
+| `profile_id` | `$config->profileId` |
 | `transaction_uuid` | A random ID, new for every call |
 | `signed_field_names` | The field names in this table except `signature`, comma-separated |
 | `signed_date_time` | UTC time, e.g. `2026-10-08T09:30:00Z` |
-| `locale` | Your `locale`, e.g. `en-us` |
-| `transaction_type` | Your `transactionType`, e.g. `sale` |
-| `reference_number` | Your `orderId` |
-| `amount` | Your `amount`, e.g. `10000` |
-| `currency` | Your `currency`, e.g. `MMK` |
-| `override_custom_receipt_page` | Your `returnUrl`, `""` when unset |
-| `override_backoffice_post_url` | Your `callbackUrl` |
-| `override_custom_cancel_page` | Your `cancelUrl`, `""` when unset |
+| `locale` | `$data->locale`, `en-us` by default |
+| `transaction_type` | `$data->transactionType`, `sale` by default |
+| `reference_number` | `$data->orderId` |
+| `amount` | `$data->amount`, e.g. `10000` |
+| `currency` | `$data->currency`, `MMK` by default |
+| `override_custom_receipt_page` | `$data->returnUrl`, `""` when unset |
+| `override_backoffice_post_url` | `$data->callbackUrl` |
+| `override_custom_cancel_page` | `$data->cancelUrl`, `""` when unset |
 | `signature` | Base64 HMAC-SHA256 of the signed fields |
 
 `initiate()` makes no HTTP call, so `CyberSource` takes no HTTP client. `FormPayment` has no `raw`: nothing is sent to CyberSource until the customer's browser posts the form.
@@ -157,7 +157,7 @@ What CyberSource puts in each property. See [Results](/php-myanmar-payments/refe
 | `gatewayReference` | CyberSource `transaction_id`. `null` when it is not signed |
 | `amount` | CyberSource `auth_amount`, falling back to `req_amount` when it is missing or empty, e.g. `10000`. Signed values only |
 | `raw` | The signed fields of the verified post plus `signature`, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `auth_amount`, `auth_code`, `req_reference_number`, `req_amount`, `req_currency`, `req_transaction_uuid`, `signed_field_names`, `signed_date_time`. Unsigned fields are left out |
-| `acknowledgement()` | HTTP `200`, empty body, `Content-Type: text/plain` |
+| `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
 ## Statuses
 
@@ -174,6 +174,6 @@ What CyberSource puts in each property. See [Results](/php-myanmar-payments/refe
 | Call | Throws | When |
 |---|---|---|
 | `new CyberSourcePaymentData(...)` | `InvalidPaymentDataException` | A value breaks the rules above. Nothing is signed |
-| `handleCallback()` | `SignatureVerificationException` | `signature` doesn't match, a field listed in `signed_field_names` is missing, or `decision` or `req_reference_number` isn't signed |
+| `handleCallback()` | `SignatureVerificationException` | `signature` doesn't match, a field listed in `signed_field_names` is missing or holds an object or array, or `decision` or `req_reference_number` isn't signed |
 
 CyberSource makes no HTTP calls, so nothing throws `ApiException`.

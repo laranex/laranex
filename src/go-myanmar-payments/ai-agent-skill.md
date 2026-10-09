@@ -13,7 +13,7 @@ Go Myanmar Payments is built for humans and AI agents. These docs are written fo
 npx skills add laranex/go-myanmar-payments
 ```
 
-Or copy `skills/go-myanmar-payments` from the [repository](https://github.com/laranex/go-myanmar-payments) into your project's `.claude/skills` or `.agents/skills` folder.
+Or copy `skills/go-myanmar-payments` from the [repository](https://github.com/laranex/go-myanmar-payments) into your project's `.claude/skills` or `.agents/skills` folder. The folder is also included in the Go module, under `$(go env GOMODCACHE)/github.com/laranex/go-myanmar-payments/v4@<version>/skills/go-myanmar-payments`.
 
 ## What the skill covers
 

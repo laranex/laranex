@@ -182,7 +182,7 @@ def test_verifies_a_kbz_pay_callback() -> None:
     callback = KbzPay(CONFIG).handle_callback(request)
 
     assert callback.status is PaymentStatus.SUCCESSFUL
-    assert callback.acknowledgement().body == "success"
+    assert callback.acknowledgement.body == "success"
 ```
 
 A modified payload must be rejected: change `total_amount` after signing and `handle_callback()` raises `SignatureVerificationError`. To exercise your real callback view, post the same JSON with your framework's test client, e.g. Django's `client.post("/payments/kbz/callback", body, content_type="application/json")`, Flask's `client.post(..., data=body, content_type="application/json")` or Starlette's `TestClient.post(..., content=body)`.

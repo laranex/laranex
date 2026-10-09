@@ -154,12 +154,13 @@ if result.IsSuccessful() {
 
 ## Responses
 
-What Yoma MMQR puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`; a field the gateway didn't send is `""`.
+What Yoma MMQR puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`. A field the gateway didn't send is `""`. `Raw` holds plain Go values (JSON numbers become `json.Number`s).
 
 ### `Initiate()` → `*myanmarpayments.QrPayment` {#initiate-response}
 
 | Field / Method | Yoma MMQR value |
 |---|---|
+| `Flow()` | `FlowQR` |
 | `OrderID` | Your `data.OrderID` (Yoma `orderNumber`) |
 | `QRString` | Always `""` |
 | `QRImage` | Yoma `qrString`, a base64 PNG of the payment slip. Always set |
@@ -179,7 +180,7 @@ The same values as [`Initiate()`](#initiate-response) for the `orderID` you pass
 | Field | Yoma MMQR value |
 |---|---|
 | `OrderID` | Always `""`: Yoma only returns the reference |
-| `Status` | `paymentStatus` mapped, see [Statuses](#statuses). `StatusExpired` for a `QR EXPIRED` error |
+| `Status` | `paymentStatus` mapped case-insensitively, see [Statuses](#statuses). `StatusExpired` for a `QR EXPIRED` error |
 | `GatewayStatus` | Yoma `paymentStatus`, trimmed, e.g. `SUCCESS`. `QR EXPIRED` for an expired QR |
 | `GatewayReference` | Yoma `refLabel`, falling back to the reference you passed. Always set |
 | `Amount` | Always `""`: Yoma's status response has no amount |
@@ -209,7 +210,9 @@ The same values as [`Initiate()`](#initiate-response) for the `orderID` you pass
 
 ## Access Tokens
 
-Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in the [token cache](/go-myanmar-payments/configuration#token-cache) and fetches a new one, retrying once, when Yoma answers `401`. `yoma.ForgetToken()` drops the cached token, e.g. after rotating the client secret.
+Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in the [token cache](/go-myanmar-payments/configuration#token-cache), shares one token request between concurrent calls, and fetches a new token, retrying once, when Yoma answers `401`. The shared token request runs without any one call's cancellation and is bounded by the HTTP client timeout, so canceling one call's `ctx` never fails the others; that call stops waiting and returns an `*APIError`. `yoma.ForgetToken()` drops the cached token, e.g. after rotating the client secret.
+
+The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseURL|clientID)>`, the same key every Laranex SDK uses, so services in different languages can share one cache, for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits, so `28800.0` is 28800 seconds; a missing or non-positive value means 3600.
 
 ## Errors
 
@@ -219,6 +222,6 @@ Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in
 | `Initiate()` | `*APIError` | The token request fails, Yoma answers with an HTTP error or an `errorCode` (e.g. `PAYMENT ALREADY EXISTS`), `checkOutStatus` isn't `true`, or there is no `qrString` or `refLabel` |
 | `RenewQR()` | `*APIError` | As `Initiate()`, without the checkout |
 | `Status()` | `*APIError` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
-| `HandleCallback()` | `*SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong (when `WebhookSecret` is set), `orderNumber` is missing, or `hashValue` doesn't match |
+| `HandleCallback()` | `*SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong (when `WebhookSecret` is set), `orderNumber` is missing, `status` holds an object or array, or `hashValue` doesn't match |
 
 The error types live in the root `myanmarpayments` package. Yoma reports business errors with HTTP 200 and an `errorCode`; `*APIError` carries it in `GatewayCode` and Yoma's `errorDescription` in `GatewayMessage`. When Yoma can't be reached or `ctx` is canceled, the calls return `*APIError`, which unwraps to the cause (`errors.Is(err, context.DeadlineExceeded)`).

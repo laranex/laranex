@@ -1,16 +1,16 @@
 ---
 title: Handling Webhooks (recommended)
-description: The recommended way to handle gateway webhooks in a Go service - verify, store, acknowledge, then process once in a worker goroutine with retries, a lock and replay.
+description: The recommended way to handle gateway webhooks in a Go app - verify, store, acknowledge, then process once in a background worker with retries, a lock and replay.
 ---
 
 # Handling Webhooks (recommended)
 
-The module verifies a webhook and builds the acknowledgement; what you do with it lives in your service. The flow below is the one we recommend for production: it answers the gateway fast, never loses a notification, and fulfills each order exactly once even when the gateway retries.
+The package verifies a webhook and builds the acknowledgement; what you do with it lives in your app. The flow below is the one we recommend for production: it answers the gateway fast, never loses a notification, and fulfills each order exactly once even when the gateway retries.
 
 1. **Verify** the webhook with `HandleCallback`.
 2. **Store** the raw call in your own table, including rejected ones for debugging.
 3. **Acknowledge** right away with `callback.Acknowledgement.Write(w)`, so the gateway stops retrying.
-4. **Process once** in a worker goroutine: claim the row, skip what is already fulfilled, retry with backoff, keep the last error.
+4. **Process once** in a background worker: claim the row, skip what is already fulfilled, retry with backoff, keep the last error.
 
 <SequenceDiagram
   title="Verify, store, acknowledge, process once"
@@ -26,7 +26,7 @@ The module verifies a webhook and builds the acknowledgement; what you do with i
   ]"
 />
 
-None of this is part of the module: copy the code into your service and adapt the fulfillment to your own orders table. It uses `database/sql` with `?` placeholders (MySQL, SQLite); use `$1`, `$2`, ... on PostgreSQL.
+None of this is part of the package: copy the code into your app and adapt the fulfillment to your own orders table. The sample uses `database/sql` with `?` placeholders and is framework-independent; with PostgreSQL, use your driver's placeholders (`$1`, `$2`, …) and the same queries.
 
 ## Table
 
@@ -56,8 +56,10 @@ CREATE INDEX payment_webhooks_order
 
 ## Handler
 
+`Handle` takes the gateway name from the route and the request, and writes the acknowledgement, or a `400` for a rejected call:
+
 ```go
-package main
+package webhooks
 
 import (
 	"context"
@@ -67,7 +69,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
@@ -143,7 +144,7 @@ func (h *Webhooks) Handle(w http.ResponseWriter, r *http.Request) {
 
 ## Worker
 
-`Work` processes stored webhooks one at a time and is safe to run in several goroutines or processes:
+`Work` processes stored webhooks one at a time and is safe to run in several processes:
 
 - **Lock:** a worker claims a row by setting `locked_until`; a crashed worker's claim expires after `lockFor`.
 - **Idempotent:** the order is only marked paid while `paid_at IS NULL`, so a retried or duplicated webhook never fulfills twice.
@@ -257,7 +258,13 @@ func (h *Webhooks) fulfill(ctx context.Context, wh webhook) error {
 	if paidAt.Valid {
 		return nil // already fulfilled by an earlier webhook
 	}
-	if normalizeAmount(wh.Amount) != normalizeAmount(amount) {
+	// Yoma MMQR callbacks carry no amount: Yoma fixed it when the order
+	// was checked out.
+	expected, err := myanmarpayments.ParseAmount(amount)
+	if err != nil {
+		return err
+	}
+	if wh.Amount != "" && !expected.Equals(wh.Amount) {
 		return fmt.Errorf("paid %s, expected %s for order %s",
 			wh.Amount, amount, wh.OrderID)
 	}
@@ -270,42 +277,70 @@ func (h *Webhooks) fulfill(ctx context.Context, wh webhook) error {
 		time.Now().Unix(), wh.GatewayReference, wh.OrderID)
 	return err
 }
-
-// normalizeAmount makes "1000", "1000.0" and "1000.00" compare equal.
-func normalizeAmount(amount string) string {
-	if strings.Contains(amount, ".") {
-		return strings.TrimRight(strings.TrimRight(amount, "0"), ".")
-	}
-	return amount
-}
 ```
 
-The sample assumes an `orders` table with a unique `number`, the `amount` as a decimal string, and nullable `paid_at` and `gateway_reference`.
+The sample assumes an `orders` table with a unique `number`, the `amount` as decimal text, and nullable `paid_at` and `gateway_reference`. `Amount.Equals` makes `1000`, `1000.0` and `1000.00` compare equal.
 
 ## Wiring It Up
 
+With `net/http`, one route serves every gateway and a goroutine runs the worker; any other router builds the `CallbackRequest` and writes the `Acknowledgement` the same way (see [Framework Integration](/go-myanmar-payments/framework-integration)):
+
 ```go
-kbz, err := kbzpay.New(kbzpay.ConfigFromEnv(os.Getenv), nil)
-if err != nil {
-	log.Fatal(err)
-}
-wave, err := wavemoney.New(wavemoney.ConfigFromEnv(os.Getenv), nil)
-if err != nil {
-	log.Fatal(err)
-}
+package main
 
-webhooks := &Webhooks{
-	DB:       db,
-	Gateways: map[string]Verifier{"kbz-pay": kbz, "wave-money": wave},
+import (
+	"context"
+	"database/sql"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/laranex/go-myanmar-payments/v4/kbzpay"
+	"github.com/laranex/go-myanmar-payments/v4/wavemoney"
+	_ "modernc.org/sqlite"
+
+	"example.com/shop/webhooks"
+)
+
+func main() {
+	ctx, stop := signal.NotifyContext(
+		context.Background(), os.Interrupt, syscall.SIGTERM,
+	)
+	defer stop()
+
+	db, err := sql.Open("sqlite", "payments.sqlite")
+	if err != nil {
+		log.Fatal(err)
+	}
+	kbz, err := kbzpay.New(kbzpay.ConfigFromEnv(os.Getenv), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	wave, err := wavemoney.New(wavemoney.ConfigFromEnv(os.Getenv), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	hooks := &webhooks.Webhooks{
+		DB: db,
+		Gateways: map[string]webhooks.Verifier{
+			"kbz-pay":    kbz,
+			"wave-money": wave,
+		},
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /webhooks/payments/{gateway}", hooks.Handle)
+
+	go hooks.Work(ctx)
+
+	log.Fatal(http.ListenAndServe(":8080", mux))
 }
-
-mux := http.NewServeMux()
-mux.HandleFunc("POST /webhooks/payments/{gateway}", webhooks.Handle)
-
-go webhooks.Work(ctx)
 ```
 
-Use `https://shop.test/webhooks/payments/kbz-pay` (and so on) as each gateway's callback URL.
+Use `https://shop.test/webhooks/payments/kbz-pay` (and so on) as each gateway's callback URL. In production, run the worker as its own process instead: a separate `main` that calls `Work`, e.g. as a systemd service.
 
 ## Replay and Prune
 
@@ -316,6 +351,8 @@ UPDATE payment_webhooks
 SET attempts = 0, available_at = 0, last_error = NULL
 WHERE id = 42;
 ```
+
+To run a stored call through verification again, e.g. after rotating a key, rebuild it from the stored body and headers: decode the `headers` column into an `http.Header` with `json.Unmarshal`, then call `myanmarpayments.NewCallbackRequest([]byte(body), header, nil)`.
 
 Delete old processed and rejected rows once a day; failed rows stay until you replay or delete them:
 

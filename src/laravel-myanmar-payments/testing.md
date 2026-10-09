@@ -5,7 +5,7 @@ description: Fake gateway calls with Http::fake(), send signed callbacks to your
 
 # Testing
 
-## Faking gateway calls
+## Faking Gateway Calls
 
 Every gateway call goes through Laravel's `Http` client, so `Http::fake()` intercepts it and `Http::assertSent()` sees it. Call `Http::preventStrayRequests()` so nothing reaches a real gateway:
 
@@ -44,26 +44,25 @@ it('starts a KBZ Pay QR payment', function () {
 
 Response bodies are described on each [gateway page](/laravel-myanmar-payments/drivers/kbz-pay). Gateways are configured on first use, so set test credentials in `phpunit.xml` or `config()->set('myanmar-payments.kbz_pay', [...])` before the first call. Yoma access tokens are kept in your cache store; the `array` store that tests usually run on starts empty in every test.
 
-## Sending signed callbacks
+## Sending Signed Callbacks
 
-To exercise your real callback route, post a payload signed with the secret from your test configuration. KBZ Pay signs every non-empty field except `sign` and `sign_type`, sorted by key, with `&key=<app key>` appended:
+To exercise your real callback route, post a payload signed with the secret from your test configuration. KBZ Pay signs every non-empty field except `sign` and `sign_type`, sorted by key, with `&key=<app key>` appended; the SDK's `KbzPaySigner` does exactly that:
 
 ```php
+use Laranex\PhpMyanmarPayments\KbzPay\KbzPaySigner;
+
 it('marks the order paid from a KBZ Pay callback', function () {
     config()->set('myanmar-payments.kbz_pay.app_key', 'test-app-key');
 
     $fields = [
         'merch_order_id' => 'ORDER_1',
         'mm_order_id' => 'MM1',
-        'total_amount' => '1000',
+        'total_amount' => '10000',
         'trade_status' => 'PAY_SUCCESS',
         'nonce_str' => 'n',
+        'sign_type' => 'SHA256',
     ];
-    ksort($fields);
-    $fields['sign_type'] = 'SHA256';
-    $signed = array_diff_key($fields, ['sign_type' => 1]);
-    $string = urldecode(http_build_query($signed)).'&key=test-app-key';
-    $fields['sign'] = strtoupper(hash('sha256', $string));
+    $fields['sign'] = (new KbzPaySigner('test-app-key'))->sign($fields);
 
     $this->postJson('/payments/kbz/callback', ['Request' => $fields])
         ->assertOk()
@@ -73,7 +72,7 @@ it('marks the order paid from a KBZ Pay callback', function () {
 
 The other gateways sign with HMAC-SHA256 as described on their gateway pages. A modified payload must be rejected: `handleCallback()` throws `SignatureVerificationException`.
 
-## Mocking the facade
+## Mocking the Gateways
 
 To test only your own handling, without signed payloads, mock the facade and return a `PaymentCallback` you build yourself:
 
@@ -86,14 +85,14 @@ $callback = new PaymentCallback(
     orderId: 'ORDER_1',
     status: PaymentStatus::Successful,
     gatewayStatus: 'PAY_SUCCESS',
-    amount: '1000',
+    amount: '10000',
 );
 
 MyanmarPayments::shouldReceive('kbzPay->handleCallback')
     ->andReturn($callback);
 ```
 
-## Following form links
+## Following Form Links
 
 `autoSubmitUrl` points at the package's form route, so a test can follow it:
 

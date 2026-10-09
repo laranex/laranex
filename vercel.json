@@ -6,6 +6,21 @@
       "source": "/:pkg(better-laravel|go-myanmar-payments|goravel-money|goravel-myanmar-payments|laravel-biometric-auth|laravel-money|laravel-myanmar-nrc|laravel-myanmar-payments|laravel-newrelic|laravel-refresh-token|nestjs-myanmar-payments|next-laravel|node-myanmar-payments|php-myanmar-payments|python-myanmar-payments){/}?",
       "destination": "/:pkg/introduction",
       "statusCode": 301
+    },
+    {
+      "source": "/goravel-myanmar-payments/usage",
+      "destination": "/goravel-myanmar-payments/payment-flows",
+      "statusCode": 301
+    },
+    {
+      "source": "/nestjs-myanmar-payments/usage",
+      "destination": "/nestjs-myanmar-payments/payment-flows",
+      "statusCode": 301
+    },
+    {
+      "source": "/go-myanmar-payments/net-http",
+      "destination": "/go-myanmar-payments/framework-integration",
+      "statusCode": 301
     }
   ]
 }

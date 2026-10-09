@@ -83,7 +83,7 @@ kbz = KbzPay.from_env()
 def checkout():
     data = KbzPayPaymentData(
         order_id="ORDER_1",
-        amount=Amount.kyat(1000),
+        amount=Amount.kyat(10000),
         callback_url="https://shop.test/payments/kbz/callback",
     )
     payment = kbz.pwa(data)
@@ -107,7 +107,7 @@ def kbz_callback():
         # then fulfill callback.order_id
         ...
 
-    ack = callback.acknowledgement()  # KBZ Pay expects a plain "success"
+    ack = callback.acknowledgement  # KBZ Pay expects a plain "success"
     return Response(ack.body, status=ack.status, headers=dict(ack.headers))
 ```
 

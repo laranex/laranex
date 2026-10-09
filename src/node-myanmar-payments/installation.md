@@ -7,7 +7,7 @@ description: Install Node Myanmar Payments from npm. Requires Node.js 20+, ships
 
 ## Via npm
 
-> **Requires** Node.js 20+. No runtime dependencies: it uses the global `fetch` and `node:crypto`.
+> **Requires** Node.js 20+. No runtime dependencies: it sends the gateway requests with the global `fetch` and signs with `node:crypto`.
 
 ::: code-group
 
@@ -25,21 +25,23 @@ yarn add @laranex/myanmar-payments
 
 :::
 
-The package ships ES modules and CommonJS, each with its own TypeScript declarations, so `import` and `require` both work and TypeScript resolves the types under `node16`, `nodenext` and `bundler` module resolution.
+The package is fully typed and ships ES modules and CommonJS, each with its own TypeScript declarations, so `import` and `require` both work and TypeScript resolves the types under `node16`, `nodenext` and `bundler` module resolution. Import everything from `@laranex/myanmar-payments`:
 
 ```ts
 // ES modules / TypeScript
-import { Amount, CallbackRequest } from '@laranex/myanmar-payments';
-import { KbzPay } from '@laranex/myanmar-payments/kbz-pay';
+import { Amount, CallbackRequest, KbzPay } from '@laranex/myanmar-payments';
 ```
 
 ```js
 // CommonJS
-const { Amount, CallbackRequest } = require('@laranex/myanmar-payments');
-const { KbzPay } = require('@laranex/myanmar-payments/kbz-pay');
+const {
+  Amount,
+  CallbackRequest,
+  KbzPay,
+} = require('@laranex/myanmar-payments');
 ```
 
-The root entry exports everything. Each gateway also has its own subpath, which exports only that gateway's classes:
+The root entry exports every public name. Each gateway also has its own subpath, which exports only that gateway's classes:
 
 | Import path | Contents |
 |---|---|
@@ -50,18 +52,20 @@ The root entry exports everything. Each gateway also has its own subpath, which 
 | `@laranex/myanmar-payments/yoma-mmqr` | `YomaMmqr`, `YomaMmqrConfig` |
 | `@laranex/myanmar-payments/cyber-source` | `CyberSource`, `CyberSourceConfig`, `CyberSourceTransactionType` |
 
-Both entries share the same modules, so `KbzPay` from the subpath and from the root are the same class.
+Both paths name the same classes, so `KbzPay` from the subpath and from the root are the same class.
 
 ## Quick Start
+
+A `node:http` app that starts a KBZ Pay PWA payment and verifies the callback:
 
 ```ts
 import { createServer } from 'node:http';
 import {
   Amount,
   CallbackRequest,
+  KbzPay,
   SignatureVerificationError,
 } from '@laranex/myanmar-payments';
-import { KbzPay } from '@laranex/myanmar-payments/kbz-pay';
 
 // Throws a ConfigurationError naming the missing setting
 const kbz = KbzPay.fromEnv(process.env);
@@ -72,7 +76,7 @@ createServer(async (req, res) => {
   if (req.method === 'GET' && url.pathname === '/checkout') {
     const payment = await kbz.pwa({
       orderId: 'ORDER_1',
-      amount: Amount.kyat(1000),
+      amount: Amount.kyat(10000),
       callbackUrl: 'https://shop.test/payments/kbz/callback',
     });
     res.writeHead(302, { Location: payment.url }).end();
@@ -80,18 +84,23 @@ createServer(async (req, res) => {
   }
 
   if (req.method === 'POST' && url.pathname === '/payments/kbz/callback') {
+    let callback;
     try {
-      const request = await CallbackRequest.fromNodeRequest(req);
-      const callback = kbz.handleCallback(request);
-      if (callback.isSuccessful()) {
-        // compare callback.amount with your order,
-        // then fulfill callback.orderId
-      }
-      callback.acknowledgement.send(res); // KBZ Pay expects a plain "success"
+      callback = kbz.handleCallback(
+        await CallbackRequest.fromNodeRequest(req),
+      );
     } catch (error) {
-      const invalid = error instanceof SignatureVerificationError;
-      res.writeHead(invalid ? 400 : 500).end();
+      if (!(error instanceof SignatureVerificationError)) throw error;
+      res.writeHead(400).end('invalid callback');
+      return;
     }
+
+    if (callback.isSuccessful()) {
+      // compare callback.amount with your order,
+      // then fulfill callback.orderId
+    }
+
+    callback.acknowledgement.send(res); // KBZ Pay expects a plain "success"
     return;
   }
 
@@ -100,3 +109,7 @@ createServer(async (req, res) => {
 ```
 
 See [Framework Integration](/node-myanmar-payments/framework-integration) for Express, Fastify, Next.js and Hono.
+
+## Using NestJS?
+
+Install [`@laranex/nestjs-myanmar-payments`](/nestjs-myanmar-payments/introduction) instead. It wraps this package in a NestJS module with an injectable service, callback helpers for Express and Fastify and an auto-submit form route.

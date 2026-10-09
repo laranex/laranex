@@ -42,8 +42,8 @@ use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
 use Laranex\PhpMyanmarPayments\KbzPay\KbzPayPaymentData;
 
 $payment = MyanmarPayments::kbzPay()->pwa(new KbzPayPaymentData(
-    orderId: 'ORDER_1',
-    amount: 1000,
+    orderId: 'ORDER_'.$order->id,
+    amount: 10000,
     callbackUrl: route('payments.kbz.callback'),
 ));
 
@@ -98,7 +98,7 @@ return response($payment->toHtml());
 <script>document.getElementById('payment-form').submit();</script>
 ```
 
-Post the fields unchanged: they are signed.
+Post the fields unchanged: they are signed. `fields` is an array keyed by name, in signing order; `$payment->values()` returns it and `$payment->field($name)` reads one.
 
 ## QR Payments
 

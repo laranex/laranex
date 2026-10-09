@@ -112,7 +112,7 @@ Only signed fields are trusted: `decision` and `req_reference_number` must be li
 
 ## Responses
 
-What CyberSource puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `undefined`. CyberSource posts form fields, so every `raw` value is a string, exactly as sent.
+What CyberSource puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `undefined`. CyberSource posts form fields, so every `raw` value is a `string`, exactly as sent.
 
 ### `initiate()` → `FormPayment` {#initiate-response}
 
@@ -171,6 +171,6 @@ What CyberSource puts in each field. See [Results](/node-myanmar-payments/refere
 | Call | Throws | When |
 |---|---|---|
 | `initiate()` | `InvalidPaymentDataError` | `CyberSource.validate(data)` fails. Nothing is signed |
-| `handleCallback()` | `SignatureVerificationError` | `signature` doesn't match, a field listed in `signed_field_names` is missing, or `decision` or `req_reference_number` isn't signed |
+| `handleCallback()` | `SignatureVerificationError` | `signature` doesn't match, a field listed in `signed_field_names` is missing or holds an object or array, or `decision` or `req_reference_number` isn't signed |
 
 CyberSource makes no HTTP calls, so nothing throws `ApiError`.

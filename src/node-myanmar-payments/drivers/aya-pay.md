@@ -155,7 +155,7 @@ try {
 }
 ```
 
-A `+` in the base64 `payload` that reached you as a space (an unencoded query string) is read back as `+` before decoding; the checksum is still verified. Still fulfill orders from the backend callback.
+A `+` in the base64 `payload` that reached you as a space (an unencoded query string) is read back as `+` before decoding; the checksum is still verified. The `payload` may be correctly padded or carry no padding at all; partial padding, the URL-safe alphabet, line breaks and text that isn't UTF-8 are rejected. Still fulfill orders from the backend callback.
 
 ## Status Checks
 
@@ -171,7 +171,7 @@ if (result.isSuccessful()) {
 
 ## Responses
 
-What AYA Pay puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `undefined`. `raw` holds plain JavaScript values (JSON numbers become `number`s), while the typed fields such as `amount` keep the exact text AYA sent.
+What AYA Pay puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `undefined`. `raw` holds plain JavaScript values, with JSON numbers kept as their exact text in a `string` (`1000.50` stays `"1000.50"`).
 
 ### `services()` → `AyaPayService[]` {#services-response}
 
@@ -262,6 +262,6 @@ The same values as [`handleCallback()`](#handlecallback-response), read from the
 | `services()` | `ApiError` | AYA answers with an HTTP error or a `status` other than `00` |
 | `status()` | `ApiError` | AYA answers with an HTTP error or a `status` other than `00`, e.g. `20` Transaction not found |
 | `status()` | `SignatureVerificationError` | The enquiry payload's `checkSum` doesn't match |
-| `handleCallback()`, `verifyRedirect()` | `SignatureVerificationError` | `payload` is missing or not base64 JSON, or `checkSum` doesn't match |
+| `handleCallback()`, `verifyRedirect()` | `SignatureVerificationError` | `payload` is missing or not base64 JSON, a signed field holds an object or array, or `checkSum` doesn't match |
 
 The async calls reject with these errors. `ApiError` carries AYA's `status` (e.g. `20` Transaction not found, `09` Duplicate order ID) in `gatewayCode` and its `message` in `gatewayMessage`. When AYA can't be reached, the request times out or the `signal` aborts, the calls throw `ApiError` with the original error as `cause`.
