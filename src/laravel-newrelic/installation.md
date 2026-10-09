@@ -28,4 +28,4 @@ This writes `config/newrelic.php`. The `newrelic` tag publishes the same file.
 
 ## New Relic PHP agent
 
-The [New Relic PHP agent](https://docs.newrelic.com/docs/apm/agents/php-agent/getting-started/introduction-new-relic-php/) is optional. Without it, logs are still shipped to New Relic Logs. With it, logs are linked to their APM transaction (logs in context) and Octane requests and queue jobs are reported as separate transactions.
+The [New Relic PHP agent](https://docs.newrelic.com/docs/apm/agents/php-agent/getting-started/introduction-new-relic-php/) is optional. Without it, logs are still shipped to New Relic Logs. With it, logs are linked to their APM transaction (logs in context) and Octane requests are reported as separate, route-named transactions. The agent reports queue jobs as their own transactions by itself.

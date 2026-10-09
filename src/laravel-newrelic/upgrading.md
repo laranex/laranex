@@ -26,7 +26,7 @@ PHP 8.1+ and Laravel 10 to 13 (v1 allowed PHP 7.4). Monolog `^3.6` is required (
 | `Processor` | `Logging\NewRelicProcessor` |
 | `Listeners\StartNewrelicWebTransaction` | `Listeners\StartWebTransaction` |
 | `Listeners\StopNewrelicWebTransaction` | `Listeners\EndTransaction` |
-| `Listeners\RestartNewrelicTransaction` | `Listeners\RestartBackgroundTransaction` |
+| `Listeners\RestartNewrelicTransaction` | None: the New Relic agent names queue job transactions itself |
 
 All classes are in the `Laranex\LaravelNewrelic` namespace. `EventMap` and `LaravelNewrelic` were removed.
 
@@ -42,7 +42,7 @@ The config file moved from `config/laravel-newrelic.php` to `config/newrelic.php
 - Rename a published `config/laravel-newrelic.php` to `config/newrelic.php`, or re-publish it with `php artisan vendor:publish --tag="newrelic-config"`.
 - Replace `config('laravel-newrelic.*')` reads with `config('newrelic.*')`.
 - `NEW_RELIC_API_KEY` still works, but `NEW_RELIC_LICENSE_KEY` is the new name.
-- New keys: `host` (`NEW_RELIC_LOG_HOST`), `app_name` (`NEW_RELIC_APP_NAME`), `transactions.octane` / `transactions.queue` (`NEW_RELIC_OCTANE_TRANSACTIONS` / `NEW_RELIC_QUEUE_TRANSACTIONS`) and `transport.timeout` / `transport.retries` (`NEW_RELIC_LOG_TIMEOUT` / `NEW_RELIC_LOG_RETRIES`). See [Usage](./usage#configuration).
+- New keys: `host` (`NEW_RELIC_LOG_HOST`), `app_name` (`NEW_RELIC_APP_NAME`), `transactions.octane` (`NEW_RELIC_OCTANE_TRANSACTIONS`) and `transport.timeout` / `transport.retries` (`NEW_RELIC_LOG_TIMEOUT` / `NEW_RELIC_LOG_RETRIES`). See [Usage](./usage#configuration).
 
 ## Behavior changes
 
@@ -52,4 +52,5 @@ The config file moved from `config/laravel-newrelic.php` to `config/newrelic.php
 - **Delivery failures.** When the Logs API cannot be reached or rejects a request, v4 writes the failure to PHP's error log instead of throwing from the log call, and splits batches bigger than the 1 MB payload limit.
 - **Batches.** v1 always buffered and never flushed the buffer itself, so a queue worker held its logs until it exited. v4 sends the buffered batch (one JSON array) after each Octane request and queue job, and `'buffer' => false` sends each record immediately.
 - **Metadata.** `service`, `hostname`, the client IP and the authenticated user are resolved per record, so they are correct on Octane. The agent's `hostname` now wins over the PHP hostname so logs link to the right host entity. A user without a readable email is logged with `email: null` instead of `'guest'`, and the user `id` comes from `getAuthIdentifier()`.
-- **Transactions.** A fresh transaction now starts after every queue job, including one that throws (v1 restarted only after a processed job or a Horizon release, so a failed job's transaction ran into the next job). It is marked as a background job, and transactions are reported to `NEW_RELIC_APP_NAME` when set (v1 always used the agent's `newrelic.appname`). Octane web transactions are now named after the request's route (route name, controller action, or method and URI pattern; `unknown` without a route) instead of the worker script. The Octane and queue listeners can be turned off with `newrelic.transactions.octane` and `newrelic.transactions.queue` (`NEW_RELIC_OCTANE_TRANSACTIONS` / `NEW_RELIC_QUEUE_TRANSACTIONS`).
+- **Queue transactions.** v4 no longer touches queue job transactions. v1 ended the transaction and started a new one after each processed job and Horizon release, but those listeners run inside the transaction the New Relic agent already opens for each job, so they cut the agent's job transaction short and left a duplicate, unnamed one. Each job is now reported only by the agent, as a background transaction named `JobClass (connection)` (for example `App\Jobs\SendInvoice (redis)`) that also records the job's exception when it fails. The package still sends the buffered logs after each job. If you upgrade from `v4.0.0-alpha.1`, remove `NEW_RELIC_QUEUE_TRANSACTIONS` from `.env` and `transactions.queue` from a published `config/newrelic.php`; the setting is gone.
+- **Octane transactions.** Octane web transactions are reported to `NEW_RELIC_APP_NAME` when set (v1 always used the agent's `newrelic.appname`) and are named after the request's route (route name, controller action, or method and URI pattern; `unknown` without a route) instead of the worker script. The Octane listeners can be turned off with `newrelic.transactions.octane` (`NEW_RELIC_OCTANE_TRANSACTIONS`).
