@@ -31,7 +31,7 @@ The queueable job stub declared `__construct(): void`, a fatal error in every jo
 php artisan vendor:publish --tag="better-laravel-stubs" --force
 ```
 
-Republishing also brings the other stub changes: generated route files import the `Route` facade and use a prefix without a leading slash (`'prefix' => 'v1/blogs'`), the feature stub's `handle` method returns `mixed` instead of `int`, and the request stub documents its `rules()` return type. Fix any job already generated from the old queueable stub by removing `: void` from its constructor.
+Republishing also brings the other stub changes: generated route files import the `Route` facade and use a prefix without a leading slash (`'prefix' => 'v1/blogs'`), the feature stub's `handle` method declares a `mixed` return type instead of `int` and returns `null` until you fill it in (a feature generated from the old stub threw a `TypeError` when served unchanged), and the request stub documents its `rules()` return type. Fix any job already generated from the old queueable stub by removing `: void` from its constructor.
 
 ## Publish tags
 

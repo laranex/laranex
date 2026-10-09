@@ -68,11 +68,11 @@ exit;
 |---|---|---|---|
 | `orderId` | `string` | Yes | Your order id. One order can have several payment attempts |
 | `callbackUrl` | `string` | Yes | Absolute http or https URL that Wave posts the result to. Wave may require HTTPS with a CA-issued certificate in production |
-| `returnUrl` | `string` | Yes | Valid URL Wave sends the customer back to. Not proof of payment |
+| `returnUrl` | `string` | Yes | Absolute http or https URL Wave sends the customer back to. Not proof of payment |
 | `description` | `string` | Yes | Shown to the customer |
 | `items` | `list<WaveMoneyItem>` | Yes | At least one item |
 | `amount` | `Amount\|int\|null` | No | Whole kyat (Wave does not accept decimals), greater than 0. Defaults to the sum of the items. Wave only accepts MMK |
-| `merchantReferenceId` | `?string` | No | Unique id of this attempt. Defaults to a random id |
+| `merchantReferenceId` | `?string` | No | Unique id of this attempt. Defaults to a random id when `null` or empty |
 
 `WaveMoneyItem` takes a `name` and an `amount` (`Amount|int`) in whole kyat, greater than 0. The default total is summed with integers, never floats.
 

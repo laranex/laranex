@@ -13,9 +13,9 @@ description: Install Laravel Myanmar Payments via Composer. Requires PHP 8.1+ an
 composer require laranex/laravel-myanmar-payments
 ```
 
-Laravel's package auto-discovery registers the service provider and the `MyanmarPayments` facade (`Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments`).
+Laravel's package auto-discovery registers the service provider and the `MyanmarPayments` facade (`Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments`). The facade resolves the `Laranex\LaravelMyanmarPayments\MyanmarPayments` singleton, which you can also inject into your own classes.
 
-The package is a thin Laravel layer over [`laranex/php-myanmar-payments`](https://github.com/laranex/php-myanmar-payments), which Composer installs alongside it. The core talks to gateways through any PSR-18 HTTP client; in Laravel every call goes through the `Http` client, so `Http::fake()` works in your tests and no extra client is needed. The package requires `guzzlehttp/guzzle` ^7.5, which Laravel's `Http` client runs on (Laravel 10 only suggests it), so Composer installs it for you.
+The package is a thin Laravel layer over [`laranex/php-myanmar-payments`](https://github.com/laranex/php-myanmar-payments), which Composer installs alongside it. The core talks to gateways through any PSR-18 HTTP client; in Laravel every call goes through the `Http` client, so `Http::fake()` works in your tests and no extra client is needed. The package requires `guzzlehttp/guzzle` ^7.4 or ^8, which Laravel's `Http` client runs on (Laravel 10 only suggests it), so Composer installs it for you.
 
 ## Publish Config
 

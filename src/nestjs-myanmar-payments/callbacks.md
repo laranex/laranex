@@ -40,7 +40,10 @@ When you need the request before verifying it (to store rejected calls, for exam
 
 ```ts
 import { CallbackRequest, SignatureVerificationError } from '@laranex/myanmar-payments';
-import { AcknowledgeCallback, MyanmarPaymentsService, RawCallback } from '@laranex/nestjs-myanmar-payments';
+import { AcknowledgeCallback, type GatewayName, RawCallback } from '@laranex/nestjs-myanmar-payments';
+import { BadRequestException, Param, Post } from '@nestjs/common';
+
+// In a controller whose constructor takes `private readonly payments: MyanmarPaymentsService`:
 
 @Post(':gateway')
 @AcknowledgeCallback()
@@ -64,6 +67,9 @@ async receive(@Param('gateway') gateway: GatewayName, @RawCallback() request: Ca
 | `acknowledge(res, callback)` | Sends the acknowledgement on an Express response or a Fastify reply (`@Res()`); without a callback, an empty 200 |
 
 ```ts
+import { acknowledge, type FastifyReplyLike, type NestRequestLike } from '@laranex/nestjs-myanmar-payments';
+import { Post, Req, Res } from '@nestjs/common';
+
 @Post('wave-money')
 async wave(@Req() req: NestRequestLike, @Res() res: FastifyReplyLike): Promise<void> {
   const callback = await this.payments.handleCallback('wave-money', req);

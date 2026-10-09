@@ -23,7 +23,7 @@ Log::channel('newrelic')->error('Payment failed', ['exception' => $e]);
 | `host` | `NEW_RELIC_LOG_HOST` | `null` | Logs API host. When empty, it is picked from the license key's region. |
 | `app_name` | `NEW_RELIC_APP_NAME` | `null` | APM application that Octane and queue transactions are reported to. Falls back to the agent's `newrelic.appname` INI value. |
 | `transactions.octane` | `NEW_RELIC_OCTANE_TRANSACTIONS` | `true` | One web transaction per Octane request. Cast to a boolean. |
-| `transactions.queue` | `NEW_RELIC_QUEUE_TRANSACTIONS` | `true` | One background transaction per processed queue job. Cast to a boolean. |
+| `transactions.queue` | `NEW_RELIC_QUEUE_TRANSACTIONS` | `true` | One background transaction per queue job, processed or failed. Cast to a boolean. |
 | `transport.timeout` | `NEW_RELIC_LOG_TIMEOUT` | `5` | Seconds to wait for the Logs API, for both the connection and the whole request. |
 | `transport.retries` | `NEW_RELIC_LOG_RETRIES` | `3` | Attempts before a failed Logs API request is given up. |
 
@@ -53,7 +53,9 @@ The package registers this channel unless your `config/logging.php` already defi
 | `buffer` | `true` | Buffer records and send them as one batch (a JSON array) after each Octane request, task or tick, after each queue job (processed or failed), and when the process exits. `false` sends each record immediately. |
 | `name` | `newrelic` | The Monolog channel name, sent as `channel`. |
 
-Records below `level` are dropped. Requests are sent with cURL, a 5 second timeout (for both the connection and the whole request) and up to 3 attempts by default. Tune them with `NEW_RELIC_LOG_TIMEOUT` and `NEW_RELIC_LOG_RETRIES`.
+Records below `level` are dropped. Requests are sent with cURL, a 5 second timeout (for both the connection and the whole request) and up to 3 attempts by default (at least one attempt is always made). Tune them with `NEW_RELIC_LOG_TIMEOUT` and `NEW_RELIC_LOG_RETRIES`. A batch bigger than the Logs API's 1 MB payload limit is split into several requests.
+
+Logging never breaks your app: when the Logs API cannot be reached after the last attempt or answers with an HTTP error status (for example `403` for a wrong license key), the failure is written to PHP's error log (`error_log`, without the payload or the key) and the request or job carries on.
 
 ## What gets logged
 
@@ -71,13 +73,13 @@ The request and user are resolved per record, so they stay correct on Octane.
 
 ## Transactions
 
-Long-running processes would otherwise report as one endless transaction. The package splits them per unit of work. The listeners are registered automatically whether or not Octane or Horizon is installed (events that never fire cost nothing), and every agent call does nothing when the agent is not loaded:
+Long-running processes would otherwise report as one endless transaction. The package splits them per unit of work. The listeners are registered automatically whether or not Octane is installed (events that never fire cost nothing), and every agent call does nothing when the agent is not loaded:
 
 | Event | Listener | Effect |
 |---|---|---|
 | Octane `WorkerStarting`, `RequestTerminated` | `Listeners\EndTransaction` | End the current transaction |
 | Octane `RequestReceived` | `Listeners\StartWebTransaction` | Start a new transaction and mark it as a web transaction |
-| Queue `JobProcessed`, Horizon `JobReleased` | `Listeners\RestartBackgroundTransaction` | End the transaction, start a new one and mark it as a background job |
+| Queue `JobProcessed`, `JobExceptionOccurred` | `Listeners\RestartBackgroundTransaction` | End the transaction, start a new one and mark it as a background job |
 
 New transactions are reported to `newrelic.app_name`, or to the agent's `newrelic.appname` INI value when it is empty. With neither set, no transaction is started.
 

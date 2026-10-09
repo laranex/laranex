@@ -31,3 +31,16 @@ The package registers one generator command per unit. Every unit except routes i
 | `next:job {job} {module} [--queue] [--force]` | `app/Modules/{Module}Module/Jobs/{Name}Job.php` |
 
 Each command exits with `0` when the file is generated and `1` when generation fails, for example when the file already exists and `--force` was not given, or when a name contains `/` or `\` (nested names such as `Blog/CreatePost` are not supported).
+
+## Facade
+
+The `NextLaravel` facade exposes the helper the service provider uses to discover route files.
+
+```php
+use Laranex\NextLaravel\Facades\NextLaravel;
+
+// Every .php file under routes/api, recursively, as absolute paths in sorted order
+$files = NextLaravel::getAllFilesOfADirectory(base_path('routes/api'), 'php');
+```
+
+`getAllFilesOfADirectory(string $directory, string $extension = '')` returns an empty array when the directory does not exist, and every file when `$extension` is empty.

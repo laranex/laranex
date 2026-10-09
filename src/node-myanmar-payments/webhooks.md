@@ -232,7 +232,8 @@ export class Webhooks {
     if (order.paid_at !== null) {
       return; // already fulfilled by an earlier webhook
     }
-    if (normalizeAmount(webhook.amount ?? '') !== normalizeAmount(order.amount)) {
+    // Yoma MMQR callbacks carry no amount: Yoma fixed it when the order was checked out.
+    if (webhook.amount !== null && normalizeAmount(webhook.amount) !== normalizeAmount(order.amount)) {
       throw new Error(`paid ${webhook.amount}, expected ${order.amount} for order ${webhook.order_id}`);
     }
 

@@ -7,6 +7,26 @@ description: Next Laravel is built on Routes, Modules, Controllers, Features, Re
 
 > Next Laravel is not a new framework — it is a set of principles you can follow to build a better Laravel application. Just follow them and your application will turn into cleaner, more human-readable code.
 
+## Request lifecycle
+
+<SequenceDiagram
+  title="Serving a request"
+  :participants="['Route', 'Controller', 'Feature', 'Operation', 'Job']"
+  :steps="[
+    { from: 'Route', to: 'Controller', label: 'POST /api/v1/blogs', detail: 'routes/api/v1/blogs.php' },
+    { from: 'Controller', to: 'Feature', label: 'serve(new StoreBlogFeature)' },
+    { from: 'Feature', to: 'Feature', label: 'Validate the Request', detail: 'StoreBlogRequest type-hinted on handle()' },
+    { from: 'Feature', to: 'Job', label: 'run(new StoreBlogJob($data))' },
+    { from: 'Job', to: 'Feature', label: 'Blog', response: true },
+    { from: 'Feature', to: 'Operation', label: 'run(new NotifySubscribersOperation($blog))' },
+    { from: 'Operation', to: 'Job', label: 'runInQueue(new NotifyViaEmailJob($blog))', detail: 'pushed onto the queue' },
+    { from: 'Feature', to: 'Controller', label: 'Blog', response: true },
+    { from: 'Controller', to: 'Route', label: 'HTTP response', response: true },
+  ]"
+/>
+
+## Units
+
 ### Routes
 
 Routes are the same as Laravel's default routes. The only difference is that Next Laravel loads routes from the `NextLaravelServiceProvider`. You have 100% control over them. See more at:

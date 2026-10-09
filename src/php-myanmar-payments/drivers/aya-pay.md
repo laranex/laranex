@@ -89,7 +89,7 @@ AYA expects the form as `multipart/form-data`; `$payment->enctype` carries it if
 | `amount` | `Amount\|int` | Yes | Whole kyat, greater than 0, e.g. `1000` or `Amount::kyat(1000)`. AYA documents no decimals. AYA only accepts MMK (`104`) |
 | `channel` | `string` | Yes | A key from `services()` |
 | `method` | `AyaPayMethod` | Yes | A method the channel supports |
-| `returnUrl` | `?string` | No | Valid URL. Defaults to the URL registered with AYA |
+| `returnUrl` | `?string` | No | Absolute http or https URL. Defaults to the URL registered with AYA |
 | `description` | `?string` | No | Shown to the customer |
 | `userRefs` | `list<string>` | No | Up to 5 of your own values, echoed back in the callback |
 
@@ -121,7 +121,7 @@ $result = $ayaPay->verifyRedirect(CallbackRequest::fromGlobals());
 echo $result->isSuccessful() ? 'Thank you, your payment was received.' : 'Payment '.$result->status->value.'.';
 ```
 
-Still fulfill orders from the backend callback.
+A `+` in the base64 `payload` that reached you as a space (an unencoded query string) is read back as `+` before decoding; the checksum is still verified. Still fulfill orders from the backend callback.
 
 ## Responses
 

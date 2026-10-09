@@ -9,7 +9,7 @@ All arithmetic is exact: amounts are integers in minor units and the math uses `
 
 Wherever a method takes an operand, it accepts a `Money`, or a **decimal amount in the same currency** given as a string (`"2.50"`) or an integer (`2` means 2.00). Multipliers, divisors, percentages and ratios are decimal strings or integers. Floats are rejected with `money.ErrInvalidOperand`.
 
-Every method returns a new `Money` and an error; the examples below leave out the error for brevity.
+Every method returns a new `Money`, and every method that can fail also returns an error (`Negated`, `Absolute` and `RoundTo` cannot); the examples below leave out the error for brevity.
 
 ## Adding and subtracting
 
@@ -103,7 +103,7 @@ money.MustParse("15", money.MustCurrency("JPY")).RoundTo(-1) // 20
 | `Ceiling` | `ceiling` | 3 | -2 | 3 |
 | `Floor` | `floor` | 2 | -3 | 2 |
 
-`money.ParseRounding("half_even")` turns a config value into a mode, and `Rounding.String()` turns it back.
+`money.ParseRounding("half_even")` turns a config value into a mode, `Rounding.String()` turns it back, and `money.Roundings()` lists every mode.
 
 ## Aggregates
 

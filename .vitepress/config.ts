@@ -60,6 +60,7 @@ export default defineConfig({
             { text: 'Payment Flows',      link: '/laravel-myanmar-payments/payment-flows' },
             { text: 'Callbacks & Status', link: '/laravel-myanmar-payments/callbacks' },
             { text: 'Handling Webhooks', link: '/laravel-myanmar-payments/webhooks' },
+            { text: 'Testing',            link: '/laravel-myanmar-payments/testing' },
             { text: 'Upgrading',          link: '/laravel-myanmar-payments/upgrading' },
           ],
         },

@@ -42,8 +42,8 @@ class BlogController extends Controller
     public function store()
     {
         return $this->serve(StoreBlogFeature::class);
-        // OR
-        return $this->serve(new StoreBlogFeature());
+        // Or pass an instance:
+        // return $this->serve(new StoreBlogFeature());
     }
 }
 ```

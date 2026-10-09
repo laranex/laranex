@@ -1,6 +1,6 @@
 ---
 title: Configuration
-description: Configure the biometrics table and RSA signature settings.
+description: Configure the biometrics table, challenge expiry and attempt limits, and RSA signature settings.
 ---
 
 # Configuration
@@ -14,6 +14,7 @@ return [
     'table' => env('BIOMETRIC_AUTH_TABLE', 'biometrics'),
 
     'challenge' => [
+        'ttl' => env('BIOMETRIC_AUTH_CHALLENGE_TTL', 300),
         'max_attempts' => env('BIOMETRIC_AUTH_CHALLENGE_MAX_ATTEMPTS', 5),
     ],
 
@@ -27,6 +28,7 @@ return [
 | Option | Default | Description |
 |---|---|---|
 | `table` | `biometrics` (`BIOMETRIC_AUTH_TABLE`) | Table that stores device public keys and pending challenges. The migration and the model both follow it |
+| `challenge.ttl` | `300` (`BIOMETRIC_AUTH_CHALLENGE_TTL`) | Seconds a challenge stays valid after it was issued. An expired challenge is replaced by the next `getBiometric()` call and `verifyBiometric()` refuses it. `0` or `null` disables expiry |
 | `challenge.max_attempts` | `5` (`BIOMETRIC_AUTH_CHALLENGE_MAX_ATTEMPTS`) | Failed verifications allowed per challenge. When the limit is reached the challenge is cleared and the client must request a new one. `0` or `null` disables the limit |
 | `rsa.encryption_padding` | `pkcs1` | RSA signature padding: `pkcs1` (RSASSA-PKCS1-v1_5) or `pss` (RSASSA-PSS). `relaxed_pkcs1` works on phpseclib 3 only |
 | `rsa.hash_algorithm` | `sha256` | RSA signature hash |

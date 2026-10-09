@@ -47,7 +47,7 @@ The tags `goravel-myanmar-payments` and `goravel-myanmar-payments-config` select
 
 | Import path | Name used in these docs | Contents |
 |---|---|---|
-| `github.com/laranex/goravel-myanmar-payments/v4` | `payments` | `ServiceProvider`, `Manager`, `CallbackRequestFromContext`, `Acknowledge`, `AutoSubmitURL`, `HTTPClient`, `TokenCache` |
+| `github.com/laranex/goravel-myanmar-payments/v4` | `payments` | `ServiceProvider`, `Manager`, `CallbackRequestFromContext`, `Acknowledge`, `AutoSubmitURL`, `HTTPClient`, `TokenCache` (see the [package reference](/goravel-myanmar-payments/usage#package-reference)) |
 | `github.com/laranex/goravel-myanmar-payments/v4/facades` | `paymentsfacades` | `MyanmarPayments()` |
 | `github.com/laranex/go-myanmar-payments/v4` | `myanmarpayments` | The SDK's shared types: `Amount`, results, `PaymentCallback`, errors |
 | `github.com/laranex/go-myanmar-payments/v4/kbzpay` and the other gateway packages | `kbzpay`, `wavemoney`, `ayapay`, `yomammqr`, `cybersource` | Each gateway's `PaymentData` and `Gateway` |

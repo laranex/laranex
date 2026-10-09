@@ -27,7 +27,7 @@ The private key never leaves the device. Your API stores only the public key and
   :steps="[
     { from: 'Mobile app', to: 'Your API', label: 'Ask for a challenge', detail: 'biometric ID' },
     { from: 'Your API', to: 'Your API', label: 'Issue a challenge', detail: 'getBiometric($id)' },
-    { from: 'Your API', to: 'Mobile app', label: 'Challenge', response: true },
+    { from: 'Your API', to: 'Mobile app', label: 'Challenge', detail: 'valid for 5 minutes', response: true },
     { from: 'Mobile app', to: 'Mobile app', label: 'Unlock with Face ID', detail: 'sign with the private key' },
     { from: 'Mobile app', to: 'Your API', label: 'Send the signature', detail: 'biometric ID + base64 signature' },
     { from: 'Your API', to: 'Your API', label: 'Verify the signature', detail: 'verifyBiometric($id, $signature)' },
@@ -76,11 +76,13 @@ $biometric = LaravelBiometricAuth::getBiometric($biometricId);
 $biometric->challenge; // the device signs this
 ```
 
-The challenge is kept until it is verified, so calling `getBiometric()` twice before the device answers returns the same challenge.
+The challenge is a random 64-character hex string. It is kept until it is verified or expires, so calling `getBiometric()` twice before the device answers returns the same challenge. A challenge expires `challenge.ttl` seconds (5 minutes by default) after it was issued; the next `getBiometric()` call then issues a fresh one.
+
+Biometric ids are UUIDs: any other id throws `BiometricNotFoundException` without querying the database.
 
 ## Verifying the signature
 
-The device signs the challenge with its private key and sends the base64-encoded signature:
+The device signs the challenge with its private key and sends the signature in standard base64 (a signature that is not valid base64 counts as a failed attempt):
 
 ```php
 use Laranex\LaravelBiometricAuth\Models\Biometric;
@@ -92,7 +94,7 @@ if ($verified) {
 }
 ```
 
-Challenges are single-use: a successful verification clears the challenge, so a captured signature cannot be replayed. The next `getBiometric()` call issues a fresh one. A failed verification keeps the challenge so the device can retry, up to `challenge.max_attempts` failed attempts (5 by default, see [Configuration](/laravel-biometric-auth/configuration)); after that the challenge is cleared, `verifyBiometric()` throws `BiometricChallengeNotFoundException` and the client must call `getBiometric()` for a new one.
+Challenges are single-use: a successful verification clears the challenge, so a captured signature cannot be replayed. The challenge is consumed atomically, so when the same signature arrives twice at once only one request is verified. The next `getBiometric()` call issues a fresh one. An expired challenge is cleared and `verifyBiometric()` throws `BiometricChallengeNotFoundException`. A failed verification keeps the challenge so the device can retry, up to `challenge.max_attempts` failed attempts (5 by default, see [Configuration](/laravel-biometric-auth/configuration)); after that the challenge is cleared, `verifyBiometric()` throws `BiometricChallengeNotFoundException` and the client must call `getBiometric()` for a new one.
 
 To resolve the service without the facade, use the container: `app(\Laranex\LaravelBiometricAuth\LaravelBiometricAuth::class)`.
 
@@ -110,8 +112,8 @@ All exceptions live in `Laranex\LaravelBiometricAuth\Exceptions`.
 
 | Exception | HTTP status | Thrown when |
 |---|---|---|
-| `BiometricNotFoundException` | `404` | `getBiometric()` / `verifyBiometric()` get an unknown or revoked biometric, or `revokeBiometric()` gets a biometric that does not exist, is already revoked or belongs to another model |
-| `BiometricChallengeNotFoundException` | `422` | `verifyBiometric()` is called with no pending challenge: none was issued, it was consumed by a successful verification, or it was cleared after too many failed attempts |
+| `BiometricNotFoundException` | `404` | `getBiometric()` / `verifyBiometric()` get an unknown, revoked or non-UUID biometric id, or `revokeBiometric()` gets a biometric that does not exist, is already revoked or belongs to another model |
+| `BiometricChallengeNotFoundException` | `422` | `verifyBiometric()` is called with no pending challenge: none was issued, it was consumed by a successful verification, it was cleared after too many failed attempts, or it expired |
 | `InvalidPublicKeyException` | `422` | `createBiometric()` or `verifyBiometric()` cannot load the public key |
 
 They extend `Laranex\LaravelBiometricAuth\Exceptions\BiometricException`. The status is also the exception code (`getCode()`) and is returned by `getStatusCode()`; passing a custom 4xx/5xx code to the constructor overrides it.

@@ -148,3 +148,20 @@ func paymentError(ctx http.Context, err error) http.Response {
 ```
 
 Callback and return URLs must be absolute http or https URLs. The packages accept plain http, but Wave Money and CyberSource may require HTTPS in production, so an HTTPS tunnel as `APP_URL` helps when testing against them.
+
+## Package reference
+
+Everything the `payments` package exports besides the helpers above. Most applications only need the facade.
+
+| Name | What it is |
+|---|---|
+| `payments.ServiceProvider` | The provider `package:install` registers. It binds the `*Manager`, publishes the config and registers the form route |
+| `payments.NewManager(payments.Options{...})` | Builds a `*Manager` outside the container. `Options` holds `Config` (required), `HTTPClient` (nil uses the SDK's default client), `TokenCache` (nil uses the SDK's in-memory cache), `Crypt` (nil disables `AutoSubmitURL`) and `Now` (nil uses `time.Now`) |
+| `payments.NewHTTPClient(factory, name, timeout)` | The `myanmarpayments.HTTPDoer` the provider uses: each request goes through the Goravel HTTP client `name` (empty means the default) with `timeout`. A nil factory sends requests with a plain `*http.Client` |
+| `payments.NewTokenCache(store)` | The `myanmarpayments.TokenCache` the provider uses for Yoma MMQR tokens, backed by a Goravel cache store |
+| `payments.ErrInvalidFormLink` | Returned by `Manager.ResolveFormPayment` for a tampered, foreign or expired link |
+| `payments.Binding` | The container key of the manager, `laranex.myanmar_payments` |
+| `payments.PackageName` | The name for `vendor:publish --package`, `github.com/laranex/goravel-myanmar-payments/v4` |
+| `payments.ConfigKey` | The config root, `myanmar_payments` |
+| `payments.FormRouteName` | The form route's name, `myanmar-payments.form` |
+| `payments.DefaultFormRoutePath`, `DefaultFormRouteTTL`, `DefaultHTTPTimeout` | The defaults without a published config: `myanmar-payments/form`, 30 minutes and 30 seconds |

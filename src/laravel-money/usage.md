@@ -36,7 +36,7 @@ Money::of('1.235', 'USD', Rounding::HalfUp);  // 1.24 USD
 Money::of('2.5', 'JPY', Rounding::HalfEven);  // 2 JPY
 ```
 
-Only digits, an optional sign, one dot as the decimal separator and grouping commas or spaces are accepted. `"12,50"` is rejected rather than read as 1250.
+Only ASCII digits, an optional sign, one dot as the decimal separator and grouping commas or spaces are accepted. `"12,50"` is rejected rather than read as 1250, and localized digits such as `"၁၂၃"` or `"١٢٣"` are rejected too; normalize user input before parsing it.
 
 ### No floats
 
@@ -110,6 +110,55 @@ LaravelMoney::currencies()->currencies();       // Money\Currencies, for moneyph
 
 `Rounding::HalfUp->toMoneyPhp()` returns the matching `Money\Money::ROUND_*` constant.
 
+## The facade and the currency registry
+
+The `LaravelMoney` facade (and `app(\Laranex\LaravelMoney\LaravelMoney::class)`) builds money and exposes the resolved configuration:
+
+```php
+use Laranex\LaravelMoney\Facades\LaravelMoney;
+
+LaravelMoney::of('12.34', 'USD');           // also ofMinor(), zero(), fromMoneyPhp()
+LaravelMoney::currency('mmk');              // Money\Currency('MMK'), validated; null or '' gives the default
+LaravelMoney::defaultCurrency();            // Money\Currency for money.default_currency
+LaravelMoney::precision('KWD');             // 3 (default currency when omitted)
+LaravelMoney::rounding();                   // Rounding::HalfUp, from money.rounding
+LaravelMoney::locale();                     // money.locale, else the app locale, else "en"
+LaravelMoney::format($money, 'de_DE');      // same as $money->format('de_DE')
+LaravelMoney::serialization();              // ['amount' => 'minor', 'include_decimal' => true, 'include_formatted' => true]
+```
+
+`LaravelMoney::currencies()` returns the `CurrencyRegistry`, which knows every ISO 4217 currency plus your custom ones:
+
+```php
+$registry = LaravelMoney::currencies();
+
+$registry->has('PTS');         // true when configured in money.currencies
+$registry->resolve('jpy');     // Money\Currency('JPY'); UnknownCurrencyException for unknown codes
+$registry->precision('JPY');   // 0
+$registry->custom();           // ['PTS' => 0]
+$registry->currencies();       // Money\Currencies, for moneyphp formatters, parsers and converters
+```
+
+### Custom formatting
+
+`format()` uses `Laranex\LaravelMoney\Formatting\IntlFormatter` when `ext-intl` is loaded and `PlainFormatter` (`USD 1234.50`) otherwise. To change how money is displayed everywhere, implement the `Formatter` interface and register it, for example in a service provider:
+
+```php
+use Laranex\LaravelMoney\Formatting\Formatter;
+
+final class CodeFirstFormatter implements Formatter
+{
+    public function format(string $decimal, string $currency, int $precision, string $locale): string
+    {
+        return $currency.' '.$decimal; // $decimal is exact, e.g. "-1234.50"
+    }
+}
+
+LaravelMoney::useFormatter(new CodeFirstFormatter);
+LaravelMoney::formatter();     // the formatter in use
+LaravelMoney::useFormatter(null); // back to the default
+```
+
 ## Macros
 
 `Money` is macroable:
@@ -129,4 +178,4 @@ Every exception extends `Laranex\LaravelMoney\Exceptions\MoneyException`, which 
 | `MoneyParseException` | an amount can't be parsed, or has more decimals than the currency allows |
 | `UnknownCurrencyException` | a currency (or the default currency) isn't ISO 4217 or configured |
 | `CurrencyMismatchException` | amounts in different currencies are combined or compared, or a cast gets the wrong currency. The message names both amounts |
-| `InvalidMoneyException` | a float is passed, division by zero, invalid ratios, a value a cast can't store, or invalid config |
+| `InvalidMoneyException` | a float is passed, division by zero, invalid ratios, a negative scale, a value a cast can't store, or invalid config |
