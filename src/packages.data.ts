@@ -15,6 +15,13 @@ export interface PackageData {
   github: string
   docsUrl: string
   install: string
+  badges: PackageBadge[]
+}
+
+export interface PackageBadge {
+  alt: string
+  src: string
+  href: string
 }
 
 export interface PackageCategory {
@@ -25,6 +32,47 @@ export interface PackageCategory {
 
 function slugify(name: string): string {
   return name.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
+/**
+ * The same badges as each package's README, picked by its registry.
+ */
+function badges(install: string, github: string): PackageBadge[] {
+  const repo = github.replace(/^https:\/\/github\.com\//, '')
+  const tests: PackageBadge = {
+    alt: 'Tests',
+    src: `https://img.shields.io/github/actions/workflow/status/${repo}/tests.yml?label=tests&style=flat-square`,
+    href: `${github}/actions/workflows/tests.yml`,
+  }
+  const license = `${github}/blob/HEAD/LICENSE.md`
+  const [tool, , target = ''] = install.split(' ')
+
+  if (tool === 'go') {
+    const module = target.replace(/@.*$/, '')
+
+    return [
+      { alt: 'Go Reference', src: `https://pkg.go.dev/badge/${module}.svg`, href: `https://pkg.go.dev/${module}` },
+      tests,
+      { alt: 'License', src: `https://img.shields.io/github/license/${repo}.svg?style=flat-square`, href: license },
+    ]
+  }
+
+  if (tool === 'npm') {
+    const name = target.replace(/(.)@.*$/, '$1')
+
+    return [
+      { alt: 'npm', src: `https://img.shields.io/npm/v/${name}.svg?style=flat-square`, href: `https://www.npmjs.com/package/${name}` },
+      tests,
+      { alt: 'License', src: `https://img.shields.io/npm/l/${name}.svg?style=flat-square`, href: license },
+    ]
+  }
+
+  return [
+    { alt: 'Latest Version on Packagist', src: `https://img.shields.io/packagist/v/${target}.svg?style=flat-square`, href: `https://packagist.org/packages/${target}` },
+    tests,
+    { alt: 'Total Downloads', src: `https://img.shields.io/packagist/dt/${target}.svg?style=flat-square`, href: `https://packagist.org/packages/${target}` },
+    { alt: 'License', src: `https://img.shields.io/packagist/l/${target}.svg?style=flat-square`, href: license },
+  ]
 }
 
 declare const data: PackageCategory[]
@@ -39,14 +87,18 @@ export default createContentLoader('*/index.md', {
       .filter(({ frontmatter }) => frontmatter.name)
       .map(({ url, frontmatter }): PackageData => {
         const slug = url.replace(/^\//, '').replace(/\/$/, '')
+        const github = (frontmatter.github as string) || ''
+        const install = (frontmatter.install as string) || `composer require laranex/${slug}`
+
         return {
           slug,
           name: frontmatter.name as string,
           description: (frontmatter.description as string) || '',
           requirements: (frontmatter.requirements as string[]) || [],
-          github: (frontmatter.github as string) || '',
+          github,
           docsUrl: `/${slug}/introduction.html`,
-          install: (frontmatter.install as string) || `composer require laranex/${slug}`,
+          install,
+          badges: badges(install, github),
         }
       })
       .sort((a, b) => {
