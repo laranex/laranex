@@ -121,6 +121,11 @@ onMounted(() => {
           >
             <div class="lx-registry-main">
               <a :href="pkg.docsUrl" class="lx-registry-name">{{ pkg.name }}</a>
+              <p class="lx-registry-badges">
+                <a v-for="badge in pkg.badges" :key="badge.alt" :href="badge.href" target="_blank" rel="noopener noreferrer">
+                  <img :src="badge.src" :alt="badge.alt" height="20" loading="lazy" />
+                </a>
+              </p>
               <p class="lx-registry-desc">{{ pkg.description }}</p>
               <p class="lx-registry-reqs">{{ pkg.requirements.join(', ') }}</p>
             </div>

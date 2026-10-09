@@ -577,6 +577,23 @@ body {
   color: var(--vp-c-brand-1);
 }
 
+.lx-registry-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+}
+
+.lx-registry-badges a {
+  display: inline-flex;
+  line-height: 0;
+}
+
+.lx-registry-badges img {
+  height: 20px;
+  width: auto;
+}
+
 .lx-registry-desc {
   margin: 6px 0 0;
   font-size: 15px;
