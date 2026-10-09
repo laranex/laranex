@@ -42,7 +42,7 @@ function badges(install: string, github: string): PackageBadge[] {
   const repo = github.replace(/^https:\/\/github\.com\//, '')
   const tests: PackageBadge = {
     alt: 'Tests',
-    src: `https://img.shields.io/github/actions/workflow/status/${repo}/tests.yml?label=tests&style=flat-square`,
+    src: `${github}/actions/workflows/tests.yml/badge.svg`,
     href: `${github}/actions/workflows/tests.yml`,
   }
   const license = `${github}/blob/HEAD/LICENSE.md`
