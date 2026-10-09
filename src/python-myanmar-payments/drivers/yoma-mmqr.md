@@ -124,10 +124,6 @@ def yoma_callback(request):
 
 The callback URL is registered with Yoma, not sent per order. When `webhook_secret` is configured, callbacks must carry it in the `X-Webhook-Secret` header. The hash is checked with HMAC-SHA256 keyed with your order number plus `webhook_hash_key`.
 
-::: warning
-Yoma's specification does not name the hash algorithm; HMAC-SHA256 is inferred from its sample. Confirm it with Yoma before going live.
-:::
-
 ## QR Lifetime and Renewal
 
 A QR is payable for 120 seconds (`YomaMmqr.QR_LIFETIME_SECONDS`); `payment.expires_at` tells you when. Yoma accepts each order number **once**, so never call `initiate()` again for the same order. Renew the QR instead:
