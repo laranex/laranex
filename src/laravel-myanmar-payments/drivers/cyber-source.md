@@ -60,7 +60,7 @@ return redirect($payment->autoSubmitUrl);
 | `callbackUrl` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters; CyberSource may require HTTPS in production |
 | `returnUrl` | `?string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `cancelUrl` | `?string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
-| `currency` | `string` | No | Any ISO 4217 code (CyberSource is multi-currency), default `MMK` |
+| `currency` | `string` | No | Any three-letter uppercase ISO 4217 code (CyberSource is multi-currency), default `MMK` |
 | `transactionType` | `CyberSourceTransactionType` | No | `Sale` (default), `Authorization`, `SaleAndCreateToken` or `AuthorizationAndCreateToken` |
 | `locale` | `string` | No | Hosted page language as a CyberSource locale code such as `en-us`, default `en-us` |
 
@@ -68,7 +68,7 @@ For decimal amounts or another currency, pass an [`Amount`](/laravel-myanmar-pay
 
 ## Handling Callbacks
 
-CyberSource posts a form to `callbackUrl`. The same check works for the browser post to your receipt page.
+CyberSource posts a form to `callbackUrl`. The same check works for the browser post to your receipt page. `decision` and `req_reference_number` must be listed in `signed_field_names`, or the post is rejected with `SignatureVerificationException`; `transaction_id` and the amount are read only when signed. An unsigned extra field, such as `decision=ACCEPT` added to a re-posted checkout form, can't change the result.
 
 ```php
 Route::post('/payments/cybersource/callback', function (Request $request) {
@@ -107,8 +107,8 @@ What CyberSource puts in each property. See [Results](/laravel-myanmar-payments/
 | `status` | `decision` mapped, see [Statuses](#statuses) |
 | `gatewayStatus` | CyberSource `decision`, uppercased, e.g. `ACCEPT` |
 | `gatewayReference` | CyberSource `transaction_id`. `null` when CyberSource sends none |
-| `amount` | CyberSource `auth_amount`, or `req_amount` when there is no authorization, e.g. `10.50` |
-| `raw` | Every field CyberSource posted, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `auth_amount`, `auth_code`, `req_reference_number`, `req_amount`, `req_currency`, `req_transaction_uuid`, `signed_field_names`, `signed_date_time`, `signature` |
+| `amount` | CyberSource `auth_amount`, falling back to `req_amount` when it is missing or empty, e.g. `10.50` |
+| `raw` | The signed fields of the verified post plus `signature`, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `auth_amount`, `auth_code`, `req_reference_number`, `req_amount`, `req_currency`, `req_transaction_uuid`, `signed_field_names`, `signed_date_time`. Fields not listed in `signed_field_names` are dropped |
 | `acknowledgement()` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
 `MyanmarPayments::acknowledge($callback)` turns `acknowledgement()` into a `CallbackResponse` (`Responsable`) that renders an empty `200`. `handleCallback()` accepts an `Illuminate\Http\Request` or a `CallbackRequest`.

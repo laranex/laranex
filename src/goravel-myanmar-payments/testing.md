@@ -11,25 +11,25 @@ Every gateway call goes through Goravel's HTTP client, so `Fake` intercepts it. 
 
 ```go
 func (s *CheckoutTestSuite) TestKbzPayQR() {
-	http := facades.Http() // client.Factory
-	http.Fake(map[string]any{
-		"http://api-uat.kbzpay.com/payment/gateway/uat/precreate": http.Response().Json(200, map[string]any{
+	fake := facades.App().MakeHttp() // client.Factory
+	fake.Fake(map[string]any{
+		"http://api-uat.kbzpay.com/payment/gateway/uat/precreate": fake.Response().Json(200, map[string]any{
 			"Response": map[string]any{"result": "SUCCESS", "code": "0", "prepay_id": "prepay-1", "qrCode": "kbz-qr"},
 		}),
 	}).PreventStrayRequests()
-	defer http.Reset()
+	defer fake.Reset()
 
 	response, err := s.Http(s.T()).Get("/checkout/kbzpay/qr")
 	s.Require().NoError(err)
 	response.AssertOk()
 
-	s.True(http.AssertSent(func(request client.Request) bool {
+	s.True(fake.AssertSent(func(request client.Request) bool {
 		return strings.Contains(request.Body(), `"merch_order_id"`)
 	}))
 }
 ```
 
-If your application's `facades.Http()` returns `client.Request` (older application skeletons), use `facades.App().MakeHttp()` to get the factory.
+`facades.App().MakeHttp()` returns the `client.Factory` that holds the fakes. The `facades.Http()` that Goravel 1.18 generates in `app/facades` returns a `client.Request`, which has no `Fake`; if yours returns `client.Factory`, use it instead.
 
 Fakes registered after a gateway was built still apply: the package resolves the Goravel client on every request. Pointing a gateway's base URL at a test host (`KBZ_PAY_BASE_URL`, `WAVE_MONEY_BASE_URL`, `AYA_PAY_BASE_URL`, `YOMA_MMQR_BASE_URL`, or the same keys under `myanmar_payments.*`) keeps the fake patterns short.
 

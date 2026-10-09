@@ -97,11 +97,11 @@ if callback.IsSuccessful() {
 callback.Acknowledgement.Write(w)
 ```
 
-A post whose `signed_field_names` lists a field that is missing fails verification.
+Only signed fields are trusted. A post fails verification when `signed_field_names` lists a field that is missing, or when it does not list `decision` and `req_reference_number`. The amount and `transaction_id` are read only when they are signed, and `callback.Raw` keeps only the signed fields plus `signature`. This stops the signed request form, which the customer's browser sees, from being replayed to your callback URL as a payment result.
 
 ## Responses
 
-What CyberSource puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`; a field the gateway didn't send is `""`. Network failures and a canceled `ctx` return `*APIError`, which unwraps to the cause (`errors.Is(err, context.DeadlineExceeded)`).
+What CyberSource puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`; a field the gateway didn't send is `""`. CyberSource makes no HTTP calls, so it never returns `*APIError`.
 
 ### `Initiate()` → `*myanmarpayments.FormPayment` {#initiate-response}
 
@@ -139,12 +139,12 @@ What CyberSource puts in each field. See [Results](/go-myanmar-payments/referenc
 | `OrderID` | CyberSource `req_reference_number` (your `OrderID`) |
 | `Status` | `decision` mapped, see [Statuses](#statuses) |
 | `GatewayStatus` | CyberSource `decision`, trimmed and uppercased, e.g. `ACCEPT` |
-| `GatewayReference` | CyberSource `transaction_id` |
-| `Amount` | CyberSource `auth_amount`, falling back to `req_amount`, e.g. `10.50` |
-| `Raw` | The verified post: `decision`, `reason_code`, `message`, `transaction_id`, `req_reference_number`, `req_amount`, `req_currency`, `auth_amount`, `signed_field_names`, `signature` and the other fields CyberSource sends |
+| `GatewayReference` | CyberSource `transaction_id`, `""` when it is not signed |
+| `Amount` | CyberSource `auth_amount`, falling back to `req_amount`, e.g. `10.50`. Only signed values are used |
+| `Raw` | The signed fields plus `signature`: `decision`, `reason_code`, `message`, `transaction_id`, `req_reference_number`, `req_amount`, `req_currency`, `auth_amount`, `signed_field_names` and the other fields CyberSource signs. Unsigned fields are left out |
 | `Acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
-Errors: `*SignatureVerificationError` when `signature` does not match or a field listed in `signed_field_names` is missing.
+Errors: `*SignatureVerificationError` when `signature` does not match, a field listed in `signed_field_names` is missing, or `decision` or `req_reference_number` is not signed.
 
 ## Statuses
 

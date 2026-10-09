@@ -76,6 +76,7 @@ err = facades.Orm().Query().FindOrFail(&fresh, product.ID)
 fresh.Price.Valid  // false for NULL
 fresh.Price.Money  // money.Money
 fresh.Cost.Ptr()   // *money.Money, nil for NULL
+fresh.Cost.Currency() // money.Currency the column stores (USD), or an error for an unknown code
 ```
 
 Saving `Money` in another currency than the column's fails with a `*money.CurrencyMismatchError`:
@@ -119,7 +120,7 @@ err = wallet.Balance.Set(money.MustParse("10", money.MustCurrency("USD")), &wall
 
 When the currency column is empty, `Set` fills it. When it holds a different currency, `Set` returns a `*money.CurrencyMismatchError` and changes nothing; change the column first (or convert the amount). When the column is empty on read, `Money("")` uses the default currency. Several amount columns can share one currency column.
 
-`AmountColumn` marshals to the stored minor units as a string (`"1500"`), because the currency lives in another field; serialize `Money(currency)` for the full shape.
+`AmountColumn` marshals to the stored minor units as a string (`"1500"`), because the currency lives in another field; serialize `Money(currency)` for the full shape. `wallet.Balance.Amount()` returns the same string, `""` for NULL.
 
 ## DECIMAL columns
 

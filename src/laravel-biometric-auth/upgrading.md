@@ -1,6 +1,6 @@
 ---
 title: Upgrading
-description: Upgrade Laravel Biometric Auth from v3 to v4. Padding names for phpseclib 3 and 4, single-use challenges and a typed revoke failure.
+description: Upgrade Laravel Biometric Auth from v3 to v4. Padding names for phpseclib 3 and 4, single-use expiring challenges and a typed revoke failure.
 ---
 
 # Upgrading to v4 from v3
@@ -33,9 +33,13 @@ phpseclib 4 is supported alongside phpseclib 3. phpseclib 4 moved to the `phpsec
 
 The old constant keeps working while you stay on phpseclib 3, but it is a fatal error on phpseclib 4 (the class no longer exists). Unknown names throw `InvalidArgumentException`.
 
-## Single-use challenges
+## Single-use, expiring challenges
 
 `verifyBiometric()` now clears the challenge after a successful verification, so a captured signature cannot be replayed. Clients must request a new challenge with `getBiometric()` after every successful verification. Failed attempts keep the challenge so the device can retry, up to `challenge.max_attempts` (5 by default, `BIOMETRIC_AUTH_CHALLENGE_MAX_ATTEMPTS`); then the challenge is cleared and the client must request a new one. Attempts are counted in the default cache store. Set the option to `0` to keep v3's unlimited retries.
+
+Challenges now expire `challenge.ttl` seconds after they are issued (300 by default, `BIOMETRIC_AUTH_CHALLENGE_TTL`). `getBiometric()` replaces an expired challenge and `verifyBiometric()` throws `BiometricChallengeNotFoundException` for one, so devices must sign within that window. The issue time is the row's `updated_at`, so no column is added. Set the option to `0` to keep v3's challenges that never expire.
+
+`getBiometric()`, `verifyBiometric()` and `revokeBiometric()` throw `BiometricNotFoundException` for an id that is not a UUID instead of querying the database (which failed on PostgreSQL's native `uuid` column). `verifyBiometric()` decodes the signature as strict base64: a signature with characters outside the base64 alphabet returns `false`.
 
 ## Revoking
 

@@ -41,7 +41,7 @@ Every config has a `sandbox` flag (default `true`) that selects the gateway's UA
 | `merchantId` | `string` | | The merchant id Wave issued |
 | `secretKey` | `string` | | The hash secret key Wave issued |
 | `merchantName` | `string` | | Your business name, shown on Wave's payment page |
-| `timeToLiveSeconds` | `int` | `300` | How long the customer has to pay |
+| `timeToLiveSeconds` | `int` | `300` | How long the customer has to pay. Zero or less falls back to `300` |
 | `sandbox` | `bool` | `true` | Use the test environment |
 | `baseUrl` | `?string` | per `sandbox` | Override the API base URL |
 | `authenticateUrl` | `?string` | per `sandbox` | Override the host the customer is redirected to (`https://preprodpayments.wavemoney.io` / `https://payments.wavemoney.io`, without the API port) |
@@ -104,6 +104,8 @@ $config = KbzPayConfig::fromArray([
     'sandbox' => getenv('KBZ_PAY_SANDBOX'), // "true"/"false" strings are accepted
 ]);
 ```
+
+`sandbox` accepts booleans and the strings `true`, `1`, `t`, `yes`, `on` or `false`, `0`, `f`, `no`, `off` in any case. Anything else, including an empty or missing value, keeps the sandbox.
 
 | Config class | Keys |
 |---|---|

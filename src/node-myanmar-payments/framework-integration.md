@@ -76,11 +76,11 @@ app.use((error: unknown, req: express.Request, res: express.Response, next: expr
 });
 ```
 
-`fromNodeRequest` reads the buffer `express.raw()` leaves in `req.body`. If a global `express.json()` or `express.urlencoded()` already parsed the body, it encodes `req.body` again as JSON or a form; signatures still verify, but numbers sent as JSON numbers lose their exact text, so `express.raw()` on callback routes is the safer setup.
+`fromNodeRequest` reads the buffer `express.raw()` leaves in `req.body`. If a global `express.json()` or `express.urlencoded()` already parsed the body, it encodes `req.body` again as JSON or a form. That usually verifies, but a JSON number such as `1000.50` comes back as `1000.5` and breaks a signature over the exact text, so `express.raw()` on callback routes is the safer setup.
 
 ## Fastify
 
-Fastify parses bodies before your handler runs. Keep the raw text for callback routes with a content-type parser, then build the request from its parts:
+Fastify parses bodies before your handler runs, so `request.raw` has no body left for `fromNodeRequest`. Keep the raw text for callback routes with a content-type parser, then build the request from its parts:
 
 ```ts
 import Fastify from 'fastify';

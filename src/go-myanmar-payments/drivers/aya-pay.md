@@ -212,7 +212,7 @@ Errors: `*SignatureVerificationError` when `payload` is missing or not base64 JS
 
 ### `VerifyRedirect()` → `*myanmarpayments.PaymentCallback` {#verifyredirect-response}
 
-The same values as `HandleCallback()`, read from the signed `payload` and `checkSum` AYA adds to your return URL (query string first, then the body). `Acknowledgement` is set but there is nothing to acknowledge: render your return page instead. Errors: `*SignatureVerificationError`.
+The same values as `HandleCallback()`, read from the signed `payload` and `checkSum` AYA adds to your return URL (query string first, then the body). A `+` in the base64 `payload` that arrived as a space (an unencoded query string) is mapped back before decoding; the checksum is still verified. `Acknowledgement` is set but there is nothing to acknowledge: render your return page instead. Errors: `*SignatureVerificationError`.
 
 ## Statuses
 

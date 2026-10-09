@@ -37,6 +37,7 @@ price, err := money.Parse("1234.50", usd)
 price = money.MustParse("1234.50", usd)     // panics on an error, for constants
 cents := money.New(123450, usd)             // int64 minor units
 huge, err := money.OfMinor("99999999999999999999", usd)
+fromBig := money.FromBigInt(big.NewInt(123450), usd) // *big.Int minor units; nil is zero
 zero := money.Zero(usd)
 ```
 
@@ -67,7 +68,9 @@ Register extra codes, or change an ISO precision, under `money.currencies`:
 points, err := moneyfacades.Money().Parse("300", "PTS")
 ```
 
-Without the container, `money.NewCurrency("PTS", 0)` builds one and `money.NewRegistry(map[string]int{"PTS": 0})` resolves codes the same way the manager does.
+Without the container, `money.NewCurrency("PTS", 0)` builds one and `money.NewRegistry(map[string]int{"PTS": 0})` resolves codes the same way the manager does: `Lookup(code)` returns the `Currency` (custom first, then ISO 4217), `Has(code)` reports whether it exists, and `Custom()` returns the custom currencies as code => decimal places.
+
+A `Currency` is identified by its code and its precision, so `money.MustCurrency("MMK")` (ISO, 2 decimals) and an MMK overridden to 0 decimals are different currencies: combining them returns a `*money.CurrencyMismatchError`. Resolve codes through the manager (or one `Registry`) so the whole application uses the same precision.
 
 ### No floats
 
@@ -151,11 +154,15 @@ Supported locales (`money.Locales()`): `ar`, `ar_EG`, `ar_SA`, `de`, `de_AT`, `d
 - `include_decimal`: add the `decimal` key when `amount` is `"minor"`
 - `include_formatted`: add the `formatted` key in the configured locale
 
-`m.Fields()` returns the same keys and values in order. Decoding reads `amount` and `currency` (the amount as a string or a JSON integer, interpreted as `serialization.amount` says) and ignores the other keys.
+`m.Fields()` (or `manager.Fields(m)`) returns the same keys and values in order, as `[]money.Field{Key, Value}`. Decoding reads `amount` and `currency` (the amount as a string or a JSON integer, interpreted as `serialization.amount` says) and ignores the other keys.
+
+`money.Currency` and `money.Rounding` implement `encoding.TextMarshaler`, so they encode as `"USD"` and `"half_up"` in JSON and other text formats. Decoding a `Currency` resolves the code with the configured registry and rejects unknown codes.
 
 ## The manager
 
-`*money.Manager` is immutable and safe for concurrent use. Besides `Parse`, `Make`, `OfMinor`, `Zero` and `Format` it exposes the configuration: `DefaultCurrency()`, `Currency(code)`, `Precision(code)`, `Rounding()`, `Locale()`, `Serialization()` and `Registry()`. Build one without the container with `money.NewManager(money.DefaultConfig())`, or from a Goravel config with `money.ConfigFrom(facades.Config())`.
+`*money.Manager` is immutable and safe for concurrent use. Besides `Parse`, `Make`, `OfMinor`, `Zero`, `Format` and `Fields` it exposes the configuration: `DefaultCurrency()`, `Currency(code)`, `Precision(code)`, `Rounding()`, `Locale()`, `Serialization()` and `Registry()`. Build one without the container with `money.NewManager(money.DefaultConfig())`, or from a Goravel config with `money.ConfigFrom(facades.Config())`.
+
+The service provider binds the manager under the container key `money.Binding` (`"laranex.money"`). `money.Resolve(app)` returns it from a given application, and `money.Registered()` from the application the provider was registered with; both return an error instead of panicking.
 
 ## Errors
 

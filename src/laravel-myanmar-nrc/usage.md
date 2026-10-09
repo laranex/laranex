@@ -14,7 +14,34 @@ STATE_ID-TOWNSHIP_ID-TYPE_ID-NUMBER
 12-284-1-123456
 ```
 
-The first three parts are the IDs of the state, township and type (from the database or the JSON file), and the last part is the 6-digit number. The NRC must have exactly four `-` separated parts.
+The first three parts are the IDs of the state, township and type (from the database or the JSON file), and the last part is the 6-digit number. The NRC must have exactly four `-` separated parts, and the township must belong to the state.
+
+### Reference IDs
+
+The bundled data uses these type IDs:
+
+| ID | Code | Myanmar |
+|---|---|---|
+| 1 | `N` | `နိုင်` |
+| 2 | `E` | `ဧည့်` |
+| 3 | `P` | `ပြု` |
+| 4 | `T` | `သာသနာ` |
+| 5 | `Y` | `ယာယီ` |
+| 6 | `S` | `စ` |
+
+State IDs equal their NRC codes: `1` Kachin, `2` Kayah, `3` Kayin, `4` Chin, `5` Sagaing, `6` Tanintharyi, `7` Bago, `8` Magway, `9` Mandalay, `10` Mon, `11` Rakhine, `12` Yangon, `13` Shan, `14` Ayeyawady and `15` Naypyitaw. Township IDs run from `1` to `471`. Build pick lists from the data rather than hard-coding IDs:
+
+```php
+use Laranex\LaravelMyanmarNRC\Models\State;
+
+// Database backend
+$states = State::query()->with('townships')->orderBy('code')->get();
+
+// JSON backend
+$townships = app(\Laranex\LaravelMyanmarNRC\Repositories\JsonNrcRepository::class)->townships();
+```
+
+Each row has `id`, `code`, `code_mm`, `name` and `name_mm`; townships also have `nrc_state_id`.
 
 ## Validation
 

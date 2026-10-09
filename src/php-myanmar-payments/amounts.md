@@ -26,12 +26,12 @@ $payment = $kbzPay->pwa(new KbzPayPaymentData(
 | Constructor | Accepts |
 |---|---|
 | `Amount::kyat(int $amount)` | A whole amount, 0 or more. Works for whole units of any currency |
-| `Amount::parse(string $amount)` | Plain digits with an optional decimal part: `1000`, `1000.50`, `0.5` |
+| `Amount::parse(string $amount)` | Plain digits with an optional decimal part: `1000`, `1000.50`, `0.5`. Leading zeros of the whole part are dropped (`007.50` becomes `7.50`); the fraction is kept exactly |
 | `Amount::from(Amount\|int $amount)` | An `Amount` as is, or an `int` through `kyat()`. The payment data classes use it |
 
 `parse()` rejects signs, exponents, spaces and thousands separators (`-1`, `1e5`, ` 10`, `1,000`, `10.`, `.5`), and both constructors reject negatives, by throwing `InvalidPaymentDataException` with an `amount` error.
 
-An `Amount` exposes `toString()` (exactly as given, also via `(string) $amount`), `decimalPlaces()`, `wholePart()`, `isZero()` and `isPositive()`. The payment data classes always store an `Amount`, so `$data->amount` is an `Amount` even when you passed an `int`.
+An `Amount` exposes `toString()` (as given without leading zeros, also via `(string) $amount`), `decimalPlaces()`, `wholePart()`, `isZero()` and `isPositive()`. The payment data classes always store an `Amount`, so `$data->amount` is an `Amount` even when you passed an `int`.
 
 ## Gateway Rules
 

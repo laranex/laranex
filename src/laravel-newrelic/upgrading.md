@@ -13,7 +13,7 @@ composer require laranex/laravel-newrelic:^4.0
 
 ## Requirements
 
-PHP 8.1+ and Laravel 10 to 13 (v1 allowed PHP 7.4). Monolog `^3.1` is required (v1 allowed `^3.0`), and `ext-curl` is now a Composer requirement instead of a check when the handler is built. The New Relic PHP agent stays optional: without it, logs still ship and the transaction listeners do nothing.
+PHP 8.1+ and Laravel 10 to 13 (v1 allowed PHP 7.4). Monolog `^3.6` is required (v1 allowed `^3.0`), and `ext-curl` is now a Composer requirement instead of a check when the handler is built. The New Relic PHP agent stays optional: without it, logs still ship and the transaction listeners do nothing.
 
 ## Renamed classes
 
@@ -49,6 +49,7 @@ The config file moved from `config/laravel-newrelic.php` to `config/newrelic.php
 - **Missing license key.** v1 posted logs with a `NO_LICENSE_KEY_FOUND` key. v4 throws when the channel is built, and Laravel falls back to its emergency logger. Set `NEW_RELIC_LICENSE_KEY` or configure the agent's `newrelic.license`.
 - **Logs API host.** As in v1, the host is picked from the license key's region (`log-api.eu.newrelic.com` for EU keys). v1 could only override it with `setHost()` on the handler; v4 reads `NEW_RELIC_LOG_HOST`.
 - **Channel options.** v1 ignored the channel config. The default `newrelic` channel now has `'level' => 'debug'` and `'buffer' => true`, and the `level`, `bubble`, `buffer` and `name` options are honored.
+- **Delivery failures.** When the Logs API cannot be reached or rejects a request, v4 writes the failure to PHP's error log instead of throwing from the log call, and splits batches bigger than the 1 MB payload limit.
 - **Batches.** v1 always buffered and never flushed the buffer itself, so a queue worker held its logs until it exited. v4 sends the buffered batch (one JSON array) after each Octane request and queue job, and `'buffer' => false` sends each record immediately.
 - **Metadata.** `service`, `hostname`, the client IP and the authenticated user are resolved per record, so they are correct on Octane. The agent's `hostname` now wins over the PHP hostname so logs link to the right host entity. A user without a readable email is logged with `email: null` instead of `'guest'`, and the user `id` comes from `getAuthIdentifier()`.
-- **Transactions.** The transaction started after each queue job is now marked as a background job, and transactions are reported to `NEW_RELIC_APP_NAME` when set (v1 always used the agent's `newrelic.appname`). The Octane and queue listeners can be turned off with `newrelic.transactions.octane` and `newrelic.transactions.queue` (`NEW_RELIC_OCTANE_TRANSACTIONS` / `NEW_RELIC_QUEUE_TRANSACTIONS`).
+- **Transactions.** A fresh transaction now starts after every queue job, including one that throws (v1 restarted only after a processed job or a Horizon release, so a failed job's transaction ran into the next job). It is marked as a background job, and transactions are reported to `NEW_RELIC_APP_NAME` when set (v1 always used the agent's `newrelic.appname`). The Octane and queue listeners can be turned off with `newrelic.transactions.octane` and `newrelic.transactions.queue` (`NEW_RELIC_OCTANE_TRANSACTIONS` / `NEW_RELIC_QUEUE_TRANSACTIONS`).

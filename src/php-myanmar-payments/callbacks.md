@@ -60,7 +60,7 @@ Signatures are checked against the exact bytes the gateway sent, so build the re
 | `CallbackRequest::fromArray($payload, $headers)` | Replaying a payload you stored, e.g. from a queue or a failed-callback table |
 | `new CallbackRequest($body, $headers, $query)` | Any other framework: pass the raw body, headers and query parameters |
 
-`$request->header($name)` is case-insensitive, `parsedBody()` decodes a JSON or form body, and `input()` merges it over the query string.
+`$request->header($name)` is case-insensitive, `parsedBody()` decodes a JSON or form body, and `input()` merges it over the query string. JSON numbers keep their exact text as strings (`1000.50` stays `"1000.50"`), so signatures are checked against what the gateway sent and `raw` never holds a rounded float.
 
 See [Framework Integration](/php-myanmar-payments/framework-integration) for Symfony and PSR-15 examples.
 

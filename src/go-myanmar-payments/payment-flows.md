@@ -14,7 +14,7 @@ Starting a payment always follows the same pattern: fill the gateway's `PaymentD
 | `*QrPayment` | Show the QR to the customer | `kbzpay.QR`, `yomammqr.Initiate`, `yomammqr.RenewQR` |
 | `*AppPayment` | Return the signed payload to your mobile app | `kbzpay.App` |
 
-Every method validates the payment data first and returns `*myanmarpayments.InvalidPaymentDataError` before any request is sent. The customer finishing on the gateway's side is never proof of payment: fulfill orders from the verified [callback](/go-myanmar-payments/callbacks) or a status check.
+Every method validates the payment data first and returns `*myanmarpayments.InvalidPaymentDataError` before any request is sent. Call `data.Validate()` yourself to check a request earlier, e.g. while handling a form. The customer finishing on the gateway's side is never proof of payment: fulfill orders from the verified [callback](/go-myanmar-payments/callbacks) or a status check.
 
 ## Redirect Payments
 

@@ -37,7 +37,7 @@ The queueable job stub declared `__construct(): void`, which is invalid PHP in e
 php artisan vendor:publish --tag="next-laravel-stubs" --force
 ```
 
-The other stubs keep the same shape: generated route files import the `Route` facade and use `Route::prefix()->group()`, route files use a prefix without a leading slash (`Route::prefix('v1/blogs')`), the feature stub's `handle` method declares a `mixed` return type instead of `int`, and unused imports were removed. Fix any job already generated from the old queueable stub by removing `: void` from its constructor.
+The other stubs keep the same shape: generated route files import the `Route` facade and use `Route::prefix()->group()`, route files use a prefix without a leading slash (`Route::prefix('v1/blogs')`), the feature stub's `handle` method declares a `mixed` return type instead of `int` and returns `null` until you fill it in (a feature generated from the old stub threw a `TypeError` when served unchanged), and unused imports were removed. Fix any job already generated from the old queueable stub by removing `: void` from its constructor.
 
 ## Route registration
 

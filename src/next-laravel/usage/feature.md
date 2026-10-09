@@ -49,8 +49,8 @@ class StoreBlogFeature extends Feature
     public function handle(StoreBlogRequest $request): Blog
     {
         return $this->run(StoreBlogJob::class, ['payload' => $request->validated()]);
-        // Or
-        return $this->run(new StoreBlogJob($request->validated()));
+        // Or pass an instance:
+        // return $this->run(new StoreBlogJob($request->validated()));
     }
 }
 ```

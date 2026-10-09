@@ -5,6 +5,32 @@ description: Create, verify and revoke refresh tokens, and prune expired ones.
 
 # Usage
 
+## How it works
+
+Your API hands the client a short-lived access token together with a long-lived refresh token. When the access token expires, the client exchanges the refresh token for a new pair, and the old refresh token is revoked so it can be used only once.
+
+<SequenceDiagram
+  title="Signing in"
+  :participants="['Client', 'Your API']"
+  :steps="[
+    { from: 'Client', to: 'Your API', label: 'Sign in', detail: 'credentials' },
+    { from: 'Your API', to: 'Your API', label: 'Issue a refresh token', detail: '$user->createRefreshToken()' },
+    { from: 'Your API', to: 'Client', label: 'Access token + refresh token', response: true },
+  ]"
+/>
+
+<SequenceDiagram
+  title="Rotating a refresh token"
+  :participants="['Client', 'Your API']"
+  :steps="[
+    { from: 'Client', to: 'Your API', label: 'Refresh', detail: 'refresh token' },
+    { from: 'Your API', to: 'Your API', label: 'Verify the token', detail: 'RefreshToken::tokenable($jwt)' },
+    { from: 'Your API', to: 'Your API', label: 'Revoke it', detail: '$token->revoke(), 401 when false' },
+    { from: 'Your API', to: 'Your API', label: 'Issue a new one', detail: '$token->instance->createRefreshToken()' },
+    { from: 'Your API', to: 'Client', label: 'New access token + refresh token', response: true },
+  ]"
+/>
+
 ## Preparing the model
 
 Add the `HasRefreshTokens` trait to the model that owns refresh tokens:
@@ -38,7 +64,7 @@ $user->refreshTokens()->where('revoked', false)->count();
 
 ## Verifying a refresh token
 
-`RefreshToken::tokenable()` verifies the signature and expiry and returns the stored token model, or `null` when the token is invalid, expired or revoked:
+`RefreshToken::tokenable()` verifies the RS256 signature and the token's `iat`, `nbf` and `exp` claims, then looks up the stored row by the token id (`jti`). It returns the stored token model, or `null` when the token is malformed, tampered with, signed with another key, expired (by its claims or by the row's `expires_at`), revoked or no longer stored:
 
 ```php
 use Laranex\RefreshToken\RefreshToken;
@@ -57,14 +83,16 @@ Token timestamps use Carbon, so `Carbon::setTestNow()` and `travel()` apply in t
 ## Revoking
 
 ```php
-$token->revoke();    // revoke this token
+$token->revoke();    // revoke this token, returns true when this call revoked it
 $token->revokeAll(); // revoke every token of the same owner, returns the number updated
 ```
 
-To rotate a token, revoke the old one and issue a new one:
+`revoke()` is a single conditional `UPDATE` that only matches a token that is still active. It returns `false` when the token was already revoked, for example by another request that verified the same token a moment earlier.
+
+To rotate a token, revoke the old one and issue a new one. Reject the request when `revoke()` returns `false`, so a token can be exchanged only once even when two requests race:
 
 ```php
-$token->revoke();
+abort_unless($token->revoke(), 401);
 
 return ['refresh_token' => $token->instance->createRefreshToken()];
 ```

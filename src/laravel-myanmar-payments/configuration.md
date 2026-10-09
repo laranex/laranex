@@ -9,7 +9,7 @@ description: Configure Laravel Myanmar Payments with environment variables. Each
 
 Add only the keys of the gateways you use. A gateway is configured the first time you call it, and a missing credential throws a `ConfigurationException` naming the key.
 
-Every gateway has a `*_SANDBOX` switch (default `true`) that selects its UAT endpoints. Set it to `false` together with production credentials when you go live. The `*_BASE_URL` style variables are optional overrides.
+Every gateway has a `*_SANDBOX` switch (default `true`) that selects its UAT endpoints. It accepts `true`, `1`, `t`, `yes`, `on` or `false`, `0`, `f`, `no`, `off` in any case; anything else keeps the sandbox. A `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` of zero or less falls back to `300`. Set it to `false` together with production credentials when you go live. The `*_BASE_URL` style variables are optional overrides.
 
 ```env
 # KBZ Pay

@@ -24,7 +24,7 @@ if errors.As(err, &configErr) {
 
 Every `Config` has a `Production bool` field. Its zero value, `false`, selects the gateway's sandbox endpoints, so a forgotten setting never sends real payments. Set `Production: true` together with production credentials when you go live.
 
-URL fields are optional overrides; leave them empty to use the endpoint matching `Production`. The `Resolved…URL()` methods return the URL actually used.
+URL fields are optional overrides; leave them empty to use the endpoint matching `Production`. Each `Config` has `Resolved…()` methods that return the value actually used: `ResolvedAPIURL()` and `ResolvedPWAURL()` (KBZ Pay), `ResolvedBaseURL()`, `ResolvedAuthenticateURL()` and `ResolvedTimeToLive()` (Wave Money), `ResolvedBaseURL()` (AYA, Yoma, CyberSource) and `ResolvedAPIVersion()` (Yoma). A gateway's `Config()` method returns the `Config` it was created with.
 
 ## Config Structs
 
@@ -98,6 +98,7 @@ URL fields are optional overrides; leave them empty to use the endpoint matching
 The URLs are exported constants, e.g. `kbzpay.SandboxAPIURL`, `kbzpay.ProductionPWAURL`, `wavemoney.SandboxAuthenticateURL`, `yomammqr.ProductionURL`.
 
 ::: warning Wave sandbox host
+The test host in Wave's documentation, `preprodpayments.wavemoney.io`, no longer resolves in DNS (October 2026). If Wave gives you another test host, set `BaseURL` and `AuthenticateURL` (or `WAVE_MONEY_BASE_URL` and `WAVE_MONEY_AUTHENTICATE_URL`).
 :::
 
 ## From Environment Variables

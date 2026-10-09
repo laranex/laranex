@@ -113,3 +113,16 @@ Cast attributes serialize like `Money::toArray()`:
 $product->toArray()['price'];
 // ['amount' => '1999', 'currency' => 'USD', 'decimal' => '19.99', 'formatted' => '$19.99']
 ```
+
+## Inspecting a cast
+
+Every builder resolves to a `Laranex\LaravelMoney\Casts\MoneyCast`, which you can inspect, for example in a form request or a custom serializer:
+
+```php
+$cast = AsMoney::castUsing(['decimal', 'currency_column=currency']);
+
+$cast->storesDecimal();                       // true
+$cast->currencyColumn();                      // "currency"
+$cast->currency(['currency' => 'jpy']);       // Money\Currency('JPY') for that row
+$cast->currency();                            // the fixed currency, else the default
+```

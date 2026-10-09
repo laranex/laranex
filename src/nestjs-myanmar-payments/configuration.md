@@ -141,7 +141,7 @@ AYA Pay and CyberSource need the customer's browser to POST a signed form. The m
 | `formRoute.enabled` | Register the route. When `false`, `autoSubmitUrl()` throws |
 | `formRoute.path` | The route path. The app's global prefix applies |
 | `formLink.secret` | Encrypts the links (AES-256-GCM, key derived with HKDF-SHA256). Defaults to `MYANMAR_PAYMENTS_FORM_KEY`, then `APP_KEY`; a `base64:` prefix is decoded first |
-| `formLink.ttlMinutes` | How long a link stays valid (default 30) |
+| `formLink.ttlMinutes` | How long a link stays valid (default 30). Must be a positive number; otherwise `autoSubmitUrl()` throws a `RangeError` |
 | `formLink.baseUrl` | The scheme and host links start with. Defaults to `APP_URL`; without it links are relative |
 
 Don't put authentication guards on the form route: the customer may arrive from a gateway or another device.

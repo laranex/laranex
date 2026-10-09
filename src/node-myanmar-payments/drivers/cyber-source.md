@@ -84,7 +84,7 @@ try {
 }
 ```
 
-A post whose `signed_field_names` lists a field that is missing fails verification.
+A post whose `signed_field_names` lists a field that is missing fails verification. Only signed fields are trusted: `decision` and `req_reference_number` must be listed in `signed_field_names`, and fields outside that list are ignored, so nobody can add a `decision` to a signature taken from another form.
 
 ## Responses
 
@@ -127,12 +127,12 @@ What CyberSource puts in each field. See [Results](/node-myanmar-payments/refere
 | `orderId` | CyberSource `req_reference_number` (your `orderId`) |
 | `status` | `decision` mapped, see [Statuses](#statuses) |
 | `gatewayStatus` | CyberSource `decision`, trimmed and uppercased, e.g. `ACCEPT` |
-| `gatewayReference` | CyberSource `transaction_id` |
-| `amount` | CyberSource `auth_amount`, falling back to `req_amount`, e.g. `10.50` |
-| `raw` | The verified post: `decision`, `reason_code`, `message`, `transaction_id`, `req_reference_number`, `req_amount`, `req_currency`, `auth_amount`, `signed_field_names`, `signature` and the other fields CyberSource sends |
+| `gatewayReference` | CyberSource `transaction_id`, when signed |
+| `amount` | CyberSource `auth_amount`, falling back to `req_amount` (signed fields only), e.g. `10.50` |
+| `raw` | The signed fields of the post (those listed in `signed_field_names`, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `req_reference_number`, `req_amount`, `req_currency`, `auth_amount`, `signed_field_names`) plus `signature`. Unsigned fields are left out |
 | `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
-Errors: `SignatureVerificationError` when `signature` does not match or a field listed in `signed_field_names` is missing.
+Errors: `SignatureVerificationError` when `signature` does not match, a field listed in `signed_field_names` is missing, or `decision` or `req_reference_number` is not signed.
 
 ## Statuses
 

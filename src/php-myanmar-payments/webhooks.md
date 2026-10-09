@@ -54,8 +54,12 @@ CREATE INDEX payment_webhooks_order ON payment_webhooks (gateway, order_id, stat
 
 ## Configuration
 
+Put the shared setup in `bootstrap.php`; both scripts below require it.
+
 ```php
 <?php
+
+// bootstrap.php
 
 require __DIR__.'/vendor/autoload.php';
 

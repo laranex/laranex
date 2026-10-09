@@ -36,7 +36,8 @@ Route::post('/payments/kbz/callback', function (Request $request) {
 
     $order = Order::where('reference', $callback->orderId)->firstOrFail();
 
-    if ($callback->isSuccessful() && ! $order->isPaid() && (int) $callback->amount === $order->amount) {
+    // $order->amount is a string such as "1000"; compare strings, never floats
+    if ($callback->isSuccessful() && ! $order->isPaid() && $callback->amount === $order->amount) {
         $order->markAsPaid($callback->gatewayReference);
     }
 
@@ -49,7 +50,7 @@ Gateways post from their own servers, so exclude callback routes from CSRF verif
 ## Rules
 
 - **Verify, then trust.** A callback that fails verification throws `SignatureVerificationException`. Never act on its payload; it carries the unverified data in `$e->raw` for logging only.
-- **Check the amount.** Compare `$callback->amount` (as the gateway sent it, a string) with your order before fulfilling.
+- **Check the amount.** Compare `$callback->amount` (as the gateway sent it, a string) with your order before fulfilling. A gateway may format it differently from your order (`1000` or `1000.00`); the `sameAmount()` helper in [Handling Webhooks](/laravel-myanmar-payments/webhooks#job) compares decimal strings exactly.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 - **Acknowledge.** `MyanmarPayments::acknowledge($callback)` returns the response the gateway expects, e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
 

@@ -58,12 +58,12 @@ Signatures are checked against what the gateway actually sent, so build the requ
 
 | Factory | Use when |
 |---|---|
-| `await CallbackRequest.fromNodeRequest(req)` | `node:http`, Express (`req`), Fastify (`request.raw`), Koa (`ctx.req`). Reads the raw body from the stream, or from `req.rawBody` / `req.body` when middleware captured it as text or bytes |
+| `await CallbackRequest.fromNodeRequest(req)` | `node:http`, Express (`req`), Koa (`ctx.req`, without a body parser). Reads the raw body from the stream, or from `req.rawBody` / `req.body` when middleware captured it as text or bytes |
 | `await CallbackRequest.fromWebRequest(request)` | A Fetch API `Request`: Next.js route handlers, Hono, Bun, Deno, Cloudflare Workers. Reads a clone, so the request stays readable |
 | `CallbackRequest.fromJson(payload, headers?)` | Replaying a payload you stored as decoded JSON, e.g. from a queue or a failed-callback table |
-| `CallbackRequest.from({ body, headers, query })` | Any other server: pass the raw body (string or bytes), headers and query (string, `URLSearchParams` or object) |
+| `CallbackRequest.from({ body, headers, query })` | Fastify and any other server: pass the raw body (string or bytes), headers and query (string, `URLSearchParams` or object) |
 
-When a body parser such as `express.json()` already consumed the stream, `fromNodeRequest` encodes the parsed `req.body` again as JSON or a form. That works for every gateway, but the raw body is exact, so prefer [`express.raw()` on callback routes](/node-myanmar-payments/framework-integration#express).
+When a body parser such as `express.json()` already consumed the stream, `fromNodeRequest` encodes the parsed `req.body` again as JSON or a form. That usually verifies, but a JSON number such as `1000.50` comes back as `1000.5` and breaks a signature over the exact text, so prefer [`express.raw()` on callback routes](/node-myanmar-payments/framework-integration#express).
 
 | Member | Description |
 |---|---|

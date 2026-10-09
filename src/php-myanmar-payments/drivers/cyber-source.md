@@ -65,7 +65,7 @@ echo $payment->toHtml(); // posts the signed form to CyberSource on load
 | `callbackUrl` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters; CyberSource may require HTTPS in production |
 | `returnUrl` | `?string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `cancelUrl` | `?string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
-| `currency` | `string` | No | Any ISO 4217 code (CyberSource is multi-currency), default `MMK` |
+| `currency` | `string` | No | Any three-letter uppercase ISO 4217 code (CyberSource is multi-currency), default `MMK` |
 | `transactionType` | `CyberSourceTransactionType` | No | `Sale` (default), `Authorization`, `SaleAndCreateToken` or `AuthorizationAndCreateToken` |
 | `locale` | `string` | No | Hosted page language as a CyberSource locale code such as `en-us`, default `en-us` |
 
@@ -73,7 +73,7 @@ For decimal amounts or another currency, pass an [`Amount`](/php-myanmar-payment
 
 ## Handling Callbacks
 
-CyberSource posts a form to `callbackUrl`. The same check works for the browser post to your receipt page.
+CyberSource posts a form to `callbackUrl`. The same check works for the browser post to your receipt page. `decision` and `req_reference_number` must be listed in `signed_field_names`, or the post is rejected with `SignatureVerificationException`; `transaction_id` and the amount are read only when signed. An unsigned extra field, such as `decision=ACCEPT` added to a re-posted checkout form, can't change the result.
 
 ```php
 // cybersource/callback.php
@@ -131,8 +131,8 @@ What CyberSource puts in each property. See [Results](/php-myanmar-payments/refe
 | `status` | `decision` mapped, see [Statuses](#statuses) |
 | `gatewayStatus` | CyberSource `decision`, uppercased, e.g. `ACCEPT` |
 | `gatewayReference` | CyberSource `transaction_id` |
-| `amount` | CyberSource `auth_amount`, falling back to `req_amount`, e.g. `20000.00` |
-| `raw` | The verified post, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `auth_amount`, `req_reference_number`, `req_amount`, `req_currency`, `signed_field_names`, `signature` |
+| `amount` | CyberSource `auth_amount`, falling back to `req_amount` when it is missing or empty, e.g. `20000.00` |
+| `raw` | The signed fields of the verified post plus `signature`, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `auth_amount`, `req_reference_number`, `req_amount`, `req_currency`, `signed_field_names`. Fields not listed in `signed_field_names` are dropped |
 | `acknowledgement()` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
 ## Statuses

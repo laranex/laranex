@@ -11,7 +11,7 @@ v4 is a rewrite on top of [`laranex/php-myanmar-payments`](/php-myanmar-payments
 
 ### Requirements
 
-PHP 8.1+ and Laravel 10 to 13. The package now requires `guzzlehttp/guzzle` ^7.5.
+PHP 8.1+ and Laravel 10 to 13. The package now requires `guzzlehttp/guzzle` ^7.4 or ^8.
 
 ```bash
 composer require laranex/laravel-myanmar-payments:^4.0

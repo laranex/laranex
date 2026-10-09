@@ -66,8 +66,15 @@ The package ships ES modules and CommonJS with type declarations, like the SDK. 
 | `MyanmarPaymentsService` | `kbzPay()`, `waveMoney()`, `ayaPay()`, `yomaMmqr()`, `cyberSource()`, `gateway(name)`, `handleCallback()`, `autoSubmitUrl()`, `resolveFormPayment()`, `tokenCache` |
 | `@InjectKbzPay()`, `@InjectWaveMoney()`, `@InjectAyaPay()`, `@InjectYomaMmqr()`, `@InjectCyberSource()` | Inject one SDK gateway |
 | `@VerifiedCallback()`, `@AcknowledgeCallback()`, `@RawCallback()` | Callback decorators; see [Callbacks](/nestjs-myanmar-payments/callbacks) |
+| `VerifiedCallbackPipe`, `CallbackRequestPipe`, `AcknowledgementInterceptor` | The pipes and the interceptor behind those decorators, for use with `@UsePipes()` / `@UseInterceptors()` directly |
 | `callbackRequestFrom()`, `acknowledge()` | Callback helpers for handlers that use `@Req()` and `@Res()` |
-| `CacheManagerTokenCache` | The Yoma token cache over `@nestjs/cache-manager` |
+| `NestRequestLike`, `FastifyReplyLike` | The request and reply shapes those helpers accept (types) |
+| `FormPaymentController` | The auto-submit form route's controller; the module mounts it at `formRoute.path` |
+| `CacheManagerTokenCache`, `CacheManagerLike` | The Yoma token cache over `@nestjs/cache-manager`, and the cache shape it needs |
 | `GATEWAY_NAMES`, `GatewayName` | `'kbz-pay'`, `'wave-money'`, `'aya-pay'`, `'yoma-mmqr'`, `'cyber-source'` |
+| `MyanmarPaymentsGateway` | `KbzPay \| WaveMoney \| AyaPay \| YomaMmqr \| CyberSource`, what `gateway(name)` returns (type) |
+| `MYANMAR_PAYMENTS_OPTIONS`, `KBZ_PAY`, `WAVE_MONEY`, `AYA_PAY`, `YOMA_MMQR`, `CYBER_SOURCE` | Injection tokens of the options and of each gateway |
+| `DEFAULT_FORM_PATH`, `DEFAULT_FORM_TTL_MINUTES` | `'myanmar-payments/form'` and `30` |
+| `MyanmarPaymentsModuleOptions`, `MyanmarPaymentsModuleExtras`, `MyanmarPaymentsModuleRootOptions`, `MyanmarPaymentsModuleAsyncOptions`, `MyanmarPaymentsOptionsFactory`, `FormLinkOptions`, `FormRouteOptions`, `ConfigReader` | Option types; see [Configuration](/nestjs-myanmar-payments/configuration) |
 
 Everything about payments themselves (`Amount`, payment data, results, `PaymentCallback`, `PaymentStatus`, errors) is imported from `@laranex/myanmar-payments`.

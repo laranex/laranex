@@ -47,7 +47,7 @@ Money::of('2')->percentageOf(Money::of('3'), 4); // "66.6667"
 Money::of('50')->ratioOf($price);            // "0.2500"
 ```
 
-`percent()`, `addPercent()` and `subtractPercent()` round once, on the percentage. `percentageOf(Money $total, int $scale = 2)` and `ratioOf(Money $other, int $scale = 4)` return decimal strings rounded to `$scale` decimals.
+`percent()`, `addPercent()` and `subtractPercent()` round once, on the percentage. `percentageOf(Money $total, int $scale = 2, ?Rounding $rounding = null)` and `ratioOf(Money $other, int $scale = 4, ?Rounding $rounding = null)` return decimal strings rounded to `$scale` decimals. Both throw an `InvalidMoneyException` when the other amount is zero or `$scale` is negative, and a `CurrencyMismatchException` for another currency.
 
 ## Splitting and allocating
 

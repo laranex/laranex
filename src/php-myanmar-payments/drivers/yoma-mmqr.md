@@ -120,7 +120,7 @@ What Yoma MMQR puts in each property. See [Results](/php-myanmar-payments/refere
 | `qrImage` | Yoma `qrString`, a base64 PNG to display as is. Always set |
 | `expiresAt` | Now + 120 seconds (`YomaMmqr::QR_LIFETIME_SECONDS`). Always set |
 | `reference` | Yoma `refLabel`, used by `status()`. Always set |
-| `raw` | The `qr/generate` response, e.g. `refLabel`, `qrString`, `errorCode` |
+| `raw` | The `qr/generate` response: `refLabel`, `qrString`, `errorCode` (`null`), `errorDescription` |
 | `qrImageDataUri()` | `data:image/png;base64,…` |
 
 `initiate()` checks the order out, then generates the QR; the result comes from the generate call.
@@ -138,7 +138,7 @@ The same values as [`initiate()`](#initiate-response), from a new generate call:
 | `gatewayStatus` | Yoma `paymentStatus`, e.g. `SUCCESS`, or `QR EXPIRED` |
 | `gatewayReference` | Yoma `refLabel`, or the reference you passed. Always set |
 | `amount` | Always `null`: Yoma doesn't return it |
-| `raw` | The `payment/check-status` response, e.g. `refLabel`, `paymentStatus`, `errorCode` |
+| `raw` | The `payment/check-status` response: `refLabel`, `paymentStatus`, `errorCode`, `errorDescription` |
 
 ### `handleCallback()` → `PaymentCallback` {#handlecallback-response}
 

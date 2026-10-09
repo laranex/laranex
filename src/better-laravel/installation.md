@@ -31,3 +31,16 @@ The package registers one generator command per unit.
 | `better:job {job} {domain} [--queue] [--force]` | `app/Domains/{Domain}/Jobs/{Name}Job.php` |
 
 Each command exits with `0` when the file is generated and `1` when generation fails, for example when the file already exists and `--force` was not given, or when a name contains `/` or `\` (nested names such as `Blog/CreatePost` are not supported).
+
+## Facade
+
+The `BetterLaravel` facade exposes the helper the service provider uses to discover route files.
+
+```php
+use Laranex\BetterLaravel\Facades\BetterLaravel;
+
+// Every .php file under routes/api, recursively, as absolute paths in sorted order
+$files = BetterLaravel::getAllFilesOfADirectory(base_path('routes/api'), 'php');
+```
+
+`getAllFilesOfADirectory(string $directory, string $extension = '')` returns an empty array when the directory does not exist, and every file when `$extension` is empty.
