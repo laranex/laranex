@@ -43,6 +43,6 @@ Returned by `kbzPay()->status()`, `ayaPay()->status()` and `yomaMmqr()->status()
 | `PaymentStatus::Successful` | `successful` | `true` |
 | `PaymentStatus::Pending` | `pending` | `false` |
 | `PaymentStatus::Failed` | `failed` | `true` |
-| `PaymentStatus::Cancelled` | `cancelled` | `true` |
+| `PaymentStatus::Canceled` | `canceled` | `true` |
 | `PaymentStatus::Expired` | `expired` | `true` |
 | `PaymentStatus::Unknown` | `unknown` | `false` |

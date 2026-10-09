@@ -14,7 +14,7 @@ use Laranex\LaravelMoney\Money;
 use Laranex\LaravelMoney\Rounding;
 
 Money::of('1234.50', 'USD');     // from a decimal string
-Money::of('1,234.50');           // commas and spaces may group thousands; default currency
+Money::of('1,234.50');           // one comma or space separator may group thousands; default currency
 Money::of(1234, 'JPY');          // an int is a whole amount: 1234 JPY
 Money::ofMinor(123450, 'USD');   // from minor units (cents): 1234.50 USD
 Money::zero('KWD');              // 0.000 KWD
@@ -37,6 +37,18 @@ Money::of('2.5', 'JPY', Rounding::HalfEven);  // 2 JPY
 ```
 
 Only ASCII digits, an optional sign, one dot as the decimal separator and grouping commas or spaces are accepted. `"12,50"` is rejected rather than read as 1250, and localized digits such as `"၁၂၃"` or `"١٢٣"` are rejected too; normalize user input before parsing it.
+
+Grouping must be consistent. Plain digits (`"1234567.89"`) are always fine; a grouped amount uses one separator throughout (a comma, a space, a no-break space or a narrow no-break space), in Western groups of three or in Indian grouping, where the last group has three digits and earlier groups two:
+
+```php
+Money::of('1,234,567.89');   // Western grouping
+Money::of('12,34,567.89');   // Indian grouping
+Money::of('1 234 567.89');   // spaces
+
+Money::of('1 234,567');      // MoneyParseException: mixed separators
+Money::of('1,234,56,789');   // MoneyParseException: irregular groups
+Money::of('1.234.567,89');   // MoneyParseException: the decimal separator is always a dot
+```
 
 ### No floats
 
@@ -178,4 +190,4 @@ Every exception extends `Laranex\LaravelMoney\Exceptions\MoneyException`, which 
 | `MoneyParseException` | an amount can't be parsed, or has more decimals than the currency allows |
 | `UnknownCurrencyException` | a currency (or the default currency) isn't ISO 4217 or configured |
 | `CurrencyMismatchException` | amounts in different currencies are combined or compared, or a cast gets the wrong currency. The message names both amounts |
-| `InvalidMoneyException` | a float is passed, division by zero, invalid ratios, a negative scale, a value a cast can't store, or invalid config |
+| `InvalidMoneyException` | a float is passed, division by zero, invalid ratios, a scale or `roundTo()` decimals outside the `Money::MAX_SCALE` bounds, a value a cast can't store, or invalid config |

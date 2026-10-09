@@ -66,14 +66,14 @@ Returned by `kbz.status()`, `aya.status()` and `yoma.status()`.
 
 ## PaymentStatus
 
-`type PaymentStatus = 'successful' | 'pending' | 'failed' | 'cancelled' | 'expired' | 'unknown'`
+`type PaymentStatus = 'successful' | 'pending' | 'failed' | 'canceled' | 'expired' | 'unknown'`
 
 | Constant | Value |
 |---|---|
 | `PaymentStatus.Successful` | `successful` |
 | `PaymentStatus.Pending` | `pending` |
 | `PaymentStatus.Failed` | `failed` |
-| `PaymentStatus.Cancelled` | `cancelled` |
+| `PaymentStatus.Canceled` | `canceled` |
 | `PaymentStatus.Expired` | `expired` |
 | `PaymentStatus.Unknown` | `unknown` |
 

@@ -142,5 +142,5 @@ What CyberSource puts in each property. See [Results](/php-myanmar-payments/refe
 | `ACCEPT` | `Successful` |
 | `REVIEW` | `Pending` |
 | `DECLINE`, `ERROR` | `Failed` |
-| `CANCEL` | `Cancelled` |
+| `CANCEL` | `Canceled` |
 | anything else | `Unknown` |

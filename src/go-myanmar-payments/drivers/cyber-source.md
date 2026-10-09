@@ -153,5 +153,5 @@ Errors: `*SignatureVerificationError` when `signature` does not match, a field l
 | `ACCEPT` | `StatusSuccessful` |
 | `REVIEW` | `StatusPending` |
 | `DECLINE`, `ERROR` | `StatusFailed` |
-| `CANCEL` | `StatusCancelled` |
+| `CANCEL` | `StatusCanceled` |
 | anything else | `StatusUnknown` |

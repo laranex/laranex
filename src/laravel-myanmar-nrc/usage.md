@@ -41,7 +41,7 @@ $states = State::query()->with('townships')->orderBy('code')->get();
 $townships = app(\Laranex\LaravelMyanmarNRC\Repositories\JsonNrcRepository::class)->townships();
 ```
 
-Each row has `id`, `code`, `code_mm`, `name` and `name_mm`; townships also have `nrc_state_id`.
+Each row has `id`, `code`, `code_my`, `name` and `name_my`; townships also have `nrc_state_id`.
 
 ## Validation
 
@@ -59,7 +59,7 @@ Pass `dbDriven` to choose the backend for this rule only:
 new MyanmarNRC(dbDriven: false); // validate against the JSON file
 ```
 
-The error message comes from the package translations (`en` and `mm`). Override it with the usual custom messages array, keyed by the rule class:
+The error message comes from the package translations (`en` and `my`). Override it with the usual custom messages array, keyed by the rule class:
 
 ```php
 $request->validate(
@@ -74,7 +74,7 @@ $request->validate(
 use Laranex\LaravelMyanmarNRC\Facades\MyanmarNrc;
 
 MyanmarNrc::parse('12-284-1-123456');             // "12/DAGAYA(N)123456"
-MyanmarNrc::parse('12-284-1-123456', lang: 'mm');  // "၁၂/ဒဂရ(နိုင်)၁၂၃၄၅၆"
+MyanmarNrc::parse('12-284-1-123456', lang: 'my');  // "၁၂/ဒဂရ(နိုင်)၁၂၃၄၅၆"
 MyanmarNrc::isValid('12-284-1-123456');           // true
 ```
 
@@ -84,7 +84,7 @@ MyanmarNrc::isValid('12-284-1-123456');           // true
 |---|---|---|
 | `$nrc` | | NRC in the ID format above |
 | `$dbDriven` | config `db_driven` | Use the database (`true`) or the JSON file (`false`) |
-| `$lang` | config `locale` | `en` or `mm` |
+| `$lang` | config `locale` | `en` or `my` |
 
 `parse()` returns `State/Township(Type)Number`. `isValid(string $nrc, ?bool $dbDriven = null): bool` returns a boolean instead.
 
@@ -95,7 +95,7 @@ The facade resolves `Laranex\LaravelMyanmarNRC\MyanmarNrc`, which is bound as a 
 | Exception | Thrown when |
 |---|---|
 | `InvalidNrcException` | The NRC is malformed, an ID doesn't exist, or the township doesn't belong to the state |
-| `UnsupportedLocaleException` | `$lang` is not `en` or `mm` |
+| `UnsupportedLocaleException` | `$lang` is not `en` or `my` |
 | `InvalidJsonFileException` | The JSON file is missing or doesn't contain `types` and `states` arrays |
 
 All three live in `Laranex\LaravelMyanmarNRC\Exceptions`. `InvalidNrcException` and `UnsupportedLocaleException` extend `InvalidArgumentException`; `InvalidJsonFileException` extends `RuntimeException`.
@@ -121,7 +121,7 @@ Both backends implement `Laranex\LaravelMyanmarNRC\Repositories\NrcRepository`, 
 
 ```php
 MyanmarNrc::repository()->township(284)?->code;      // backend from config
-MyanmarNrc::repository(false)->state(12)?->name_mm;  // JSON backend
+MyanmarNrc::repository(false)->state(12)?->name_my;  // JSON backend
 ```
 
 | Class | Reads from |

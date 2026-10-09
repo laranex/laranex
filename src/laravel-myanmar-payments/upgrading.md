@@ -5,6 +5,17 @@ description: Upgrade Laravel Myanmar Payments from v2.2.7 to v4.0.0. New facade 
 
 # Upgrading
 
+## From a v4 pre-release
+
+If you installed `v4.0.0-alpha.1`, one status was renamed to American English, with no alias:
+
+| v4.0.0-alpha.1 | v4.0.0 |
+|---|---|
+| `PaymentStatus::Cancelled` | `PaymentStatus::Canceled` |
+| `'cancelled'` (enum value) | `'canceled'` |
+
+Update code that references the case, and any statuses you stored as `'cancelled'`. Gateway status literals keep their spelling: Wave Money still sends `PAYMENT_REQUEST_CANCELLED`, and it still maps to `PaymentStatus::Canceled`.
+
 ## From v2.2.7 to v4.0.0
 
 v4 is a rewrite on top of [`laranex/php-myanmar-payments`](/php-myanmar-payments/introduction). The rewrite was developed as v3, but v3 was never released: upgrade straight from v2.2.7 to v4.0.0. Every gateway now takes a typed request object and returns a typed result, and every exception extends `PaymentException`.

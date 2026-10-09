@@ -20,7 +20,7 @@ import (
 manager := moneyfacades.Money() // *money.Manager
 
 price, err := manager.Parse("1234.50", "USD")          // from a decimal string
-price, err = manager.Parse("1,234.50", "")             // commas and spaces may group thousands; default currency
+price, err = manager.Parse("1,234.50", "")             // one comma or space separator may group thousands; default currency
 yen, err := manager.Parse("1234", "JPY")               // a whole amount: 1234 JPY
 cents, err := manager.Make(123450, "USD")              // from int64 minor units: 1234.50 USD
 huge, err := manager.OfMinor("99999999999999999999", "USD") // minor units of any size
@@ -52,7 +52,19 @@ manager.Parse("1.235", "USD", money.HalfUp) // 1.24 USD
 manager.Parse("2.5", "JPY", money.HalfEven) // 2 JPY
 ```
 
-Only digits, an optional sign, one dot as the decimal separator, and commas or spaces grouping thousands (`"1,234,567.89"`, `"12,34,567.00"`, `"1 234.50"`) are accepted. `"12,50"`, `".5"`, `"5."`, `"1e3"` and `"$10"` return `money.ErrInvalidDecimal` rather than guessing.
+Only ASCII digits, an optional sign, one dot as the decimal separator, and commas or spaces grouping thousands (`"1,234,567.89"`, `"12,34,567.00"`, `"1 234.50"`) are accepted. `"12,50"`, `".5"`, `"5."`, `"1e3"` and `"$10"` return `money.ErrInvalidDecimal` rather than guessing.
+
+Grouping must be consistent. Plain digits (`"1234567.89"`) are always fine; a grouped amount uses one separator throughout (a comma, a space, a no-break space or a narrow no-break space), in Western groups of three or in Indian grouping, where the last group has three digits and earlier groups two:
+
+```go
+money.Parse("1,234,567.89", usd) // Western grouping
+money.Parse("12,34,567.89", usd) // Indian grouping
+money.Parse("1 234 567.89", usd) // spaces
+
+money.Parse("1 234,567", usd)    // ErrInvalidDecimal: mixed separators
+money.Parse("1,234,56,789", usd) // ErrInvalidDecimal: irregular groups
+money.Parse("1.234.567,89", usd) // ErrInvalidDecimal: the decimal separator is always a dot
+```
 
 ### Custom currencies
 
@@ -182,4 +194,4 @@ The typed errors mirror Laravel Money's exceptions:
 | `*money.ParseError` | `MoneyParseException` | `ErrInvalidDecimal` (malformed), `ErrTooManyDecimals` (more decimals than the currency allows) |
 | `*money.UnknownCurrencyError` | `UnknownCurrencyException` | `ErrUnknownCurrency`: not ISO 4217 or configured; `Default` is true for the default currency |
 | `*money.CurrencyMismatchError` | `CurrencyMismatchException` | `ErrCurrencyMismatch`: different currencies combined, compared or stored. The message names both amounts |
-| `*money.InvalidMoneyError` | `InvalidMoneyException` | `ErrInvalidOperand` (floats, wrong types), `ErrDivisionByZero`, `ErrInvalidAllocation`, `ErrEmptyAggregate`, `ErrOverflow`, `ErrInvalidStoredAmount`, `ErrInvalidConfig` |
+| `*money.InvalidMoneyError` | `InvalidMoneyException` | `ErrInvalidOperand` (floats, wrong types, a scale or `RoundTo` decimals outside the `MaxScale` bounds), `ErrDivisionByZero`, `ErrInvalidAllocation`, `ErrEmptyAggregate`, `ErrOverflow`, `ErrInvalidStoredAmount`, `ErrInvalidConfig` |

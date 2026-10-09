@@ -54,7 +54,7 @@ Returned by `kbzpay.Status`, `ayapay.Status` and `yomammqr.Status`.
 | `StatusSuccessful` | `successful` |
 | `StatusPending` | `pending` |
 | `StatusFailed` | `failed` |
-| `StatusCancelled` | `cancelled` |
+| `StatusCanceled` | `canceled` |
 | `StatusExpired` | `expired` |
 | `StatusUnknown` | `unknown` |
 

@@ -47,7 +47,7 @@ Money::of('2')->percentageOf(Money::of('3'), 4); // "66.6667"
 Money::of('50')->ratioOf($price);            // "0.2500"
 ```
 
-`percent()`, `addPercent()` and `subtractPercent()` round once, on the percentage. `percentageOf(Money $total, int $scale = 2, ?Rounding $rounding = null)` and `ratioOf(Money $other, int $scale = 4, ?Rounding $rounding = null)` return decimal strings rounded to `$scale` decimals. Both throw an `InvalidMoneyException` when the other amount is zero or `$scale` is negative, and a `CurrencyMismatchException` for another currency.
+`percent()`, `addPercent()` and `subtractPercent()` round once, on the percentage. `percentageOf(Money $total, int $scale = 2, ?Rounding $rounding = null)` and `ratioOf(Money $other, int $scale = 4, ?Rounding $rounding = null)` return decimal strings rounded to `$scale` decimals. `$scale` must be between 0 and `Money::MAX_SCALE` (100), so no call can force a huge computation. Both throw an `InvalidMoneyException` when the other amount is zero or `$scale` is outside that range, and a `CurrencyMismatchException` for another currency.
 
 ## Splitting and allocating
 
@@ -73,7 +73,7 @@ Money::of('12.34')->roundTo(1, Rounding::Ceiling);     // 12.40
 Money::of('15', 'JPY')->roundTo(-1);                   // 20
 ```
 
-`roundTo()` keeps the currency's precision (the result is still stored in minor units), so it's useful for cash rounding or whole-unit prices.
+`roundTo()` keeps the currency's precision (the result is still stored in minor units), so it's useful for cash rounding or whole-unit prices. `$decimals` must be between `-Money::MAX_SCALE` and `Money::MAX_SCALE` (-100 to 100); anything else throws an `InvalidMoneyException`.
 
 | `Rounding` case | Config value | 2.5 | -2.5 | 2.4 |
 |---|---|---|---|---|
