@@ -96,10 +96,6 @@ Route::post('/payments/yoma/callback', function (Request $request) {
 
 The callback URL is registered with Yoma, not sent per order. When `YOMA_MMQR_WEBHOOK_SECRET` is set, callbacks must carry it in the `X-Webhook-Secret` header. The hash is checked with HMAC-SHA256 keyed with your order number plus `YOMA_MMQR_WEBHOOK_HASHKEY`.
 
-::: warning
-Yoma's specification does not name the hash algorithm; HMAC-SHA256 is inferred from its sample. Confirm it with Yoma before going live.
-:::
-
 ## QR Lifetime and Renewal
 
 A QR is payable for 120 seconds (`YomaMmqr::QR_LIFETIME_SECONDS`); `$payment->expiresAt` tells you when. Yoma accepts each order number **once**, so never call `initiate()` again for the same order. Renew the QR instead:

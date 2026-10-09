@@ -119,10 +119,6 @@ callback.Acknowledgement.Write(w)
 
 The callback URL is registered with Yoma, not sent per order. When `WebhookSecret` is configured, callbacks must carry it in the `X-Webhook-Secret` header. The hash is checked with HMAC-SHA256 keyed with your order number plus `WebhookHashKey`.
 
-::: warning
-Yoma's specification does not name the hash algorithm; HMAC-SHA256 is inferred from its sample. Confirm it with Yoma before going live.
-:::
-
 ## QR Lifetime and Renewal
 
 A QR is payable for 120 seconds (`yomammqr.QRLifetime`); `payment.ExpiresAt` tells you when. Yoma accepts each order number **once**, so never call `Initiate` again for the same order. Renew the QR instead:
