@@ -10,5 +10,5 @@ github: https://github.com/laranex/laravel-myanmar-payments
 head:
   - - meta
     - http-equiv: refresh
-      content: '0;url=./introduction.html'
+      content: '0;url=/laravel-myanmar-payments/introduction.html'
 ---

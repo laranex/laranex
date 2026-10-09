@@ -8,5 +8,5 @@ github: https://github.com/laranex/better-laravel
 head:
   - - meta
     - http-equiv: refresh
-      content: '0;url=./introduction.html'
+      content: '0;url=/better-laravel/introduction.html'
 ---

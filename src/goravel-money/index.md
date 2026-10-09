@@ -9,5 +9,5 @@ install: go get github.com/laranex/goravel-money/v4
 head:
   - - meta
     - http-equiv: refresh
-      content: '0;url=./introduction.html'
+      content: '0;url=/goravel-money/introduction.html'
 ---

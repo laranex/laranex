@@ -10,5 +10,5 @@ install: npm install @laranex/nestjs-myanmar-payments@next
 head:
   - - meta
     - http-equiv: refresh
-      content: '0;url=./introduction.html'
+      content: '0;url=/nestjs-myanmar-payments/introduction.html'
 ---

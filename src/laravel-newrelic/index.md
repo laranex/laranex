@@ -11,5 +11,5 @@ github: https://github.com/laranex/laravel-newrelic
 head:
   - - meta
     - http-equiv: refresh
-      content: '0;url=./introduction.html'
+      content: '0;url=/laravel-newrelic/introduction.html'
 ---

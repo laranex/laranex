@@ -9,5 +9,5 @@ install: npm install @laranex/myanmar-payments
 head:
   - - meta
     - http-equiv: refresh
-      content: '0;url=./introduction.html'
+      content: '0;url=/node-myanmar-payments/introduction.html'
 ---

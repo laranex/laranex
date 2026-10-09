@@ -9,5 +9,5 @@ install: go get github.com/laranex/go-myanmar-payments/v4
 head:
   - - meta
     - http-equiv: refresh
-      content: '0;url=./introduction.html'
+      content: '0;url=/go-myanmar-payments/introduction.html'
 ---
