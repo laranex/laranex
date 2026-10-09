@@ -422,12 +422,10 @@ body {
   position: relative;
 }
 
-.lx-link-btn,
 .lx-btn {
   transform: translateZ(0);
 }
 
-.lx-link-btn:active,
 .lx-btn:active,
 .lx-filter:active {
   transform: scale(0.97);
@@ -610,32 +608,6 @@ body {
 .lx-registry-main {
   flex: 1;
   min-width: 0;
-}
-
-.lx-registry-side {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.lx-link-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 7px 14px;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 550;
-  color: var(--vp-c-text-1);
-  text-decoration: none;
-  white-space: nowrap;
-  transition: color 0.2s, border-color 0.2s, background-color 0.2s;
-}
-
-.lx-link-btn:hover {
-  border-color: var(--lx-jade);
-  color: var(--vp-c-brand-1);
-  background: var(--lx-jade-soft);
 }
 
 /* Small screens */
