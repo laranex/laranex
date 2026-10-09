@@ -7,8 +7,4 @@ requirements:
   - ext-ctype
   - ext-json
 github: https://github.com/laranex/laravel-myanmar-nrc
-head:
-  - - meta
-    - http-equiv: refresh
-      content: '0;url=/laravel-myanmar-nrc/introduction.html'
 ---

@@ -6,8 +6,4 @@ requirements:
   - No runtime dependencies
 github: https://github.com/laranex/node-myanmar-payments
 install: npm install @laranex/myanmar-payments
-head:
-  - - meta
-    - http-equiv: refresh
-      content: '0;url=/node-myanmar-payments/introduction.html'
 ---
