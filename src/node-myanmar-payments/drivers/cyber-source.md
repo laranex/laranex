@@ -141,5 +141,5 @@ Errors: `SignatureVerificationError` when `signature` does not match, a field li
 | `ACCEPT` | `successful` |
 | `REVIEW` | `pending` |
 | `DECLINE`, `ERROR` | `failed` |
-| `CANCEL` | `cancelled` |
+| `CANCEL` | `canceled` |
 | anything else | `unknown` |

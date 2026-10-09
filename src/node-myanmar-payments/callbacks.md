@@ -102,7 +102,7 @@ Every gateway's own status values are mapped onto one string union. The original
 | `PaymentStatus.Successful` | `successful` | The customer paid. The only status that means money was collected. |
 | `PaymentStatus.Pending` | `pending` | Still in progress or waiting on the customer. |
 | `PaymentStatus.Failed` | `failed` | Attempted and failed or rejected. |
-| `PaymentStatus.Cancelled` | `cancelled` | Canceled or closed before completing. |
+| `PaymentStatus.Canceled` | `canceled` | Canceled or closed before completing. |
 | `PaymentStatus.Expired` | `expired` | The payment window ran out. |
 | `PaymentStatus.Unknown` | `unknown` | A status this package does not recognize yet. Inspect `gatewayStatus`. |
 

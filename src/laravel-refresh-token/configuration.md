@@ -41,6 +41,8 @@ RefreshToken::refreshTokensExpireIn(now()->addDays(30));
 RefreshToken::loadKeysFrom(base_path('secrets'));
 ```
 
+The date must be in the future. A past date, or the current moment, throws an `InvalidArgumentException` and keeps the previous lifetime, because every token issued with it would already be expired.
+
 Called without an argument, `refreshTokensExpireIn()` returns the current lifetime as a `DateInterval`.
 
 ## Reading keys

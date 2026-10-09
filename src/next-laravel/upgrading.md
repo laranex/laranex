@@ -15,7 +15,7 @@ PHP 8.1+ and Laravel 10 to 13 (v1.1 supported Laravel 10 and 11).
 composer require laranex/next-laravel:^4.0
 ```
 
-The package no longer depends on `spatie/laravel-package-tools`; it requires only the `illuminate/*` components it uses. If your application relied on the package to pull in `spatie/laravel-package-tools`, require it yourself.
+The package no longer depends on `spatie/laravel-package-tools`; it requires `laravel/framework` (10 through 13), since it builds on framework-only classes such as `FormRequest`, `DispatchesJobs` and `ValidatesRequests`. If your application relied on the package to pull in `spatie/laravel-package-tools`, require it yourself.
 
 ## Commands
 

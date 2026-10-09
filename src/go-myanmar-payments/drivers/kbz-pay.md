@@ -183,7 +183,7 @@ Errors: `*SignatureVerificationError` when `sign` does not match.
 | `PAY_SUCCESS` | `StatusSuccessful` |
 | `WAIT_PAY`, `PAYING` | `StatusPending` |
 | `PAY_FAILED` | `StatusFailed` |
-| `ORDER_CLOSED` | `StatusCancelled` |
+| `ORDER_CLOSED` | `StatusCanceled` |
 | `ORDER_EXPIRED` | `StatusExpired` |
 | anything else | `StatusUnknown` |
 

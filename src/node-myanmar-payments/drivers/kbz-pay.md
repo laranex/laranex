@@ -176,7 +176,7 @@ Errors: `SignatureVerificationError` when `sign` does not match.
 | `PAY_SUCCESS` | `successful` |
 | `WAIT_PAY`, `PAYING` | `pending` |
 | `PAY_FAILED` | `failed` |
-| `ORDER_CLOSED` | `cancelled` |
+| `ORDER_CLOSED` | `canceled` |
 | `ORDER_EXPIRED` | `expired` |
 | anything else | `unknown` |
 

@@ -144,7 +144,7 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 | `PAYMENT_CONFIRMED` | `StatusSuccessful` |
 | `INSUFFICIENT_BALANCE` | `StatusPending` |
 | `ACCOUNT_LOCKED`, `BILL_COLLECTION_FAILED` | `StatusFailed` |
-| `PAYMENT_REQUEST_CANCELLED` | `StatusCancelled` |
+| `PAYMENT_REQUEST_CANCELLED` | `StatusCanceled` |
 | `TRANSACTION_TIMED_OUT`, `SCHEDULER_TRANSACTION_TIMED_OUT` | `StatusExpired` |
 | anything else | `StatusUnknown` |
 

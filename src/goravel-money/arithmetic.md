@@ -9,7 +9,7 @@ All arithmetic is exact: amounts are integers in minor units and the math uses `
 
 Wherever a method takes an operand, it accepts a `Money`, or a **decimal amount in the same currency** given as a string (`"2.50"`) or an integer (`2` means 2.00). Multipliers, divisors, percentages and ratios are decimal strings or integers. Floats are rejected with `money.ErrInvalidOperand`.
 
-Every method returns a new `Money`, and every method that can fail also returns an error (`Negated`, `Absolute` and `RoundTo` cannot); the examples below leave out the error for brevity.
+Every method returns a new `Money`, and every method that can fail also returns an error (`Negated` and `Absolute` cannot); the examples below leave out the error for brevity.
 
 ## Adding and subtracting
 
@@ -57,7 +57,7 @@ money.MustParse("2", usd).PercentageOf(money.MustParse("3", usd), 4)   // "66.66
 money.MustParse("50", usd).RatioOf(price, 4)                           // "0.2500"
 ```
 
-`Percent`, `AddPercent` and `SubtractPercent` round once, on the percentage. `PercentageOf(total, scale)` and `RatioOf(other, scale)` return decimal strings rounded to `scale` decimals; Laravel Money's defaults are 2 and 4.
+`Percent`, `AddPercent` and `SubtractPercent` round once, on the percentage. `PercentageOf(total, scale)` and `RatioOf(other, scale)` return decimal strings rounded to `scale` decimals; Laravel Money's defaults are 2 and 4. `scale` must be between 0 and `money.MaxScale` (100), so no call can force a huge computation; anything else returns `money.ErrInvalidOperand`.
 
 ## Splitting and allocating
 
@@ -90,7 +90,7 @@ money.MustParse("12.34", usd).RoundTo(1, money.Ceiling)  // 12.40
 money.MustParse("15", money.MustCurrency("JPY")).RoundTo(-1) // 20
 ```
 
-`RoundTo` keeps the currency's precision (the result is still stored in minor units), so it's useful for cash rounding or whole-unit prices. It returns `Money` only, without an error.
+`RoundTo` keeps the currency's precision (the result is still stored in minor units), so it's useful for cash rounding or whole-unit prices. `decimals` must be between `-money.MaxScale` and `money.MaxScale` (-100 to 100); anything else returns `money.ErrInvalidOperand`. Like the other methods, it returns the config error when no rounding is passed and the money config can't be loaded.
 
 | `money.Rounding` | Config value | 2.5 | -2.5 | 2.4 |
 |---|---|---|---|---|

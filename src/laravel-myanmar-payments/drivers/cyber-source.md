@@ -120,5 +120,5 @@ What CyberSource puts in each property. See [Results](/laravel-myanmar-payments/
 | `ACCEPT` | `Successful` |
 | `REVIEW` | `Pending` |
 | `DECLINE`, `ERROR` | `Failed` |
-| `CANCEL` | `Cancelled` |
+| `CANCEL` | `Canceled` |
 | anything else | `Unknown` |

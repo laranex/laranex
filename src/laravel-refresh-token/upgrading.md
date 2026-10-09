@@ -66,6 +66,15 @@ Tokens are now stored with `getMorphClass()`. If your app uses `Relation::morphM
 
 `createRefreshToken()` on a model without a key now throws a `LogicException`.
 
+## Token lifetime
+
+`RefreshToken::refreshTokensExpireIn()` now requires a date in the future. v1 accepted a past date, which made every newly issued token already expired; v4 throws an `InvalidArgumentException` for a past date or the current moment.
+
+```php
+RefreshToken::refreshTokensExpireIn(now()->addDays(30)); // OK
+RefreshToken::refreshTokensExpireIn(now()->subDay());    // throws InvalidArgumentException
+```
+
 ## Database
 
 Existing tables keep working. New installs get `id` as the primary key and an index on `refreshable_type` + `refreshable_id`. To add them to an existing table, write a migration of your own:

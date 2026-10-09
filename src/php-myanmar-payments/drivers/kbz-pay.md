@@ -165,7 +165,7 @@ What KBZ Pay puts in each property. See [Results](/php-myanmar-payments/referenc
 | `PAY_SUCCESS` | `Successful` |
 | `WAIT_PAY`, `PAYING` | `Pending` |
 | `PAY_FAILED` | `Failed` |
-| `ORDER_CLOSED` | `Cancelled` |
+| `ORDER_CLOSED` | `Canceled` |
 | `ORDER_EXPIRED` | `Expired` |
 | anything else | `Unknown` |
 
