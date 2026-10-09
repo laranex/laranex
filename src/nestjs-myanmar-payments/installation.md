@@ -34,15 +34,25 @@ Gateway signatures are computed over the exact bytes they send. Create the app w
 ```ts
 import { NestFactory } from '@nestjs/core';
 
+import { AppModule } from './app.module';
+
 const app = await NestFactory.create(AppModule, { rawBody: true });
 ```
 
 ```ts
-import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import { NestFactory } from '@nestjs/core';
+import {
+  FastifyAdapter,
+  type NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 
-const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), {
-  rawBody: true,
-});
+import { AppModule } from './app.module';
+
+const app = await NestFactory.create<NestFastifyApplication>(
+  AppModule,
+  new FastifyAdapter(),
+  { rawBody: true },
+);
 ```
 
 Without it the package falls back to the unread request stream (Express) or encodes the parsed body again. That still verifies for every gateway's documented payloads, but re-encoded JSON can change how numbers are written, so `rawBody: true` is the safe setting.

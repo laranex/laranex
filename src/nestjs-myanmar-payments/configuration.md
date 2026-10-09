@@ -58,8 +58,12 @@ Each gateway's credentials, endpoints and limits are described in the SDK's driv
 ## forRoot
 
 ```ts
+import { MyanmarPaymentsModule } from '@laranex/nestjs-myanmar-payments';
+
 MyanmarPaymentsModule.forRoot(); // process.env
-MyanmarPaymentsModule.forRoot({ env: { KBZ_PAY_APP_ID: '...', KBZ_PAY_APP_KEY: '...' } });
+MyanmarPaymentsModule.forRoot({
+  env: { KBZ_PAY_APP_ID: '...', KBZ_PAY_APP_KEY: '...' },
+});
 MyanmarPaymentsModule.forRoot({
   isGlobal: true,
   kbzPay: { appId: '...', appKey: '...', merchantCode: '...', sandbox: false },
@@ -71,6 +75,7 @@ MyanmarPaymentsModule.forRoot({
 With `@nestjs/config`, hand the `ConfigService` to `env`; the package reads each variable through `config.get()`, so values from `.env` files, `load` factories and validation all apply:
 
 ```ts
+import { MyanmarPaymentsModule } from '@laranex/nestjs-myanmar-payments';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 MyanmarPaymentsModule.forRootAsync({
@@ -84,6 +89,13 @@ MyanmarPaymentsModule.forRootAsync({
 `useClass` and `useExisting` take a class implementing `MyanmarPaymentsOptionsFactory`:
 
 ```ts
+import {
+  MyanmarPaymentsModule,
+  type MyanmarPaymentsModuleOptions,
+  type MyanmarPaymentsOptionsFactory,
+} from '@laranex/nestjs-myanmar-payments';
+import { Injectable } from '@nestjs/common';
+
 @Injectable()
 class PaymentsConfig implements MyanmarPaymentsOptionsFactory {
   createMyanmarPaymentsOptions(): MyanmarPaymentsModuleOptions {
@@ -121,6 +133,10 @@ The options object is available under the `MYANMAR_PAYMENTS_OPTIONS` token.
 Yoma MMQR uses OAuth access tokens. When `@nestjs/cache-manager`'s `CacheModule` is registered globally, or passed in `forRootAsync`'s `imports`, tokens are kept in that cache (`CacheManagerTokenCache`), so every instance that shares the store (Redis, for example) also shares the token. Otherwise each process keeps its own token in memory.
 
 ```ts
+import { MyanmarPaymentsModule } from '@laranex/nestjs-myanmar-payments';
+import { CacheModule } from '@nestjs/cache-manager';
+import { Module } from '@nestjs/common';
+
 @Module({
   imports: [
     CacheModule.register({ isGlobal: true }),

@@ -5,14 +5,16 @@ description: Integrate CyberSource Secure Acceptance card payments in Node.js. S
 
 # CyberSource
 
-| Method | Flow | Returns |
+CyberSource Secure Acceptance is a hosted checkout for card payments, in MMK or any other currency.
+
+| Call | What it does | Returns |
 |---|---|---|
 | `cs.initiate(data)` | Signed form posted to the hosted checkout | [`FormPayment`](#initiate-response) |
 | `cs.handleCallback(request)` | Verify the result post | [`PaymentCallback`](#handlecallback-response) |
 
-[Responses](#responses) shows what CyberSource puts in each result.
+CyberSource has no status API in this package: the callback is the only payment result.
 
-CyberSource has no status API in this package: rely on the callback.
+[Responses](#responses) shows what CyberSource puts in each result.
 
 ## How it works
 
@@ -36,59 +38,81 @@ CyberSource posts the result twice, to your backoffice URL and through the brows
 ## Initiating a Payment
 
 ```ts
-import { Amount } from '@laranex/myanmar-payments';
-import { CyberSource } from '@laranex/myanmar-payments/cyber-source';
+import {
+  CyberSource,
+  type CyberSourcePaymentData,
+} from '@laranex/myanmar-payments/cyber-source';
 
-const cs = new CyberSource({ profileId: '...', accessKey: '...', secretKey: '...' });
+const cs = new CyberSource({
+  profileId: '...',
+  accessKey: '...',
+  secretKey: '...',
+});
 
-const payment = cs.initiate({
-  orderId: `ORDER-${orderId}`,
-  amount: Amount.parse('10.50'),
-  currency: 'USD',
+const data: CyberSourcePaymentData = {
+  orderId: `ORDER_${order.id}`,
+  amount: 10000,
   callbackUrl: 'https://shop.test/payments/cybersource/callback',
   returnUrl: 'https://shop.test/payments/cybersource/receipt',
   cancelUrl: 'https://shop.test/checkout',
-});
-res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-res.end(payment.toHtml()); // posts the signed form to CyberSource on load
-```
+};
 
-`CyberSource` takes no HTTP options and `initiate()` is synchronous: CyberSource only signs fields and makes no HTTP calls.
+const payment = cs.initiate(data);
+
+// The page posts the signed form to CyberSource on load.
+res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+res.end(payment.toHtml());
+```
 
 ### CyberSourcePaymentData
 
 | Field | Type | Required | Rules |
 |---|---|---|---|
 | `orderId` | `string` | Yes | At most 50 characters, sent as `reference_number` |
-| `amount` | `Amount \| number \| bigint` | Yes | Order total in `currency`, 0 or more, any number of decimals, at most 15 characters |
+| `amount` | `Amount \| number \| bigint` | Yes | Order total in `currency`, 0 or more, any number of decimals, at most 15 characters, e.g. `10000` or `Amount.parse('10.50')` |
 | `callbackUrl` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters; CyberSource may require HTTPS in production |
 | `returnUrl` | `string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `cancelUrl` | `string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
-| `currency` | `string` | No | Any ISO 4217 code (CyberSource is multi-currency). Unset means `MMK` |
-| `transactionType` | `CyberSourceTransactionType` | No | `'sale'` (default), `'authorization'`, `'sale,create_payment_token'` or `'authorization,create_payment_token'`; also available as `CyberSourceTransactionType.Sale`, `.Authorization`, `.SaleAndCreateToken`, `.AuthorizationAndCreateToken` |
+| `currency` | `string` | No | Any three-letter uppercase ISO 4217 code. Unset means `MMK` |
+| `transactionType` | `CyberSourceTransactionType` | No | `CyberSourceTransactionType.Sale` (`'sale'`, the default), `.Authorization` (`'authorization'`), `.SaleAndCreateToken` (`'sale,create_payment_token'`) or `.AuthorizationAndCreateToken` (`'authorization,create_payment_token'`) |
 | `locale` | `string` | No | Hosted page language as a CyberSource locale code such as `en-us`. Unset means `en-us` |
+
+### Amounts and Currencies
+
+CyberSource is multi-currency and accepts decimals. For another currency, pass an [`Amount`](/node-myanmar-payments/amounts) with the currency: `amount: Amount.parse('10.50'), currency: 'USD'`.
+
+### Form Encoding
+
+CyberSource expects the form as `application/x-www-form-urlencoded`. `payment.enctype` carries it; use it if you [render the form yourself](/node-myanmar-payments/payment-flows#form-payments).
 
 ## Handling Callbacks
 
 CyberSource posts a form to `callbackUrl`. The same check works for the browser post to your receipt page.
 
 ```ts
+import { CallbackRequest } from '@laranex/myanmar-payments';
+
+// POST /payments/cybersource/callback
 try {
-  const callback = cs.handleCallback(await CallbackRequest.fromNodeRequest(req));
+  const request = await CallbackRequest.fromNodeRequest(req);
+  const callback = cs.handleCallback(request);
+
   if (callback.isSuccessful()) {
-    // callback.orderId (req_reference_number), callback.gatewayReference (transaction_id)
+    // callback.orderId is your req_reference_number
+    // callback.gatewayReference is CyberSource's transaction_id
   }
+
   callback.acknowledgement.send(res);
-} catch (error) {
+} catch {
   res.writeHead(400).end('invalid callback');
 }
 ```
 
-A post whose `signed_field_names` lists a field that is missing fails verification. Only signed fields are trusted: `decision` and `req_reference_number` must be listed in `signed_field_names`, and fields outside that list are ignored, so nobody can add a `decision` to a signature taken from another form.
+Only signed fields are trusted: `decision` and `req_reference_number` must be listed in `signed_field_names`, `transaction_id` and the amount are read only when they are signed, and `raw` keeps only the signed fields plus `signature`. An unsigned extra field, such as `decision=ACCEPT` added to a re-posted checkout form, can't change the result.
 
 ## Responses
 
-What CyberSource puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. On error the method throws; a field the gateway didn't send is `undefined`. CyberSource posts form fields, so every `raw` value is a string, exactly as sent.
+What CyberSource puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `undefined`. CyberSource posts form fields, so every `raw` value is a string, exactly as sent.
 
 ### `initiate()` → `FormPayment` {#initiate-response}
 
@@ -97,28 +121,28 @@ What CyberSource puts in each field. See [Results](/node-myanmar-payments/refere
 | `flow` | `'form'` |
 | `orderId` | Your `data.orderId` |
 | `action` | `{baseUrl}/pay`, e.g. `https://testsecureacceptance.cybersource.com/pay` |
-| `fields` | The signed fields below, in signing order |
+| `fields` | The signed fields below, in signing order. Post them unchanged |
 | `enctype` | `application/x-www-form-urlencoded` |
-| `toHtml()` | A page that posts the fields to `action` on load |
+| `toHtml()` | A full HTML page that posts `fields` to `action` on load |
 
 | Form field | Value |
 |---|---|
 | `access_key` | `config.accessKey` |
 | `profile_id` | `config.profileId` |
-| `transaction_uuid` | A random id per call |
-| `signed_field_names` | Every field name in this table except `signature`, comma-separated |
-| `signed_date_time` | UTC, e.g. `2026-10-08T09:30:00Z` |
+| `transaction_uuid` | A random ID, new for every call |
+| `signed_field_names` | The field names in this table except `signature`, comma-separated |
+| `signed_date_time` | UTC time, e.g. `2026-10-08T09:30:00Z` |
 | `locale` | `data.locale`, `en-us` when unset |
 | `transaction_type` | `data.transactionType`, `sale` when unset |
 | `reference_number` | `data.orderId` |
-| `amount` | `data.amount`, e.g. `10.50` |
+| `amount` | `data.amount`, e.g. `10000` |
 | `currency` | `data.currency`, `MMK` when unset |
 | `override_custom_receipt_page` | `data.returnUrl`, `""` when unset |
 | `override_backoffice_post_url` | `data.callbackUrl` |
 | `override_custom_cancel_page` | `data.cancelUrl`, `""` when unset |
 | `signature` | Base64 HMAC-SHA256 of the signed fields |
 
-`initiate()` makes no HTTP call. Errors: `InvalidPaymentDataError` only.
+`initiate()` makes no HTTP call, so it is synchronous and takes no `signal`, and `CyberSource` takes no HTTP options. `FormPayment` has no `raw`: nothing is sent to CyberSource until the customer's browser posts the form.
 
 ### `handleCallback()` → `PaymentCallback` {#handlecallback-response}
 
@@ -127,12 +151,10 @@ What CyberSource puts in each field. See [Results](/node-myanmar-payments/refere
 | `orderId` | CyberSource `req_reference_number` (your `orderId`) |
 | `status` | `decision` mapped, see [Statuses](#statuses) |
 | `gatewayStatus` | CyberSource `decision`, trimmed and uppercased, e.g. `ACCEPT` |
-| `gatewayReference` | CyberSource `transaction_id`, when signed |
-| `amount` | CyberSource `auth_amount`, falling back to `req_amount` (signed fields only), e.g. `10.50` |
-| `raw` | The signed fields of the post (those listed in `signed_field_names`, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `req_reference_number`, `req_amount`, `req_currency`, `auth_amount`, `signed_field_names`) plus `signature`. Unsigned fields are left out |
+| `gatewayReference` | CyberSource `transaction_id`. `undefined` when it is not signed |
+| `amount` | CyberSource `auth_amount`, falling back to `req_amount` when it is missing or empty, e.g. `10000`. Signed values only |
+| `raw` | The signed fields of the verified post plus `signature`, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `auth_amount`, `auth_code`, `req_reference_number`, `req_amount`, `req_currency`, `req_transaction_uuid`, `signed_field_names`, `signed_date_time`. Unsigned fields are left out |
 | `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
-
-Errors: `SignatureVerificationError` when `signature` does not match, a field listed in `signed_field_names` is missing, or `decision` or `req_reference_number` is not signed.
 
 ## Statuses
 
@@ -143,3 +165,12 @@ Errors: `SignatureVerificationError` when `signature` does not match, a field li
 | `DECLINE`, `ERROR` | `failed` |
 | `CANCEL` | `canceled` |
 | anything else | `unknown` |
+
+## Errors
+
+| Call | Throws | When |
+|---|---|---|
+| `initiate()` | `InvalidPaymentDataError` | `CyberSource.validate(data)` fails. Nothing is signed |
+| `handleCallback()` | `SignatureVerificationError` | `signature` doesn't match, a field listed in `signed_field_names` is missing, or `decision` or `req_reference_number` isn't signed |
+
+CyberSource makes no HTTP calls, so nothing throws `ApiError`.

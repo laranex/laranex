@@ -5,7 +5,9 @@ description: Integrate KBZ Pay in plain PHP. PWA redirect, QR and in-app payment
 
 # KBZ Pay
 
-| Method | Flow | Returns |
+KBZ Pay is KBZ Bank's mobile wallet: customers pay in the KBZ Pay PWA, by scanning a QR code, or from your mobile app.
+
+| Call | What it does | Returns |
 |---|---|---|
 | `$kbzPay->pwa($data)` | Redirect to the KBZ Pay PWA | [`RedirectPayment`](#pwa-response) |
 | `$kbzPay->qr($data)` | Customer scans a QR | [`QrPayment`](#qr-response) |
@@ -29,7 +31,7 @@ Every KBZ Pay flow starts with the same precreate call and ends with KBZ's signe
     { from: 'Your app', to: 'Customer', label: 'PWA URL, QR or signed order', detail: 'url / qrString / orderInfo + sign', response: true },
     { from: 'Customer', to: 'KBZ Pay', label: 'Pay in the KBZ Pay app' },
     { from: 'KBZ Pay', to: 'Your app', label: 'Notify callbackUrl', detail: 'signed JSON under Request' },
-    { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: '$kbzPay->handleCallback()' },
+    { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: '$kbzPay->handleCallback($request)' },
     { from: 'Your app', to: 'KBZ Pay', label: 'Plain-text success', detail: 'within about 10 s, or KBZ retries', response: true },
     { from: 'Your app', to: 'KBZ Pay', label: 'No notify? Query the order', detail: '$kbzPay->status($orderId)' },
   ]"
@@ -42,16 +44,22 @@ use Laranex\PhpMyanmarPayments\KbzPay\KbzPay;
 use Laranex\PhpMyanmarPayments\KbzPay\KbzPayConfig;
 use Laranex\PhpMyanmarPayments\KbzPay\KbzPayPaymentData;
 
-$kbzPay = new KbzPay(new KbzPayConfig(appId: '...', appKey: '...', merchantCode: '...', sandbox: true));
+$kbzPay = new KbzPay(new KbzPayConfig(
+    appId: '...',
+    appKey: '...',
+    merchantCode: '...',
+    sandbox: true,
+));
 
 $data = new KbzPayPaymentData(
     orderId: 'ORDER_'.$order->id,
     amount: 10000,
-    callbackUrl: 'https://shop.test/kbz/callback.php',
+    callbackUrl: 'https://shop.test/payments/kbz/callback',
 );
 
-// PWA
+// PWA: send the customer to the KBZ Pay PWA
 $payment = $kbzPay->pwa($data);
+
 header('Location: '.$payment->url);
 exit;
 
@@ -60,6 +68,8 @@ $payment = $kbzPay->qr($data);
 
 // In-app: hand the signed values to your mobile app
 $payment = $kbzPay->app($data);
+
+header('Content-Type: application/json');
 echo json_encode($payment->toArray());
 ```
 
@@ -68,13 +78,11 @@ echo json_encode($payment->toArray());
 | Parameter | Type | Required | Rules |
 |---|---|---|---|
 | `orderId` | `string` | Yes | Unique per order. Letters, digits and `_` only, at most 40 characters |
-| `amount` | `Amount\|int` | Yes | Kyat, greater than 0, up to 2 decimal places: `1000` or `Amount::parse('1000.50')`. KBZ only accepts MMK |
+| `amount` | `Amount\|int` | Yes | Kyat, greater than 0, at most 2 decimal places, e.g. `10000` or `Amount::parse('1000.50')`. KBZ only accepts MMK |
 | `callbackUrl` | `string` | Yes | Public URL KBZ posts the result to. At most 512 characters, no query string |
 | `title` | `?string` | No | Product name shown to the customer |
-| `timeoutMinutes` | `?int` | No | 1 to 120. KBZ defaults to 120 |
+| `timeoutMinutes` | `?int` | No | 1 to 120. `null` leaves it to KBZ (120) |
 | `callbackInfo` | `?string` | No | Free text echoed back in the callback, at most 512 characters once URL-encoded |
-
-Invalid values throw `InvalidPaymentDataException` before any request is sent.
 
 ### PWA Notes
 
@@ -87,19 +95,38 @@ Invalid values throw `InvalidPaymentDataException` before any request is sent.
 KBZ Pay posts JSON nested under a `Request` key; build the `CallbackRequest` from the whole request.
 
 ```php
-// kbz/callback.php
+// POST /payments/kbz/callback
+use Laranex\PhpMyanmarPayments\Exceptions\SignatureVerificationException;
 use Laranex\PhpMyanmarPayments\Http\CallbackRequest;
 
-$callback = $kbzPay->handleCallback(CallbackRequest::fromGlobals());
+try {
+    $callback = $kbzPay->handleCallback(CallbackRequest::fromGlobals());
+} catch (SignatureVerificationException) {
+    http_response_code(400);
+    exit;
+}
 
 if ($callback->isSuccessful()) {
-    // $callback->orderId is your merch_order_id, $callback->gatewayReference is KBZ's mm_order_id
+    // $callback->orderId is your merch_order_id
+    // $callback->gatewayReference is KBZ's mm_order_id
 }
 
 $callback->acknowledgement()->send(); // plain-text "success"
 ```
 
-KBZ requires an HTTP 200 with the plain-text body `success`, answered within about 10 seconds. Otherwise it retries after 60 and 600 seconds; when no callback arrives, poll `status()`.
+KBZ requires an HTTP 200 with the plain-text body `success`, answered within about 10 seconds. Otherwise it retries after 60 and 600 seconds; when no callback arrives, [query the order](#status-checks).
+
+## Status Checks
+
+```php
+$result = $kbzPay->status('ORDER_'.$order->id);
+
+if ($result->isSuccessful()) {
+    // $result->gatewayReference is KBZ's mm_order_id
+}
+```
+
+`status()` takes your `orderId`. An order KBZ doesn't know throws `ApiException`.
 
 ## Responses
 
@@ -116,34 +143,36 @@ What KBZ Pay puts in each property. See [Results](/php-myanmar-payments/referenc
 
 ### `qr()` → `QrPayment` {#qr-response}
 
-| Property | KBZ Pay value |
+| Property / Method | KBZ Pay value |
 |---|---|
 | `orderId` | Your `orderId` |
 | `qrString` | KBZ `qrCode`, a payload to encode into a QR image. Always set |
-| `qrImage` | Always `null`, so `qrImageDataUri()` is `null` too |
-| `expiresAt` | Now + `timeoutMinutes`. `null` when you didn't set `timeoutMinutes` (KBZ then allows 120 minutes) |
+| `qrImage` | Always `null` |
+| `expiresAt` | Now + `timeoutMinutes`. `null` when `timeoutMinutes` is `null` (KBZ then allows 120 minutes) |
 | `reference` | KBZ `prepay_id`. Always set |
 | `raw` | The `precreate` response, as for `pwa()` plus `qrCode` |
+| `qrImageDataUri()` | Always `null`, as `qrImage` is |
 
 ### `app()` → `AppPayment` {#app-response}
 
-| Property | KBZ Pay value |
+| Property / Method | KBZ Pay value |
 |---|---|
 | `orderId` | Your `orderId` |
 | `orderInfo` | `appid=…&merch_code=…&nonce_str=…&prepay_id=…&timestamp=…` |
-| `sign` | SHA256 signature of `orderInfo`, uppercase hex |
+| `sign` | SHA-256 signature of `orderInfo`, uppercase hex. See [Signing](#signing) |
 | `signType` | `SHA256` |
 | `raw` | The `precreate` response, as for `pwa()` |
+| `toArray()` | `orderId`, `orderInfo`, `sign` and `signType`, without `raw` |
 
 ### `status()` → `PaymentStatusResult` {#status-response}
 
 | Property | KBZ Pay value |
 |---|---|
-| `orderId` | KBZ `merch_order_id` (your `orderId`). Always set |
+| `orderId` | KBZ `merch_order_id`, falling back to the `orderId` you passed. Always set |
 | `status` | `trade_status` mapped, see [Statuses](#statuses) |
-| `gatewayStatus` | KBZ `trade_status`, e.g. `PAY_SUCCESS` |
+| `gatewayStatus` | KBZ `trade_status`, trimmed, e.g. `PAY_SUCCESS` |
 | `gatewayReference` | KBZ `mm_order_id`. `null` until KBZ has created the payment |
-| `amount` | KBZ `total_amount`, e.g. `1000` |
+| `amount` | KBZ `total_amount`, e.g. `10000` |
 | `raw` | The `queryorder` response: `result`, `code`, `msg`, `merch_order_id`, `mm_order_id`, `total_amount`, `trans_currency`, `trade_status`, `trans_end_time`, `nonce_str`, `sign_type`, `sign` |
 
 ### `handleCallback()` → `PaymentCallback` {#handlecallback-response}
@@ -152,9 +181,9 @@ What KBZ Pay puts in each property. See [Results](/php-myanmar-payments/referenc
 |---|---|
 | `orderId` | KBZ `merch_order_id` (your `orderId`) |
 | `status` | `trade_status` mapped, see [Statuses](#statuses) |
-| `gatewayStatus` | KBZ `trade_status`, e.g. `PAY_SUCCESS` |
+| `gatewayStatus` | KBZ `trade_status`, trimmed, e.g. `PAY_SUCCESS` |
 | `gatewayReference` | KBZ `mm_order_id` |
-| `amount` | KBZ `total_amount`, e.g. `1000` |
+| `amount` | KBZ `total_amount`, e.g. `10000` |
 | `raw` | The verified `Request`: `appid`, `notify_time`, `merch_code`, `merch_order_id`, `mm_order_id`, `total_amount`, `trans_currency`, `trade_status`, `trans_end_time`, `callback_info`, `nonce_str`, `sign_type`, `sign` |
 | `acknowledgement()` | HTTP `200`, body `success`, `Content-Type: text/plain` |
 
@@ -169,6 +198,18 @@ What KBZ Pay puts in each property. See [Results](/php-myanmar-payments/referenc
 | `ORDER_EXPIRED` | `Expired` |
 | anything else | `Unknown` |
 
+## Signing
+
+KBZ signs requests, the in-app `orderInfo` and notifications the same way: every non-empty field except `sign` and `sign_type`, sorted by key, joined as raw `key=value` pairs, with `&key=<app key>` appended, hashed with SHA-256 and uppercased. The package signs every request and verifies every notification for you; its signer is internal, so there is no public API for custom calls.
+
 ## Errors
 
-A failed `precreate` or `queryorder` throws `ApiException` with KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `gatewayCode` and its `msg` in `gatewayMessage`.
+| Call | Throws | When |
+|---|---|---|
+| `new KbzPayPaymentData(...)` | `InvalidPaymentDataException` | A value breaks the rules above. Nothing is sent |
+| `pwa()`, `qr()`, `app()` | `ApiException` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, or without a `prepay_id` |
+| `qr()` | `ApiException` | KBZ returns no `qrCode` |
+| `status()` | `ApiException` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, e.g. for an unknown order |
+| `handleCallback()` | `SignatureVerificationException` | `sign` doesn't match |
+
+`ApiException` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `gatewayCode` and its `msg` in `gatewayMessage`. When KBZ can't be reached, the calls throw `ApiException` with `httpStatus` `0`.

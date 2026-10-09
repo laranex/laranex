@@ -25,7 +25,10 @@ go get github.com/laranex/goravel-myanmar-payments/v4
 Add the provider to `bootstrap/providers.go`:
 
 ```go
-import payments "github.com/laranex/goravel-myanmar-payments/v4"
+import (
+	"github.com/goravel/framework/contracts/foundation"
+	payments "github.com/laranex/goravel-myanmar-payments/v4"
+)
 
 func Providers() []foundation.ServiceProvider {
 	return []foundation.ServiceProvider{
@@ -38,7 +41,8 @@ func Providers() []foundation.ServiceProvider {
 Then publish the config:
 
 ```bash
-./artisan vendor:publish --package=github.com/laranex/goravel-myanmar-payments/v4
+./artisan vendor:publish \
+  --package=github.com/laranex/goravel-myanmar-payments/v4
 ```
 
 The tags `goravel-myanmar-payments` and `goravel-myanmar-payments-config` select the same file. Without a published config the package reads the SDK's environment variables directly, so publishing is optional.
@@ -67,6 +71,8 @@ The provider works with whatever is registered and degrades gracefully:
 
 ```go
 import (
+	"fmt"
+
 	"github.com/goravel/framework/contracts/http"
 	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
 	"github.com/laranex/go-myanmar-payments/v4/kbzpay"
@@ -75,15 +81,19 @@ import (
 )
 
 func Checkout(ctx http.Context) http.Response {
+	order := findOrder(ctx) // your own order lookup
+
 	kbz, err := paymentsfacades.MyanmarPayments().KbzPay()
 	if err != nil {
-		return ctx.Response().String(http.StatusInternalServerError, "%s", err.Error())
+		return ctx.Response().
+			String(http.StatusInternalServerError, "%s", err.Error())
 	}
-	payment, err := kbz.PWA(ctx, kbzpay.PaymentData{
-		OrderID:     "ORDER_1",
-		Amount:      myanmarpayments.Kyat(1000),
+	data := kbzpay.PaymentData{
+		OrderID:     fmt.Sprintf("ORDER_%d", order.ID),
+		Amount:      myanmarpayments.Kyat(10000),
 		CallbackURL: "https://shop.test/payments/callback/kbzpay",
-	})
+	}
+	payment, err := kbz.PWA(ctx, data)
 	if err != nil {
 		return ctx.Response().String(http.StatusBadGateway, "%s", err.Error())
 	}
@@ -97,16 +107,19 @@ func KbzCallback(ctx http.Context) http.Response {
 	}
 	kbz, err := paymentsfacades.MyanmarPayments().KbzPay()
 	if err != nil {
-		return ctx.Response().String(http.StatusInternalServerError, "not configured")
+		return ctx.Response().
+			String(http.StatusInternalServerError, "not configured")
 	}
 	callback, err := kbz.HandleCallback(request)
 	if err != nil {
 		return ctx.Response().String(http.StatusBadRequest, "invalid signature")
 	}
 	if callback.IsSuccessful() {
-		// compare callback.Amount with your order, then fulfill callback.OrderID once
+		// compare callback.Amount with your order,
+		// then fulfill callback.OrderID once
 	}
-	return payments.Acknowledge(ctx, callback) // KBZ Pay expects a plain "success"
+	// KBZ Pay expects a plain-text "success"
+	return payments.Acknowledge(ctx, callback)
 }
 ```
 

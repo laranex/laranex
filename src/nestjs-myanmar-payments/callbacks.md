@@ -13,16 +13,22 @@ Create the app with `rawBody: true` (see [Installation](/nestjs-myanmar-payments
 
 ```ts
 import { PaymentCallback } from '@laranex/myanmar-payments';
-import { AcknowledgeCallback, VerifiedCallback } from '@laranex/nestjs-myanmar-payments';
+import {
+  AcknowledgeCallback,
+  VerifiedCallback,
+} from '@laranex/nestjs-myanmar-payments';
 import { Controller, Post } from '@nestjs/common';
 
 @Controller('payments/callback')
 export class CallbackController {
   @Post('kbz-pay')
   @AcknowledgeCallback()
-  kbzPay(@VerifiedCallback('kbz-pay') callback: PaymentCallback): PaymentCallback {
+  kbzPay(
+    @VerifiedCallback('kbz-pay') callback: PaymentCallback,
+  ): PaymentCallback {
     if (callback.isSuccessful()) {
-      // compare callback.amount with the order, then fulfill callback.orderId once
+      // compare callback.amount with the order,
+      // then fulfill callback.orderId once
     }
     return callback;
   }
@@ -39,15 +45,26 @@ Both work the same on the Express and the Fastify adapter.
 When you need the request before verifying it (to store rejected calls, for example), take the raw `CallbackRequest` and verify it yourself:
 
 ```ts
-import { CallbackRequest, SignatureVerificationError } from '@laranex/myanmar-payments';
-import { AcknowledgeCallback, type GatewayName, RawCallback } from '@laranex/nestjs-myanmar-payments';
+import {
+  CallbackRequest,
+  SignatureVerificationError,
+} from '@laranex/myanmar-payments';
+import {
+  AcknowledgeCallback,
+  type GatewayName,
+  RawCallback,
+} from '@laranex/nestjs-myanmar-payments';
 import { BadRequestException, Param, Post } from '@nestjs/common';
 
-// In a controller whose constructor takes `private readonly payments: MyanmarPaymentsService`:
+// In a controller whose constructor takes
+// `private readonly payments: MyanmarPaymentsService`:
 
 @Post(':gateway')
 @AcknowledgeCallback()
-async receive(@Param('gateway') gateway: GatewayName, @RawCallback() request: CallbackRequest) {
+async receive(
+  @Param('gateway') gateway: GatewayName,
+  @RawCallback() request: CallbackRequest,
+) {
   try {
     return await this.payments.handleCallback(gateway, request);
   } catch (error) {
@@ -67,11 +84,18 @@ async receive(@Param('gateway') gateway: GatewayName, @RawCallback() request: Ca
 | `acknowledge(res, callback)` | Sends the acknowledgement on an Express response or a Fastify reply (`@Res()`); without a callback, an empty 200 |
 
 ```ts
-import { acknowledge, type FastifyReplyLike, type NestRequestLike } from '@laranex/nestjs-myanmar-payments';
+import {
+  acknowledge,
+  type FastifyReplyLike,
+  type NestRequestLike,
+} from '@laranex/nestjs-myanmar-payments';
 import { Post, Req, Res } from '@nestjs/common';
 
 @Post('wave-money')
-async wave(@Req() req: NestRequestLike, @Res() res: FastifyReplyLike): Promise<void> {
+async wave(
+  @Req() req: NestRequestLike,
+  @Res() res: FastifyReplyLike,
+): Promise<void> {
   const callback = await this.payments.handleCallback('wave-money', req);
   // ...
   acknowledge(res, callback);
@@ -93,9 +117,17 @@ The query string comes from the full URL, global prefix included.
 AYA also sends the customer back to your `returnUrl` with a signed query string. Verify it to show the right page, but fulfill orders only from the server callback:
 
 ```ts
+import type { PaymentCallback } from '@laranex/myanmar-payments';
+import {
+  callbackRequestFrom,
+  type NestRequestLike,
+} from '@laranex/nestjs-myanmar-payments';
+import { Get, Req } from '@nestjs/common';
+
 @Get('payments/aya-pay/done')
 async done(@Req() req: NestRequestLike): Promise<PaymentCallback> {
-  return this.payments.ayaPay().verifyRedirect(await callbackRequestFrom(req));
+  const request = await callbackRequestFrom(req);
+  return this.payments.ayaPay().verifyRedirect(request);
 }
 ```
 

@@ -10,11 +10,26 @@ description: Fake gateway HTTP calls with Goravel's HTTP client fakes, sign call
 Every gateway call goes through Goravel's HTTP client, so `Fake` intercepts it. Match the gateway endpoint your test configuration resolves to, and prevent stray requests so nothing reaches a real gateway:
 
 ```go
+import (
+	"strings"
+
+	"github.com/goravel/framework/contracts/http/client"
+
+	"yourapp/app/facades"
+)
+
 func (s *CheckoutTestSuite) TestKbzPayQR() {
+	const precreate = "http://api-uat.kbzpay.com/payment/gateway/uat/precreate"
+
 	fake := facades.App().MakeHttp() // client.Factory
 	fake.Fake(map[string]any{
-		"http://api-uat.kbzpay.com/payment/gateway/uat/precreate": fake.Response().Json(200, map[string]any{
-			"Response": map[string]any{"result": "SUCCESS", "code": "0", "prepay_id": "prepay-1", "qrCode": "kbz-qr"},
+		precreate: fake.Response().Json(200, map[string]any{
+			"Response": map[string]any{
+				"result":    "SUCCESS",
+				"code":      "0",
+				"prepay_id": "prepay-1",
+				"qrCode":    "kbz-qr",
+			},
 		}),
 	}).PreventStrayRequests()
 	defer fake.Reset()
@@ -50,7 +65,18 @@ Response bodies are described on each [driver page](/go-myanmar-payments/drivers
 Post a correctly signed payload to your callback route. KBZ Pay's signer is exported:
 
 ```go
-fields := map[string]any{"merch_order_id": "ORDER_1", "total_amount": "1000", "trade_status": "PAY_SUCCESS" /* ... */}
+import (
+	"encoding/json"
+
+	"github.com/laranex/go-myanmar-payments/v4/kbzpay"
+)
+
+fields := map[string]any{
+	"merch_order_id": "ORDER_1",
+	"total_amount":   "10000",
+	"trade_status":   "PAY_SUCCESS",
+	// ...
+}
 fields["sign"] = kbzpay.NewSigner("your-test-app-key").Sign(fields)
 body, _ := json.Marshal(map[string]any{"Request": fields})
 ```
@@ -62,10 +88,14 @@ The other gateways sign with HMAC-SHA256 as described on their driver pages; com
 `AutoSubmitURL` returns an absolute link; request its path and query on the test server:
 
 ```go
+import "net/url"
+
+const action = `action="https://uat-pgw.ayainnovation.com/v1/payment/request"`
+
 response, _ := s.Http(s.T()).Get("/checkout/aya-pay")
 location, _ := url.Parse(response.Headers().Get("Location"))
 form, _ := s.Http(s.T()).Get(location.RequestURI())
-form.AssertOk().AssertSee([]string{`action="https://uat-pgw.ayainnovation.com/v1/payment/request"`}, false)
+form.AssertOk().AssertSee([]string{action}, false)
 ```
 
 A tampered or expired link answers `410 Gone`.

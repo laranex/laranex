@@ -5,14 +5,16 @@ description: Integrate Wave Money (WavePay) in Go. Redirect payments with typed 
 
 # Wave Money
 
-| Method | Flow | Returns |
+Wave Money's payment gateway sends the customer to a Wave payment page to pay with their WavePay wallet.
+
+| Call | What it does | Returns |
 |---|---|---|
 | `wave.Initiate(ctx, &data)` | Redirect to Wave's payment page | [`*RedirectPayment`](#initiate-response) |
 | `wave.HandleCallback(request)` | Verify the callback | [`*PaymentCallback`](#handlecallback-response) |
 
-[Responses](#responses) shows what Wave puts in each result.
+Wave Money has no status API in this package: the callback is the only payment result.
 
-Wave has no status API: the callback is the only payment result.
+[Responses](#responses) shows what Wave Money puts in each result.
 
 ## How it works
 
@@ -37,23 +39,30 @@ Wave sends the customer back to your return URL and posts the result to your cal
 
 ```go
 import (
+	"fmt"
+	"net/http"
+
 	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
 	"github.com/laranex/go-myanmar-payments/v4/wavemoney"
 )
 
-wave, err := wavemoney.New(wavemoney.Config{MerchantID: "...", SecretKey: "...", MerchantName: "My Shop"}, nil)
+wave, err := wavemoney.New(wavemoney.Config{
+	MerchantID:   "...",
+	SecretKey:    "...",
+	MerchantName: "My Shop",
+}, nil)
 if err != nil {
 	return err
 }
 
 data := wavemoney.PaymentData{
-	OrderID:     orderID,
+	OrderID:     fmt.Sprintf("ORDER_%d", order.ID),
 	CallbackURL: "https://shop.test/payments/wave/callback",
-	ReturnURL:   "https://shop.test/orders/" + orderID,
-	Description: "Order #" + orderID,
+	ReturnURL:   fmt.Sprintf("https://shop.test/orders/%d", order.ID),
+	Description: fmt.Sprintf("Order #%d", order.ID),
 	Items: []wavemoney.Item{
-		{Name: "Product A", Amount: myanmarpayments.Kyat(3000)},
-		{Name: "Product B", Amount: myanmarpayments.Kyat(2000)},
+		{Name: "Product A", Amount: myanmarpayments.Kyat(6000)},
+		{Name: "Product B", Amount: myanmarpayments.Kyat(4000)},
 	},
 }
 
@@ -61,36 +70,47 @@ payment, err := wave.Initiate(ctx, &data)
 if err != nil {
 	return err
 }
-saveWaveReference(orderID, data.MerchantReferenceID) // filled in by Initiate
+
+// Store data.MerchantReferenceID with the order: Initiate filled it in.
+
 http.Redirect(w, r, payment.URL, http.StatusFound)
 ```
-
-`Initiate` takes a pointer so it can record the generated `MerchantReferenceID` on your struct.
 
 ### wavemoney.PaymentData
 
 | Field | Type | Required | Rules |
 |---|---|---|---|
-| `OrderID` | `string` | Yes | Your order id. One order can have several payment attempts |
+| `OrderID` | `string` | Yes | Your order ID. One order can have several payment attempts |
 | `CallbackURL` | `string` | Yes | Absolute http or https URL that Wave posts the result to. Wave may require HTTPS with a CA-issued certificate in production |
-| `ReturnURL` | `string` | Yes | Valid URL Wave sends the customer back to. Not proof of payment |
+| `ReturnURL` | `string` | Yes | Absolute http or https URL Wave sends the customer back to. Not proof of payment |
 | `Description` | `string` | Yes | Shown to the customer |
-| `Items` | `[]wavemoney.Item` | Yes | At least one item, each with a `Name` and an `Amount` in whole kyat greater than 0 |
-| `Amount` | `myanmarpayments.Amount` | No | Whole kyat (Wave does not accept decimals), greater than 0. Leave it unset to charge the sum of the items. Wave only accepts MMK |
-| `MerchantReferenceID` | `string` | No | Unique id of this attempt. Empty means a random id |
+| `Items` | `[]wavemoney.Item` | Yes | At least one item |
+| `Amount` | `myanmarpayments.Amount` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). Unset charges the sum of the items. Wave only accepts MMK |
+| `MerchantReferenceID` | `string` | No | Unique ID of this attempt. Empty means a random ID |
 
-`data.ResolvedAmount()` returns the total that will be charged; items are summed with exact integer arithmetic.
+`wavemoney.Item` has a `Name` and an `Amount` in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats; `data.ResolvedAmount()` returns the total that will be charged.
 
 ### Merchant Reference ID
 
-Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random id, and **store it** after `Initiate`: Wave marks `orderId` as optional in callbacks, while `merchantReferenceId` is always present.
+Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: Wave marks `orderId` as optional in callbacks, while `merchantReferenceId` is always present. `Initiate` takes a pointer and writes the generated ID to `data.MerchantReferenceID` once `data` passes validation.
+
+### Sandbox Host
+
+Wave's sandbox API is `https://preprodpayments.wavemoney.io:8107`, while the customer-facing authenticate page is served without the port, at `https://preprodpayments.wavemoney.io/authenticate`. The package uses both hosts by default; set `BaseURL` and `AuthenticateURL` in `wavemoney.Config` if Wave gives you others.
 
 ## Handling Callbacks
 
 ```go
+import (
+	"net/http"
+
+	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
+)
+
+// POST /payments/wave/callback
 request, err := myanmarpayments.NewCallbackRequestFromHTTP(r)
 if err != nil {
-	http.Error(w, err.Error(), http.StatusBadRequest)
+	http.Error(w, "invalid callback", http.StatusBadRequest)
 	return
 }
 callback, err := wave.HandleCallback(request)
@@ -98,9 +118,13 @@ if err != nil {
 	http.Error(w, "invalid callback", http.StatusBadRequest)
 	return
 }
+
 if callback.IsSuccessful() {
-	// callback.OrderID, callback.Raw["merchantReferenceId"], callback.GatewayReference (Wave transactionId)
+	// callback.OrderID is your OrderID
+	// callback.Raw["merchantReferenceId"] is the attempt's reference
+	// callback.GatewayReference is Wave's transactionId
 }
+
 callback.Acknowledgement.Write(w)
 ```
 
@@ -108,32 +132,30 @@ callback.Acknowledgement.Write(w)
 
 ## Responses
 
-What Wave puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`; a field the gateway didn't send is `""`. Network failures and a canceled `ctx` return `*APIError`, which unwraps to the cause (`errors.Is(err, context.DeadlineExceeded)`).
+What Wave Money puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`; a field the gateway didn't send is `""`.
 
 ### `Initiate()` → `*myanmarpayments.RedirectPayment` {#initiate-response}
 
-| Field | Wave value |
+| Field | Wave Money value |
 |---|---|
 | `OrderID` | Your `data.OrderID` |
-| `URL` | `{AuthenticateURL}/authenticate?transaction_id=…` (no port), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
+| `URL` | `{AuthenticateURL}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
 | `GatewayReference` | Wave `transaction_id`. Always set |
 | `Raw` | Wave's `/payment` response: `message` (`success`), `transaction_id` |
 
-Once `data` passes validation, `Initiate` writes the generated reference to `data.MerchantReferenceID` when you left it empty; invalid data is returned untouched. Errors: `*InvalidPaymentDataError` (no request sent), `*APIError` (HTTP error, `message` not `success`, or no `transaction_id`).
+The attempt's `MerchantReferenceID` is not on the result: read it from `data.MerchantReferenceID`.
 
 ### `HandleCallback()` → `*myanmarpayments.PaymentCallback` {#handlecallback-response}
 
-| Field | Wave value |
+| Field | Wave Money value |
 |---|---|
 | `OrderID` | Wave `orderId`, falling back to `merchantReferenceId` when it is missing, null or empty |
 | `Status` | `status` mapped, see [Statuses](#statuses) |
 | `GatewayStatus` | Wave `status`, trimmed, e.g. `PAYMENT_CONFIRMED` |
 | `GatewayReference` | Wave `transactionId` |
-| `Amount` | Wave `amount`, e.g. `5000` |
+| `Amount` | Wave `amount`, e.g. `10000` |
 | `Raw` | The verified body: `status`, `merchantId`, `orderId`, `merchantReferenceId`, `frontendResultUrl`, `backendResultUrl`, `initiatorMsisdn`, `amount`, `timeToLiveSeconds`, `paymentDescription`, `currency`, `additionalField1`–`5`, `transactionId`, `paymentRequestId`, `requestTime`, `hashValue` |
 | `Acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
-
-Read the attempt's reference with `callback.Raw["merchantReferenceId"]`. Errors: `*SignatureVerificationError` when `hashValue` does not match.
 
 ## Statuses
 
@@ -152,4 +174,10 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 
 ## Errors
 
-A rejected request returns `*myanmarpayments.APIError`; `HTTPStatus` tells them apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`GatewayCode` is `VALIDATION_ERROR`).
+| Call | Returns | When |
+|---|---|---|
+| `Initiate()` | `*InvalidPaymentDataError` | `data.Validate()` fails. Nothing is sent and `data` is left untouched |
+| `Initiate()` | `*APIError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
+| `HandleCallback()` | `*SignatureVerificationError` | `hashValue` doesn't match |
+
+The error types live in the root `myanmarpayments` package. `HTTPStatus` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`GatewayCode` is `VALIDATION_ERROR`). When Wave can't be reached or `ctx` is canceled, `Initiate` returns `*APIError`, which unwraps to the cause (`errors.Is(err, context.DeadlineExceeded)`).
