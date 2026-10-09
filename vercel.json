@@ -3,7 +3,7 @@
   "cleanUrls": true,
   "redirects": [
     {
-      "source": "/:pkg(better-laravel|go-myanmar-payments|goravel-money|goravel-myanmar-payments|laravel-biometric-auth|laravel-money|laravel-myanmar-nrc|laravel-myanmar-payments|laravel-newrelic|laravel-refresh-token|nestjs-myanmar-payments|next-laravel|node-myanmar-payments|php-myanmar-payments){/}?",
+      "source": "/:pkg(better-laravel|go-myanmar-payments|goravel-money|goravel-myanmar-payments|laravel-biometric-auth|laravel-money|laravel-myanmar-nrc|laravel-myanmar-payments|laravel-newrelic|laravel-refresh-token|nestjs-myanmar-payments|next-laravel|node-myanmar-payments|php-myanmar-payments|python-myanmar-payments){/}?",
       "destination": "/:pkg/introduction",
       "statusCode": 301
     }

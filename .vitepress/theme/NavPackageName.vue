@@ -9,6 +9,7 @@ const packages: Record<string, string> = {
   'go-myanmar-payments': 'Go Myanmar Payments',
   'node-myanmar-payments': 'Node Myanmar Payments',
   'php-myanmar-payments': 'PHP Myanmar Payments',
+  'python-myanmar-payments': 'Python Myanmar Payments',
   'goravel-myanmar-payments': 'Goravel Myanmar Payments',
   'nestjs-myanmar-payments': 'NestJS Myanmar Payments',
   'goravel-money': 'Goravel Money',

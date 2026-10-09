@@ -7,7 +7,7 @@ description: Configure NestJS Myanmar Payments with forRoot or forRootAsync, the
 
 ## Environment Variables
 
-Every gateway left out of the module options is read with the SDK's `fromEnv` the first time it is used. The names are the ones the [Node SDK](/node-myanmar-payments/configuration#from-environment-variables) reads and the same as the Laravel, Goravel, PHP and Go packages, so one `.env` works for all of them.
+Every gateway left out of the module options is read with the SDK's `fromEnv` the first time it is used. The names are the ones the [Node SDK](/node-myanmar-payments/configuration#from-environment-variables) reads and the same as the Laravel, Goravel, PHP, Go and Python packages, so one `.env` works for all of them.
 
 ```env
 # KBZ Pay
