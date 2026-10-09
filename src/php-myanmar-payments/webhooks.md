@@ -32,13 +32,14 @@ None of this is part of the package: copy the code into your app and adapt the f
 
 ```sql
 CREATE TABLE payment_webhooks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,  -- BIGINT AUTO_INCREMENT on MySQL, BIGSERIAL on PostgreSQL
+    -- BIGINT AUTO_INCREMENT on MySQL, BIGSERIAL on PostgreSQL
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     gateway VARCHAR(32) NOT NULL,
     order_id VARCHAR(64) NULL,
     status VARCHAR(16) NULL,               -- PaymentStatus value
     gateway_status VARCHAR(64) NULL,
     gateway_reference VARCHAR(128) NULL,
-    amount VARCHAR(32) NULL,               -- as the gateway sent it, never a float
+    amount VARCHAR(32) NULL,               -- as sent, never a float
     verified SMALLINT NOT NULL,
     body TEXT NOT NULL,                    -- the raw request body
     headers TEXT NOT NULL,                 -- JSON
@@ -49,7 +50,8 @@ CREATE TABLE payment_webhooks (
     processed_at INTEGER NULL,
     created_at INTEGER NOT NULL
 );
-CREATE INDEX payment_webhooks_order ON payment_webhooks (gateway, order_id, status);
+CREATE INDEX payment_webhooks_order
+    ON payment_webhooks (gateway, order_id, status);
 ```
 
 ## Configuration
@@ -65,9 +67,12 @@ require __DIR__.'/vendor/autoload.php';
 
 use Laranex\PhpMyanmarPayments\MyanmarPayments;
 
-$pdo = new PDO(getenv('DATABASE_DSN') ?: 'sqlite:'.__DIR__.'/app.sqlite', getenv('DATABASE_USER') ?: null, getenv('DATABASE_PASSWORD') ?: null, [
-    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-]);
+$pdo = new PDO(
+    getenv('DATABASE_DSN') ?: 'sqlite:'.__DIR__.'/app.sqlite',
+    getenv('DATABASE_USER') ?: null,
+    getenv('DATABASE_PASSWORD') ?: null,
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION],
+);
 
 $payments = new MyanmarPayments([
     'wave_money' => [
@@ -76,7 +81,8 @@ $payments = new MyanmarPayments([
         'merchant_name' => 'My Shop',
         'sandbox' => true,
     ],
-    // 'kbz_pay' => [...], 'aya_pay' => [...], 'yoma_mmqr' => [...], 'cyber_source' => [...]
+    // 'kbz_pay' => [...], 'aya_pay' => [...],
+    // 'yoma_mmqr' => [...], 'cyber_source' => [...]
 ]);
 ```
 
@@ -87,7 +93,8 @@ $payments = new MyanmarPayments([
 ```php
 <?php
 
-// POST /webhook.php?gateway=wave-money : verify, store, acknowledge. Processing happens in worker.php.
+// POST /webhook.php?gateway=wave-money : verify, store, acknowledge.
+// Processing happens in worker.php.
 
 require __DIR__.'/bootstrap.php';
 
@@ -111,21 +118,27 @@ if ($driver === null) {
 
 $request = CallbackRequest::fromGlobals();
 $store = $pdo->prepare('INSERT INTO payment_webhooks
-    (gateway, order_id, status, gateway_status, gateway_reference, amount, verified, body, headers, last_error, available_at, created_at)
+    (gateway, order_id, status, gateway_status, gateway_reference, amount,
+     verified, body, headers, last_error, available_at, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+$headers = json_encode($request->headers());
 
 try {
     $callback = $driver->handleCallback($request);
 } catch (SignatureVerificationException $e) {
-    $store->execute([$gateway, null, null, null, null, null, 0, $request->body, json_encode($request->headers()), $e->getMessage(), time(), time()]);
+    $store->execute([
+        $gateway, null, null, null, null, null,
+        0, $request->body, $headers, $e->getMessage(), time(), time(),
+    ]);
     http_response_code(400);
     echo 'invalid signature';
     exit;
 }
 
 $store->execute([
-    $gateway, $callback->orderId, $callback->status->value, $callback->gatewayStatus, $callback->gatewayReference,
-    $callback->amount, 1, $request->body, json_encode($request->headers()), null, time(), time(),
+    $gateway, $callback->orderId, $callback->status->value,
+    $callback->gatewayStatus, $callback->gatewayReference, $callback->amount,
+    1, $request->body, $headers, null, time(), time(),
 ]);
 
 $callback->acknowledgement()->send();
@@ -144,7 +157,8 @@ In a PSR-7 framework, build the request with `CallbackRequest::fromPsr7($request
 ```php
 <?php
 
-// php worker.php : processes stored webhooks once, with retries and backoff. Run it under a process manager.
+// php worker.php : processes stored webhooks once, with retries and
+// backoff. Run it under a process manager.
 
 require __DIR__.'/bootstrap.php';
 
@@ -156,7 +170,8 @@ function processNext(PDO $pdo): bool
 {
     $now = time();
     $next = $pdo->prepare('SELECT * FROM payment_webhooks
-        WHERE verified = 1 AND processed_at IS NULL AND attempts < ? AND available_at <= ?
+        WHERE verified = 1 AND processed_at IS NULL
+          AND attempts < ? AND available_at <= ?
           AND (locked_until IS NULL OR locked_until < ?)
         ORDER BY id LIMIT 1');
     $next->execute([MAX_ATTEMPTS, $now, $now]);
@@ -166,9 +181,12 @@ function processNext(PDO $pdo): bool
         return false;
     }
 
-    // Claim the row; another worker that read it at the same time gets rowCount() 0 and moves on.
-    $claim = $pdo->prepare('UPDATE payment_webhooks SET locked_until = ?, attempts = attempts + 1
-        WHERE id = ? AND processed_at IS NULL AND (locked_until IS NULL OR locked_until < ?)');
+    // Claim the row; another worker that read it at the same time gets
+    // rowCount() 0 and moves on.
+    $claim = $pdo->prepare('UPDATE payment_webhooks
+        SET locked_until = ?, attempts = attempts + 1
+        WHERE id = ? AND processed_at IS NULL
+          AND (locked_until IS NULL OR locked_until < ?)');
     $claim->execute([$now + LOCK_SECONDS, $webhook['id'], $now]);
 
     if ($claim->rowCount() !== 1) {
@@ -178,13 +196,17 @@ function processNext(PDO $pdo): bool
     try {
         fulfill($pdo, $webhook);
 
-        $pdo->prepare('UPDATE payment_webhooks SET processed_at = ?, last_error = NULL, locked_until = NULL WHERE id = ?')
+        $pdo->prepare('UPDATE payment_webhooks
+            SET processed_at = ?, last_error = NULL, locked_until = NULL
+            WHERE id = ?')
             ->execute([time(), $webhook['id']]);
     } catch (Throwable $e) {
         $attempt = (int) $webhook['attempts'] + 1;
         $delay = BACKOFF[min($attempt - 1, count(BACKOFF) - 1)];
 
-        $pdo->prepare('UPDATE payment_webhooks SET last_error = ?, available_at = ?, locked_until = NULL WHERE id = ?')
+        $pdo->prepare('UPDATE payment_webhooks
+            SET last_error = ?, available_at = ?, locked_until = NULL
+            WHERE id = ?')
             ->execute([$e->getMessage(), time() + $delay, $webhook['id']]);
     }
 
@@ -196,11 +218,14 @@ function processNext(PDO $pdo): bool
  */
 function fulfill(PDO $pdo, array $webhook): void
 {
-    if ($webhook['status'] !== 'successful') { // PaymentStatus::Successful->value
+    // 'successful' is PaymentStatus::Successful->value
+    if ($webhook['status'] !== 'successful') {
         return; // record failures, cancellations, ... as your app needs
     }
 
-    $order = $pdo->prepare('SELECT amount, paid_at FROM orders WHERE number = ?');
+    $order = $pdo->prepare(
+        'SELECT amount, paid_at FROM orders WHERE number = ?',
+    );
     $order->execute([$webhook['order_id']]);
     $row = $order->fetch(PDO::FETCH_ASSOC);
 
@@ -212,13 +237,23 @@ function fulfill(PDO $pdo, array $webhook): void
         return; // already fulfilled by an earlier webhook
     }
 
-    if (normalizeAmount((string) $webhook['amount']) !== normalizeAmount((string) $row['amount'])) {
-        throw new RuntimeException("Paid {$webhook['amount']}, expected {$row['amount']} for order {$webhook['order_id']}.");
+    $paid = normalizeAmount((string) $webhook['amount']);
+    $expected = normalizeAmount((string) $row['amount']);
+
+    if ($paid !== $expected) {
+        throw new RuntimeException(
+            "Paid {$webhook['amount']}, expected {$row['amount']}"
+            ." for order {$webhook['order_id']}.",
+        );
     }
 
-    // The paid_at IS NULL condition makes this idempotent even if two webhooks for one order run at once.
-    $pdo->prepare('UPDATE orders SET paid_at = ?, gateway_reference = ? WHERE number = ? AND paid_at IS NULL')
-        ->execute([time(), $webhook['gateway_reference'], $webhook['order_id']]);
+    // The paid_at IS NULL condition makes this idempotent even if two
+    // webhooks for one order run at once.
+    $pdo->prepare('UPDATE orders SET paid_at = ?, gateway_reference = ?
+        WHERE number = ? AND paid_at IS NULL')
+        ->execute([
+            time(), $webhook['gateway_reference'], $webhook['order_id'],
+        ]);
 }
 
 /**
@@ -226,7 +261,9 @@ function fulfill(PDO $pdo, array $webhook): void
  */
 function normalizeAmount(string $amount): string
 {
-    return str_contains($amount, '.') ? rtrim(rtrim($amount, '0'), '.') : $amount;
+    return str_contains($amount, '.')
+        ? rtrim(rtrim($amount, '0'), '.')
+        : $amount;
 }
 
 while (true) {
@@ -243,12 +280,15 @@ The sample assumes an `orders` table with a unique `number`, the `amount` as a d
 A row that ran out of attempts keeps `last_error` and `processed_at IS NULL`. After fixing the cause, make it available again and the worker picks it up:
 
 ```sql
-UPDATE payment_webhooks SET attempts = 0, available_at = 0, last_error = NULL WHERE id = 42;
+UPDATE payment_webhooks
+SET attempts = 0, available_at = 0, last_error = NULL
+WHERE id = 42;
 ```
 
 Delete old processed and rejected rows from a daily cron job; failed rows stay until you replay or delete them:
 
 ```php
-$pdo->prepare('DELETE FROM payment_webhooks WHERE created_at < ? AND (processed_at IS NOT NULL OR verified = 0)')
+$pdo->prepare('DELETE FROM payment_webhooks WHERE created_at < ?
+    AND (processed_at IS NOT NULL OR verified = 0)')
     ->execute([time() - 90 * 86400]);
 ```

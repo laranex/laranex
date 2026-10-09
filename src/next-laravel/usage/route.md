@@ -23,7 +23,7 @@ Generated route will be at `routes/api/v1/blogs.php`. The route name is pluraliz
 ### Options
 
 - `--api` — generated route file will be stored in `routes/api` instead of `routes/web`. See more at:
-  - [Configuration](/next-laravel/configuration.html#config)
+  - [Configuration](/next-laravel/configuration#config)
   - [NextLaravelServiceProvider.php](https://github.com/laranex/next-laravel/blob/master/src/NextLaravelServiceProvider.php)
   - [RouteMakeCommand.php](https://github.com/laranex/next-laravel/blob/master/src/Commands/RouteMakeCommand.php)
 - `--force` — overwrites an existing file at the same path

@@ -33,12 +33,13 @@ State IDs equal their NRC codes: `1` Kachin, `2` Kayah, `3` Kayin, `4` Chin, `5`
 
 ```php
 use Laranex\LaravelMyanmarNRC\Models\State;
+use Laranex\LaravelMyanmarNRC\Repositories\JsonNrcRepository;
 
 // Database backend
 $states = State::query()->with('townships')->orderBy('code')->get();
 
 // JSON backend
-$townships = app(\Laranex\LaravelMyanmarNRC\Repositories\JsonNrcRepository::class)->townships();
+$townships = app(JsonNrcRepository::class)->townships();
 ```
 
 Each row has `id`, `code`, `code_my`, `name` and `name_my`; townships also have `nrc_state_id`.

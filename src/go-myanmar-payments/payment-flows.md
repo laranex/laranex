@@ -84,8 +84,11 @@ To build the form yourself, use `Action`, `Fields` (an ordered `[]FormField`) an
 
 ```go
 var form = template.Must(template.New("form").Parse(`
-<form id="payment-form" method="POST" action="{{.Action}}" enctype="{{.Enctype}}">
-  {{range .Fields}}<input type="hidden" name="{{.Name}}" value="{{.Value}}">{{end}}
+<form id="payment-form" method="POST" action="{{.Action}}"
+      enctype="{{.Enctype}}">
+  {{range .Fields}}
+  <input type="hidden" name="{{.Name}}" value="{{.Value}}">
+  {{end}}
 </form>
 <script>document.getElementById("payment-form").submit();</script>`))
 
@@ -127,7 +130,8 @@ if err != nil {
 	// handle err
 }
 page.Execute(w, map[string]any{
-	"QR":         template.URL(payment.QRImageDataURI("")), // "" means image/png
+	// "" means image/png
+	"QR":         template.URL(payment.QRImageDataURI("")),
 	"ValidUntil": payment.ExpiresAt.Format("15:04:05"),
 })
 ```
@@ -162,7 +166,8 @@ if err != nil {
 	// handle err
 }
 w.Header().Set("Content-Type", "application/json")
-json.NewEncoder(w).Encode(payment) // {"orderId", "orderInfo", "sign", "signType"}
+// {"orderId", "orderInfo", "sign", "signType"}
+json.NewEncoder(w).Encode(payment)
 ```
 
 The SDK's own result only means the payment screen closed; rely on the callback or `kbz.Status`.

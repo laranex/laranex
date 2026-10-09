@@ -83,8 +83,11 @@ Token timestamps use Carbon, so `Carbon::setTestNow()` and `travel()` apply in t
 ## Revoking
 
 ```php
-$token->revoke();    // revoke this token, returns true when this call revoked it
-$token->revokeAll(); // revoke every token of the same owner, returns the number updated
+// revoke this token, returns true when this call revoked it
+$token->revoke();
+
+// revoke every token of the same owner, returns the number updated
+$token->revokeAll();
 ```
 
 `revoke()` is a single conditional `UPDATE` that only matches a token that is still active. It returns `false` when the token was already revoked, for example by another request that verified the same token a moment earlier.

@@ -49,10 +49,14 @@ app.get('/checkout/:orderId', async (req, res, next) => {
   }
 });
 
-app.post('/payments/callback/kbz', express.raw({ type: '*/*' }), async (req, res, next) => {
+const raw = express.raw({ type: '*/*' });
+
+app.post('/payments/callback/kbz', raw, async (req, res, next) => {
   try {
-    const callback = payments.kbzPay().handleCallback(await CallbackRequest.fromNodeRequest(req));
-    // fulfill callback.orderId when callback.isSuccessful() and the amount matches
+    const request = await CallbackRequest.fromNodeRequest(req);
+    const callback = payments.kbzPay().handleCallback(request);
+    // fulfill callback.orderId when callback.isSuccessful()
+    // and the amount matches
     callback.acknowledgement.send(res);
   } catch (error) {
     next(error);
@@ -61,17 +65,36 @@ app.post('/payments/callback/kbz', express.raw({ type: '*/*' }), async (req, res
 
 app.get('/payments/aya/return', async (req, res, next) => {
   try {
-    const result = payments.ayaPay().verifyRedirect(await CallbackRequest.fromNodeRequest(req));
-    res.send(result.isSuccessful() ? 'Thank you, your payment was received.' : `Payment ${result.status}.`);
+    const request = await CallbackRequest.fromNodeRequest(req);
+    const result = payments.ayaPay().verifyRedirect(request);
+    res.send(
+      result.isSuccessful()
+        ? 'Thank you, your payment was received.'
+        : `Payment ${result.status}.`,
+    );
   } catch (error) {
     next(error);
   }
 });
 
-app.use((error: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (error instanceof InvalidPaymentDataError) return res.status(422).json({ errors: error.errors });
-  if (error instanceof SignatureVerificationError) return res.status(400).send('invalid signature');
-  if (error instanceof ApiError) return res.status(502).json({ code: error.gatewayCode, message: error.gatewayMessage });
+app.use((
+  error: unknown,
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+) => {
+  if (error instanceof InvalidPaymentDataError) {
+    return res.status(422).json({ errors: error.errors });
+  }
+  if (error instanceof SignatureVerificationError) {
+    return res.status(400).send('invalid signature');
+  }
+  if (error instanceof ApiError) {
+    return res.status(502).json({
+      code: error.gatewayCode,
+      message: error.gatewayMessage,
+    });
+  }
   next(error);
 });
 ```
@@ -84,12 +107,17 @@ Fastify parses bodies before your handler runs, so `request.raw` has no body lef
 
 ```ts
 import Fastify from 'fastify';
-import { CallbackRequest, MyanmarPayments, SignatureVerificationError } from '@laranex/myanmar-payments';
+import {
+  CallbackRequest,
+  MyanmarPayments,
+  SignatureVerificationError,
+} from '@laranex/myanmar-payments';
 
 const payments = MyanmarPayments.fromEnv(process.env);
 const app = Fastify();
 
-// Keep JSON and form bodies as strings; parse them yourself elsewhere if you need to.
+// Keep JSON and form bodies as strings;
+// parse them yourself elsewhere if you need to.
 app.addContentTypeParser(
   ['application/json', 'application/x-www-form-urlencoded'],
   { parseAs: 'string' },
@@ -124,14 +152,20 @@ In an App Router route handler, read the Fetch `Request` and return the acknowle
 
 ```ts
 // app/payments/callback/kbz/route.ts
-import { CallbackRequest, SignatureVerificationError } from '@laranex/myanmar-payments';
-import { payments } from '@/lib/payments'; // one MyanmarPayments instance for the app
+import {
+  CallbackRequest,
+  SignatureVerificationError,
+} from '@laranex/myanmar-payments';
+// one MyanmarPayments instance for the app
+import { payments } from '@/lib/payments';
 
 export async function POST(request: Request): Promise<Response> {
   try {
-    const callback = payments.kbzPay().handleCallback(await CallbackRequest.fromWebRequest(request));
+    const callbackRequest = await CallbackRequest.fromWebRequest(request);
+    const callback = payments.kbzPay().handleCallback(callbackRequest);
     if (callback.isSuccessful()) {
-      // compare callback.amount with the order, then fulfill callback.orderId once
+      // compare callback.amount with the order,
+      // then fulfill callback.orderId once
     }
     return callback.acknowledgement.toResponse();
   } catch (error) {
@@ -166,14 +200,19 @@ Hono exposes the Fetch `Request` as `c.req.raw`:
 
 ```ts
 import { Hono } from 'hono';
-import { CallbackRequest, MyanmarPayments, SignatureVerificationError } from '@laranex/myanmar-payments';
+import {
+  CallbackRequest,
+  MyanmarPayments,
+  SignatureVerificationError,
+} from '@laranex/myanmar-payments';
 
 const payments = MyanmarPayments.fromEnv(process.env);
 const app = new Hono();
 
 app.post('/payments/callback/yoma', async (c) => {
   try {
-    const callback = payments.yomaMmqr().handleCallback(await CallbackRequest.fromWebRequest(c.req.raw));
+    const request = await CallbackRequest.fromWebRequest(c.req.raw);
+    const callback = payments.yomaMmqr().handleCallback(request);
     return callback.acknowledgement.toResponse();
   } catch (error) {
     if (error instanceof SignatureVerificationError) {
@@ -205,9 +244,19 @@ Pass a fake `fetch` to any gateway to answer with canned responses, without netw
 
 ```ts
 const fetch = async (url: string, init: RequestInit): Promise<Response> =>
-  Response.json({ Response: { result: 'SUCCESS', code: '0', prepay_id: 'PREPAY_1', qrCode: 'qr' } });
+  Response.json({
+    Response: {
+      result: 'SUCCESS',
+      code: '0',
+      prepay_id: 'PREPAY_1',
+      qrCode: 'qr',
+    },
+  });
 
-const kbz = new KbzPay({ appId: 'kp1', appKey: 'key', merchantCode: '100001' }, { fetch });
+const kbz = new KbzPay(
+  { appId: 'kp1', appKey: 'key', merchantCode: '100001' },
+  { fetch },
+);
 ```
 
 To test your own fulfillment code, build a `PaymentCallback` yourself instead of going through a gateway:
@@ -215,5 +264,10 @@ To test your own fulfillment code, build a `PaymentCallback` yourself instead of
 ```ts
 import { PaymentCallback } from '@laranex/myanmar-payments';
 
-const callback = new PaymentCallback({ orderId: 'ORDER_1', status: 'successful', gatewayStatus: 'PAY_SUCCESS', amount: '1000' });
+const callback = new PaymentCallback({
+  orderId: 'ORDER_1',
+  status: 'successful',
+  gatewayStatus: 'PAY_SUCCESS',
+  amount: '1000',
+});
 ```

@@ -72,7 +72,8 @@ Tokens are now stored with `getMorphClass()`. If your app uses `Relation::morphM
 
 ```php
 RefreshToken::refreshTokensExpireIn(now()->addDays(30)); // OK
-RefreshToken::refreshTokensExpireIn(now()->subDay());    // throws InvalidArgumentException
+// throws InvalidArgumentException
+RefreshToken::refreshTokensExpireIn(now()->subDay());
 ```
 
 ## Database

@@ -87,10 +87,14 @@ The device signs the challenge with its private key and sends the signature in s
 ```php
 use Laranex\LaravelBiometricAuth\Models\Biometric;
 
-$verified = LaravelBiometricAuth::verifyBiometric($biometricId, $signatureBase64);
+$verified = LaravelBiometricAuth::verifyBiometric(
+    $biometricId,
+    $signatureBase64,
+);
 
 if ($verified) {
-    $user = Biometric::find($biometricId)->instance; // the model that registered the biometric
+    // the model that registered the biometric
+    $user = Biometric::find($biometricId)->instance;
 }
 ```
 

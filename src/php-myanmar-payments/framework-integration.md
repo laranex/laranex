@@ -40,7 +40,10 @@ public function kbzCallback(Request $request): Response
 {
     $callback = $this->kbzPay->handleCallback(new CallbackRequest(
         body: $request->getContent(),
-        headers: array_map(fn (array $values): string => implode(', ', $values), $request->headers->all()),
+        headers: array_map(
+            fn (array $values): string => implode(', ', $values),
+            $request->headers->all(),
+        ),
         query: $request->query->all(),
     ));
 
@@ -73,7 +76,9 @@ final class KbzCallbackHandler implements RequestHandlerInterface
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $callback = $this->kbzPay->handleCallback(CallbackRequest::fromPsr7($request));
+        $callback = $this->kbzPay->handleCallback(
+            CallbackRequest::fromPsr7($request),
+        );
 
         // fulfill the order ...
 

@@ -77,9 +77,19 @@ res.end(payment.toHtml());
 To build the form yourself, use `action`, `fields` (an ordered array of `{ name, value }`) and `enctype` with your template engine, and escape every value:
 
 ```tsx
-<form id="payment-form" method="POST" action={payment.action} encType={payment.enctype}>
+<form
+  id="payment-form"
+  method="POST"
+  action={payment.action}
+  encType={payment.enctype}
+>
   {payment.fields.map((field) => (
-    <input key={field.name} type="hidden" name={field.name} value={field.value} />
+    <input
+      key={field.name}
+      type="hidden"
+      name={field.name}
+      value={field.value}
+    />
   ))}
 </form>
 ```
@@ -146,7 +156,8 @@ The KBZ Pay mobile SDK needs a signed order string. `AppPayment` has a `toJSON()
 ```ts
 const payment = await kbz.app(data);
 res.writeHead(200, { 'Content-Type': 'application/json' });
-res.end(JSON.stringify(payment)); // {"orderId", "orderInfo", "sign", "signType"}
+// {"orderId", "orderInfo", "sign", "signType"}
+res.end(JSON.stringify(payment));
 ```
 
 The SDK's own result only means the payment screen closed; rely on the callback or `kbz.status()`.
@@ -160,13 +171,15 @@ function respond(payment: PaymentResult, res: ServerResponse): void {
       res.writeHead(302, { Location: payment.url }).end();
       break;
     case 'form':
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end(payment.toHtml());
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(payment.toHtml());
       break;
     case 'qr':
       res.end(payment.qrImageDataUri() ?? payment.qrString);
       break;
     case 'app':
-      res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify(payment));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(payment));
       break;
   }
 }

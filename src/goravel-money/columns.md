@@ -64,25 +64,28 @@ type Customer struct {
 ## Writing and reading
 
 ```go
+usd := money.MustCurrency("USD")
 price, err := moneyfacades.Money().Parse(ctx.Request().Input("price"), "")
 product := Product{
 	Price: money.NewColumn[money.Default](price),
-	Cost:  money.NewColumn[iso.USD](money.MustParse("2.50", money.MustCurrency("USD"))),
+	Cost:  money.NewColumn[iso.USD](money.MustParse("2.50", usd)),
 }
 err = facades.Orm().Query().Create(&product) // price = 1050, cost = 250
 
 var fresh Product
 err = facades.Orm().Query().FindOrFail(&fresh, product.ID)
-fresh.Price.Valid  // false for NULL
-fresh.Price.Money  // money.Money
-fresh.Cost.Ptr()   // *money.Money, nil for NULL
-fresh.Cost.Currency() // money.Currency the column stores (USD), or an error for an unknown code
+fresh.Price.Valid // false for NULL
+fresh.Price.Money // money.Money
+fresh.Cost.Ptr()  // *money.Money, nil for NULL
+// money.Currency the column stores (USD), or an error for an unknown code
+fresh.Cost.Currency()
 ```
 
 Saving `Money` in another currency than the column's fails with a `*money.CurrencyMismatchError`:
 
 ```
-money: the column stores USD amounts, but EUR 1.00 was given; convert it to USD first
+money: the column stores USD amounts, but EUR 1.00 was given; convert it to
+USD first
 ```
 
 Reading a value that is not an integer, such as `"10.50"` from a DECIMAL column, fails with `money.ErrInvalidStoredAmount` and points you to `money.DecimalColumn`.
@@ -108,14 +111,18 @@ Go struct fields can't see each other while a row is scanned, so you pass the cu
 
 ```go
 var wallet Wallet
-err := wallet.Balance.Set(money.MustParse("1500", money.MustCurrency("JPY")), &wallet.Currency)
+jpy := money.MustParse("1500", money.MustCurrency("JPY"))
+err := wallet.Balance.Set(jpy, &wallet.Currency)
 wallet.Currency // "JPY": filled because it was empty
 err = facades.Orm().Query().Create(&wallet)
 
-balance, ok, err := wallet.Balance.Money(wallet.Currency) // 1500 JPY; ok is false for NULL
+// 1500 JPY; ok is false for NULL
+balance, ok, err := wallet.Balance.Money(wallet.Currency)
 
-err = wallet.Balance.Set(money.MustParse("10", money.MustCurrency("USD")), &wallet.Currency)
-// money: the currency column holds JPY, but USD 10.00 was given; convert the amount, or change the currency column first
+usd := money.MustParse("10", money.MustCurrency("USD"))
+err = wallet.Balance.Set(usd, &wallet.Currency)
+// money: the currency column holds JPY, but USD 10.00 was given;
+// convert the amount, or change the currency column first
 ```
 
 When the currency column is empty, `Set` fills it. When it holds a different currency, `Set` returns a `*money.CurrencyMismatchError` and changes nothing; change the column first (or convert the amount). When the column is empty on read, `Money("")` uses the default currency. Several amount columns can share one currency column.
@@ -148,7 +155,15 @@ SQLite stores DECIMAL columns as floating point. The column accepts a float from
 `Column` and `DecimalColumn` marshal like [`Money`](/goravel-money/usage#json), or `null`:
 
 ```json
-{"price": {"amount": "1050", "currency": "USD", "decimal": "10.50", "formatted": "$10.50"}, "cost": null}
+{
+  "price": {
+    "amount": "1050",
+    "currency": "USD",
+    "decimal": "10.50",
+    "formatted": "$10.50"
+  },
+  "cost": null
+}
 ```
 
 Decoding accepts the same object (or `null`) and checks that its currency is the column's.

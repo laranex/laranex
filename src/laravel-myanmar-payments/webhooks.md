@@ -44,12 +44,12 @@ return new class extends Migration
             $table->id();
             $table->string('gateway');
             $table->string('order_id')->nullable();
-            $table->string('status')->nullable();          // PaymentStatus value
+            $table->string('status')->nullable(); // PaymentStatus value
             $table->string('gateway_status')->nullable();
             $table->string('gateway_reference')->nullable();
-            $table->string('amount')->nullable();          // as the gateway sent it, never a float
+            $table->string('amount')->nullable(); // as sent, never a float
             $table->boolean('verified');
-            $table->longText('body');                      // the raw request body
+            $table->longText('body'); // the raw request body
             $table->json('headers');
             $table->unsignedInteger('attempts')->default(0);
             $table->text('last_error')->nullable();
@@ -96,7 +96,9 @@ class PaymentWebhook extends Model
     {
         return static::query()
             ->where('created_at', '<', now()->subDays(90))
-            ->where(fn (Builder $query) => $query->whereNotNull('processed_at')->orWhere('verified', false));
+            ->where(fn (Builder $query) => $query
+                ->whereNotNull('processed_at')
+                ->orWhere('verified', false));
     }
 }
 ```
@@ -109,7 +111,9 @@ One route serves every gateway. Gateways post from their own servers, so exclude
 use App\Http\Controllers\PaymentWebhookController;
 
 Route::post('/webhooks/payments/{gateway}', PaymentWebhookController::class)
-    ->whereIn('gateway', ['kbz-pay', 'wave-money', 'aya-pay', 'yoma-mmqr', 'cyber-source'])
+    ->whereIn('gateway', [
+        'kbz-pay', 'wave-money', 'aya-pay', 'yoma-mmqr', 'cyber-source',
+    ])
     ->name('payments.webhook');
 ```
 
@@ -129,14 +133,23 @@ use Laranex\PhpMyanmarPayments\Results\PaymentCallback;
 
 class PaymentWebhookController extends Controller
 {
-    public function __invoke(Request $request, string $gateway): Response|CallbackResponse
-    {
-        $raw = ['gateway' => $gateway, 'body' => $request->getContent(), 'headers' => $request->headers->all()];
+    public function __invoke(
+        Request $request,
+        string $gateway,
+    ): Response|CallbackResponse {
+        $raw = [
+            'gateway' => $gateway,
+            'body' => $request->getContent(),
+            'headers' => $request->headers->all(),
+        ];
 
         try {
             $callback = $this->verify($gateway, $request);
         } catch (SignatureVerificationException $e) {
-            PaymentWebhook::create($raw + ['verified' => false, 'last_error' => $e->getMessage()]);
+            PaymentWebhook::create($raw + [
+                'verified' => false,
+                'last_error' => $e->getMessage(),
+            ]);
 
             return response('invalid signature', 400);
         }
@@ -157,13 +170,15 @@ class PaymentWebhookController extends Controller
 
     private function verify(string $gateway, Request $request): PaymentCallback
     {
-        return match ($gateway) {
-            'kbz-pay' => MyanmarPayments::kbzPay()->handleCallback($request),
-            'wave-money' => MyanmarPayments::waveMoney()->handleCallback($request),
-            'aya-pay' => MyanmarPayments::ayaPay()->handleCallback($request),
-            'yoma-mmqr' => MyanmarPayments::yomaMmqr()->handleCallback($request),
-            'cyber-source' => MyanmarPayments::cyberSource()->handleCallback($request),
+        $driver = match ($gateway) {
+            'kbz-pay' => MyanmarPayments::kbzPay(),
+            'wave-money' => MyanmarPayments::waveMoney(),
+            'aya-pay' => MyanmarPayments::ayaPay(),
+            'yoma-mmqr' => MyanmarPayments::yomaMmqr(),
+            'cyber-source' => MyanmarPayments::cyberSource(),
         };
+
+        return $driver->handleCallback($request);
     }
 }
 ```
@@ -212,9 +227,12 @@ class ProcessPaymentWebhook implements ShouldQueue
 
     public function handle(): void
     {
-        // One worker per order at a time; waits up to 10 s, otherwise the attempt fails and is retried.
-        Cache::lock("payment-webhook:{$this->webhook->gateway}:{$this->webhook->order_id}", 120)
-            ->block(10, fn () => $this->process());
+        $key = "payment-webhook:{$this->webhook->gateway}"
+            .":{$this->webhook->order_id}";
+
+        // One worker per order at a time; waits up to 10 s, otherwise the
+        // attempt fails and is retried.
+        Cache::lock($key, 120)->block(10, fn () => $this->process());
     }
 
     private function process(): void
@@ -255,17 +273,28 @@ class ProcessPaymentWebhook implements ShouldQueue
         }
 
         DB::transaction(function () use ($webhook) {
-            $order = Order::query()->where('number', $webhook->order_id)->lockForUpdate()->firstOrFail();
+            $order = Order::query()
+                ->where('number', $webhook->order_id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
             if ($order->paid_at !== null) {
                 return;
             }
 
-            if (! $this->sameAmount((string) $webhook->amount, $order->amount)) {
-                throw new RuntimeException("Paid {$webhook->amount}, expected {$order->amount} for order {$order->number}.");
+            $paid = (string) $webhook->amount;
+
+            if (! $this->sameAmount($paid, $order->amount)) {
+                throw new RuntimeException(
+                    "Paid {$paid}, expected {$order->amount}"
+                    ." for order {$order->number}.",
+                );
             }
 
-            $order->update(['paid_at' => now(), 'gateway_reference' => $webhook->gateway_reference]);
+            $order->update([
+                'paid_at' => now(),
+                'gateway_reference' => $webhook->gateway_reference,
+            ]);
         });
     }
 
@@ -274,7 +303,9 @@ class ProcessPaymentWebhook implements ShouldQueue
      */
     private function sameAmount(string $paid, string $expected): bool
     {
-        $normalize = fn (string $amount): string => str_contains($amount, '.') ? rtrim(rtrim($amount, '0'), '.') : $amount;
+        $normalize = fn (string $amount): string => str_contains($amount, '.')
+            ? rtrim(rtrim($amount, '0'), '.')
+            : $amount;
 
         return $normalize($paid) === $normalize($expected);
     }
@@ -299,15 +330,20 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('payments:replay-webhook {id}', function (string $id) {
-    $webhook = PaymentWebhook::query()->where('verified', true)->findOrFail($id);
+    $webhook = PaymentWebhook::query()
+        ->where('verified', true)
+        ->findOrFail($id);
     $webhook->update(['processed_at' => null]);
 
     ProcessPaymentWebhook::dispatch($webhook);
 
-    $this->info("Replaying {$webhook->gateway} webhook {$webhook->id} for order {$webhook->order_id}.");
+    $this->info("Replaying {$webhook->gateway} webhook {$webhook->id}"
+        ." for order {$webhook->order_id}.");
 })->purpose('Process a stored payment webhook again');
 
-Schedule::command('model:prune', ['--model' => [PaymentWebhook::class]])->daily();
+Schedule::command('model:prune', [
+    '--model' => [PaymentWebhook::class],
+])->daily();
 ```
 
 On Laravel 10, schedule `model:prune` in `app/Console/Kernel.php` instead: `$schedule->command('model:prune', ['--model' => [PaymentWebhook::class]])->daily();`.
@@ -326,7 +362,8 @@ use Illuminate\Support\Facades\Queue;
 it('stores, acknowledges and processes a webhook', function () {
     Queue::fake();
 
-    $this->postJson('/webhooks/payments/wave-money', $signedWavePayload)->assertOk();
+    $this->postJson('/webhooks/payments/wave-money', $signedWavePayload)
+        ->assertOk();
 
     Queue::assertPushed(ProcessPaymentWebhook::class);
 

@@ -73,7 +73,8 @@ func (s *server) kbzCallback(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	// fulfill callback.OrderID when callback.IsSuccessful() and the amount matches
+	// fulfill callback.OrderID when callback.IsSuccessful()
+	// and the amount matches
 	callback.Acknowledgement.Write(w)
 }
 

@@ -32,13 +32,14 @@ None of this is part of the package: copy the code into your app and adapt the f
 
 ```sql
 CREATE TABLE payment_webhooks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,  -- BIGINT AUTO_INCREMENT on MySQL, BIGSERIAL on PostgreSQL
+    -- BIGINT AUTO_INCREMENT on MySQL, BIGSERIAL on PostgreSQL
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     gateway VARCHAR(32) NOT NULL,
     order_id VARCHAR(64) NULL,
     status VARCHAR(16) NULL,               -- PaymentStatus value
     gateway_status VARCHAR(64) NULL,
     gateway_reference VARCHAR(128) NULL,
-    amount VARCHAR(32) NULL,               -- as the gateway sent it, never a float
+    amount VARCHAR(32) NULL,               -- as sent, never a float
     verified SMALLINT NOT NULL,
     body TEXT NOT NULL,                    -- the raw request body
     headers TEXT NOT NULL,                 -- JSON
@@ -49,7 +50,8 @@ CREATE TABLE payment_webhooks (
     processed_at INTEGER NULL,
     created_at INTEGER NOT NULL
 );
-CREATE INDEX payment_webhooks_order ON payment_webhooks (gateway, order_id, status);
+CREATE INDEX payment_webhooks_order
+    ON payment_webhooks (gateway, order_id, status);
 ```
 
 ## Handler
@@ -63,7 +65,10 @@ import {
   type PaymentCallback,
 } from '@laranex/myanmar-payments';
 
-/** What every gateway (KbzPay, WaveMoney, AyaPay, YomaMmqr, CyberSource) has in common. */
+/**
+ * What every gateway (KbzPay, WaveMoney, AyaPay, YomaMmqr, CyberSource)
+ * has in common.
+ */
 interface Verifier {
   handleCallback(request: CallbackRequest): PaymentCallback;
 }
@@ -73,11 +78,16 @@ const now = (): number => Math.floor(Date.now() / 1000);
 export class Webhooks {
   constructor(
     private readonly db: DatabaseSync,
-    private readonly gateways: Record<string, Verifier>, // 'kbz-pay' => kbz, 'wave-money' => wave, ...
+    // 'kbz-pay' => kbz, 'wave-money' => wave, ...
+    private readonly gateways: Record<string, Verifier>,
   ) {}
 
   /** Verifies, stores and acknowledges. Processing happens in work(). */
-  async handle(name: string, req: IncomingMessage, res: ServerResponse): Promise<void> {
+  async handle(
+    name: string,
+    req: IncomingMessage,
+    res: ServerResponse,
+  ): Promise<void> {
     const gateway = this.gateways[name];
     if (gateway === undefined) {
       res.writeHead(404).end();
@@ -97,7 +107,9 @@ export class Webhooks {
       }
       this.db
         .prepare(
-          `INSERT INTO payment_webhooks (gateway, verified, body, headers, last_error, available_at, created_at)
+          `INSERT INTO payment_webhooks
+             (gateway, verified, body, headers, last_error,
+              available_at, created_at)
            VALUES (?, 0, ?, ?, ?, ?, ?)`,
         )
         .run(name, request.body, headers, error.message, time, time);
@@ -109,7 +121,8 @@ export class Webhooks {
       this.db
         .prepare(
           `INSERT INTO payment_webhooks
-             (gateway, order_id, status, gateway_status, gateway_reference, amount, verified, body, headers, available_at, created_at)
+             (gateway, order_id, status, gateway_status, gateway_reference,
+              amount, verified, body, headers, available_at, created_at)
            VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`,
         )
         .run(
@@ -161,7 +174,10 @@ interface StoredWebhook {
 export class Webhooks {
   // ...constructor and handle() from above
 
-  /** Processes stored webhooks until the signal aborts. Safe to run in several processes. */
+  /**
+   * Processes stored webhooks until the signal aborts. Safe to run in
+   * several processes.
+   */
   async work(signal: AbortSignal): Promise<void> {
     while (!signal.aborted) {
       let found = false;
@@ -181,8 +197,10 @@ export class Webhooks {
     const time = now();
     const webhook = this.db
       .prepare(
-        `SELECT id, order_id, status, gateway_reference, amount, attempts FROM payment_webhooks
-         WHERE verified = 1 AND processed_at IS NULL AND attempts < ? AND available_at <= ?
+        `SELECT id, order_id, status, gateway_reference, amount, attempts
+         FROM payment_webhooks
+         WHERE verified = 1 AND processed_at IS NULL
+           AND attempts < ? AND available_at <= ?
            AND (locked_until IS NULL OR locked_until < ?)
          ORDER BY id LIMIT 1`,
       )
@@ -191,11 +209,13 @@ export class Webhooks {
       return false;
     }
 
-    // Claim the row; a worker that read it at the same time changes 0 rows and moves on.
+    // Claim the row; a worker that read it at the same time changes 0 rows
+    // and moves on.
     const claimed = this.db
       .prepare(
         `UPDATE payment_webhooks SET locked_until = ?, attempts = attempts + 1
-         WHERE id = ? AND processed_at IS NULL AND (locked_until IS NULL OR locked_until < ?)`,
+         WHERE id = ? AND processed_at IS NULL
+           AND (locked_until IS NULL OR locked_until < ?)`,
       )
       .run(time + LOCK_SECONDS, webhook.id, time);
     if (Number(claimed.changes) !== 1) {
@@ -205,15 +225,25 @@ export class Webhooks {
     try {
       this.fulfill(webhook);
     } catch (error) {
-      const delay = BACKOFF[Math.min(webhook.attempts, BACKOFF.length - 1)] as number;
+      const retry = Math.min(webhook.attempts, BACKOFF.length - 1);
+      const delay = BACKOFF[retry] as number;
+      const message = error instanceof Error ? error.message : error;
       this.db
-        .prepare(`UPDATE payment_webhooks SET last_error = ?, available_at = ?, locked_until = NULL WHERE id = ?`)
-        .run(String(error instanceof Error ? error.message : error), now() + delay, webhook.id);
+        .prepare(
+          `UPDATE payment_webhooks
+           SET last_error = ?, available_at = ?, locked_until = NULL
+           WHERE id = ?`,
+        )
+        .run(String(message), now() + delay, webhook.id);
       return true;
     }
 
     this.db
-      .prepare(`UPDATE payment_webhooks SET processed_at = ?, last_error = NULL, locked_until = NULL WHERE id = ?`)
+      .prepare(
+        `UPDATE payment_webhooks
+         SET processed_at = ?, last_error = NULL, locked_until = NULL
+         WHERE id = ?`,
+      )
       .run(now(), webhook.id);
     return true;
   }
@@ -225,28 +255,43 @@ export class Webhooks {
 
     const order = this.db
       .prepare(`SELECT amount, paid_at FROM orders WHERE number = ?`)
-      .get(webhook.order_id) as { amount: string; paid_at: number | null } | undefined;
+      .get(webhook.order_id) as
+      | { amount: string; paid_at: number | null }
+      | undefined;
     if (order === undefined) {
       throw new Error(`order ${webhook.order_id} not found`);
     }
     if (order.paid_at !== null) {
       return; // already fulfilled by an earlier webhook
     }
-    // Yoma MMQR callbacks carry no amount: Yoma fixed it when the order was checked out.
-    if (webhook.amount !== null && normalizeAmount(webhook.amount) !== normalizeAmount(order.amount)) {
-      throw new Error(`paid ${webhook.amount}, expected ${order.amount} for order ${webhook.order_id}`);
+    // Yoma MMQR callbacks carry no amount: Yoma fixed it when the order was
+    // checked out.
+    if (
+      webhook.amount !== null &&
+      normalizeAmount(webhook.amount) !== normalizeAmount(order.amount)
+    ) {
+      throw new Error(
+        `paid ${webhook.amount}, expected ${order.amount}` +
+          ` for order ${webhook.order_id}`,
+      );
     }
 
-    // The paid_at IS NULL condition keeps this idempotent even if two webhooks for one order run at once.
+    // The paid_at IS NULL condition keeps this idempotent even if two
+    // webhooks for one order run at once.
     this.db
-      .prepare(`UPDATE orders SET paid_at = ?, gateway_reference = ? WHERE number = ? AND paid_at IS NULL`)
+      .prepare(
+        `UPDATE orders SET paid_at = ?, gateway_reference = ?
+         WHERE number = ? AND paid_at IS NULL`,
+      )
       .run(now(), webhook.gateway_reference, webhook.order_id);
   }
 }
 
 /** Makes "1000", "1000.0" and "1000.00" compare equal. */
 function normalizeAmount(amount: string): string {
-  return amount.includes('.') ? amount.replace(/0+$/, '').replace(/\.$/, '') : amount;
+  return amount.includes('.')
+    ? amount.replace(/0+$/, '').replace(/\.$/, '')
+    : amount;
 }
 ```
 
@@ -269,7 +314,9 @@ const webhooks = new Webhooks(db, {
 createServer((req, res) => {
   const match = /^\/webhooks\/payments\/([\w-]+)$/.exec(req.url ?? '');
   if (req.method === 'POST' && match) {
-    webhooks.handle(match[1] as string, req, res).catch(() => res.writeHead(500).end());
+    webhooks
+      .handle(match[1] as string, req, res)
+      .catch(() => res.writeHead(500).end());
     return;
   }
   res.writeHead(404).end();
@@ -287,13 +334,16 @@ Use `https://shop.test/webhooks/payments/kbz-pay` (and so on) as each gateway's 
 A row that ran out of attempts keeps `last_error` and `processed_at IS NULL`. After fixing the cause, make it available again and a worker picks it up:
 
 ```sql
-UPDATE payment_webhooks SET attempts = 0, available_at = 0, last_error = NULL WHERE id = 42;
+UPDATE payment_webhooks
+SET attempts = 0, available_at = 0, last_error = NULL
+WHERE id = 42;
 ```
 
 Delete old processed and rejected rows once a day; failed rows stay until you replay or delete them:
 
 ```ts
 db.prepare(
-  `DELETE FROM payment_webhooks WHERE created_at < ? AND (processed_at IS NOT NULL OR verified = 0)`,
+  `DELETE FROM payment_webhooks
+   WHERE created_at < ? AND (processed_at IS NOT NULL OR verified = 0)`,
 ).run(now() - 90 * 24 * 60 * 60);
 ```

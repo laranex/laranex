@@ -189,5 +189,6 @@ type TokenCache interface {
 Pass `nil` to use `myanmarpayments.NewMemoryTokenCache()`, which lives for the life of the process. Share one `*yomammqr.Gateway` across requests, or implement `TokenCache` on top of Redis when you run several processes:
 
 ```go
-yoma, err := yomammqr.New(yomammqr.ConfigFromEnv(os.Getenv), nil, myanmarpayments.NewMemoryTokenCache())
+cache := myanmarpayments.NewMemoryTokenCache()
+yoma, err := yomammqr.New(yomammqr.ConfigFromEnv(os.Getenv), nil, cache)
 ```

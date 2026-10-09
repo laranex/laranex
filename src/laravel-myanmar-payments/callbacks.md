@@ -37,7 +37,9 @@ Route::post('/payments/kbz/callback', function (Request $request) {
     $order = Order::where('reference', $callback->orderId)->firstOrFail();
 
     // $order->amount is a string such as "1000"; compare strings, never floats
-    if ($callback->isSuccessful() && ! $order->isPaid() && $callback->amount === $order->amount) {
+    $paid = $callback->amount === $order->amount;
+
+    if ($callback->isSuccessful() && ! $order->isPaid() && $paid) {
         $order->markAsPaid($callback->gatewayReference);
     }
 

@@ -39,9 +39,18 @@ use Laranex\PhpMyanmarPayments\KbzPay\KbzPay;
 use Laranex\PhpMyanmarPayments\KbzPay\KbzPayConfig;
 use Laranex\PhpMyanmarPayments\KbzPay\KbzPayPaymentData;
 
-$kbzPay = new KbzPay(new KbzPayConfig(appId: '...', appKey: '...', merchantCode: '...', sandbox: true));
+$kbzPay = new KbzPay(new KbzPayConfig(
+    appId: '...',
+    appKey: '...',
+    merchantCode: '...',
+    sandbox: true,
+));
 
-$payment = $kbzPay->pwa(new KbzPayPaymentData(orderId: 'ORDER_1', amount: 1000, callbackUrl: 'https://shop.test/kbz/callback'));
+$payment = $kbzPay->pwa(new KbzPayPaymentData(
+    orderId: 'ORDER_1',
+    amount: 1000,
+    callbackUrl: 'https://shop.test/kbz/callback',
+));
 
 // In the callback endpoint
 $callback = $kbzPay->handleCallback(CallbackRequest::fromGlobals());

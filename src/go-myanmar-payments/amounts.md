@@ -8,8 +8,10 @@ description: Amounts are myanmarpayments.Amount values, exact decimal text that 
 Every `PaymentData.Amount` (and `wavemoney.Item.Amount`) is a `myanmarpayments.Amount`: an exact, non-negative amount kept as decimal text, so it is never rounded through a `float64`.
 
 ```go
-myanmarpayments.Kyat(1000)                  // whole amount: 1000
-myanmarpayments.MustParseAmount("1000.50")  // decimal; panics on bad input (constants, tests)
+myanmarpayments.Kyat(1000) // whole amount: 1000
+
+// Decimal; panics on bad input (constants, tests).
+myanmarpayments.MustParseAmount("1000.50")
 
 amount, err := myanmarpayments.ParseAmount(input) // decimal from user input
 if err != nil {

@@ -39,7 +39,8 @@ The `NextLaravel` facade exposes the helper the service provider uses to discove
 ```php
 use Laranex\NextLaravel\Facades\NextLaravel;
 
-// Every .php file under routes/api, recursively, as absolute paths in sorted order
+// Every .php file under routes/api, recursively, as absolute paths,
+// in sorted order
 $files = NextLaravel::getAllFilesOfADirectory(base_path('routes/api'), 'php');
 ```
 

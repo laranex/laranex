@@ -43,10 +43,13 @@ import (
 func main() {
 	kbz, err := kbzpay.New(kbzpay.ConfigFromEnv(os.Getenv), nil)
 	if err != nil {
-		log.Fatal(err) // *myanmarpayments.ConfigurationError names the missing setting
+		// *myanmarpayments.ConfigurationError names the missing setting
+		log.Fatal(err)
 	}
 
-	http.HandleFunc("GET /checkout", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("GET /checkout", func(
+		w http.ResponseWriter, r *http.Request,
+	) {
 		payment, err := kbz.PWA(r.Context(), kbzpay.PaymentData{
 			OrderID:     "ORDER_1",
 			Amount:      myanmarpayments.Kyat(1000),
@@ -59,7 +62,9 @@ func main() {
 		http.Redirect(w, r, payment.URL, http.StatusFound)
 	})
 
-	http.HandleFunc("POST /payments/kbz/callback", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("POST /payments/kbz/callback", func(
+		w http.ResponseWriter, r *http.Request,
+	) {
 		request, err := myanmarpayments.NewCallbackRequestFromHTTP(r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -71,7 +76,8 @@ func main() {
 			return
 		}
 		if callback.IsSuccessful() {
-			// compare callback.Amount with your order, then fulfill callback.OrderID
+			// compare callback.Amount with your order,
+			// then fulfill callback.OrderID
 		}
 		callback.Acknowledgement.Write(w) // KBZ Pay expects a plain "success"
 	})

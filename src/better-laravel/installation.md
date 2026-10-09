@@ -39,8 +39,12 @@ The `BetterLaravel` facade exposes the helper the service provider uses to disco
 ```php
 use Laranex\BetterLaravel\Facades\BetterLaravel;
 
-// Every .php file under routes/api, recursively, as absolute paths in sorted order
-$files = BetterLaravel::getAllFilesOfADirectory(base_path('routes/api'), 'php');
+// Every .php file under routes/api, recursively, as absolute paths,
+// in sorted order
+$files = BetterLaravel::getAllFilesOfADirectory(
+    base_path('routes/api'),
+    'php',
+);
 ```
 
 `getAllFilesOfADirectory(string $directory, string $extension = '')` returns an empty array when the directory does not exist, and every file when `$extension` is empty.

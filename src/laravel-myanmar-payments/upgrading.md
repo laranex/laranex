@@ -87,7 +87,8 @@ The `verify*()` methods returned a `bool` (or AYA's decoded payload). `handleCal
 
 ```php
 // v2.2.7
-abort_unless(LaravelMyanmarPaymentsFacade::channel('kbz_pay.qr')->verifySignature($request), 401);
+$channel = LaravelMyanmarPaymentsFacade::channel('kbz_pay.qr');
+abort_unless($channel->verifySignature($request), 401);
 
 // v4.0.0
 $callback = MyanmarPayments::kbzPay()->handleCallback($request);

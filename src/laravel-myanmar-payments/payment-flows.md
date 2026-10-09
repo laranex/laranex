@@ -89,7 +89,8 @@ return response($payment->toHtml());
 ```
 
 ```blade
-<form id="payment-form" method="POST" action="{{ $payment->action }}" enctype="{{ $payment->enctype }}">
+<form id="payment-form" method="POST" action="{{ $payment->action }}"
+      enctype="{{ $payment->enctype }}">
     @foreach ($payment->fields as $name => $value)
         <input type="hidden" name="{{ $name }}" value="{{ $value }}">
     @endforeach
@@ -162,7 +163,8 @@ The KBZ Pay mobile SDK needs a signed order string. Return it to your app, which
 ```php
 $payment = MyanmarPayments::kbzPay()->app($data);
 
-return response()->json($payment->toArray()); // orderId, orderInfo, sign, signType
+// orderId, orderInfo, sign, signType
+return response()->json($payment->toArray());
 ```
 
 The SDK's own result only means the payment screen closed; rely on the callback or `kbzPay()->status()`.

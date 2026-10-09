@@ -101,7 +101,8 @@ $config = KbzPayConfig::fromArray([
     'app_id' => getenv('KBZ_PAY_APP_ID'),
     'app_key' => getenv('KBZ_PAY_APP_KEY'),
     'merchant_code' => getenv('KBZ_PAY_MERCHANT_CODE'),
-    'sandbox' => getenv('KBZ_PAY_SANDBOX'), // "true"/"false" strings are accepted
+    // "true"/"false" strings are accepted
+    'sandbox' => getenv('KBZ_PAY_SANDBOX'),
 ]);
 ```
 
@@ -125,11 +126,28 @@ A missing required key throws `ConfigurationException` naming it, e.g. `The kbz_
 use Laranex\PhpMyanmarPayments\MyanmarPayments;
 
 $payments = new MyanmarPayments([
-    'kbz_pay' => ['app_id' => '...', 'app_key' => '...', 'merchant_code' => '...'],
-    'wave_money' => ['merchant_id' => '...', 'secret_key' => '...', 'merchant_name' => 'My Shop'],
+    'kbz_pay' => [
+        'app_id' => '...',
+        'app_key' => '...',
+        'merchant_code' => '...',
+    ],
+    'wave_money' => [
+        'merchant_id' => '...',
+        'secret_key' => '...',
+        'merchant_name' => 'My Shop',
+    ],
     'aya_pay' => ['app_key' => '...', 'app_secret' => '...'],
-    'yoma_mmqr' => ['merchant_id' => '...', 'client_id' => '...', 'client_secret' => '...', 'webhook_hashkey' => '...'],
-    'cyber_source' => ['profile_id' => '...', 'access_key' => '...', 'secret_key' => '...'],
+    'yoma_mmqr' => [
+        'merchant_id' => '...',
+        'client_id' => '...',
+        'client_secret' => '...',
+        'webhook_hashkey' => '...',
+    ],
+    'cyber_source' => [
+        'profile_id' => '...',
+        'access_key' => '...',
+        'secret_key' => '...',
+    ],
 ], httpClient: $httpClient, cache: $cache); // both optional
 
 $payments->kbzPay();      // KbzPay

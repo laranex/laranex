@@ -73,7 +73,8 @@ $table->bigInteger('balance')->nullable();
 $wallet = Wallet::create(['balance' => Money::of('1500', 'JPY')]);
 $wallet->currency; // "JPY": filled because the column was empty
 
-$wallet->balance = Money::of('10', 'USD'); // CurrencyMismatchException: the column holds JPY
+// CurrencyMismatchException: the column holds JPY
+$wallet->balance = Money::of('10', 'USD');
 ```
 
 When the currency column is empty, assigning money fills it. When it holds a different currency, the cast throws a `CurrencyMismatchException`; change the column first (or convert the amount). When the column is empty on read, the cast's fixed currency or the default currency is used. Several attributes can share one currency column.
@@ -97,7 +98,8 @@ SQLite stores DECIMAL columns as floating point. The cast accepts a float from t
 ```php
 $product->price = Money::of('19.99');   // a Money
 $product->price = \Money\Money::USD(1999); // a moneyphp Money
-$product->price = '19.99';              // a decimal string in the attribute's currency (strict)
+// a decimal string in the attribute's currency (strict)
+$product->price = '19.99';
 $product->price = null;                 // null stays null
 ```
 
@@ -111,7 +113,8 @@ Cast attributes serialize like `Money::toArray()`:
 
 ```php
 $product->toArray()['price'];
-// ['amount' => '1999', 'currency' => 'USD', 'decimal' => '19.99', 'formatted' => '$19.99']
+// ['amount' => '1999', 'currency' => 'USD', 'decimal' => '19.99',
+//  'formatted' => '$19.99']
 ```
 
 ## Inspecting a cast
@@ -123,6 +126,8 @@ $cast = AsMoney::castUsing(['decimal', 'currency_column=currency']);
 
 $cast->storesDecimal();                       // true
 $cast->currencyColumn();                      // "currency"
-$cast->currency(['currency' => 'jpy']);       // Money\Currency('JPY') for that row
-$cast->currency();                            // the fixed currency, else the default
+// Money\Currency('JPY') for that row
+$cast->currency(['currency' => 'jpy']);
+// the fixed currency, else the default
+$cast->currency();
 ```
