@@ -15,7 +15,8 @@ try {
   const kbz = new KbzPay({ appId: '...', appKey: '...', merchantCode: '...' });
 } catch (error) {
   if (error instanceof ConfigurationError) {
-    console.error(`missing ${error.gateway} setting "${error.key}"`); // e.g. kbz_pay "app_key"
+    // e.g. kbz_pay "app_key"
+    console.error(`missing ${error.gateway} setting "${error.key}"`);
   }
   throw error;
 }
@@ -165,13 +166,21 @@ import { MyanmarPayments } from '@laranex/myanmar-payments';
 
 const payments = new MyanmarPayments({
   kbzPay: { appId: '...', appKey: '...', merchantCode: '...' },
-  yomaMmqr: { merchantId: '...', clientId: '...', clientSecret: '...', webhookHashKey: '...' },
+  yomaMmqr: {
+    merchantId: '...',
+    clientId: '...',
+    clientSecret: '...',
+    webhookHashKey: '...',
+  },
 });
 
 payments.kbzPay();   // KbzPay, the same instance on every call
-payments.waveMoney(); // throws ConfigurationError: The wave_money configuration is missing [merchant_id].
+// throws ConfigurationError:
+// The wave_money configuration is missing [merchant_id].
+payments.waveMoney();
 
-const fromEnv = MyanmarPayments.fromEnv(process.env); // reads each gateway's variables on first use
+// reads each gateway's variables on first use
+const fromEnv = MyanmarPayments.fromEnv(process.env);
 ```
 
 The second argument takes the HTTP and cache options below, shared by every gateway it builds.
@@ -196,7 +205,9 @@ const kbz = new KbzPay(config, { timeoutMs: 10_000 });
 interface HttpClient {
   send(request: HttpRequest): Promise<HttpResponse>;
 }
-// HttpRequest:  { method: 'POST'; url: string; headers: Record<string, string>; body: string; signal?: AbortSignal }
+// HttpRequest:  { method: 'POST'; url: string;
+//                 headers: Record<string, string>; body: string;
+//                 signal?: AbortSignal }
 // HttpResponse: { status: number; body: string }
 ```
 
@@ -205,7 +216,9 @@ The default is `FetchHttpClient`, which you can also build yourself: `new FetchH
 Every network method takes an optional last argument `{ signal }`, so request deadlines and cancellation apply to gateway calls:
 
 ```ts
-const result = await kbz.status('ORDER_1', { signal: AbortSignal.timeout(5000) });
+const result = await kbz.status('ORDER_1', {
+  signal: AbortSignal.timeout(5000),
+});
 ```
 
 An aborted or failed request throws an `ApiError` whose `cause` is the original error.
@@ -218,8 +231,14 @@ Yoma MMQR authenticates with an OAuth access token that lasts hours. `YomaMmqr` 
 
 ```ts
 interface TokenCache {
-  get(key: string): string | undefined | null | Promise<string | undefined | null>;
-  set(key: string, value: string, ttlSeconds: number): unknown | Promise<unknown>;
+  get(
+    key: string,
+  ): string | undefined | null | Promise<string | undefined | null>;
+  set(
+    key: string,
+    value: string,
+    ttlSeconds: number,
+  ): unknown | Promise<unknown>;
   delete(key: string): unknown | Promise<unknown>;
 }
 ```

@@ -18,9 +18,15 @@ Every exception extends `Laranex\PhpMyanmarPayments\Exceptions\PaymentException`
 
 ```php
 try {
-    $data = new KbzPayPaymentData(orderId: 'ORDER-1', amount: 0, callbackUrl: 'https://shop.test/cb');
+    $data = new KbzPayPaymentData(
+        orderId: 'ORDER-1',
+        amount: 0,
+        callbackUrl: 'https://shop.test/cb',
+    );
 } catch (InvalidPaymentDataException $e) {
-    $e->errors(); // ['orderId' => 'The orderId field may only contain ...', 'amount' => 'The amount field must be greater than 0.']
+    $e->errors();
+    // ['orderId' => 'The orderId field may only contain ...',
+    //  'amount' => 'The amount field must be greater than 0.']
 }
 ```
 

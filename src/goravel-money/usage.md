@@ -19,12 +19,18 @@ import (
 
 manager := moneyfacades.Money() // *money.Manager
 
-price, err := manager.Parse("1234.50", "USD")          // from a decimal string
-price, err = manager.Parse("1,234.50", "")             // one comma or space separator may group thousands; default currency
-yen, err := manager.Parse("1234", "JPY")               // a whole amount: 1234 JPY
-cents, err := manager.Make(123450, "USD")              // from int64 minor units: 1234.50 USD
-huge, err := manager.OfMinor("99999999999999999999", "USD") // minor units of any size
-zero, err := manager.Zero("KWD")                       // 0.000 KWD
+// from a decimal string
+price, err := manager.Parse("1234.50", "USD")
+// one comma or space separator may group thousands; default currency
+price, err = manager.Parse("1,234.50", "")
+// a whole amount: 1234 JPY
+yen, err := manager.Parse("1234", "JPY")
+// from int64 minor units: 1234.50 USD
+cents, err := manager.Make(123450, "USD")
+// minor units of any size
+huge, err := manager.OfMinor("99999999999999999999", "USD")
+// 0.000 KWD
+zero, err := manager.Zero("KWD")
 ```
 
 Codes are case-insensitive. An unknown code returns an `*money.UnknownCurrencyError`. `moneyfacades.Money()` panics when the service provider is not registered; `money.Registered()` returns the manager with an error instead.
@@ -32,12 +38,14 @@ Codes are case-insensitive. An unknown code returns an `*money.UnknownCurrencyEr
 Without the container, pass a `money.Currency`:
 
 ```go
-usd := money.MustCurrency("USD")            // panics on an unknown code; LookupCurrency returns an error
+// panics on an unknown code; LookupCurrency returns an error
+usd := money.MustCurrency("USD")
 price, err := money.Parse("1234.50", usd)
-price = money.MustParse("1234.50", usd)     // panics on an error, for constants
-cents := money.New(123450, usd)             // int64 minor units
+price = money.MustParse("1234.50", usd) // panics on an error, for constants
+cents := money.New(123450, usd)         // int64 minor units
 huge, err := money.OfMinor("99999999999999999999", usd)
-fromBig := money.FromBigInt(big.NewInt(123450), usd) // *big.Int minor units; nil is zero
+// *big.Int minor units; nil is zero
+fromBig := money.FromBigInt(big.NewInt(123450), usd)
 zero := money.Zero(usd)
 ```
 
@@ -46,8 +54,9 @@ zero := money.Zero(usd)
 Each currency has a fixed number of decimals. Extra decimals that are zeros are fine; anything else returns a `*money.ParseError` (`money.ErrTooManyDecimals`) that tells you how many decimals the currency allows. Pass a rounding mode to round instead:
 
 ```go
-manager.Parse("12.500", "USD")              // 12.50 USD
-manager.Parse("1.234", "USD")               // error: USD allows 2 decimal places, but "1.234" has 3; ...
+manager.Parse("12.500", "USD") // 12.50 USD
+// error: USD allows 2 decimal places, but "1.234" has 3; ...
+manager.Parse("1.234", "USD")
 manager.Parse("1.235", "USD", money.HalfUp) // 1.24 USD
 manager.Parse("2.5", "JPY", money.HalfEven) // 2 JPY
 ```
@@ -63,7 +72,8 @@ money.Parse("1 234 567.89", usd) // spaces
 
 money.Parse("1 234,567", usd)    // ErrInvalidDecimal: mixed separators
 money.Parse("1,234,56,789", usd) // ErrInvalidDecimal: irregular groups
-money.Parse("1.234.567,89", usd) // ErrInvalidDecimal: the decimal separator is always a dot
+// ErrInvalidDecimal: the decimal separator is always a dot
+money.Parse("1.234.567,89", usd)
 ```
 
 ### Custom currencies
@@ -89,7 +99,9 @@ A `Currency` is identified by its code and its precision, so `money.MustCurrency
 Floats can't hold most decimal amounts exactly, so every method that takes an amount, multiplier or percentage rejects them with `money.ErrInvalidOperand` and suggests a string:
 
 ```go
-price.Times(1.1)   // error: floats are not accepted for money (1.1 given) ...; pass a string such as "1.1"
+// error: floats are not accepted for money (1.1 given) ...;
+// pass a string such as "1.1"
+price.Times(1.1)
 price.Times("1.1") // fine
 ```
 
@@ -98,12 +110,14 @@ price.Times("1.1") // fine
 ```go
 m, _ := manager.Parse("1234.5", "USD")
 
-m.Amount()     // "123450"   minor units, always a string
-m.Decimal()    // "1234.50"  with the currency's precision
-m.Int64()      // 123450, or money.ErrOverflow beyond int64
-m.BigInt()     // *big.Int copy
-m.Currency()   // money.Currency: Code() "USD", Name() "US Dollar", MinorUnits() 2, NumericCode() 840
-m.Precision()  // 2
+m.Amount()  // "123450"   minor units, always a string
+m.Decimal() // "1234.50"  with the currency's precision
+m.Int64()   // 123450, or money.ErrOverflow beyond int64
+m.BigInt()  // *big.Int copy
+// money.Currency: Code() "USD", Name() "US Dollar", MinorUnits() 2,
+// NumericCode() 840
+m.Currency()
+m.Precision() // 2
 
 m.IsZero(); m.IsPositive(); m.IsNegative(); m.Sign()
 ```
@@ -139,13 +153,15 @@ See [Arithmetic](/goravel-money/arithmetic) for multiplying, dividing, percentag
 ## Formatting
 
 ```go
-money.MustParse("1234.5", usd).Format()            // configured locale: "$1,234.50"
+// configured locale: "$1,234.50"
+money.MustParse("1234.5", usd).Format()
 money.MustParse("1234.5", eur).Format("de_DE")     // "1.234,50 €"
 money.MustParse("1500", jpy).Format("en")          // "¥1,500"
 money.MustParse("1234567.89", inr).Format("en_IN") // "₹12,34,567.89"
 money.MustParse("1500", mmk).Format("my_MM")       // "၁,၅၀၀.၀၀ K"
 manager.Format(m, "fr_FR")                         // "1 234,50 €"
-m.String()                                         // "USD 1234.50", never locale-dependent
+// "USD 1234.50", never locale-dependent
+m.String()
 ```
 
 The locale defaults to `money.locale`, then `app.locale`. Go has no ICU, so the package ships CLDR data generated from ICU 77.1 for 61 locales: the currency symbols, separators, grouping (including Indian lakh grouping), native digits and the positive and negative patterns, with ICU's currency spacing. It builds the output from the exact decimal string, so `123456789012345678901.23` formats without losing a digit, and the output matches ICU character for character (the test suite checks 8,296 ICU outputs).
@@ -159,7 +175,12 @@ Supported locales (`money.Locales()`): `ar`, `ar_EG`, `ar_SA`, `de`, `de_AT`, `d
 `Money` marshals to strings, in the shape configured by `money.serialization`:
 
 ```json
-{"amount": "123450", "currency": "USD", "decimal": "1234.50", "formatted": "$1,234.50"}
+{
+  "amount": "123450",
+  "currency": "USD",
+  "decimal": "1234.50",
+  "formatted": "$1,234.50"
+}
 ```
 
 - `amount`: `"minor"` (the default, `"123450"`) or `"decimal"` (`"1234.50"`, and no `decimal` key)
@@ -183,7 +204,9 @@ Every error matches `money.ErrMoney` and one specific reason with `errors.Is`, s
 ```go
 price, err := moneyfacades.Money().Parse(ctx.Request().Input("price"), "")
 if errors.Is(err, money.ErrMoney) {
-	return ctx.Response().Json(http.StatusUnprocessableEntity, http.Json{"message": err.Error()})
+	return ctx.Response().Json(http.StatusUnprocessableEntity, http.Json{
+		"message": err.Error(),
+	})
 }
 ```
 

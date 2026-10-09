@@ -30,7 +30,7 @@ description: Better Laravel is built on Routes, Domains, Modules, Controllers, F
 ### Routes
 
 Routes are the same as Laravel's default routes. The only difference is that Better Laravel loads routes from the `BetterLaravelServiceProvider`. You have 100% control over them. See more at:
-- [Configuration](/better-laravel/configuration.html#config)
+- [Configuration](/better-laravel/configuration#config)
 - [BetterLaravelServiceProvider.php](https://github.com/laranex/better-laravel/blob/master/src/BetterLaravelServiceProvider.php)
 
 ### Domain

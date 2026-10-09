@@ -23,7 +23,8 @@ refund.Absolute()                          // 19.99
 Amounts in different currencies return a `*money.CurrencyMismatchError` that names both amounts and suggests converting one of them first:
 
 ```
-money: cannot combine USD 10.00 with EUR 5.00: the amounts are in different currencies; convert one of them first
+money: cannot combine USD 10.00 with EUR 5.00: the amounts are in different
+currencies; convert one of them first
 ```
 
 Decimal operands are parsed strictly: `jpy.Plus("0.5")` returns `money.ErrTooManyDecimals`.
@@ -52,9 +53,12 @@ price.Percent("7.5")       // 15.00   7.5% of the amount
 price.AddPercent(7)        // 214.00  e.g. tax
 price.SubtractPercent(15)  // 170.00  e.g. a discount
 
-money.MustParse("25", usd).PercentageOf(price, 2)                      // "12.50"   what % 25 is of 200
-money.MustParse("2", usd).PercentageOf(money.MustParse("3", usd), 4)   // "66.6667"
-money.MustParse("50", usd).RatioOf(price, 4)                           // "0.2500"
+// "12.50": what % 25 is of 200
+money.MustParse("25", usd).PercentageOf(price, 2)
+// "66.6667"
+money.MustParse("2", usd).PercentageOf(money.MustParse("3", usd), 4)
+// "0.2500"
+money.MustParse("50", usd).RatioOf(price, 4)
 ```
 
 `Percent`, `AddPercent` and `SubtractPercent` round once, on the percentage. `PercentageOf(total, scale)` and `RatioOf(other, scale)` return decimal strings rounded to `scale` decimals; Laravel Money's defaults are 2 and 4. `scale` must be between 0 and `money.MaxScale` (100), so no call can force a huge computation; anything else returns `money.ErrInvalidOperand`.
@@ -64,18 +68,26 @@ money.MustParse("50", usd).RatioOf(price, 4)                           // "0.250
 Splitting never loses or invents a minor unit. Each part gets its share rounded down, and the leftover units go one at a time to the parts with the largest remainders, earlier parts first, exactly as in Laravel Money and moneyphp:
 
 ```go
-money.MustParse("100.00", usd).Split(3)                    // 33.34, 33.33, 33.33
-money.MustParse("1000", money.MustCurrency("JPY")).Split(3) // 334, 333, 333
-money.MustParse("1", money.MustCurrency("KWD")).Split(6)    // 0.167 ×4, 0.166 ×2
+jpy := money.MustCurrency("JPY")
+kwd := money.MustCurrency("KWD")
 
-money.MustParse("100.00", usd).Allocate(70, 20, 10)        // 70.00, 20.00, 10.00
-money.MustParse("0.10", usd).Allocate("0.3", "0.3", "0.4") // 0.03, 0.03, 0.04
+money.MustParse("100.00", usd).Split(3) // 33.34, 33.33, 33.33
+money.MustParse("1000", jpy).Split(3)   // 334, 333, 333
+money.MustParse("1", kwd).Split(6)      // 0.167 ×4, 0.166 ×2
+
+money.MustParse("100.00", usd).Allocate(70, 20, 10) // 70.00, 20.00, 10.00
+// 0.03, 0.03, 0.04
+money.MustParse("0.10", usd).Allocate("0.3", "0.3", "0.4")
 ```
 
 `Allocate` returns the parts in the order of the ratios. For named shares, `money.AllocateMap` takes a map of ratios and returns a map of amounts:
 
 ```go
-shares, err := money.AllocateMap(total, map[string]int{"owner": 70, "agent": 20, "platform": 10})
+shares, err := money.AllocateMap(total, map[string]int{
+	"owner":    70,
+	"agent":    20,
+	"platform": 10,
+})
 shares["owner"] // 70.00
 ```
 

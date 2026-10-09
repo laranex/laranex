@@ -82,9 +82,13 @@ echo $payment->toHtml();
 To build the form yourself, for example with your own loading state, use `action`, `fields` and `enctype`:
 
 ```php
-<form id="payment-form" method="POST" action="<?= htmlspecialchars($payment->action) ?>" enctype="<?= htmlspecialchars($payment->enctype) ?>">
+<form id="payment-form" method="POST"
+      action="<?= htmlspecialchars($payment->action) ?>"
+      enctype="<?= htmlspecialchars($payment->enctype) ?>">
     <?php foreach ($payment->fields as $name => $value): ?>
-        <input type="hidden" name="<?= htmlspecialchars($name) ?>" value="<?= htmlspecialchars($value) ?>">
+        <input type="hidden"
+               name="<?= htmlspecialchars($name) ?>"
+               value="<?= htmlspecialchars($value) ?>">
     <?php endforeach ?>
 </form>
 <script>document.getElementById('payment-form').submit();</script>
@@ -124,7 +128,8 @@ Gateways return QR codes in two shapes:
 ```php
 $payment = $yomaMmqr->initiate($data);
 ?>
-<img src="<?= htmlspecialchars($payment->qrImageDataUri()) ?>" alt="Scan to pay">
+<img src="<?= htmlspecialchars($payment->qrImageDataUri()) ?>"
+     alt="Scan to pay">
 <p>Valid until <?= $payment->expiresAt?->format('H:i:s') ?></p>
 ```
 

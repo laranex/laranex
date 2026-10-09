@@ -46,11 +46,13 @@ func (h *handlers) kbzCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	order := h.orders.Find(callback.OrderID)
-	if callback.IsSuccessful() && !order.Paid && callback.Amount == order.Amount.String() {
+	paid := callback.Amount == order.Amount.String()
+	if callback.IsSuccessful() && !order.Paid && paid {
 		h.orders.MarkPaid(order, callback.GatewayReference)
 	}
 
-	callback.Acknowledgement.Write(w) // KBZ Pay: HTTP 200 with plain-text "success"
+	// KBZ Pay: HTTP 200 with plain-text "success"
+	callback.Acknowledgement.Write(w)
 }
 ```
 

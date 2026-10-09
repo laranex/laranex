@@ -29,9 +29,15 @@ Every callback goes through the same steps; KBZ Pay is shown here.
 
 ```ts
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { CallbackRequest, SignatureVerificationError } from '@laranex/myanmar-payments';
+import {
+  CallbackRequest,
+  SignatureVerificationError,
+} from '@laranex/myanmar-payments';
 
-async function kbzCallback(req: IncomingMessage, res: ServerResponse): Promise<void> {
+async function kbzCallback(
+  req: IncomingMessage,
+  res: ServerResponse,
+): Promise<void> {
   let callback;
   try {
     callback = kbz.handleCallback(await CallbackRequest.fromNodeRequest(req));
@@ -44,11 +50,13 @@ async function kbzCallback(req: IncomingMessage, res: ServerResponse): Promise<v
   }
 
   const order = await orders.find(callback.orderId);
-  if (callback.isSuccessful() && !order.paid && order.amount.equals(callback.amount)) {
+  const paid = order.amount.equals(callback.amount);
+  if (callback.isSuccessful() && !order.paid && paid) {
     await orders.markPaid(order, callback.gatewayReference);
   }
 
-  callback.acknowledgement.send(res); // KBZ Pay: HTTP 200 with plain-text "success"
+  // KBZ Pay: HTTP 200 with plain-text "success"
+  callback.acknowledgement.send(res);
 }
 ```
 

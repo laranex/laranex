@@ -41,7 +41,8 @@ YOMA_MMQR_MERCHANT_ID=
 YOMA_MMQR_CLIENT_ID=
 YOMA_MMQR_CLIENT_SECRET=
 YOMA_MMQR_WEBHOOK_HASHKEY=
-YOMA_MMQR_WEBHOOK_SECRET=             # optional, checks the X-Webhook-Secret header
+# optional, checks the X-Webhook-Secret header
+YOMA_MMQR_WEBHOOK_SECRET=
 YOMA_MMQR_BASE_URL=                   # optional override
 YOMA_MMQR_API_VERSION=v1rc
 
@@ -54,7 +55,8 @@ CYBER_SOURCE_BASE_URL=                # optional
 
 # Package
 MYANMAR_PAYMENTS_HTTP_TIMEOUT=30
-MYANMAR_PAYMENTS_CACHE_STORE=         # store for Yoma access tokens, null = default store
+# store for Yoma access tokens, null = default store
+MYANMAR_PAYMENTS_CACHE_STORE=
 ```
 
 ## Default Endpoints
@@ -88,8 +90,14 @@ return [
         'sandbox'                 => env('WAVE_MONEY_SANDBOX', true),
         'merchant_id'             => env('WAVE_MONEY_MERCHANT_ID'),
         'secret_key'              => env('WAVE_MONEY_SECRET_KEY'),
-        'merchant_name'           => env('WAVE_MONEY_MERCHANT_NAME', env('APP_NAME')),
-        'time_to_live_in_seconds' => env('WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS', 300),
+        'merchant_name'           => env(
+            'WAVE_MONEY_MERCHANT_NAME',
+            env('APP_NAME'),
+        ),
+        'time_to_live_in_seconds' => env(
+            'WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS',
+            300,
+        ),
         'base_url'                => env('WAVE_MONEY_BASE_URL'),
         'authenticate_url'        => env('WAVE_MONEY_AUTHENTICATE_URL'),
     ],

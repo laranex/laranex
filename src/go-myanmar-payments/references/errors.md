@@ -18,7 +18,8 @@ if err != nil {
 	case errors.As(err, &invalidErr):
 		return fmt.Errorf("check the order: %v", invalidErr.Errors)
 	case errors.As(err, &apiErr):
-		return fmt.Errorf("KBZ said %s: %s", apiErr.GatewayCode, apiErr.GatewayMessage)
+		return fmt.Errorf("KBZ said %s: %s",
+			apiErr.GatewayCode, apiErr.GatewayMessage)
 	default:
 		return err
 	}

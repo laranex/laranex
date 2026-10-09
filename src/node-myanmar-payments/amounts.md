@@ -11,7 +11,8 @@ Every payment data `amount` (and every Wave Money item `amount`) is an `Amount` 
 import { Amount } from '@laranex/myanmar-payments';
 
 Amount.kyat(1000);              // whole amount: 1000
-Amount.kyat(10_000_000_000n);   // a bigint works too, beyond Number.MAX_SAFE_INTEGER
+// a bigint works too, beyond Number.MAX_SAFE_INTEGER
+Amount.kyat(10_000_000_000n);
 Amount.parse('1000.50');        // decimal, from a string
 ```
 

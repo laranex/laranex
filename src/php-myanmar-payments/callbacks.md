@@ -42,11 +42,14 @@ try {
 
 $order = findOrderByReference($callback->orderId);
 
-if ($callback->isSuccessful() && ! $order->isPaid() && (int) $callback->amount === $order->amount) {
+$paid = (int) $callback->amount === $order->amount;
+
+if ($callback->isSuccessful() && ! $order->isPaid() && $paid) {
     $order->markAsPaid($callback->gatewayReference);
 }
 
-$callback->acknowledgement()->send(); // KBZ Pay: HTTP 200 with plain-text "success"
+// KBZ Pay: HTTP 200 with plain-text "success"
+$callback->acknowledgement()->send();
 ```
 
 ## Building a CallbackRequest

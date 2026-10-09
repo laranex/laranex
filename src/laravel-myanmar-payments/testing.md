@@ -16,12 +16,21 @@ use Illuminate\Support\Facades\Http;
 it('starts a KBZ Pay QR payment', function () {
     Http::preventStrayRequests();
     Http::fake([
-        '*/precreate' => Http::response(['Response' => ['result' => 'SUCCESS', 'code' => '0', 'prepay_id' => 'PREPAY1', 'qrCode' => 'kbz-qr']]),
+        '*/precreate' => Http::response(['Response' => [
+            'result' => 'SUCCESS',
+            'code' => '0',
+            'prepay_id' => 'PREPAY1',
+            'qrCode' => 'kbz-qr',
+        ]]),
     ]);
 
     $this->post('/checkout/kbz-qr')->assertOk()->assertSee('kbz-qr');
 
-    Http::assertSent(fn (Request $request) => $request['Request']['biz_content']['merch_order_id'] === 'ORDER_1');
+    Http::assertSent(function (Request $request) {
+        $biz = $request['Request']['biz_content'];
+
+        return $biz['merch_order_id'] === 'ORDER_1';
+    });
 });
 ```
 
@@ -43,10 +52,18 @@ To exercise your real callback route, post a payload signed with the secret from
 it('marks the order paid from a KBZ Pay callback', function () {
     config()->set('myanmar-payments.kbz_pay.app_key', 'test-app-key');
 
-    $fields = ['merch_order_id' => 'ORDER_1', 'mm_order_id' => 'MM1', 'total_amount' => '1000', 'trade_status' => 'PAY_SUCCESS', 'nonce_str' => 'n'];
+    $fields = [
+        'merch_order_id' => 'ORDER_1',
+        'mm_order_id' => 'MM1',
+        'total_amount' => '1000',
+        'trade_status' => 'PAY_SUCCESS',
+        'nonce_str' => 'n',
+    ];
     ksort($fields);
     $fields['sign_type'] = 'SHA256';
-    $fields['sign'] = strtoupper(hash('sha256', urldecode(http_build_query(array_diff_key($fields, ['sign_type' => 1]))).'&key=test-app-key'));
+    $signed = array_diff_key($fields, ['sign_type' => 1]);
+    $string = urldecode(http_build_query($signed)).'&key=test-app-key';
+    $fields['sign'] = strtoupper(hash('sha256', $string));
 
     $this->postJson('/payments/kbz/callback', ['Request' => $fields])
         ->assertOk()
@@ -65,12 +82,15 @@ use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
 use Laranex\PhpMyanmarPayments\Enums\PaymentStatus;
 use Laranex\PhpMyanmarPayments\Results\PaymentCallback;
 
-MyanmarPayments::shouldReceive('kbzPay->handleCallback')->andReturn(new PaymentCallback(
+$callback = new PaymentCallback(
     orderId: 'ORDER_1',
     status: PaymentStatus::Successful,
     gatewayStatus: 'PAY_SUCCESS',
     amount: '1000',
-));
+);
+
+MyanmarPayments::shouldReceive('kbzPay->handleCallback')
+    ->andReturn($callback);
 ```
 
 ## Following form links
@@ -82,7 +102,10 @@ $payment = MyanmarPayments::ayaPay()->initiate($data);
 
 $this->get($payment->autoSubmitUrl)
     ->assertOk()
-    ->assertSee('action="https://uat-pgw.ayainnovation.com/v1/payment/request"', false);
+    ->assertSee(
+        'action="https://uat-pgw.ayainnovation.com/v1/payment/request"',
+        false,
+    );
 ```
 
 A tampered link, or one older than `form_route.ttl_minutes` (try `$this->travel(31)->minutes()`), answers `410 Gone`.

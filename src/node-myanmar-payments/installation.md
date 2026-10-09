@@ -56,7 +56,11 @@ Both entries share the same modules, so `KbzPay` from the subpath and from the r
 
 ```ts
 import { createServer } from 'node:http';
-import { Amount, CallbackRequest, SignatureVerificationError } from '@laranex/myanmar-payments';
+import {
+  Amount,
+  CallbackRequest,
+  SignatureVerificationError,
+} from '@laranex/myanmar-payments';
 import { KbzPay } from '@laranex/myanmar-payments/kbz-pay';
 
 // Throws a ConfigurationError naming the missing setting
@@ -77,13 +81,16 @@ createServer(async (req, res) => {
 
   if (req.method === 'POST' && url.pathname === '/payments/kbz/callback') {
     try {
-      const callback = kbz.handleCallback(await CallbackRequest.fromNodeRequest(req));
+      const request = await CallbackRequest.fromNodeRequest(req);
+      const callback = kbz.handleCallback(request);
       if (callback.isSuccessful()) {
-        // compare callback.amount with your order, then fulfill callback.orderId
+        // compare callback.amount with your order,
+        // then fulfill callback.orderId
       }
       callback.acknowledgement.send(res); // KBZ Pay expects a plain "success"
     } catch (error) {
-      res.writeHead(error instanceof SignatureVerificationError ? 400 : 500).end();
+      const invalid = error instanceof SignatureVerificationError;
+      res.writeHead(invalid ? 400 : 500).end();
     }
     return;
   }

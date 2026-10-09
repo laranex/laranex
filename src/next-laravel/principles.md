@@ -30,7 +30,7 @@ description: Next Laravel is built on Routes, Modules, Controllers, Features, Re
 ### Routes
 
 Routes are the same as Laravel's default routes. The only difference is that Next Laravel loads routes from the `NextLaravelServiceProvider`. You have 100% control over them. See more at:
-- [Configuration](/next-laravel/configuration.html#config)
+- [Configuration](/next-laravel/configuration#config)
 - [NextLaravelServiceProvider.php](https://github.com/laranex/next-laravel/blob/master/src/NextLaravelServiceProvider.php)
 
 ### Module
