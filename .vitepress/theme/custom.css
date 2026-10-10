@@ -488,6 +488,11 @@ body {
   color: var(--vp-c-text-1);
   background: none;
   font-size: 14px;
+  scrollbar-width: none;
+}
+
+.vp-doc .pkg-install-command::-webkit-scrollbar {
+  display: none;
 }
 
 .pkg-install-copy {
@@ -526,6 +531,34 @@ body {
 
 .pkg-actions .pkg-copy-page > div {
   margin: 0;
+}
+
+/* Match the plugin's buttons to the theme buttons beside them. */
+.pkg-actions .pkg-copy-page .dropdown-trigger,
+.pkg-actions .pkg-copy-page .download-btn {
+  min-height: 38px;
+  border-radius: 10px;
+}
+
+@media (max-width: 640px) {
+  .pkg-actions .lx-btn {
+    flex: 1 1 0;
+  }
+
+  .pkg-actions .pkg-copy-page {
+    flex-basis: 100%;
+    margin: 0;
+  }
+
+  .pkg-actions .pkg-copy-page .markdown-copy-buttons-inner,
+  .pkg-actions .pkg-copy-page .dropdown-container {
+    flex: 1;
+  }
+
+  .pkg-actions .pkg-copy-page .copy-page {
+    flex: 1;
+    justify-content: center;
+  }
 }
 
 .vp-doc .pkg-reqs {
