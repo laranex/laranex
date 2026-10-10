@@ -1,16 +1,18 @@
 import { readdirSync, readFileSync, existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import matter from 'gray-matter'
-import { defineConfig, type HeadConfig, type PageData } from 'vitepress'
+import { defineConfig, type DefaultTheme, type HeadConfig, type PageData, type Plugin } from 'vitepress'
+import llmstxt, { copyOrDownloadAsMarkdownButtons } from 'vitepress-plugin-llms'
 import { installCommand, programmingLanguage } from './package-meta'
 
 /** The site's public origin. Change this one line when moving to a custom domain. */
 const hostname = 'https://laranex.vercel.app'
 
 const siteTitle = 'Laranex'
-const siteDescription = 'Laranex is an open source organization, built by developers for developers.'
+const siteDescription =
+  'Laranex is an open source organization, built by developers for developers. Free projects, tested before they ship and documented before they are done, with an AI agent skill for each one.'
 const homeTitle = 'Laranex — Open source, built by developers for developers'
-const ogImage = { url: `${hostname}/og-image.png`, width: '1200', height: '630', alt: 'Laranex — Built by developers for developers.' }
+const ogImage = { url: `${hostname}/og-image.png`, width: '1200', height: '630', alt: 'Laranex — Built by developers, for developers.' }
 
 interface PackageMeta {
   slug: string
@@ -19,6 +21,8 @@ interface PackageMeta {
   github: string
   language: string
   license: string
+  install: string
+  requirements: string[]
 }
 
 /** Each package's front matter from `src/<slug>/index.md`, read once at config time. */
@@ -39,6 +43,8 @@ const packages = new Map<string, PackageMeta>(
           github: data.github || '',
           language: programmingLanguage(installCommand(slug, data.install)),
           license: data.license || 'MIT',
+          install: installCommand(slug, data.install),
+          requirements: data.requirements || [],
         },
       ])
   })(),
@@ -46,6 +52,54 @@ const packages = new Map<string, PackageMeta>(
 
 function packageOf(relativePath: string): PackageMeta | undefined {
   return packages.get(relativePath.split('/')[0])
+}
+
+/**
+ * Introduction pages render the package header with `<PackageIntroduction />`, which has no Markdown of its own.
+ * Give the llms.txt plugin the same facts as Markdown (inside `<llm-only>`, which it strips from the HTML page).
+ */
+function llmsPackageIntroduction(): Plugin {
+  return {
+    name: 'laranex:llms-package-introduction',
+    enforce: 'pre',
+    transform(code, id) {
+      const match = id.match(/\/src\/([^/]+)\/introduction\.md$/)
+      const pkg = match ? packages.get(match[1]) : undefined
+
+      if (!pkg || !code.includes('<PackageIntroduction />')) {
+        return null
+      }
+
+      const markdown = [
+        `# ${pkg.name}`,
+        '',
+        pkg.description,
+        '',
+        `Install: \`${pkg.install}\``,
+        '',
+        `Source code: ${pkg.github}`,
+        '',
+        '## Requirements',
+        '',
+        ...pkg.requirements.map((requirement) => `- ${requirement}`),
+      ].join('\n')
+      const withDescription = /^---\n[\s\S]*?\ndescription:/.test(code)
+        ? code
+        : code.replace(/^---\n/, `---\ndescription: ${JSON.stringify(pkg.description)}\n`)
+
+      return withDescription.replace('<PackageIntroduction />', `<PackageIntroduction />\n\n<llm-only>\n\n${markdown}\n\n</llm-only>`)
+    },
+  }
+}
+
+/** The sidebar for llms.txt: one section per package, named after it, instead of a dozen "Getting Started" sections. */
+function llmsSidebar(sidebar: DefaultTheme.Sidebar | undefined): DefaultTheme.SidebarItem[] {
+  return Object.entries((sidebar ?? {}) as DefaultTheme.SidebarMulti).flatMap(([path, groups]) => {
+    const name = packages.get(path.replace(/\//g, ''))?.name
+    const items = Array.isArray(groups) ? groups : groups.items
+
+    return items.map((group) => ({ ...group, text: name && group.text !== name ? `${name}: ${group.text}` : group.text }))
+  })
 }
 
 /** The absolute, clean URL of a page: `foo/index.md` → `/foo/`, `foo/bar.md` → `/foo/bar`. */
@@ -74,6 +128,23 @@ function structuredData(pageData: PageData, url: string): HeadConfig[] {
         '@graph': [
           { '@type': 'WebSite', '@id': `${hostname}/#website`, name: siteTitle, url: `${hostname}/`, description: siteDescription, publisher: { '@id': organization['@id'] } },
           organization,
+          {
+            '@type': 'CollectionPage',
+            '@id': `${hostname}/#projects`,
+            url: `${hostname}/`,
+            name: homeTitle,
+            isPartOf: { '@id': `${hostname}/#website` },
+            mainEntity: {
+              '@type': 'ItemList',
+              numberOfItems: packages.size,
+              itemListElement: [...packages.values()].map((pkg, index) => ({
+                '@type': 'ListItem',
+                position: index + 1,
+                url: `${hostname}/${pkg.slug}/introduction`,
+                name: pkg.name,
+              })),
+            },
+          },
         ],
       }),
     ]
@@ -113,6 +184,7 @@ function structuredData(pageData: PageData, url: string): HeadConfig[] {
 }
 
 export default defineConfig({
+  lang: 'en-US',
   title: siteTitle,
   titleTemplate: `:title — ${siteTitle}`,
   description: siteDescription,
@@ -130,17 +202,13 @@ export default defineConfig({
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
     ['meta', { name: 'theme-color', content: '#18b69b' }],
-    ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
-    ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
-    ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap' }],
+    ['meta', { name: 'author', content: siteTitle }],
+    ['meta', { name: 'color-scheme', content: 'light dark' }],
     ['meta', { property: 'og:site_name', content: siteTitle }],
-    ['meta', { property: 'og:type', content: 'website' }],
-    ['meta', { property: 'og:image', content: ogImage.url }],
+    ['meta', { property: 'og:locale', content: 'en_US' }],
     ['meta', { property: 'og:image:width', content: ogImage.width }],
     ['meta', { property: 'og:image:height', content: ogImage.height }],
-    ['meta', { property: 'og:image:alt', content: ogImage.alt }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
-    ['meta', { name: 'twitter:image', content: ogImage.url }],
   ],
 
   /**
@@ -161,12 +229,24 @@ export default defineConfig({
   },
 
   transformHead({ pageData, title, description }) {
+    if (pageData.isNotFound || pageData.relativePath === '404.md') {
+      return [['meta', { name: 'robots', content: 'noindex' }]]
+    }
+
     const url = canonicalUrl(pageData.relativePath)
     const pageTitle = pageData.relativePath === 'index.md' ? homeTitle : title
     const pageDescription = description || siteDescription
+    const pkg = packageOf(pageData.relativePath)
+    // Package pages share their package's card; everything else uses the site card.
+    const image = pkg ? { url: `${hostname}/og/${pkg.slug}.png`, alt: `${pkg.name} — ${pkg.description}` } : ogImage
 
     return [
       ['link', { rel: 'canonical', href: url }],
+      ['meta', { property: 'og:type', content: pkg ? 'article' : 'website' }],
+      ['meta', { property: 'og:image', content: image.url }],
+      ['meta', { property: 'og:image:alt', content: image.alt }],
+      ['meta', { name: 'twitter:image', content: image.url }],
+      ['meta', { name: 'twitter:image:alt', content: image.alt }],
       ['meta', { property: 'og:url', content: url }],
       ['meta', { property: 'og:title', content: pageTitle }],
       ['meta', { property: 'og:description', content: pageDescription }],
@@ -551,6 +631,17 @@ export default defineConfig({
       ],
     },
 
+    nav: [
+      { text: 'Projects', link: '/#projects' },
+    ],
+
+    outline: { level: [2, 3], label: 'On this page' },
+
+    editLink: {
+      pattern: 'https://github.com/laranex/laranex/edit/dev/src/:path',
+      text: 'Edit this page on GitHub',
+    },
+
     socialLinks: [
       { icon: 'github', link: 'https://github.com/laranex' },
     ],
@@ -581,18 +672,32 @@ export default defineConfig({
     },
 
     footer: {
-      message: 'Released under the MIT License, except where a package says otherwise.',
       copyright: '© 2026 Laranex',
     },
   },
 
   markdown: {
+    config(md) {
+      md.use(copyOrDownloadAsMarkdownButtons)
+    },
     languageAlias: {
       env: 'dotenv',
     },
   },
 
   vite: {
+    plugins: [
+      // llms.txt, llms-full.txt and a Markdown copy of every page, so AI agents can read the docs.
+      llmsPackageIntroduction(),
+      llmstxt({
+        domain: hostname,
+        sidebar: llmsSidebar,
+        title: siteTitle,
+        description: siteDescription,
+        // Package `index.md` pages only carry front matter; Vercel redirects them to the introduction.
+        ignoreFiles: ['index.md', '*/index.md'],
+      }),
+    ],
     server: {
       host: true,
     },
