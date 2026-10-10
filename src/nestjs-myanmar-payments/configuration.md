@@ -140,7 +140,7 @@ MyanmarPaymentsModule.forRootAsync({ useClass: PaymentsConfig });
 | Option | Meaning |
 |---|---|
 | `env` | Where variables are read: `process.env` (default), a record, or anything with `get(key)` such as `ConfigService` |
-| `kbzPay`, `waveMoney`, `ayaPay`, `yomaMmqr`, `cyberSource` | A gateway's config, as options (`{ appId, appKey, ... }`) or an SDK config instance (`new KbzPayConfig(...)`). Wins over the environment for that gateway; see the SDK's [config options](/node-myanmar-payments/configuration) |
+| `kbzPay`, `waveMoney`, `ayaPay`, `yomaMmqr`, `cyberSource` | A gateway's config, as options (`{ appId, appKey, ... }`) or an SDK config instance (`new KbzPayConfig(...)`). Wins over the environment for that gateway; see the SDK's [config options](/node-myanmar-payments/configuration). `sandbox` also takes a string, read like the `*_SANDBOX` variable, so `sandbox: 'false'` selects production |
 | `fetch` | The `fetch` gateways call, e.g. a fake one in tests |
 | `httpClient` | An SDK `HttpClient`; takes precedence over `fetch` and `timeoutMs` |
 | `timeoutMs` | Milliseconds before a gateway call is aborted. Defaults to `MYANMAR_PAYMENTS_HTTP_TIMEOUT` (seconds), then 30 seconds |
@@ -178,7 +178,7 @@ Links are encrypted with the form link secret and start with `formLink.baseUrl` 
 
 ## Cache
 
-Yoma MMQR access tokens last several hours and are reused until they expire. When `@nestjs/cache-manager`'s `CacheModule` is registered globally, or passed in `forRootAsync`'s `imports`, they are kept in that cache (`CacheManagerTokenCache`); otherwise each process keeps its own token in memory. Use a shared store (Redis, for example) when you run more than one server.
+Yoma MMQR access tokens last several hours and are reused until they expire. When `@nestjs/cache-manager`'s `CacheModule` is registered globally, or passed in `forRootAsync`'s `imports`, they are kept in that cache (`CacheManagerTokenCache`); otherwise each process keeps its own token in memory. Use a shared store (Redis, for example) when you run more than one server. The token is stored under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>`, the same key in every Laranex SDK, so services written in different languages can share one store.
 
 ```ts
 import { MyanmarPaymentsModule } from '@laranex/nestjs-myanmar-payments';

@@ -150,7 +150,7 @@ Route::get('/payments/aya/return', function (Request $request) {
 })->name('payments.aya.return');
 ```
 
-A `+` in the base64 `payload` that reached you as a space (an unencoded query string) is read back as `+` before decoding; the checksum is still verified. Still fulfill orders from the backend callback.
+A `+` in the base64 `payload` that reached you as a space (an unencoded query string) is read back as `+` before decoding; the checksum is still verified. The `payload` may be correctly padded or carry no padding at all; partial padding, the URL-safe alphabet, line breaks and text that isn't UTF-8 are rejected. Still fulfill orders from the backend callback.
 
 ## Status Checks
 
@@ -168,7 +168,7 @@ if ($result->isSuccessful()) {
 
 ## Responses
 
-What AYA Pay puts in each property. See [Results](/laravel-myanmar-payments/references/results) and [PaymentCallback & Status](/laravel-myanmar-payments/references/payment-callback) for the full classes.
+What AYA Pay puts in each property. See [Results](/laravel-myanmar-payments/references/results) and [PaymentCallback & Status](/laravel-myanmar-payments/references/payment-callback) for the full classes. `raw` holds plain PHP values (JSON numbers stay `string`s with their exact text), while the typed properties such as `amount` keep the exact text AYA sent.
 
 ### `services()` → `list<AyaPayService>` {#services-response}
 
@@ -265,6 +265,6 @@ The same values as [`handleCallback()`](#handlecallback-response), read from the
 | `services()` | `ApiException` | AYA answers with an HTTP error or a `status` other than `00` |
 | `status()` | `ApiException` | AYA answers with an HTTP error or a `status` other than `00`, e.g. `20` Transaction not found |
 | `status()` | `SignatureVerificationException` | The enquiry payload's `checkSum` doesn't match |
-| `handleCallback()`, `verifyRedirect()` | `SignatureVerificationException` | `payload` is missing or not base64 JSON, or `checkSum` doesn't match |
+| `handleCallback()`, `verifyRedirect()` | `SignatureVerificationException` | `payload` is missing or not base64 JSON, a signed field holds an object or array, or `checkSum` doesn't match |
 
 `ApiException` carries AYA's `status` (e.g. `20` Transaction not found, `09` Duplicate order ID) in `gatewayCode` and its `message` in `gatewayMessage`. When AYA can't be reached, the calls throw `ApiException` with `httpStatus` `0`.

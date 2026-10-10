@@ -16,7 +16,7 @@ Returned by every gateway's `HandleCallback()`, by `Manager.HandleCallback()` an
 | `GatewayStatus` | `string` | The gateway's own status value, unmapped |
 | `GatewayReference` | `string` | The gateway's ID for the payment |
 | `Amount` | `string` | The amount as the gateway sent it |
-| `Raw` | `map[string]any` | The verified payload |
+| `Raw` | `map[string]any` | The verified payload; JSON numbers are `json.Number`s, which keep their exact text |
 | `IsSuccessful()` | `bool` | `Status == StatusSuccessful` |
 | `Acknowledgement` | `Acknowledgement` | The response the gateway expects (`Status`, `Body`, `Headers`) |
 
@@ -46,3 +46,5 @@ Returned by `Status()` on `KbzPay()`, `AyaPay()` and `YomaMmqr()`.
 | `myanmarpayments.StatusCanceled` | `canceled` | `true` |
 | `myanmarpayments.StatusExpired` | `expired` | `true` |
 | `myanmarpayments.StatusUnknown` | `unknown` | `false` |
+
+`myanmarpayments.PaymentStatuses()` lists every status.

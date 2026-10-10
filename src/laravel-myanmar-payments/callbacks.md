@@ -30,14 +30,15 @@ Every callback goes through the same steps; KBZ Pay is shown here.
 ```php
 use Illuminate\Http\Request;
 use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
+use Laranex\PhpMyanmarPayments\Amount;
 
 Route::post('/payments/kbz/callback', function (Request $request) {
     $callback = MyanmarPayments::kbzPay()->handleCallback($request);
 
     $order = Order::where('reference', $callback->orderId)->firstOrFail();
 
-    // $order->amount is a string such as "10000"; compare strings, never floats
-    $paid = $callback->amount === $order->amount;
+    // $order->amount is a string such as "10000"; compare by value, not floats
+    $paid = Amount::parse($order->amount)->equals($callback->amount);
 
     if ($callback->isSuccessful() && ! $order->isPaid() && $paid) {
         $order->markAsPaid($callback->gatewayReference);
@@ -59,11 +60,11 @@ Gateways post from their own servers, so exclude callback routes from CSRF verif
 | `MyanmarPayments::acknowledge($callback)` | The response the gateway expects, as a `Responsable`. Without a callback, an empty 200 |
 | `ayaPay()->verifyRedirect($request)` | Verifies AYA's browser return; see [AYA Pay](/laravel-myanmar-payments/drivers/aya-pay) |
 
-Signatures are computed over the exact bytes the gateway sent; the package reads them from `$request->getContent()`, so don't rewrite the body in middleware before the callback route.
+Signatures are computed over the exact bytes the gateway sent; the package reads them from `$request->getContent()`, so don't rewrite the body in middleware before the callback route. A body is read as JSON only when it is a single JSON object; any other body is read as a urlencoded form.
 
 ## Rules
 
-- **Verify, then trust.** A callback that fails verification throws `SignatureVerificationException`. Never act on its payload; it carries the unverified data in `$e->raw` for logging only.
+- **Verify, then trust.** A callback that fails verification throws `SignatureVerificationException`, and so does one whose signed or hashed field holds an object or array instead of a single value, since no gateway signs nested values. Never act on its payload; it carries the unverified data in `$e->raw` for logging only.
 - **Check the amount.** Compare `$callback->amount` (as the gateway sent it, a string) with your order before fulfilling. A gateway may format it differently from your order (`10000` or `10000.00`); `Amount::parse($order->amount)->equals($callback->amount)` compares decimal strings exactly.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 - **Acknowledge.** `MyanmarPayments::acknowledge($callback)` returns the response the gateway expects, e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.

@@ -213,4 +213,4 @@ Links are encrypted with Goravel's crypt facade (`APP_KEY`); without it, `AutoSu
 
 ## Cache
 
-Yoma MMQR access tokens last several hours and are reused until they expire. They are kept in your default cache store, or in `cache_store` when set. Use a shared store (Redis, database) when you run more than one server. Without the cache facade, each process keeps its own token in memory.
+Yoma MMQR access tokens last several hours and are reused until they expire. They are kept in your default cache store, or in `cache_store` when set. Use a shared store (Redis, database) when you run more than one server. The token is stored under `myanmar-payments.yoma-mmqr.token.<sha256(baseURL|clientID)>`, the same key in every Laranex SDK, so services written in different languages can share one store. Without the cache facade, each process keeps its own token in memory.

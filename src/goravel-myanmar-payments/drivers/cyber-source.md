@@ -95,7 +95,7 @@ CyberSource is multi-currency and accepts decimals. For another currency, pass a
 
 ### Form Encoding
 
-CyberSource expects the form as `application/x-www-form-urlencoded`. The Go SDK leaves `form.Enctype` empty, and `form.HTML()` (which the form route serves) falls back to `application/x-www-form-urlencoded`; use that encoding if you [render the form yourself](/goravel-myanmar-payments/payment-flows#form-payments).
+CyberSource expects the form as `application/x-www-form-urlencoded`. `form.Enctype` carries it; use it if you [render the form yourself](/goravel-myanmar-payments/payment-flows#form-payments).
 
 ## Handling Callbacks
 
@@ -139,7 +139,7 @@ Only signed fields are trusted: `decision` and `req_reference_number` must be li
 
 ## Responses
 
-What CyberSource puts in each field. See [Results](/goravel-myanmar-payments/references/results) and [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for the full types.
+What CyberSource puts in each field. See [Results](/goravel-myanmar-payments/references/results) and [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for the full types. CyberSource posts form fields, so every `Raw` value is a `string`, exactly as sent.
 
 ### `Initiate()` → `*FormPayment` {#initiate-response}
 
@@ -148,7 +148,7 @@ What CyberSource puts in each field. See [Results](/goravel-myanmar-payments/ref
 | `OrderID` | Your `OrderID` |
 | `Action` | `{base_url}/pay`, e.g. `https://testsecureacceptance.cybersource.com/pay` |
 | `Fields` | The signed fields below, in this order. Post them unchanged |
-| `Enctype` | Empty; `HTML()` posts it as `application/x-www-form-urlencoded` |
+| `Enctype` | `application/x-www-form-urlencoded` |
 | `HTML()` | A full HTML page that posts `Fields` to `Action` on load |
 
 `payments.AutoSubmitURL(form)` returns the encrypted link to the `myanmar-payments.form` route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. It expires after `form_route.ttl_minutes` (30). With `form_route.enabled` set to `false` it returns `payments.ErrFormRouteDisabled`.

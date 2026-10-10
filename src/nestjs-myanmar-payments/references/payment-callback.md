@@ -16,7 +16,7 @@ Returned by every gateway's `handleCallback()` and by `ayaPay().verifyRedirect()
 | `gatewayStatus` | `string` | The gateway's own status value, unmapped |
 | `gatewayReference` | `string \| undefined` | The gateway's ID for the payment |
 | `amount` | `string \| undefined` | The amount as the gateway sent it |
-| `raw` | `Readonly<Record<string, unknown>>` | The verified payload |
+| `raw` | `Readonly<Record<string, unknown>>` | The verified payload; JSON numbers are their exact text as `string`s |
 | `isSuccessful()` | `boolean` | `status === PaymentStatus.Successful` |
 | `acknowledgement` | `Acknowledgement` | The response the gateway expects (`status`, `body`, `headers`) |
 
@@ -46,3 +46,5 @@ Returned by `kbzPay().status()`, `ayaPay().status()` and `yomaMmqr().status()`.
 | `PaymentStatus.Canceled` | `canceled` | `true` |
 | `PaymentStatus.Expired` | `expired` | `true` |
 | `PaymentStatus.Unknown` | `unknown` | `false` |
+
+`PaymentStatus.values` lists every status.

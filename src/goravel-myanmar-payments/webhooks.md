@@ -288,7 +288,6 @@ package jobs
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/goravel/framework/contracts/database/orm"
@@ -336,7 +335,13 @@ var FulfillPayment = func(
 		if order.PaidAt != nil {
 			return nil
 		}
-		if !sameAmount(callback.Amount, order.Amount) {
+		expected, err := myanmarpayments.ParseAmount(order.Amount)
+		if err != nil {
+			return err
+		}
+		// Yoma MMQR's callback carries no amount; its amount was fixed
+		// at checkout.
+		if callback.Amount != "" && !expected.Equals(callback.Amount) {
 			return fmt.Errorf(
 				"paid %s, expected %s for order %s",
 				callback.Amount, order.Amount, order.Number,
@@ -348,19 +353,6 @@ var FulfillPayment = func(
 
 		return tx.Save(&order)
 	})
-}
-
-// sameAmount compares decimal strings, so "10000", "10000.0" and "10000.00"
-// are equal.
-func sameAmount(paid, expected string) bool {
-	normalize := func(amount string) string {
-		if strings.Contains(amount, ".") {
-			amount = strings.TrimRight(strings.TrimRight(amount, "0"), ".")
-		}
-		return amount
-	}
-
-	return normalize(paid) == normalize(expected)
 }
 
 // ProcessPaymentWebhook processes a stored payment webhook once, with retries.

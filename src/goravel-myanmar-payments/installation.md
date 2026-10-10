@@ -112,3 +112,5 @@ request, err := myanmarpayments.NewCallbackRequestFromHTTP(r)
 callback, err := kbz.HandleCallback(request)
 err = callback.Acknowledgement.Write(w)
 ```
+
+To build every gateway from one object, as this package's facade does, use the SDK's `payments` package (`payments.New`, `payments.FromEnv`); see [One Object for Every Gateway](/go-myanmar-payments/configuration#one-object-for-every-gateway).

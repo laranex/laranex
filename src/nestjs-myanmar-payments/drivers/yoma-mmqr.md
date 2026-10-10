@@ -144,7 +144,7 @@ if (result.isSuccessful()) {
 
 ## Responses
 
-What Yoma MMQR puts in each property. See [Results](/nestjs-myanmar-payments/references/results) and [PaymentCallback & Status](/nestjs-myanmar-payments/references/payment-callback) for the full classes.
+What Yoma MMQR puts in each property. See [Results](/nestjs-myanmar-payments/references/results) and [PaymentCallback & Status](/nestjs-myanmar-payments/references/payment-callback) for the full classes. `raw` holds plain JavaScript values, with JSON numbers kept as their exact text in a `string` (`1000.50` stays `'1000.50'`).
 
 ### `initiate()` → `QrPayment` {#initiate-response}
 
@@ -201,7 +201,9 @@ The same values as [`initiate()`](#initiate-response) for the `orderId` you pass
 
 ## Access Tokens
 
-Yoma authenticates with an OAuth token that lasts hours. The package caches it in the token cache (see [Configuration](/nestjs-myanmar-payments/configuration#cache)) and fetches a new one, retrying once, when Yoma answers `401`. `await this.payments.yomaMmqr().forgetToken()` drops the cached token, e.g. after rotating the client secret.
+Yoma authenticates with an OAuth token that lasts hours. The package caches it in the token cache (see [Configuration](/nestjs-myanmar-payments/configuration#cache)), shares one token request between concurrent calls, and fetches a new one, retrying once, when Yoma answers `401`. The shared token request is bounded by the HTTP client timeout rather than one call's `signal`, so aborting one call never fails the others. `await this.payments.yomaMmqr().forgetToken()` drops the cached token, e.g. after rotating the client secret.
+
+The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>`, the same key every Laranex SDK uses, so services in different languages can share one cache (the cache store's own prefix still applies), for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits, so `28800.0` is 28800 seconds; a missing or non-positive value means 3600.
 
 ## Errors
 
@@ -211,6 +213,6 @@ Yoma authenticates with an OAuth token that lasts hours. The package caches it i
 | `initiate()` | `ApiError` | The token request fails, Yoma answers with an HTTP error or an `errorCode` (e.g. `PAYMENT ALREADY EXISTS`), `checkOutStatus` isn't `true`, or there is no `qrString` or `refLabel` |
 | `renewQr()` | `ApiError` | As `initiate()`, without the checkout |
 | `status()` | `ApiError` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
-| `handleCallback()` | `SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong (when a webhook secret is set), `orderNumber` is missing, or `hashValue` doesn't match |
+| `handleCallback()` | `SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong (when a webhook secret is set), `orderNumber` is missing, `orderNumber` or `status` holds an object or array, or `hashValue` doesn't match |
 
 Yoma reports business errors with HTTP 200 and an `errorCode`; `ApiError` carries it in `gatewayCode` and Yoma's `errorDescription` in `gatewayMessage`. When Yoma can't be reached, the calls throw `ApiError` with `httpStatus` `0`.

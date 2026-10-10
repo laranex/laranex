@@ -127,3 +127,5 @@ const request = await CallbackRequest.fromNodeRequest(req);
 const callback = kbzPay.handleCallback(request);
 callback.acknowledgement.send(res);
 ```
+
+To build every gateway from one object, as this package's service does, use the SDK's `MyanmarPayments`; see [One Object for Every Gateway](/node-myanmar-payments/configuration#one-object-for-every-gateway).

@@ -124,7 +124,7 @@ if ($result->isSuccessful()) {
 
 ## Responses
 
-What KBZ Pay puts in each property. See [Results](/laravel-myanmar-payments/references/results) and [PaymentCallback & Status](/laravel-myanmar-payments/references/payment-callback) for the full classes.
+What KBZ Pay puts in each property. See [Results](/laravel-myanmar-payments/references/results) and [PaymentCallback & Status](/laravel-myanmar-payments/references/payment-callback) for the full classes. `raw` holds plain PHP values (JSON numbers stay `string`s with their exact text), while the typed properties such as `amount` keep the exact text KBZ sent.
 
 ### `pwa()` → `RedirectPayment` {#pwa-response}
 
@@ -206,6 +206,6 @@ KBZ signs requests, the in-app `orderInfo` and notifications the same way: every
 | `pwa()`, `qr()`, `app()` | `ApiException` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, or without a `prepay_id` |
 | `qr()` | `ApiException` | KBZ returns no `qrCode` |
 | `status()` | `ApiException` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, e.g. for an unknown order |
-| `handleCallback()` | `SignatureVerificationException` | `sign` doesn't match |
+| `handleCallback()` | `SignatureVerificationException` | `sign` doesn't match, or a field holds an object or array |
 
 `ApiException` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `gatewayCode` and its `msg` in `gatewayMessage`. When KBZ can't be reached, the calls throw `ApiException` with `httpStatus` `0`.

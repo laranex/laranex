@@ -107,7 +107,7 @@ Route::post('/payments/wave/callback', function (Request $request) {
 
 ## Responses
 
-What Wave Money puts in each property. See [Results](/laravel-myanmar-payments/references/results) and [PaymentCallback & Status](/laravel-myanmar-payments/references/payment-callback) for the full classes.
+What Wave Money puts in each property. See [Results](/laravel-myanmar-payments/references/results) and [PaymentCallback & Status](/laravel-myanmar-payments/references/payment-callback) for the full classes. `raw` holds plain PHP values (JSON numbers stay `string`s with their exact text), while the typed properties such as `amount` keep the exact text Wave sent.
 
 ### `initiate()` → `RedirectPayment` {#initiate-response}
 
@@ -155,6 +155,6 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 |---|---|---|
 | `new WaveMoneyPaymentData(...)` | `InvalidPaymentDataException` | A value breaks the rules above. Nothing is sent |
 | `initiate()` | `ApiException` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
-| `handleCallback()` | `SignatureVerificationException` | `hashValue` doesn't match |
+| `handleCallback()` | `SignatureVerificationException` | `hashValue` doesn't match, or a hashed field holds an object or array |
 
 `httpStatus` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`gatewayCode` is `VALIDATION_ERROR`). When Wave can't be reached, `initiate()` throws `ApiException` with `httpStatus` `0`.
