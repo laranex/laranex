@@ -1,6 +1,6 @@
 ---
 name: NestJS Myanmar Payments
-description: "NestJS integration for Myanmar payment gateways: KBZ Pay, Wave Money, AYA Pay, Yoma MMQR and CyberSource. Built on Node Myanmar Payments. Module and injectable service, callback helpers for Express and Fastify, and an auto-submit form route."
+description: "NestJS integration for Myanmar payment gateways: KBZ Pay, Wave Money, AYA Pay, Yoma MMQR and CyberSource. Built on Node Myanmar Payments. Injectable module, verified callbacks and test fakes."
 requirements:
   - Node.js 20+
   - NestJS 10, 11 or 12
