@@ -56,11 +56,14 @@ func (r *CheckoutController) Card(ctx http.Context) http.Response {
 		return ctx.Response().String(http.StatusInternalServerError, "%s", err)
 	}
 	data := cybersource.PaymentData{
-		OrderID:     fmt.Sprintf("ORDER_%d", order.ID),
-		Amount:      myanmarpayments.Kyat(10000),
-		CallbackURL: "https://shop.test/payments/cybersource/callback",
-		ReturnURL:   "https://shop.test/payments/cybersource/receipt",
-		CancelURL:   "https://shop.test/checkout",
+		OrderID:         fmt.Sprintf("ORDER_%d", order.ID),
+		Amount:          myanmarpayments.Kyat(10000),
+		CallbackURL:     "https://shop.test/payments/cybersource/callback",
+		Currency:        "MMK",
+		TransactionType: cybersource.Sale,
+		Locale:          "en-us",
+		ReturnURL:       "https://shop.test/payments/cybersource/receipt",
+		CancelURL:       "https://shop.test/checkout",
 	}
 
 	form, err := cyberSource.Initiate(data)
@@ -83,11 +86,11 @@ func (r *CheckoutController) Card(ctx http.Context) http.Response {
 | `OrderID` | `string` | Yes | At most 50 characters, sent as `reference_number` |
 | `Amount` | `myanmarpayments.Amount` | Yes | Order total in `Currency`, 0 or more, any number of decimals, at most 15 characters, e.g. `Kyat(10000)` or `MustParseAmount("10.50")` |
 | `CallbackURL` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters; CyberSource may require HTTPS in production |
+| `Currency` | `string` | Yes | Any three-letter uppercase ISO 4217 code, e.g. `MMK` |
+| `TransactionType` | `cybersource.TransactionType` | Yes | `cybersource.Sale` (`"sale"`), `Authorization` (`"authorization"`), `SaleAndCreateToken` (`"sale,create_payment_token"`) or `AuthorizationAndCreateToken` (`"authorization,create_payment_token"`) |
+| `Locale` | `string` | Yes | Hosted page language as a CyberSource locale code, e.g. `en-us` |
 | `ReturnURL` | `string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `CancelURL` | `string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
-| `Currency` | `string` | No | Any three-letter uppercase ISO 4217 code, default `MMK` |
-| `TransactionType` | `cybersource.TransactionType` | No | `cybersource.Sale` (default), `Authorization`, `SaleAndCreateToken` or `AuthorizationAndCreateToken` |
-| `Locale` | `string` | No | Hosted page language as a CyberSource locale code such as `en-us`, default `en-us` |
 
 ### Amounts and Currencies
 
@@ -151,7 +154,7 @@ What CyberSource puts in each field. See [Results](/goravel-myanmar-payments/ref
 | `Enctype` | `application/x-www-form-urlencoded` |
 | `HTML()` | A full HTML page that posts `Fields` to `Action` on load |
 
-`payments.AutoSubmitURL(form)` returns the encrypted link to the `myanmar-payments.form` route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. It expires after `form_route.ttl_minutes` (30). With `form_route.enabled` set to `false` it returns `payments.ErrFormRouteDisabled`.
+`payments.AutoSubmitURL(form)` returns the encrypted link to the `myanmar-payments.form` route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. It expires after `form_route.ttl_minutes`. With `form_route.enabled` set to `false` it returns `payments.ErrFormRouteDisabled`.
 
 `Fields`, all signed, in this order:
 

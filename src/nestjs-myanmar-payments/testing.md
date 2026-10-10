@@ -37,6 +37,7 @@ it('starts a KBZ Pay QR payment', async () => {
     imports: [
       MyanmarPaymentsModule.forRoot({
         env: {
+          MYANMAR_PAYMENTS_HTTP_TIMEOUT: '5',
           KBZ_PAY_APP_ID: 'test-app-id',
           KBZ_PAY_APP_KEY: 'test-app-key',
           KBZ_PAY_MERCHANT_CODE: '100001',
@@ -66,7 +67,7 @@ it('starts a KBZ Pay QR payment', async () => {
 | Yoma MMQR | `{baseUrl}/token`, then `{baseUrl}/payment-gateway/{apiVersion}/api/` + `payment/checkout`, `qr/generate`, `payment/check-status` |
 | CyberSource | None: forms are signed locally |
 
-Response bodies are described on each [gateway page](/nestjs-myanmar-payments/drivers/kbz-pay). Gateways are configured on first use, so pass test credentials in `env` (a record keeps the test independent of the machine's environment). When your app registers the module with `forRootAsync()`, override the options instead: `.overrideProvider(MYANMAR_PAYMENTS_OPTIONS).useValue({ env: testEnv, fetch })`. Yoma access tokens are kept in the token cache; the in-memory cache starts empty in every testing module.
+Response bodies are described on each [gateway page](/nestjs-myanmar-payments/drivers/kbz-pay). Gateways are configured on first use, so pass every required setting of the gateways under test in `env` (a record keeps the test independent of the machine's environment). When your app registers the module with `forRootAsync()`, override the options instead: `.overrideProvider(MYANMAR_PAYMENTS_OPTIONS).useValue({ env: testEnv, fetch })`. Yoma access tokens are kept in the token cache; the in-memory cache starts empty in every testing module.
 
 ## Sending Signed Callbacks
 
@@ -128,7 +129,7 @@ Code that takes the callback as an argument can be called with it directly, e.g.
 
 ## Following Form Links
 
-`autoSubmitUrl()` points at the module's form route, so a test can follow it. It needs a secret: put `MYANMAR_PAYMENTS_FORM_KEY` in the test `env` (or `formLink: { secret }`).
+`autoSubmitUrl()` points at the module's form route, so a test can follow it. It needs a secret and a lifetime: put `MYANMAR_PAYMENTS_FORM_KEY` and `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` in the test `env` (or `formLink: { secret, ttlMinutes }`).
 
 ```ts
 const payment = payments.ayaPay().initiate(data);
@@ -139,8 +140,8 @@ const response = await request(app.getHttpServer())
   .expect(200);
 
 expect(response.text).toContain(
-  'action="https://uat-pgw.ayainnovation.com/v1/payment/request"',
+  'action="https://pgw.ayainnovation.com/v1/payment/request"',
 );
 ```
 
-A tampered link, or one older than `formLink.ttlMinutes` (try `vi.useFakeTimers()` and `vi.advanceTimersByTime(31 * 60_000)`), answers `410 Gone`.
+A tampered link, or one older than `formLink.ttlMinutes` (with `ttlMinutes` set to 30, try `vi.useFakeTimers()` and `vi.advanceTimersByTime(31 * 60_000)`), answers `410 Gone`.

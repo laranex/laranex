@@ -12,7 +12,7 @@ Gateways return the SDK's typed errors from `github.com/laranex/go-myanmar-payme
 | `*InvalidPaymentDataError` | Payment data has values the gateway would reject |
 | `*APIError` | A gateway rejects a request, answers with an error (including errors sent with HTTP 200), or cannot be reached |
 | `*SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification |
-| `*ConfigurationError` | A gateway is requested without a credential it needs |
+| `*ConfigurationError` | A gateway is requested without a setting it needs, or a time setting is not a whole number greater than 0 |
 
 ```go
 var paymentErr myanmarpayments.PaymentError
@@ -75,4 +75,4 @@ Validation runs inside the gateway call, before any request is sent. `err.Error(
 
 ## ConfigurationError
 
-The message names the gateway and the missing key, e.g. `myanmarpayments: The wave_money configuration is missing [merchant_id].` `Gateway` and `Key` hold both.
+The message names the gateway and the key, e.g. `myanmarpayments: The wave_money configuration is missing [merchant_id].`, or `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting, with `Invalid` set. `Gateway` and `Key` hold both. `AutoSubmitURL` returns it with `form_route` and `ttl_minutes` when the form link lifetime is missing or invalid.

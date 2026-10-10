@@ -50,9 +50,10 @@ import (
 )
 
 kbz, err := kbzpay.New(kbzpay.Config{
-	AppID:        "...",
-	AppKey:       "...",
-	MerchantCode: "...",
+	AppID:          "...",
+	AppKey:         "...",
+	MerchantCode:   "...",
+	TimeoutSeconds: 30,
 }, nil)
 if err != nil {
 	return err

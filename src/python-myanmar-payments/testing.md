@@ -17,7 +17,12 @@ import json
 import httpx
 from python_myanmar_payments import KbzPay, KbzPayConfig, KbzPayPaymentData
 
-CONFIG = KbzPayConfig(app_id="kp1", app_key="kbz-secret", merchant_code="1")
+CONFIG = KbzPayConfig(
+    app_id="kp1",
+    app_key="kbz-secret",
+    merchant_code="1",
+    timeout_seconds=5,
+)
 
 
 def precreate(request: httpx.Request) -> httpx.Response:
@@ -72,6 +77,7 @@ TEST_ENV = {
     "KBZ_PAY_APP_ID": "kp1",
     "KBZ_PAY_APP_KEY": "kbz-secret",
     "KBZ_PAY_MERCHANT_CODE": "1",
+    "MYANMAR_PAYMENTS_HTTP_TIMEOUT": "5",
 }
 
 
@@ -89,7 +95,12 @@ import httpx
 import respx
 from python_myanmar_payments import KbzPay, KbzPayConfig
 
-CONFIG = KbzPayConfig(app_id="kp1", app_key="kbz-secret", merchant_code="1")
+CONFIG = KbzPayConfig(
+    app_id="kp1",
+    app_key="kbz-secret",
+    merchant_code="1",
+    timeout_seconds=5,
+)
 
 
 @respx.mock
@@ -127,7 +138,12 @@ from python_myanmar_payments import (
     KbzPayPaymentData,
 )
 
-CONFIG = KbzPayConfig(app_id="kp1", app_key="kbz-secret", merchant_code="1")
+CONFIG = KbzPayConfig(
+    app_id="kp1",
+    app_key="kbz-secret",
+    merchant_code="1",
+    timeout_seconds=5,
+)
 
 
 def precreate(request: httpx.Request) -> httpx.Response:
@@ -162,7 +178,12 @@ from python_myanmar_payments import (
     PaymentStatus,
 )
 
-CONFIG = KbzPayConfig(app_id="kp1", app_key="kbz-secret", merchant_code="1")
+CONFIG = KbzPayConfig(
+    app_id="kp1",
+    app_key="kbz-secret",
+    merchant_code="1",
+    timeout_seconds=5,
+)
 
 
 def signed_kbz_callback(**fields: str) -> CallbackRequest:

@@ -12,7 +12,7 @@ Every exception extends `Laranex\PhpMyanmarPayments\Exceptions\PaymentException`
 | `InvalidPaymentDataException` | A request object is built with values the gateway would reject |
 | `ApiException` | A gateway rejects a request, answers with an error (including errors sent with HTTP 200), or cannot be reached |
 | `SignatureVerificationException` | A callback, return redirect or gateway response fails signature verification |
-| `ConfigurationException` | A gateway is used without a credential it needs |
+| `ConfigurationException` | A gateway is used without a setting it needs, or a time setting is not a whole number greater than 0 |
 
 ## InvalidPaymentDataException
 
@@ -45,4 +45,4 @@ try {
 
 ## ConfigurationException
 
-The message names the gateway and the missing key, e.g. `The wave_money configuration is missing [merchant_id].` `gateway` and `key` hold both.
+The message names the gateway and the key, e.g. `The wave_money configuration is missing [merchant_id].`, or `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting. `gateway` and `key` hold both. A form payment without a form link lifetime throws it with `form_route` and `ttl_minutes`.

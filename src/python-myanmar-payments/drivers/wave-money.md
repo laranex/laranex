@@ -55,6 +55,8 @@ wave = WaveMoney(
         merchant_id="...",
         secret_key="...",
         merchant_name="My Shop",
+        time_to_live_seconds=300,
+        timeout_seconds=30,
     )
 )
 

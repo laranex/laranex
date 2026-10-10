@@ -47,6 +47,7 @@ import { AyaPay, AyaPayMethod } from '@laranex/myanmar-payments/aya-pay';
 const aya = new AyaPay({
   appKey: '...',
   appSecret: '...',
+  timeoutSeconds: 30,
 });
 
 for (const service of await aya.services()) {
@@ -194,7 +195,7 @@ Entries AYA sends without a `key` are skipped.
 |---|---|
 | `flow` | `'form'` |
 | `orderId` | Your `data.orderId` |
-| `action` | `{baseUrl}/v1/payment/request`, e.g. `https://uat-pgw.ayainnovation.com/v1/payment/request` |
+| `action` | `{baseUrl}/v1/payment/request`, e.g. `https://pgw.ayainnovation.com/v1/payment/request` |
 | `fields` | The signed fields below, in signing order. Post them unchanged |
 | `enctype` | `multipart/form-data` |
 | `toHtml()` | A full HTML page that posts `fields` to `action` on load |

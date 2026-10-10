@@ -49,7 +49,7 @@ use Laranex\PhpMyanmarPayments\AyaPay\AyaPayMethod;
 $ayaPay = new AyaPay(new AyaPayConfig(
     appKey: '...',
     appSecret: '...',
-    sandbox: true,
+    timeoutSeconds: 30,
 ));
 
 foreach ($ayaPay->services() as $service) {
@@ -196,7 +196,7 @@ Entries AYA sends without a `key` are skipped.
 |---|---|
 | `flow()` | `PaymentFlow::Form` |
 | `orderId` | Your `$data->orderId` |
-| `action` | `{baseUrl}/v1/payment/request`, e.g. `https://uat-pgw.ayainnovation.com/v1/payment/request` |
+| `action` | `{baseUrl}/v1/payment/request`, e.g. `https://pgw.ayainnovation.com/v1/payment/request` |
 | `fields` | The signed fields below, in signing order. Post them unchanged |
 | `enctype` | `multipart/form-data` |
 | `autoSubmitUrl` | `null` in plain PHP until you call `withAutoSubmitUrl()` |

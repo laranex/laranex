@@ -49,7 +49,8 @@ $yomaMmqr = new YomaMmqr(
         clientId: '...',
         clientSecret: '...',
         webhookHashKey: '...',
-        sandbox: true,
+        apiVersion: 'v1rc',
+        timeoutSeconds: 30,
     ),
     cache: $cache, // a shared PSR-16 cache for the access token
 );

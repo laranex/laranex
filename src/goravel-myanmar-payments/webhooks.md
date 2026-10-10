@@ -686,4 +686,4 @@ func (s *PaymentWebhooksTestSuite) TestKbzPayWebhook() {
 }
 ```
 
-Post the same body twice to test duplicates, a modified body to test rejection, and call `(&jobs.ProcessPaymentWebhook{}).Handle(id)` directly to test retries. To sign other gateways' payloads, compute the signature in the test with your sandbox secret, as described on each gateway's page.
+Post the same body twice to test duplicates, a modified body to test rejection, and call `(&jobs.ProcessPaymentWebhook{}).Handle(id)` directly to test retries. To sign other gateways' payloads, compute the signature in the test with the secret from your test configuration, as described on each gateway's page.

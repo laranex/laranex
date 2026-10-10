@@ -45,8 +45,9 @@ AYA posts the result to your callback URL and also signs the query string it add
 import "github.com/laranex/go-myanmar-payments/v4/ayapay"
 
 aya, err := ayapay.New(ayapay.Config{
-	AppKey:    "...",
-	AppSecret: "...",
+	AppKey:         "...",
+	AppSecret:      "...",
+	TimeoutSeconds: 30,
 }, nil)
 if err != nil {
 	return err
@@ -229,7 +230,7 @@ Entries AYA sends without a `key` are skipped.
 |---|---|
 | `Flow()` | `FlowForm` |
 | `OrderID` | Your `data.OrderID` |
-| `Action` | `{BaseURL}/v1/payment/request`, e.g. `https://uat-pgw.ayainnovation.com/v1/payment/request` |
+| `Action` | `{BaseURL}/v1/payment/request`, e.g. `https://pgw.ayainnovation.com/v1/payment/request` |
 | `Fields` | The signed fields below, in signing order. Post them unchanged |
 | `Enctype` | `multipart/form-data` |
 | `HTML()` | A full HTML page that posts `Fields` to `Action` on load |

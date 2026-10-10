@@ -44,6 +44,7 @@ function kbzConfig(): KbzPayConfig
         appId: 'kp1',
         appKey: 'kbz-secret',
         merchantCode: '1',
+        timeoutSeconds: 5,
     );
 }
 
@@ -94,6 +95,7 @@ const TEST_ENV = [
     'KBZ_PAY_APP_ID' => 'kp1',
     'KBZ_PAY_APP_KEY' => 'kbz-secret',
     'KBZ_PAY_MERCHANT_CODE' => '1',
+    'MYANMAR_PAYMENTS_HTTP_TIMEOUT' => '5',
 ];
 
 function makePayments(Closure $handler): MyanmarPayments

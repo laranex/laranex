@@ -33,9 +33,11 @@ services:
                     app_id: '%env(KBZ_PAY_APP_ID)%'
                     app_key: '%env(KBZ_PAY_APP_KEY)%'
                     merchant_code: '%env(KBZ_PAY_MERCHANT_CODE)%'
+                    timeout_in_seconds: '%env(MYANMAR_PAYMENTS_HTTP_TIMEOUT)%'
                 aya_pay:
                     app_key: '%env(AYA_PAY_APP_KEY)%'
                     app_secret: '%env(AYA_PAY_APP_SECRET)%'
+                    timeout_in_seconds: '%env(MYANMAR_PAYMENTS_HTTP_TIMEOUT)%'
             $httpClient: '@Symfony\Component\HttpClient\Psr18Client'
             $cache: '@app.payments_cache'
 

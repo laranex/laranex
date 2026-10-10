@@ -76,7 +76,7 @@ The provider uses whatever is registered and degrades gracefully:
 | `payments.NewTokenCache(store)` | The `myanmarpayments.TokenCache` the provider uses for Yoma MMQR tokens, backed by a Goravel cache store |
 | `payments.ErrUnknownGateway`, `ErrFormRouteDisabled`, `ErrCryptNotAvailable`, `ErrInvalidFormLink` | The package's own errors; see [Errors](/goravel-myanmar-payments/references/errors) |
 | `payments.Binding`, `PackageName`, `ConfigKey`, `FormRouteName` | `laranex.myanmar_payments`, `github.com/laranex/goravel-myanmar-payments/v4`, `myanmar_payments` and `myanmar-payments.form` |
-| `payments.DefaultFormRoutePath`, `DefaultFormRouteTTL`, `DefaultHTTPTimeout` | The defaults without a published config: `myanmar-payments/form`, 30 minutes and 30 seconds |
+| `payments.DefaultFormRoutePath` | The form route path without a published config: `myanmar-payments/form` |
 
 Payment data, results, `PaymentCallback`, `PaymentStatus`, `Amount` and errors are the SDK's own types, imported from `github.com/laranex/go-myanmar-payments/v4` (as `myanmarpayments`) and its gateway packages `kbzpay`, `wavemoney`, `ayapay`, `yomammqr` and `cybersource`.
 
@@ -94,11 +94,11 @@ import (
 	"github.com/laranex/go-myanmar-payments/v4/kbzpay"
 )
 
-// The zero value of Production selects the sandbox.
 kbz, err := kbzpay.New(kbzpay.Config{
-	AppID:        "...",
-	AppKey:       "...",
-	MerchantCode: "...",
+	AppID:          "...",
+	AppKey:         "...",
+	MerchantCode:   "...",
+	TimeoutSeconds: 30,
 }, nil)
 
 payment, err := kbz.PWA(r.Context(), kbzpay.PaymentData{

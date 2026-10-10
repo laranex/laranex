@@ -123,11 +123,12 @@ The config file is now `config/myanmar-payments.php` (publish tag `myanmar-payme
 php artisan vendor:publish --tag="myanmar-payments-config"
 ```
 
-- Each gateway has a `*_SANDBOX` switch (default `true`) that selects its endpoints. The `*_BASE_URL` variables (required for AYA and CyberSource in v2) are now optional overrides. **Set `*_SANDBOX=false` in production**, even if you keep your base URL overrides: the other endpoints of a gateway (KBZ's PWA page, Wave's authenticate redirect) follow the switch.
+- Every gateway uses its production endpoints. The `*_BASE_URL` variables (required for AYA and CyberSource in v2) are now optional overrides; to test against UAT, set them to the UAT URLs listed in [Testing Against UAT](/laravel-myanmar-payments/configuration#testing-against-uat).
 - The AYA block is renamed `aya_pgw` → `aya_pay`, read from `AYA_PAY_*` with the `AYA_PGW_*` names as fallbacks.
 - KBZ Pay's `base_url` and `pwa.base_redirect_url` keys are now `api_url` and `pwa_url`; the `KBZ_PAY_BASE_URL` and `KBZ_PAY_PWA_BASE_REDIRECT_URL` env names are unchanged. `KBZ_PAY_MERCHANT_NAME` is no longer used.
 - Wave Money redirects the customer to `WAVE_MONEY_AUTHENTICATE_URL` (the Wave host without the API port) instead of the API base URL.
-- `MYANMAR_PAYMENTS_HTTP_TIMEOUT`, `MYANMAR_PAYMENTS_CACHE_STORE` and the `form_route` options are new.
+- `MYANMAR_PAYMENTS_HTTP_TIMEOUT`, `MYANMAR_PAYMENTS_FORM_TTL_MINUTES`, `MYANMAR_PAYMENTS_CACHE_STORE` and the `form_route` options are new.
+- Every setting of the gateways you use is required and has no default, including `MYANMAR_PAYMENTS_HTTP_TIMEOUT`, `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` (for AYA Pay and CyberSource), `WAVE_MONEY_MERCHANT_NAME` (no `APP_NAME` fallback), `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` and `YOMA_MMQR_API_VERSION`. CyberSource payments take `currency`, `transactionType` and `locale`.
 
 See [Configuration](/laravel-myanmar-payments/configuration).
 

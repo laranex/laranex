@@ -50,6 +50,7 @@ aya = AyaPay(
     AyaPayConfig(
         app_key="...",
         app_secret="...",
+        timeout_seconds=30,
     )
 )
 
@@ -213,7 +214,7 @@ Entries AYA sends without a `key` are skipped.
 |---|---|
 | `flow` | `PaymentFlow.FORM` |
 | `order_id` | Your `data.order_id` |
-| `action` | `{base_url}/v1/payment/request`, e.g. `https://uat-pgw.ayainnovation.com/v1/payment/request` |
+| `action` | `{base_url}/v1/payment/request`, e.g. `https://pgw.ayainnovation.com/v1/payment/request` |
 | `fields` | The signed fields below, in signing order. Post them unchanged |
 | `enctype` | `multipart/form-data` |
 | `to_html()` | A full HTML page that posts `fields` to `action` on load |

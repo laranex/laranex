@@ -230,12 +230,12 @@ Entries AYA sends without a `key` are skipped.
 | Property / Method | AYA Pay value |
 |---|---|
 | `orderId` | Your `orderId` |
-| `action` | `{baseUrl}/v1/payment/request`, e.g. `https://uat-pgw.ayainnovation.com/v1/payment/request` |
+| `action` | `{baseUrl}/v1/payment/request`, e.g. `https://pgw.ayainnovation.com/v1/payment/request` |
 | `fields` | The signed fields below. Post them unchanged |
 | `enctype` | `multipart/form-data` |
 | `toHtml()` | A full HTML page that posts `fields` to `action` on load |
 
-`this.payments.autoSubmitUrl(payment)` returns an encrypted link to the module's form route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. It expires after `formLink.ttlMinutes` (30); the call throws when `formRoute.enabled` is `false`.
+`this.payments.autoSubmitUrl(payment)` returns an encrypted link to the module's form route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. It expires after `formLink.ttlMinutes`; the call throws when `formRoute.enabled` is `false`.
 
 `fields`, in the order AYA signs them:
 
