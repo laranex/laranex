@@ -52,6 +52,8 @@ yoma, err := yomammqr.New(
 		ClientID:       "...",
 		ClientSecret:   "...",
 		WebhookHashKey: "...",
+		APIVersion:     "v1rc",
+		TimeoutSeconds: 30,
 	},
 	nil, // default HTTP client
 	nil, // in-memory token cache; share this gateway across requests

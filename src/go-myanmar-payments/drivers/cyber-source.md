@@ -56,11 +56,14 @@ if err != nil {
 }
 
 data := cybersource.PaymentData{
-	OrderID:     fmt.Sprintf("ORDER_%d", order.ID),
-	Amount:      myanmarpayments.Kyat(10000),
-	CallbackURL: "https://shop.test/payments/cybersource/callback",
-	ReturnURL:   "https://shop.test/payments/cybersource/receipt",
-	CancelURL:   "https://shop.test/checkout",
+	OrderID:         fmt.Sprintf("ORDER_%d", order.ID),
+	Amount:          myanmarpayments.Kyat(10000),
+	CallbackURL:     "https://shop.test/payments/cybersource/callback",
+	Currency:        "MMK",
+	TransactionType: cybersource.Sale,
+	Locale:          "en-us",
+	ReturnURL:       "https://shop.test/payments/cybersource/receipt",
+	CancelURL:       "https://shop.test/checkout",
 }
 
 payment, err := cs.Initiate(data)
@@ -80,11 +83,11 @@ io.WriteString(w, payment.HTML())
 | `OrderID` | `string` | Yes | At most 50 characters, sent as `reference_number` |
 | `Amount` | `myanmarpayments.Amount` | Yes | Order total in `Currency`, 0 or more, any number of decimals, at most 15 characters, e.g. `Kyat(10000)` or `MustParseAmount("10.50")` |
 | `CallbackURL` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters; CyberSource may require HTTPS in production |
+| `Currency` | `string` | Yes | Any three-letter uppercase ISO 4217 code, e.g. `MMK` |
+| `TransactionType` | `cybersource.TransactionType` | Yes | `cybersource.Sale` (`"sale"`), `.Authorization` (`"authorization"`), `.SaleAndCreateToken` (`"sale,create_payment_token"`) or `.AuthorizationAndCreateToken` (`"authorization,create_payment_token"`) |
+| `Locale` | `string` | Yes | Hosted page language as a CyberSource locale code, e.g. `en-us` |
 | `ReturnURL` | `string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `CancelURL` | `string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
-| `Currency` | `string` | No | Any three-letter uppercase ISO 4217 code. Empty means `MMK` |
-| `TransactionType` | `cybersource.TransactionType` | No | `cybersource.Sale` (`"sale"`, the default), `.Authorization` (`"authorization"`), `.SaleAndCreateToken` (`"sale,create_payment_token"`) or `.AuthorizationAndCreateToken` (`"authorization,create_payment_token"`). Empty means `Sale` |
-| `Locale` | `string` | No | Hosted page language as a CyberSource locale code such as `en-us`. Empty means `en-us` |
 
 ### Amounts and Currencies
 
@@ -137,7 +140,7 @@ What CyberSource puts in each field. See [Results](/go-myanmar-payments/referenc
 |---|---|
 | `Flow()` | `FlowForm` |
 | `OrderID` | Your `data.OrderID` |
-| `Action` | `{BaseURL}/pay`, e.g. `https://testsecureacceptance.cybersource.com/pay` |
+| `Action` | `{BaseURL}/pay`, e.g. `https://secureacceptance.cybersource.com/pay` |
 | `Fields` | The signed fields below, in signing order. Post them unchanged |
 | `Enctype` | `application/x-www-form-urlencoded` |
 | `HTML()` | A full HTML page that posts `Fields` to `Action` on load |
@@ -149,11 +152,11 @@ What CyberSource puts in each field. See [Results](/go-myanmar-payments/referenc
 | `transaction_uuid` | A random ID, new for every call |
 | `signed_field_names` | The field names in this table except `signature`, comma-separated |
 | `signed_date_time` | UTC time, e.g. `2026-10-08T09:30:00Z` |
-| `locale` | `data.Locale`, `en-us` when empty |
-| `transaction_type` | `data.TransactionType`, `sale` when empty |
+| `locale` | `data.Locale` |
+| `transaction_type` | `data.TransactionType` |
 | `reference_number` | `data.OrderID` |
 | `amount` | `data.Amount`, e.g. `10000` |
-| `currency` | `data.Currency`, `MMK` when empty |
+| `currency` | `data.Currency` |
 | `override_custom_receipt_page` | `data.ReturnURL`, `""` when unset |
 | `override_backoffice_post_url` | `data.CallbackURL` |
 | `override_custom_cancel_page` | `data.CancelURL`, `""` when unset |

@@ -89,7 +89,7 @@ The module works with whatever is registered:
 | `GATEWAY_NAMES`, `GatewayName` | `'kbz-pay'`, `'wave-money'`, `'aya-pay'`, `'yoma-mmqr'`, `'cyber-source'` |
 | `MyanmarPaymentsGateway` | `KbzPay \| WaveMoney \| AyaPay \| YomaMmqr \| CyberSource`, what `gateway(name)` returns (type) |
 | `MYANMAR_PAYMENTS_OPTIONS`, `KBZ_PAY`, `WAVE_MONEY`, `AYA_PAY`, `YOMA_MMQR`, `CYBER_SOURCE` | Injection tokens of the options and of each gateway |
-| `DEFAULT_FORM_PATH`, `DEFAULT_FORM_TTL_MINUTES` | `'myanmar-payments/form'` and `30` |
+| `DEFAULT_FORM_PATH` | `'myanmar-payments/form'` |
 | `MyanmarPaymentsModuleOptions`, `MyanmarPaymentsModuleExtras`, `MyanmarPaymentsModuleRootOptions`, `MyanmarPaymentsModuleAsyncOptions`, `MyanmarPaymentsOptionsFactory`, `FormLinkOptions`, `FormRouteOptions`, `ConfigReader` | Option types; see [Configuration](/nestjs-myanmar-payments/configuration) |
 
 Everything about payments themselves (`Amount`, payment data, results, `PaymentCallback`, `PaymentStatus`, errors) is imported from `@laranex/myanmar-payments`.
@@ -113,7 +113,7 @@ const kbzPay = new KbzPay({
   appId: '...',
   appKey: '...',
   merchantCode: '...',
-  sandbox: true,
+  timeoutSeconds: 30,
 });
 
 const payment = await kbzPay.pwa({

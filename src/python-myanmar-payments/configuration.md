@@ -1,17 +1,22 @@
 ---
 title: Configuration
-description: Configure Python Myanmar Payments with one config class per gateway or from environment variables. Sandbox is the default; pass your own httpx client, timeout and token cache.
+description: Configure Python Myanmar Payments with one config class per gateway or from environment variables. Every setting is required; endpoints default to production. Pass your own httpx client and token cache.
 ---
 
 # Configuration
 
-Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes keyword arguments. Gateways take the config object or a mapping of its keyword arguments (`KbzPay({"app_id": "...", ...})`), and a missing credential raises a `ConfigurationError` naming it:
+Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes keyword arguments. Gateways take the config object or a mapping of its keyword arguments (`KbzPay({"app_id": "...", ...})`). Every setting is required except the URL overrides and Yoma's webhook secret: there are no defaults, and a missing or blank setting raises a `ConfigurationError` naming it:
 
 ```python
 from python_myanmar_payments import ConfigurationError, KbzPay, KbzPayConfig
 
 try:
-    config = KbzPayConfig(app_id="...", app_key="", merchant_code="...")
+    config = KbzPayConfig(
+        app_id="...",
+        app_key="",
+        merchant_code="...",
+        timeout_seconds=30,
+    )
 except ConfigurationError as error:
     # e.g. kbz_pay "app_key"
     print(f'missing {error.gateway} setting "{error.key}"')
@@ -22,11 +27,11 @@ kbz = KbzPay(config)
 
 `str(error)` reads `The kbz_pay configuration is missing [app_key].`
 
-## Sandbox and Production
+The time settings (`timeout_seconds`, and Wave Money's `time_to_live_seconds`) must be whole numbers greater than 0. Any other value raises the same error with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
-Every config has a `sandbox` argument that defaults to `True`, so a forgotten setting never sends real payments. Pass `sandbox=False` together with production credentials when you go live. `sandbox` also takes text, read like `*_SANDBOX`: `"false"`, `"0"`, `"f"`, `"no"` or `"off"` (in any case) selects production, and anything else keeps the sandbox.
+## Endpoints
 
-URL arguments are optional overrides; leave them unset to use the endpoint matching `sandbox`. Each config object exposes the URL actually used as an attribute (`config.api_url`, `config.base_url`, …).
+Every gateway uses its production endpoints. There is no switch between test and production: to test against a gateway's UAT environment, or to go through a proxy, set the URL overrides (see [Testing Against UAT](#testing-against-uat)). A blank override means unset. Each config object exposes the URL actually used as an attribute (`config.api_url`, `config.base_url`, …).
 
 ## Config Options
 
@@ -37,7 +42,7 @@ URL arguments are optional overrides; leave them unset to use the endpoint match
 | `app_id` | `str` | Yes | `appid` issued by KBZ |
 | `app_key` | `str` | Yes | Secret key used to sign requests |
 | `merchant_code` | `str` | Yes | `merch_code` issued by KBZ |
-| `sandbox` | `bool \| str` | No | `True` (default) uses UAT |
+| `timeout_seconds` | `int \| str` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
 | `api_url` | `str` | No | Override the API base URL |
 | `pwa_url` | `str` | No | Override the PWA checkout URL. Normalized to end with `/`, e.g. `…/pwa/#/` |
 
@@ -48,8 +53,8 @@ URL arguments are optional overrides; leave them unset to use the endpoint match
 | `merchant_id` | `str` | Yes | Merchant ID issued by Wave |
 | `secret_key` | `str` | Yes | Hash secret key issued by Wave |
 | `merchant_name` | `str` | Yes | Shown on Wave's payment page |
-| `time_to_live_seconds` | `int` | No | Seconds the customer has to pay. Unset or not a positive integer means 300 |
-| `sandbox` | `bool \| str` | No | `True` (default) uses the test host |
+| `time_to_live_seconds` | `int \| str` | Yes | Seconds the customer has to pay. A missing one is reported as `time_to_live_in_seconds` |
+| `timeout_seconds` | `int \| str` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
 | `base_url` | `str` | No | Override the API base URL |
 | `authenticate_url` | `str` | No | Override the host the customer is redirected to |
 
@@ -59,7 +64,7 @@ URL arguments are optional overrides; leave them unset to use the endpoint match
 |---|---|---|---|
 | `app_key` | `str` | Yes | Public application key |
 | `app_secret` | `str` | Yes | Secret used for checksums |
-| `sandbox` | `bool \| str` | No | `True` (default) uses UAT |
+| `timeout_seconds` | `int \| str` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
 | `base_url` | `str` | No | Override the gateway base URL |
 
 ### YomaMmqrConfig
@@ -70,10 +75,10 @@ URL arguments are optional overrides; leave them unset to use the endpoint match
 | `client_id` | `str` | Yes | OAuth client ID |
 | `client_secret` | `str` | Yes | OAuth client secret |
 | `webhook_hash_key` | `str` | Yes | Hash key issued by Yoma for verifying callbacks. A missing one is reported as `webhook_hashkey` |
+| `api_version` | `str` | Yes | The `{version}` segment of Yoma's API paths, e.g. `v1rc` |
+| `timeout_seconds` | `int \| str` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
 | `webhook_secret` | `str` | No | When set, callbacks must carry it in `X-Webhook-Secret` |
-| `sandbox` | `bool \| str` | No | `True` (default) uses UAT |
 | `base_url` | `str` | No | Override the API base URL |
-| `api_version` | `str` | No | The `{version}` path segment, default `v1rc` (`YomaMmqrConfig.DEFAULT_API_VERSION`) |
 
 ### CyberSourceConfig
 
@@ -82,22 +87,37 @@ URL arguments are optional overrides; leave them unset to use the endpoint match
 | `profile_id` | `str` | Yes | Secure Acceptance profile ID |
 | `access_key` | `str` | Yes | Profile access key |
 | `secret_key` | `str` | Yes | Profile secret key used to sign fields |
-| `sandbox` | `bool \| str` | No | `True` (default) uses the test environment |
 | `base_url` | `str` | No | Override the Secure Acceptance base URL |
 
-## Default Endpoints
+## Production Endpoints
 
-| Gateway | Sandbox | Production |
-|---|---|---|
-| KBZ Pay API | `http://api-uat.kbzpay.com/payment/gateway/uat` | `https://api.kbzpay.com/payment/gateway` |
-| KBZ Pay PWA | `https://static.kbzpay.com/pgw/uat/pwa/#/` | `https://wap.kbzpay.com/pgw/pwa/#/` |
-| Wave Money API | `https://preprodpayments.wavemoney.io:8107` | `https://payments.wavemoney.io` |
-| Wave Money authenticate redirect | `https://preprodpayments.wavemoney.io` | `https://payments.wavemoney.io` |
-| AYA Payment Gateway | `https://uat-pgw.ayainnovation.com` | `https://pgw.ayainnovation.com` |
-| Yoma MMQR | `https://devapi.yomabank.net` | `https://paymenthubapi.yomabank.com` |
-| CyberSource | `https://testsecureacceptance.cybersource.com` | `https://secureacceptance.cybersource.com` |
+| Gateway | URL |
+|---|---|
+| KBZ Pay API | `https://api.kbzpay.com/payment/gateway` |
+| KBZ Pay PWA | `https://wap.kbzpay.com/pgw/pwa/#/` |
+| Wave Money API | `https://payments.wavemoney.io` |
+| Wave Money authenticate redirect | `https://payments.wavemoney.io` |
+| AYA Payment Gateway | `https://pgw.ayainnovation.com` |
+| Yoma MMQR | `https://paymenthubapi.yomabank.com` |
+| CyberSource | `https://secureacceptance.cybersource.com` |
 
-The URLs are class constants on the config classes, e.g. `KbzPayConfig.SANDBOX_API_URL`, `KbzPayConfig.PRODUCTION_PWA_URL`, `WaveMoneyConfig.SANDBOX_AUTHENTICATE_URL`, `YomaMmqrConfig.PRODUCTION_URL`.
+The URLs are class constants on the config classes: `KbzPayConfig.PRODUCTION_API_URL`, `KbzPayConfig.PRODUCTION_PWA_URL`, `WaveMoneyConfig.PRODUCTION_URL`, `WaveMoneyConfig.PRODUCTION_AUTHENTICATE_URL`, and `PRODUCTION_URL` on `AyaPayConfig`, `YomaMmqrConfig` and `CyberSourceConfig`.
+
+## Testing Against UAT
+
+Each gateway issues separate UAT credentials. To use them, set the URL overrides to the gateway's UAT endpoints together with the UAT credentials:
+
+| Gateway | Variable | Config argument | UAT value |
+|---|---|---|---|
+| KBZ Pay | `KBZ_PAY_BASE_URL` | `api_url` | `http://api-uat.kbzpay.com/payment/gateway/uat` |
+| KBZ Pay | `KBZ_PAY_PWA_BASE_REDIRECT_URL` | `pwa_url` | `https://static.kbzpay.com/pgw/uat/pwa/#/` |
+| Wave Money | `WAVE_MONEY_BASE_URL` | `base_url` | `https://preprodpayments.wavemoney.io:8107` |
+| Wave Money | `WAVE_MONEY_AUTHENTICATE_URL` | `authenticate_url` | `https://preprodpayments.wavemoney.io` |
+| AYA Payment Gateway | `AYA_PAY_BASE_URL` | `base_url` | `https://uat-pgw.ayainnovation.com` |
+| Yoma MMQR | `YOMA_MMQR_BASE_URL` | `base_url` | `https://devapi.yomabank.net` |
+| CyberSource | `CYBER_SOURCE_BASE_URL` | `base_url` | `https://testsecureacceptance.cybersource.com` |
+
+Wave serves its API on port `8107` and the page the customer is redirected to on the same host without the port. Remove the overrides, and switch to the production credentials, when you go live.
 
 ## From Environment Variables
 
@@ -112,9 +132,13 @@ config = KbzPayConfig.from_env()
 kbz = KbzPay(config)
 ```
 
+Every variable is required unless it is marked optional. The values after `=` are examples:
+
 ```env
+# Every gateway that calls an API
+MYANMAR_PAYMENTS_HTTP_TIMEOUT=30
+
 # KBZ Pay
-KBZ_PAY_SANDBOX=true
 KBZ_PAY_APP_ID=
 KBZ_PAY_APP_KEY=
 KBZ_PAY_MERCHANT_CODE=
@@ -122,39 +146,35 @@ KBZ_PAY_BASE_URL=                     # optional override
 KBZ_PAY_PWA_BASE_REDIRECT_URL=        # optional override
 
 # Wave Money
-WAVE_MONEY_SANDBOX=true
 WAVE_MONEY_MERCHANT_ID=
 WAVE_MONEY_SECRET_KEY=
-WAVE_MONEY_MERCHANT_NAME=             # falls back to APP_NAME
+WAVE_MONEY_MERCHANT_NAME=
 WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS=300
 WAVE_MONEY_BASE_URL=                  # optional override
 WAVE_MONEY_AUTHENTICATE_URL=          # optional override
 
 # AYA Payment Gateway (AYA_PGW_* names are read too)
-AYA_PAY_SANDBOX=true
 AYA_PAY_APP_KEY=
 AYA_PAY_APP_SECRET=
 AYA_PAY_BASE_URL=                     # optional override
 
 # Yoma MMQR
-YOMA_MMQR_SANDBOX=true
 YOMA_MMQR_MERCHANT_ID=
 YOMA_MMQR_CLIENT_ID=
 YOMA_MMQR_CLIENT_SECRET=
 YOMA_MMQR_WEBHOOK_HASHKEY=
+YOMA_MMQR_API_VERSION=v1rc
 YOMA_MMQR_WEBHOOK_SECRET=             # optional
 YOMA_MMQR_BASE_URL=                   # optional override
-YOMA_MMQR_API_VERSION=v1rc
 
 # CyberSource
-CYBER_SOURCE_SANDBOX=true
 CYBER_SOURCE_PROFILE_ID=
 CYBER_SOURCE_ACCESS_KEY=
 CYBER_SOURCE_SECRET_KEY=
 CYBER_SOURCE_BASE_URL=                # optional override
 ```
 
-`*_SANDBOX=false` (or `0`, `f`, `no`, `off`, in any case) selects production. Unset or unrecognized values mean sandbox. The package never reads files itself: load the `.env` file with your framework or with [`python-dotenv`](https://pypi.org/project/python-dotenv/) (`load_dotenv()` before `from_env()`, or pass `dotenv_values(".env")` as `env`).
+`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR. The package never reads files itself: load the `.env` file with your framework or with [`python-dotenv`](https://pypi.org/project/python-dotenv/) (`load_dotenv()` before `from_env()`, or pass `dotenv_values(".env")` as `env`).
 
 ## One Object for Every Gateway
 
@@ -168,12 +188,19 @@ from python_myanmar_payments import (
 )
 
 payments = MyanmarPayments(
-    kbz_pay=KbzPayConfig(app_id="...", app_key="...", merchant_code="..."),
+    kbz_pay=KbzPayConfig(
+        app_id="...",
+        app_key="...",
+        merchant_code="...",
+        timeout_seconds=30,
+    ),
     yoma_mmqr=YomaMmqrConfig(
         merchant_id="...",
         client_id="...",
         client_secret="...",
         webhook_hash_key="...",
+        api_version="v1rc",
+        timeout_seconds=30,
     ),
 )
 
@@ -186,7 +213,7 @@ payments.wave_money()
 from_env = MyanmarPayments.from_env()
 ```
 
-The keyword arguments `kbz_pay`, `wave_money`, `aya_pay`, `yoma_mmqr` and `cyber_source` take the config objects or mappings of their keyword arguments, and the facade also takes the `http_client`, `timeout` and `token_cache` options below, shared by every gateway it builds. `payments.cyber_source()` returns the one `CyberSource` class.
+The keyword arguments `kbz_pay`, `wave_money`, `aya_pay`, `yoma_mmqr` and `cyber_source` take the config objects or mappings of their keyword arguments, and the facade also takes the `http_client` and `token_cache` options below, shared by every gateway it builds. `payments.cyber_source()` returns the one `CyberSource` class.
 
 `AsyncMyanmarPayments` is the async twin: same arguments, but `kbz_pay()` returns an `AsyncKbzPay`, `wave_money()` an `AsyncWaveMoney` and so on, and `http_client` takes an `httpx.AsyncClient`.
 
@@ -196,21 +223,19 @@ Gateways that call an API take keyword options after the config:
 
 | Option | Type | Description |
 |---|---|---|
-| `http_client` | `httpx.Client` (async classes: `httpx.AsyncClient`) | Sends every request. Use it for proxies, tracing, retries or test transports |
-| `timeout` | `float \| None` | Seconds before a request is abandoned. Default `30` (`DEFAULT_TIMEOUT`); `None` disables it. Ignored when you pass `http_client`, which keeps its own timeout |
+| `http_client` | `httpx.Client` (async classes: `httpx.AsyncClient`) | Sends every request. Use it for proxies, tracing, retries or test transports. Without one, the gateway creates an `httpx` client with the config's `timeout_seconds` |
 
 ```python
 import httpx
 from python_myanmar_payments import KbzPay, KbzPayConfig
 
-kbz = KbzPay(KbzPayConfig.from_env(), timeout=10)
-
-# or share your own client
 client = httpx.Client(timeout=10, proxy="http://proxy.internal:3128")
 kbz = KbzPay(KbzPayConfig.from_env(), http_client=client)
 ```
 
-`from_env()` takes the same options: `KbzPay.from_env(timeout=10)`.
+`from_env()` takes the same option: `KbzPay.from_env(http_client=client)`.
+
+A client you pass keeps its own timeout; `timeout_seconds` is still required.
 
 Without `http_client`, a gateway creates its client on first use and keeps it for later calls, so create gateways once at startup and share them. Close the client it created with `close()` (async: `await aclose()`) or a `with` (async: `async with`) block; a client you passed stays open, since you own it:
 

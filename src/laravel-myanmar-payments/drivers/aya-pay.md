@@ -190,10 +190,10 @@ Entries AYA sends without a `key` are skipped.
 | Property / Method | AYA Pay value |
 |---|---|
 | `orderId` | Your `orderId` |
-| `action` | `{base_url}/v1/payment/request`, e.g. `https://uat-pgw.ayainnovation.com/v1/payment/request` |
+| `action` | `{base_url}/v1/payment/request`, e.g. `https://pgw.ayainnovation.com/v1/payment/request` |
 | `fields` | The signed fields below. Post them unchanged |
 | `enctype` | `multipart/form-data` |
-| `autoSubmitUrl` | Encrypted link to the `myanmar-payments.form` route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. Expires after `form_route.ttl_minutes` (30). `null` when `form_route.enabled` is `false` |
+| `autoSubmitUrl` | Encrypted link to the `myanmar-payments.form` route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. Expires after `form_route.ttl_minutes`. `null` when `form_route.enabled` is `false` |
 | `toHtml()` | A full HTML page that posts `fields` to `action` on load |
 
 `fields`, in the order AYA signs them:

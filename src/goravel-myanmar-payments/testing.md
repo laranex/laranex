@@ -19,7 +19,7 @@ import (
 )
 
 func (s *CheckoutTestSuite) TestKbzPayQR() {
-	const precreate = "http://api-uat.kbzpay.com/payment/gateway/uat/precreate"
+	const precreate = "https://api.kbzpay.com/payment/gateway/precreate"
 
 	fake := facades.App().MakeHttp() // client.Factory
 	fake.Fake(map[string]any{
@@ -56,7 +56,17 @@ func (s *CheckoutTestSuite) TestKbzPayQR() {
 | Yoma MMQR | `{base_url}/token`, then `{base_url}/payment-gateway/{api_version}/api/` + `payment/checkout`, `qr/generate`, `payment/check-status` |
 | CyberSource | None: forms are signed locally |
 
-Response bodies are described on each [gateway page](/goravel-myanmar-payments/drivers/kbz-pay). Gateways are configured on first use and then reused for the whole process, so set test credentials in your test `.env` or with `facades.Config().Add("myanmar_payments.kbz_pay", ...)` before the first gateway is requested, for example in `SetupSuite`, and use the same values in every suite of the package. Pointing a gateway's base URL at a test host (`KBZ_PAY_BASE_URL`, `WAVE_MONEY_BASE_URL`, `AYA_PAY_BASE_URL`, `YOMA_MMQR_BASE_URL`) keeps the fake patterns short. Yoma access tokens are kept in your cache store; clear it between tests that fake the token call.
+Response bodies are described on each [gateway page](/goravel-myanmar-payments/drivers/kbz-pay). Gateways are configured on first use and then reused for the whole process, so set every required setting of the gateways under test in your test `.env` or with `facades.Config().Add("myanmar_payments.kbz_pay", ...)` before the first gateway is requested, for example in `SetupSuite`, and use the same values in every suite of the package:
+
+```env
+MYANMAR_PAYMENTS_HTTP_TIMEOUT=5
+MYANMAR_PAYMENTS_FORM_TTL_MINUTES=30
+KBZ_PAY_APP_ID=kp1
+KBZ_PAY_APP_KEY=test-app-key
+KBZ_PAY_MERCHANT_CODE=1
+```
+
+Pointing a gateway's base URL at a test host (`KBZ_PAY_BASE_URL`, `WAVE_MONEY_BASE_URL`, `AYA_PAY_BASE_URL`, `YOMA_MMQR_BASE_URL`) keeps the fake patterns short. Yoma access tokens are kept in your cache store; clear it between tests that fake the token call.
 
 ## Sending Signed Callbacks
 
@@ -128,7 +138,7 @@ Go has no facade mocks: the manager behind `paymentsfacades.MyanmarPayments()` i
 ```go
 import "net/url"
 
-const action = `action="https://uat-pgw.ayainnovation.com/v1/payment/request"`
+const action = `action="https://pgw.ayainnovation.com/v1/payment/request"`
 
 response, _ := s.Http(s.T()).Get("/checkout/aya-pay")
 location, _ := url.Parse(response.Headers().Get("Location"))

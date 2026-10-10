@@ -247,12 +247,12 @@ Entries AYA sends without a `key` are skipped.
 | Field / Method | AYA Pay value |
 |---|---|
 | `OrderID` | Your `OrderID` |
-| `Action` | `{base_url}/v1/payment/request`, e.g. `https://uat-pgw.ayainnovation.com/v1/payment/request` |
+| `Action` | `{base_url}/v1/payment/request`, e.g. `https://pgw.ayainnovation.com/v1/payment/request` |
 | `Fields` | The signed fields below, in signing order. Post them unchanged |
 | `Enctype` | `multipart/form-data` |
 | `HTML()` | A full HTML page that posts `Fields` to `Action` on load |
 
-`payments.AutoSubmitURL(form)` returns the encrypted link to the `myanmar-payments.form` route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. It expires after `form_route.ttl_minutes` (30). With `form_route.enabled` set to `false` it returns `payments.ErrFormRouteDisabled`.
+`payments.AutoSubmitURL(form)` returns the encrypted link to the `myanmar-payments.form` route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. It expires after `form_route.ttl_minutes`. With `form_route.enabled` set to `false` it returns `payments.ErrFormRouteDisabled`.
 
 `Fields`, in the order AYA signs them:
 

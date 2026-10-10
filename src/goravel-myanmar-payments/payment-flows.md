@@ -81,7 +81,7 @@ Here is the flow with AYA Pay; CyberSource works the same way with its hosted ch
   :steps="[
     { from: 'Customer', to: 'Your app', label: 'Check out' },
     { from: 'Your app', to: 'Your app', label: 'Sign and encrypt the form', detail: 'aya.Initiate(data), payments.AutoSubmitURL(form)' },
-    { from: 'Your app', to: 'Customer', label: 'Redirect to autoSubmitUrl', detail: 'encrypted, expires in 30 min', response: true },
+    { from: 'Your app', to: 'Customer', label: 'Redirect to autoSubmitUrl', detail: 'encrypted, expires after ttl_minutes', response: true },
     { from: 'Customer', to: 'Your app', label: 'Open the auto-submit route', detail: 'GET myanmar-payments/form' },
     { from: 'Your app', to: 'Customer', label: 'Auto-submitting form page', detail: '410 Gone once the link expires', response: true },
     { from: 'Customer', to: 'AYA Pay', label: 'Post the signed form', detail: 'POST /v1/payment/request' },

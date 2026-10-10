@@ -47,9 +47,11 @@ import (
 )
 
 wave, err := wavemoney.New(wavemoney.Config{
-	MerchantID:   "...",
-	SecretKey:    "...",
-	MerchantName: "My Shop",
+	MerchantID:        "...",
+	SecretKey:         "...",
+	MerchantName:      "My Shop",
+	TimeToLiveSeconds: 300,
+	TimeoutSeconds:    30,
 }, nil)
 if err != nil {
 	return err

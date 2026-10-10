@@ -20,6 +20,7 @@ const config = new KbzPayConfig({
   appId: 'kp1',
   appKey: 'kbz-secret',
   merchantCode: '1',
+  timeoutSeconds: 5,
 });
 
 async function precreate(url: string, init: RequestInit): Promise<Response> {
@@ -72,6 +73,7 @@ const testEnv = {
   KBZ_PAY_APP_ID: 'kp1',
   KBZ_PAY_APP_KEY: 'kbz-secret',
   KBZ_PAY_MERCHANT_CODE: '1',
+  MYANMAR_PAYMENTS_HTTP_TIMEOUT: '5',
 };
 
 export function makePayments(fetch: FetchFunction): MyanmarPayments {
@@ -93,6 +95,7 @@ const config = new KbzPayConfig({
   appId: 'kp1',
   appKey: 'kbz-secret',
   merchantCode: '1',
+  timeoutSeconds: 5,
 });
 
 test('reports a paid order', async () => {
@@ -101,8 +104,8 @@ test('reports a paid order', async () => {
   setGlobalDispatcher(agent);
 
   agent
-    .get('http://api-uat.kbzpay.com')
-    .intercept({ path: '/payment/gateway/uat/queryorder', method: 'POST' })
+    .get('https://api.kbzpay.com')
+    .intercept({ path: '/payment/gateway/queryorder', method: 'POST' })
     .reply(200, {
       Response: {
         result: 'SUCCESS',
@@ -138,6 +141,7 @@ const config = new KbzPayConfig({
   appId: 'kp1',
   appKey: 'kbz-secret',
   merchantCode: '1',
+  timeoutSeconds: 5,
 });
 
 function signedKbzCallback(

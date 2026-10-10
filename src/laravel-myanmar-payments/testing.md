@@ -42,7 +42,19 @@ it('starts a KBZ Pay QR payment', function () {
 | Yoma MMQR | `{base_url}/token`, then `{base_url}/payment-gateway/{api_version}/api/` + `payment/checkout`, `qr/generate`, `payment/check-status` |
 | CyberSource | None: forms are signed locally |
 
-Response bodies are described on each [gateway page](/laravel-myanmar-payments/drivers/kbz-pay). Gateways are configured on first use, so set test credentials in `phpunit.xml` or `config()->set('myanmar-payments.kbz_pay', [...])` before the first call. Yoma access tokens are kept in your cache store; the `array` store that tests usually run on starts empty in every test.
+Response bodies are described on each [gateway page](/laravel-myanmar-payments/drivers/kbz-pay). Gateways are configured on first use, so set every required setting of the gateways under test in `phpunit.xml` or with `config()->set('myanmar-payments.kbz_pay', [...])` before the first call:
+
+```xml
+<php>
+    <env name="MYANMAR_PAYMENTS_HTTP_TIMEOUT" value="5"/>
+    <env name="MYANMAR_PAYMENTS_FORM_TTL_MINUTES" value="30"/>
+    <env name="KBZ_PAY_APP_ID" value="kp1"/>
+    <env name="KBZ_PAY_APP_KEY" value="test-app-key"/>
+    <env name="KBZ_PAY_MERCHANT_CODE" value="1"/>
+</php>
+```
+
+Yoma access tokens are kept in your cache store; the `array` store that tests usually run on starts empty in every test.
 
 ## Sending Signed Callbacks
 
@@ -102,9 +114,9 @@ $payment = MyanmarPayments::ayaPay()->initiate($data);
 $this->get($payment->autoSubmitUrl)
     ->assertOk()
     ->assertSee(
-        'action="https://uat-pgw.ayainnovation.com/v1/payment/request"',
+        'action="https://pgw.ayainnovation.com/v1/payment/request"',
         false,
     );
 ```
 
-A tampered link, or one older than `form_route.ttl_minutes` (try `$this->travel(31)->minutes()`), answers `410 Gone`.
+A tampered link, or one older than `form_route.ttl_minutes` (with `ttl_minutes` set to 30, try `$this->travel(31)->minutes()`), answers `410 Gone`.

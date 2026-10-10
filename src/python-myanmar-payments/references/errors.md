@@ -25,7 +25,7 @@ except ApiError as error:
 | `InvalidPaymentDataError` | Payment data breaks the gateway's documented rules, or `Amount.kyat` / `Amount.parse` / `Amount.of` get bad input. Raised before any request is sent |
 | `ApiError` | The gateway rejected the request, answered with an error (including errors sent with HTTP 200), or could not be reached |
 | `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification |
-| `ConfigurationError` | A gateway is missing a credential |
+| `ConfigurationError` | A gateway setting is missing or blank, or a time setting is not a whole number greater than 0 |
 
 ## InvalidPaymentDataError
 
@@ -60,6 +60,6 @@ When the gateway sends an error code without a message, `str(error)` ends with t
 | Field | Type | Description |
 |---|---|---|
 | `gateway` | `str` | e.g. `kbz_pay` |
-| `key` | `str` | The missing setting, e.g. `app_key` |
+| `key` | `str` | The setting, e.g. `app_key` |
 
-`str(error)` is e.g. `The kbz_pay configuration is missing [app_key].` Raised by each config class (and so by each gateway's `from_env()`), and by `MyanmarPayments` and `AsyncMyanmarPayments` when a gateway is used without configuration.
+`str(error)` is e.g. `The kbz_pay configuration is missing [app_key].`, or `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting. Raised by each config class (and so by each gateway's `from_env()`), and by `MyanmarPayments` and `AsyncMyanmarPayments` when a gateway is used without configuration.

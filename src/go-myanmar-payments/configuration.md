@@ -1,11 +1,11 @@
 ---
 title: Configuration
-description: Configure Go Myanmar Payments with one Config struct per gateway or from environment variables. Sandbox is the default; pass your own HTTP client and token cache.
+description: Configure Go Myanmar Payments with one Config struct per gateway or from environment variables. Every setting is required; endpoints default to production. Pass your own HTTP client and token cache.
 ---
 
 # Configuration
 
-Each gateway package has a config struct (`kbzpay.Config`, `wavemoney.Config`, `ayapay.Config`, `yomammqr.Config`, `cybersource.Config`) and a `New` constructor that takes it. A missing credential returns a `*myanmarpayments.ConfigurationError` naming it:
+Each gateway package has a config struct (`kbzpay.Config`, `wavemoney.Config`, `ayapay.Config`, `yomammqr.Config`, `cybersource.Config`) and a `New` constructor that takes it. Every setting is required except the URL overrides and Yoma's webhook secret: there are no defaults, and a missing or blank setting returns a `*myanmarpayments.ConfigurationError` naming it:
 
 ```go
 package main
@@ -20,9 +20,10 @@ import (
 
 func main() {
 	kbz, err := kbzpay.New(kbzpay.Config{
-		AppID:        "...",
-		AppKey:       "",
-		MerchantCode: "...",
+		AppID:          "...",
+		AppKey:         "",
+		MerchantCode:   "...",
+		TimeoutSeconds: 30,
 	}, nil)
 
 	var configErr *myanmarpayments.ConfigurationError
@@ -36,11 +37,11 @@ func main() {
 
 `err.Error()` reads `myanmarpayments: The kbz_pay configuration is missing [app_key].`
 
-## Sandbox and Production
+The time settings (`TimeoutSeconds`, and Wave Money's `TimeToLiveSeconds`) must be whole numbers greater than 0. `0` is the zero value, so it counts as missing. A negative value returns the same error with `Invalid` set and the message `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
-Every config has a `Production` field whose zero value, `false`, selects the sandbox, so a forgotten setting never sends real payments. Set `Production: true` together with production credentials when you go live.
+## Endpoints
 
-URL fields are optional overrides; leave them empty to use the endpoint matching `Production`. Each config has `Resolved…()` methods that return the value actually used: `ResolvedAPIURL()` and `ResolvedPWAURL()` (KBZ Pay), `ResolvedBaseURL()`, `ResolvedAuthenticateURL()` and `ResolvedTimeToLive()` (Wave Money), `ResolvedBaseURL()` (AYA, Yoma, CyberSource) and `ResolvedAPIVersion()` (Yoma). A gateway's `Config()` method returns the config it was created with.
+Every gateway uses its production endpoints. There is no switch between test and production: to test against a gateway's UAT environment, or to go through a proxy, set the URL overrides (see [Testing Against UAT](#testing-against-uat)). An empty override means unset. Each config has `Resolved…()` methods that return the URL actually used: `ResolvedAPIURL()` and `ResolvedPWAURL()` (KBZ Pay), `ResolvedBaseURL()` and `ResolvedAuthenticateURL()` (Wave Money), and `ResolvedBaseURL()` (AYA, Yoma, CyberSource). A gateway's `Config()` method returns the config it was created with.
 
 ## Config Options
 
@@ -51,7 +52,7 @@ URL fields are optional overrides; leave them empty to use the endpoint matching
 | `AppID` | `string` | Yes | `appid` issued by KBZ |
 | `AppKey` | `string` | Yes | Secret key used to sign requests |
 | `MerchantCode` | `string` | Yes | `merch_code` issued by KBZ |
-| `Production` | `bool` | No | `false` (default) uses UAT |
+| `TimeoutSeconds` | `int` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
 | `APIURL` | `string` | No | Override the API base URL |
 | `PWAURL` | `string` | No | Override the PWA checkout URL. Normalized to end with `/`, e.g. `…/pwa/#/` |
 
@@ -62,8 +63,8 @@ URL fields are optional overrides; leave them empty to use the endpoint matching
 | `MerchantID` | `string` | Yes | Merchant ID issued by Wave |
 | `SecretKey` | `string` | Yes | Hash secret key issued by Wave |
 | `MerchantName` | `string` | Yes | Shown on Wave's payment page |
-| `TimeToLiveSeconds` | `int` | No | Seconds the customer has to pay. `0` or less means 300 |
-| `Production` | `bool` | No | `false` (default) uses the test host |
+| `TimeToLiveSeconds` | `int` | Yes | Seconds the customer has to pay. A missing one is reported as `time_to_live_in_seconds` |
+| `TimeoutSeconds` | `int` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
 | `BaseURL` | `string` | No | Override the API base URL |
 | `AuthenticateURL` | `string` | No | Override the host the customer is redirected to |
 
@@ -73,7 +74,7 @@ URL fields are optional overrides; leave them empty to use the endpoint matching
 |---|---|---|---|
 | `AppKey` | `string` | Yes | Public application key |
 | `AppSecret` | `string` | Yes | Secret used for checksums |
-| `Production` | `bool` | No | `false` (default) uses UAT |
+| `TimeoutSeconds` | `int` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
 | `BaseURL` | `string` | No | Override the gateway base URL |
 
 ### yomammqr.Config
@@ -84,10 +85,10 @@ URL fields are optional overrides; leave them empty to use the endpoint matching
 | `ClientID` | `string` | Yes | OAuth client ID |
 | `ClientSecret` | `string` | Yes | OAuth client secret |
 | `WebhookHashKey` | `string` | Yes | Hash key issued by Yoma for verifying callbacks. A missing one is reported as `webhook_hashkey` |
+| `APIVersion` | `string` | Yes | The `{version}` segment of Yoma's API paths, e.g. `v1rc` |
+| `TimeoutSeconds` | `int` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
 | `WebhookSecret` | `string` | No | When set, callbacks must carry it in `X-Webhook-Secret` |
-| `Production` | `bool` | No | `false` (default) uses UAT |
 | `BaseURL` | `string` | No | Override the API base URL |
-| `APIVersion` | `string` | No | The `{version}` path segment, default `v1rc` (`yomammqr.DefaultAPIVersion`) |
 
 ### cybersource.Config
 
@@ -96,22 +97,37 @@ URL fields are optional overrides; leave them empty to use the endpoint matching
 | `ProfileID` | `string` | Yes | Secure Acceptance profile ID |
 | `AccessKey` | `string` | Yes | Profile access key |
 | `SecretKey` | `string` | Yes | Profile secret key used to sign fields |
-| `Production` | `bool` | No | `false` (default) uses the test environment |
 | `BaseURL` | `string` | No | Override the Secure Acceptance base URL |
 
-## Default Endpoints
+## Production Endpoints
 
-| Gateway | Sandbox | Production |
-|---|---|---|
-| KBZ Pay API | `http://api-uat.kbzpay.com/payment/gateway/uat` | `https://api.kbzpay.com/payment/gateway` |
-| KBZ Pay PWA | `https://static.kbzpay.com/pgw/uat/pwa/#/` | `https://wap.kbzpay.com/pgw/pwa/#/` |
-| Wave Money API | `https://preprodpayments.wavemoney.io:8107` | `https://payments.wavemoney.io` |
-| Wave Money authenticate redirect | `https://preprodpayments.wavemoney.io` | `https://payments.wavemoney.io` |
-| AYA Payment Gateway | `https://uat-pgw.ayainnovation.com` | `https://pgw.ayainnovation.com` |
-| Yoma MMQR | `https://devapi.yomabank.net` | `https://paymenthubapi.yomabank.com` |
-| CyberSource | `https://testsecureacceptance.cybersource.com` | `https://secureacceptance.cybersource.com` |
+| Gateway | URL |
+|---|---|
+| KBZ Pay API | `https://api.kbzpay.com/payment/gateway` |
+| KBZ Pay PWA | `https://wap.kbzpay.com/pgw/pwa/#/` |
+| Wave Money API | `https://payments.wavemoney.io` |
+| Wave Money authenticate redirect | `https://payments.wavemoney.io` |
+| AYA Payment Gateway | `https://pgw.ayainnovation.com` |
+| Yoma MMQR | `https://paymenthubapi.yomabank.com` |
+| CyberSource | `https://secureacceptance.cybersource.com` |
 
-The URLs are exported constants in the gateway packages, e.g. `kbzpay.SandboxAPIURL`, `kbzpay.ProductionPWAURL`, `wavemoney.SandboxAuthenticateURL`, `yomammqr.ProductionURL`.
+The URLs are exported constants in the gateway packages: `kbzpay.ProductionAPIURL`, `kbzpay.ProductionPWAURL`, `wavemoney.ProductionURL`, `wavemoney.ProductionAuthenticateURL`, and `ProductionURL` in `ayapay`, `yomammqr` and `cybersource`.
+
+## Testing Against UAT
+
+Each gateway issues separate UAT credentials. To use them, set the URL overrides to the gateway's UAT endpoints together with the UAT credentials:
+
+| Gateway | Variable | Config field | UAT value |
+|---|---|---|---|
+| KBZ Pay | `KBZ_PAY_BASE_URL` | `APIURL` | `http://api-uat.kbzpay.com/payment/gateway/uat` |
+| KBZ Pay | `KBZ_PAY_PWA_BASE_REDIRECT_URL` | `PWAURL` | `https://static.kbzpay.com/pgw/uat/pwa/#/` |
+| Wave Money | `WAVE_MONEY_BASE_URL` | `BaseURL` | `https://preprodpayments.wavemoney.io:8107` |
+| Wave Money | `WAVE_MONEY_AUTHENTICATE_URL` | `AuthenticateURL` | `https://preprodpayments.wavemoney.io` |
+| AYA Payment Gateway | `AYA_PAY_BASE_URL` | `BaseURL` | `https://uat-pgw.ayainnovation.com` |
+| Yoma MMQR | `YOMA_MMQR_BASE_URL` | `BaseURL` | `https://devapi.yomabank.net` |
+| CyberSource | `CYBER_SOURCE_BASE_URL` | `BaseURL` | `https://testsecureacceptance.cybersource.com` |
+
+Wave serves its API on port `8107` and the page the customer is redirected to on the same host without the port. Remove the overrides, and switch to the production credentials, when you go live.
 
 ## From Environment Variables
 
@@ -121,9 +137,13 @@ Every gateway package has `ConfigFromEnv(getenv)`, which takes a lookup function
 kbz, err := kbzpay.New(kbzpay.ConfigFromEnv(os.Getenv), nil)
 ```
 
+Every variable is required unless it is marked optional. The values after `=` are examples:
+
 ```env
+# Every gateway that calls an API
+MYANMAR_PAYMENTS_HTTP_TIMEOUT=30
+
 # KBZ Pay
-KBZ_PAY_SANDBOX=true
 KBZ_PAY_APP_ID=
 KBZ_PAY_APP_KEY=
 KBZ_PAY_MERCHANT_CODE=
@@ -131,39 +151,35 @@ KBZ_PAY_BASE_URL=                     # optional override
 KBZ_PAY_PWA_BASE_REDIRECT_URL=        # optional override
 
 # Wave Money
-WAVE_MONEY_SANDBOX=true
 WAVE_MONEY_MERCHANT_ID=
 WAVE_MONEY_SECRET_KEY=
-WAVE_MONEY_MERCHANT_NAME=             # falls back to APP_NAME
+WAVE_MONEY_MERCHANT_NAME=
 WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS=300
 WAVE_MONEY_BASE_URL=                  # optional override
 WAVE_MONEY_AUTHENTICATE_URL=          # optional override
 
 # AYA Payment Gateway (AYA_PGW_* names are read too)
-AYA_PAY_SANDBOX=true
 AYA_PAY_APP_KEY=
 AYA_PAY_APP_SECRET=
 AYA_PAY_BASE_URL=                     # optional override
 
 # Yoma MMQR
-YOMA_MMQR_SANDBOX=true
 YOMA_MMQR_MERCHANT_ID=
 YOMA_MMQR_CLIENT_ID=
 YOMA_MMQR_CLIENT_SECRET=
 YOMA_MMQR_WEBHOOK_HASHKEY=
+YOMA_MMQR_API_VERSION=v1rc
 YOMA_MMQR_WEBHOOK_SECRET=             # optional
 YOMA_MMQR_BASE_URL=                   # optional override
-YOMA_MMQR_API_VERSION=v1rc
 
 # CyberSource
-CYBER_SOURCE_SANDBOX=true
 CYBER_SOURCE_PROFILE_ID=
 CYBER_SOURCE_ACCESS_KEY=
 CYBER_SOURCE_SECRET_KEY=
 CYBER_SOURCE_BASE_URL=                # optional override
 ```
 
-`*_SANDBOX=false` (or `0`, `f`, `no`, `off`, in any case) selects production. Unset or unrecognized values mean sandbox. The package never reads files itself: load the `.env` file with your framework or with a package such as [`godotenv`](https://github.com/joho/godotenv) before calling `ConfigFromEnv`.
+`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `TimeoutSeconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR. `ConfigFromEnv` never fails: `New` returns the error, and a time variable that is set but not a whole number greater than 0 gives the `must be a whole number greater than 0` error. The package never reads files itself: load the `.env` file with your framework or with a package such as [`godotenv`](https://github.com/joho/godotenv) before calling `ConfigFromEnv`.
 
 ## One Object for Every Gateway
 
@@ -184,15 +200,18 @@ import (
 func main() {
 	gateways := payments.New(payments.Config{
 		KBZPay: &kbzpay.Config{
-			AppID:        "...",
-			AppKey:       "...",
-			MerchantCode: "...",
+			AppID:          "...",
+			AppKey:         "...",
+			MerchantCode:   "...",
+			TimeoutSeconds: 30,
 		},
 		YomaMMQR: &yomammqr.Config{
 			MerchantID:     "...",
 			ClientID:       "...",
 			ClientSecret:   "...",
 			WebhookHashKey: "...",
+			APIVersion:     "v1rc",
+			TimeoutSeconds: 30,
 		},
 	}, payments.Options{})
 
@@ -227,13 +246,19 @@ type HTTPDoer interface {
 
 | Argument | Description |
 |---|---|
-| `nil` | Uses `myanmarpayments.DefaultHTTPClient()`, an `*http.Client` with a 30 second timeout |
+| `nil` | Uses an `*http.Client` with the config's `TimeoutSeconds` |
 | your `HTTPDoer` | Sends every request. Use it for proxies, tracing, retries or test doubles |
 
 ```go
-client := &http.Client{Timeout: 10 * time.Second}
+proxy, _ := url.Parse("http://proxy.internal:3128")
+client := &http.Client{
+	Timeout:   10 * time.Second,
+	Transport: &http.Transport{Proxy: http.ProxyURL(proxy)},
+}
 kbz, err := kbzpay.New(kbzpay.ConfigFromEnv(os.Getenv), client)
 ```
+
+A client you pass keeps its own timeout; `TimeoutSeconds` is still required.
 
 Every network method takes a `context.Context` first, so request deadlines and cancellation apply to gateway calls:
 

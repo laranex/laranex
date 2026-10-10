@@ -12,7 +12,7 @@ Every error extends `PaymentError` from `@laranex/myanmar-payments`, so one `cat
 | `InvalidPaymentDataError` | A payment is started with values the gateway would reject |
 | `ApiError` | A gateway rejects a request, answers with an error (including errors sent with HTTP 200), or cannot be reached |
 | `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification |
-| `ConfigurationError` | A gateway is used without a credential it needs |
+| `ConfigurationError` | A gateway is used without a setting it needs, or a time setting is not a whole number greater than 0 |
 
 ## InvalidPaymentDataError
 
@@ -49,7 +49,7 @@ try {
 
 ## ConfigurationError
 
-The message names the gateway and the missing key, e.g. `The wave_money configuration is missing [merchant_id].` `gateway` and `key` hold both. `autoSubmitUrl()` throws it with `myanmar_payments` and `formLink.secret` when no form link secret is set.
+The message names the gateway and the key, e.g. `The wave_money configuration is missing [merchant_id].`, or `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting. `gateway` and `key` hold both. `autoSubmitUrl()` throws it with `form_route` and `ttl_minutes` when the form link lifetime is missing or invalid, and with `myanmar_payments` and `formLink.secret` when no form link secret is set.
 
 ## Exception Filter
 

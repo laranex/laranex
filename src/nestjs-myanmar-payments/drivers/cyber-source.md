@@ -38,7 +38,10 @@ CyberSource posts the result twice, to your backoffice URL and through the brows
 ## Initiating a Payment
 
 ```ts
-import type { CyberSourcePaymentData } from '@laranex/myanmar-payments';
+import {
+  CyberSourceTransactionType,
+  type CyberSourcePaymentData,
+} from '@laranex/myanmar-payments';
 import { MyanmarPaymentsService } from '@laranex/nestjs-myanmar-payments';
 import { Controller, Param, Post, Redirect } from '@nestjs/common';
 
@@ -60,6 +63,9 @@ export class CyberSourceCheckoutController {
       orderId: `ORDER_${order.id}`,
       amount: 10000,
       callbackUrl: 'https://shop.test/payments/cybersource/callback',
+      currency: 'MMK',
+      transactionType: CyberSourceTransactionType.Sale,
+      locale: 'en-us',
       returnUrl: 'https://shop.test/payments/cybersource/receipt',
       cancelUrl: 'https://shop.test/checkout',
     };
@@ -78,11 +84,11 @@ export class CyberSourceCheckoutController {
 | `orderId` | `string` | Yes | At most 50 characters, sent as `reference_number` |
 | `amount` | `AmountInput` | Yes | Order total in `currency`, 0 or more, any number of decimals, at most 15 characters, e.g. `10000` or `Amount.parse('10.50')` |
 | `callbackUrl` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters; CyberSource may require HTTPS in production |
+| `currency` | `string` | Yes | Any three-letter uppercase ISO 4217 code, e.g. `MMK` |
+| `transactionType` | `CyberSourceTransactionType` | Yes | `CyberSourceTransactionType.Sale` (`'sale'`), `.Authorization` (`'authorization'`), `.SaleAndCreateToken` (`'sale,create_payment_token'`) or `.AuthorizationAndCreateToken` (`'authorization,create_payment_token'`) |
+| `locale` | `string` | Yes | Hosted page language as a CyberSource locale code, e.g. `en-us` |
 | `returnUrl` | `string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `cancelUrl` | `string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
-| `currency` | `string` | No | Any three-letter uppercase ISO 4217 code, default `MMK` |
-| `transactionType` | `CyberSourceTransactionType` | No | `Sale` (default), `Authorization`, `SaleAndCreateToken` or `AuthorizationAndCreateToken` |
-| `locale` | `string` | No | Hosted page language as a CyberSource locale code such as `en-us`, default `en-us` |
 
 ### Amounts and Currencies
 
@@ -137,7 +143,7 @@ What CyberSource puts in each property. See [Results](/nestjs-myanmar-payments/r
 | `enctype` | `application/x-www-form-urlencoded` |
 | `toHtml()` | A full HTML page that posts `fields` to `action` on load |
 
-`this.payments.autoSubmitUrl(payment)` returns an encrypted link to the module's form route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. It expires after `formLink.ttlMinutes` (30); the call throws when `formRoute.enabled` is `false`.
+`this.payments.autoSubmitUrl(payment)` returns an encrypted link to the module's form route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. It expires after `formLink.ttlMinutes`; the call throws when `formRoute.enabled` is `false`.
 
 `fields`, all signed, in this order:
 

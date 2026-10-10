@@ -351,4 +351,4 @@ it('stores, acknowledges and processes a webhook', function () {
 });
 ```
 
-To send a signed payload, compute the gateway's signature in the test with your sandbox secret, as described on each gateway's page.
+To send a signed payload, compute the gateway's signature in the test with the secret from your test configuration, as described on each gateway's page.

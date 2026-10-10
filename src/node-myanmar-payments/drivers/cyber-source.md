@@ -40,6 +40,7 @@ CyberSource posts the result twice, to your backoffice URL and through the brows
 ```ts
 import {
   CyberSource,
+  CyberSourceTransactionType,
   type CyberSourcePaymentData,
 } from '@laranex/myanmar-payments/cyber-source';
 
@@ -53,6 +54,9 @@ const data: CyberSourcePaymentData = {
   orderId: `ORDER_${order.id}`,
   amount: 10000,
   callbackUrl: 'https://shop.test/payments/cybersource/callback',
+  currency: 'MMK',
+  transactionType: CyberSourceTransactionType.Sale,
+  locale: 'en-us',
   returnUrl: 'https://shop.test/payments/cybersource/receipt',
   cancelUrl: 'https://shop.test/checkout',
 };
@@ -71,11 +75,11 @@ res.end(payment.toHtml());
 | `orderId` | `string` | Yes | At most 50 characters, sent as `reference_number` |
 | `amount` | `Amount \| number \| bigint` | Yes | Order total in `currency`, 0 or more, any number of decimals, at most 15 characters, e.g. `10000` or `Amount.parse('10.50')` |
 | `callbackUrl` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters; CyberSource may require HTTPS in production |
+| `currency` | `string` | Yes | Any three-letter uppercase ISO 4217 code, e.g. `MMK` |
+| `transactionType` | `CyberSourceTransactionType` | Yes | `CyberSourceTransactionType.Sale` (`'sale'`), `.Authorization` (`'authorization'`), `.SaleAndCreateToken` (`'sale,create_payment_token'`) or `.AuthorizationAndCreateToken` (`'authorization,create_payment_token'`) |
+| `locale` | `string` | Yes | Hosted page language as a CyberSource locale code, e.g. `en-us` |
 | `returnUrl` | `string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `cancelUrl` | `string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
-| `currency` | `string` | No | Any three-letter uppercase ISO 4217 code. Unset means `MMK` |
-| `transactionType` | `CyberSourceTransactionType` | No | `CyberSourceTransactionType.Sale` (`'sale'`, the default), `.Authorization` (`'authorization'`), `.SaleAndCreateToken` (`'sale,create_payment_token'`) or `.AuthorizationAndCreateToken` (`'authorization,create_payment_token'`) |
-| `locale` | `string` | No | Hosted page language as a CyberSource locale code such as `en-us`. Unset means `en-us` |
 
 ### Amounts and Currencies
 
@@ -120,7 +124,7 @@ What CyberSource puts in each field. See [Results](/node-myanmar-payments/refere
 |---|---|
 | `flow` | `'form'` |
 | `orderId` | Your `data.orderId` |
-| `action` | `{baseUrl}/pay`, e.g. `https://testsecureacceptance.cybersource.com/pay` |
+| `action` | `{baseUrl}/pay`, e.g. `https://secureacceptance.cybersource.com/pay` |
 | `fields` | The signed fields below, in signing order. Post them unchanged |
 | `enctype` | `application/x-www-form-urlencoded` |
 | `toHtml()` | A full HTML page that posts `fields` to `action` on load |
@@ -132,11 +136,11 @@ What CyberSource puts in each field. See [Results](/node-myanmar-payments/refere
 | `transaction_uuid` | A random ID, new for every call |
 | `signed_field_names` | The field names in this table except `signature`, comma-separated |
 | `signed_date_time` | UTC time, e.g. `2026-10-08T09:30:00Z` |
-| `locale` | `data.locale`, `en-us` when unset |
-| `transaction_type` | `data.transactionType`, `sale` when unset |
+| `locale` | `data.locale` |
+| `transaction_type` | `data.transactionType` |
 | `reference_number` | `data.orderId` |
 | `amount` | `data.amount`, e.g. `10000` |
-| `currency` | `data.currency`, `MMK` when unset |
+| `currency` | `data.currency` |
 | `override_custom_receipt_page` | `data.returnUrl`, `""` when unset |
 | `override_backoffice_post_url` | `data.callbackUrl` |
 | `override_custom_cancel_page` | `data.cancelUrl`, `""` when unset |

@@ -547,4 +547,4 @@ it('stores, acknowledges and processes a webhook', async () => {
 });
 ```
 
-Set `WEBHOOK_WORKER_INTERVAL_MS=0` in tests so only `drain()` processes rows. To send a signed payload, compute the gateway's signature in the test with your sandbox secret, as described on each gateway's page and in [Testing](/nestjs-myanmar-payments/testing#sending-signed-callbacks).
+Set `WEBHOOK_WORKER_INTERVAL_MS=0` in tests so only `drain()` processes rows. To send a signed payload, compute the gateway's signature in the test with the secret from your test configuration, as described on each gateway's page and in [Testing](/nestjs-myanmar-payments/testing#sending-signed-callbacks).

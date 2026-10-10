@@ -28,6 +28,7 @@ import (
 
 var config = kbzpay.Config{
 	AppID: "kp1", AppKey: "kbz-secret", MerchantCode: "1",
+	TimeoutSeconds: 5,
 }
 
 // doerFunc turns a function into a myanmarpayments.HTTPDoer.
@@ -101,9 +102,10 @@ import (
 )
 
 var testEnv = map[string]string{
-	"KBZ_PAY_APP_ID":        "kp1",
-	"KBZ_PAY_APP_KEY":       "kbz-secret",
-	"KBZ_PAY_MERCHANT_CODE": "1",
+	"KBZ_PAY_APP_ID":                "kp1",
+	"KBZ_PAY_APP_KEY":               "kbz-secret",
+	"KBZ_PAY_MERCHANT_CODE":         "1",
+	"MYANMAR_PAYMENTS_HTTP_TIMEOUT": "5",
 }
 
 func makePayments(doer myanmarpayments.HTTPDoer) *payments.Gateways {
@@ -146,8 +148,9 @@ func TestReportsAPaidOrder(t *testing.T) {
 	kbz, err := kbzpay.New(kbzpay.Config{
 		AppID:        "kp1",
 		AppKey:       "kbz-secret",
-		MerchantCode: "1",
-		APIURL:       server.URL,
+		MerchantCode:   "1",
+		TimeoutSeconds: 5,
+		APIURL:         server.URL,
 	}, server.Client())
 	if err != nil {
 		t.Fatal(err)
@@ -182,6 +185,7 @@ import (
 
 var config = kbzpay.Config{
 	AppID: "kp1", AppKey: "kbz-secret", MerchantCode: "1",
+	TimeoutSeconds: 5,
 }
 
 func signedKBZCallback(

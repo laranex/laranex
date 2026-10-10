@@ -40,11 +40,15 @@ CyberSource posts the result twice, to your backoffice URL and through the brows
 ```php
 use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
 use Laranex\PhpMyanmarPayments\CyberSource\CyberSourcePaymentData;
+use Laranex\PhpMyanmarPayments\CyberSource\CyberSourceTransactionType;
 
 $data = new CyberSourcePaymentData(
     orderId: 'ORDER_'.$order->id,
     amount: 10000,
     callbackUrl: route('payments.cybersource.callback'),
+    currency: 'MMK',
+    transactionType: CyberSourceTransactionType::Sale,
+    locale: 'en-us',
     returnUrl: route('payments.cybersource.receipt'),
     cancelUrl: route('checkout'),
 );
@@ -61,11 +65,11 @@ return redirect($payment->autoSubmitUrl);
 | `orderId` | `string` | Yes | At most 50 characters, sent as `reference_number` |
 | `amount` | `Amount\|int` | Yes | Order total in `currency`, 0 or more, any number of decimals, at most 15 characters, e.g. `10000` or `Amount::parse('10.50')` |
 | `callbackUrl` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters; CyberSource may require HTTPS in production |
+| `currency` | `string` | Yes | Any three-letter uppercase ISO 4217 code, e.g. `MMK` |
+| `transactionType` | `CyberSourceTransactionType` | Yes | `CyberSourceTransactionType::Sale` (`'sale'`), `::Authorization` (`'authorization'`), `::SaleAndCreateToken` (`'sale,create_payment_token'`) or `::AuthorizationAndCreateToken` (`'authorization,create_payment_token'`) |
+| `locale` | `string` | Yes | Hosted page language as a CyberSource locale code, e.g. `en-us` |
 | `returnUrl` | `?string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `cancelUrl` | `?string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
-| `currency` | `string` | No | Any three-letter uppercase ISO 4217 code, default `MMK` |
-| `transactionType` | `CyberSourceTransactionType` | No | `Sale` (default), `Authorization`, `SaleAndCreateToken` or `AuthorizationAndCreateToken` |
-| `locale` | `string` | No | Hosted page language as a CyberSource locale code such as `en-us`, default `en-us` |
 
 ### Amounts and Currencies
 
@@ -115,7 +119,7 @@ What CyberSource puts in each property. See [Results](/laravel-myanmar-payments/
 | `action` | `{base_url}/pay`, e.g. `https://testsecureacceptance.cybersource.com/pay` |
 | `fields` | The signed fields below. Post them unchanged |
 | `enctype` | `application/x-www-form-urlencoded` |
-| `autoSubmitUrl` | Encrypted link to the `myanmar-payments.form` route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. Expires after `form_route.ttl_minutes` (30). `null` when `form_route.enabled` is `false` |
+| `autoSubmitUrl` | Encrypted link to the `myanmar-payments.form` route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. Expires after `form_route.ttl_minutes`. `null` when `form_route.enabled` is `false` |
 | `toHtml()` | A full HTML page that posts `fields` to `action` on load |
 
 `fields`, all signed, in this order:

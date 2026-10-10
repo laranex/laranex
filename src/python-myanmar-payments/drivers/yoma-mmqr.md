@@ -57,6 +57,8 @@ yoma = YomaMmqr(
         client_id="...",
         client_secret="...",
         webhook_hash_key="...",
+        api_version="v1rc",
+        timeout_seconds=30,
     )
 )
 
