@@ -87,7 +87,7 @@ func (r *CheckoutController) KbzPay(ctx http.Context) http.Response {
 | `Amount` | `myanmarpayments.Amount` | Yes | Kyat, greater than 0, at most 2 decimal places, e.g. `Kyat(10000)` or `MustParseAmount("10000.50")`. KBZ only accepts MMK |
 | `CallbackURL` | `string` | Yes | Public URL KBZ posts the result to. At most 512 characters, no query string |
 | `Title` | `string` | No | Product name shown to the customer |
-| `TimeoutMinutes` | `int` | No | 1 to 120. `0` leaves it to KBZ (120) |
+| `TimeoutMinutes` | `*int` | No | 1 to 120, e.g. `minutes := 30` then `TimeoutMinutes: &minutes`. `nil` leaves it to KBZ (120); `0` is rejected |
 | `CallbackInfo` | `string` | No | Free text echoed back in the callback, at most 512 characters once URL-encoded |
 
 ### PWA Notes
@@ -157,7 +157,7 @@ if err == nil && result.IsSuccessful() {
 
 ## Responses
 
-What KBZ Pay puts in each field. See [Results](/goravel-myanmar-payments/references/results) and [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for the full types.
+What KBZ Pay puts in each field. See [Results](/goravel-myanmar-payments/references/results) and [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for the full types. `Raw` holds plain Go values (JSON numbers become `json.Number`s), while the typed fields such as `Amount` keep the exact text KBZ sent.
 
 ### `PWA()` → `*RedirectPayment` {#pwa-response}
 
@@ -175,7 +175,7 @@ What KBZ Pay puts in each field. See [Results](/goravel-myanmar-payments/referen
 | `OrderID` | Your `OrderID` |
 | `QRString` | KBZ `qrCode`, a payload to encode into a QR image. Always set |
 | `QRImage` | Always empty |
-| `ExpiresAt` | Now + `TimeoutMinutes`. The zero `time.Time` when `TimeoutMinutes` is `0` (KBZ then allows 120 minutes) |
+| `ExpiresAt` | Now + `TimeoutMinutes`. The zero `time.Time` when `TimeoutMinutes` is `nil` (KBZ then allows 120 minutes) |
 | `Reference` | KBZ `prepay_id`. Always set |
 | `Raw` | The `precreate` response, as for `PWA()` plus `qrCode` |
 | `QRImageDataURI()` | Always empty, as `QRImage` is |
@@ -230,7 +230,7 @@ Encoded as JSON, an `AppPayment` has `orderId`, `orderInfo`, `sign` and `signTyp
 
 ## Signing
 
-KBZ signs requests, the in-app `orderInfo` and notifications the same way: every non-empty field except `sign` and `sign_type`, sorted by key, joined as raw `key=value` pairs, with `&key=<app key>` appended, hashed with SHA-256 and uppercased. The package signs every request and verifies every notification for you. The SDK also exports the signer as `kbzpay.NewSigner(appKey)` (`Sign`, `SignString`, `Verify`), which is handy for [signing test callbacks](/goravel-myanmar-payments/testing#sending-signed-callbacks).
+KBZ signs requests, the in-app `orderInfo` and notifications the same way: every non-empty field except `sign` and `sign_type`, sorted by key, joined as raw `key=value` pairs, with `&key=<app key>` appended, hashed with SHA-256 and uppercased. The package signs every request and verifies every notification for you. The SDK exposes the signer as `kbz.Signer()` (a `kbzpay.Signer`; `kbzpay.NewSigner(appKey)` builds one) for custom calls and [test fixtures](/goravel-myanmar-payments/testing#sending-signed-callbacks).
 
 ## Errors
 
@@ -240,6 +240,6 @@ KBZ signs requests, the in-app `orderInfo` and notifications the same way: every
 | `PWA()`, `QR()`, `App()` | `*APIError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, or without a `prepay_id` |
 | `QR()` | `*APIError` | KBZ returns no `qrCode` |
 | `Status()` | `*APIError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, e.g. for an unknown order |
-| `HandleCallback()` | `*SignatureVerificationError` | `sign` doesn't match |
+| `HandleCallback()` | `*SignatureVerificationError` | `sign` doesn't match, or a field holds an object or array |
 
 `*APIError` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `GatewayCode` and its `msg` in `GatewayMessage`. When KBZ can't be reached, the calls return an `*APIError` with `HTTPStatus` `0`.

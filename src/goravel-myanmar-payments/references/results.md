@@ -27,7 +27,7 @@ Returned by `AyaPay()` → `Initiate()` and `CyberSource()` → `Initiate()`.
 | `OrderID` | `string` | Your order ID |
 | `Action` | `string` | The gateway URL the form posts to |
 | `Fields` | `[]FormField` | The signed hidden fields (`Name`, `Value`), in signing order. Post them unchanged |
-| `Enctype` | `string` | The form encoding the gateway expects. Empty means `application/x-www-form-urlencoded` |
+| `Enctype` | `string` | The form encoding the gateway expects. `HTML()` treats an empty value as `application/x-www-form-urlencoded` |
 | `Field(name)` | `(string, bool)` | The value of one field |
 | `Values()` | `map[string]string` | The fields as a map |
 | `HTML()` | `string` | A full HTML page that posts the form on load |

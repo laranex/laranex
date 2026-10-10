@@ -30,6 +30,7 @@ Every callback goes through the same steps; KBZ Pay is shown here.
 ```go
 import (
 	"github.com/goravel/framework/contracts/http"
+	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
 	payments "github.com/laranex/goravel-myanmar-payments/v4"
 	paymentsfacades "github.com/laranex/goravel-myanmar-payments/v4/facades"
 
@@ -61,8 +62,9 @@ facades.Route().Post("/payments/kbz/callback", func(
 		return ctx.Response().String(http.StatusNotFound, "unknown order")
 	}
 
-	// order.Amount is a string such as "10000"; compare strings, never floats
-	paid := callback.Amount == order.Amount
+	// order.Amount is a string such as "10000"; compare by value, not floats
+	amount, err := myanmarpayments.ParseAmount(order.Amount)
+	paid := err == nil && amount.Equals(callback.Amount)
 
 	if callback.IsSuccessful() && !order.IsPaid() && paid {
 		order.MarkAsPaid(callback.GatewayReference)
@@ -94,10 +96,12 @@ Signatures are computed over the exact bytes the gateway sent, so always build t
 | JSON (KBZ Pay, Wave Money, Yoma MMQR) | The body byte for byte |
 | `application/x-www-form-urlencoded` or `multipart/form-data` (AYA Pay, CyberSource) | Goravel's gin driver parses form bodies before your handler runs, which consumes them. The body is rebuilt from the parsed form fields as urlencoded and `Content-Type` says so. These gateways sign field values, so the result verifies the same |
 
+A body is read as JSON only when it is a single JSON object; any other body is read as a urlencoded form, skipping a malformed pair.
+
 ## Rules
 
-- **Verify, then trust.** A callback that fails verification returns a `*myanmarpayments.SignatureVerificationError`. Never act on its payload; it carries the unverified data in `Raw` for logging only.
-- **Check the amount.** Compare `callback.Amount` (as the gateway sent it, a string) with your order before fulfilling. A gateway may format it differently from your order (`10000` or `10000.00`); the `sameAmount()` helper in [Handling Webhooks](/goravel-myanmar-payments/webhooks#job) compares decimal strings exactly.
+- **Verify, then trust.** A callback that fails verification returns a `*myanmarpayments.SignatureVerificationError`, and so does one whose signed or hashed field holds an object or array instead of a single value, since no gateway signs nested values. Never act on its payload; it carries the unverified data in `Raw` for logging only.
+- **Check the amount.** Compare `callback.Amount` (as the gateway sent it, a string) with your order before fulfilling. A gateway may format it differently from your order (`10000` or `10000.00`); `amount.Equals(callback.Amount)`, with `amount` parsed from your order by `myanmarpayments.ParseAmount()`, compares decimal strings exactly.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 - **Acknowledge.** `payments.Acknowledge(ctx, callback)` returns the response the gateway expects, e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
 

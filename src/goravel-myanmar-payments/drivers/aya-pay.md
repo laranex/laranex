@@ -202,7 +202,7 @@ facades.Route().Get("/payments/aya/return", func(
 })
 ```
 
-A `+` in the base64 `payload` that reached you as a space (an unencoded query string) is read back as `+` before decoding; the checksum is still verified. Still fulfill orders from the backend callback.
+A `+` in the base64 `payload` that reached you as a space (an unencoded query string) is read back as `+` before decoding; the checksum is still verified. The `payload` may be correctly padded or carry no padding at all; partial padding, the URL-safe alphabet, line breaks and text that isn't UTF-8 are rejected. Still fulfill orders from the backend callback.
 
 ## Status Checks
 
@@ -225,7 +225,7 @@ if err == nil && result.IsSuccessful() {
 
 ## Responses
 
-What AYA Pay puts in each field. See [Results](/goravel-myanmar-payments/references/results) and [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for the full types.
+What AYA Pay puts in each field. See [Results](/goravel-myanmar-payments/references/results) and [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for the full types. `Raw` holds plain Go values (JSON numbers become `json.Number`s), while the typed fields such as `Amount` keep the exact text AYA sent.
 
 ### `Services()` → `[]ayapay.Service` {#services-response}
 
@@ -323,6 +323,6 @@ The same values as [`HandleCallback()`](#handlecallback-response), read from the
 | `Services()` | `*APIError` | AYA answers with an HTTP error or a `status` other than `00` |
 | `Status()` | `*APIError` | AYA answers with an HTTP error or a `status` other than `00`, e.g. `20` Transaction not found |
 | `Status()` | `*SignatureVerificationError` | The enquiry payload's `checkSum` doesn't match |
-| `HandleCallback()`, `VerifyRedirect()` | `*SignatureVerificationError` | `payload` is missing or not base64 JSON, or `checkSum` doesn't match |
+| `HandleCallback()`, `VerifyRedirect()` | `*SignatureVerificationError` | `payload` is missing or not base64 JSON, a signed field holds an object or array, or `checkSum` doesn't match |
 
 `*APIError` carries AYA's `status` (e.g. `20` Transaction not found, `09` Duplicate order ID) in `GatewayCode` and its `message` in `GatewayMessage`. When AYA can't be reached, the calls return an `*APIError` with `HTTPStatus` `0`.

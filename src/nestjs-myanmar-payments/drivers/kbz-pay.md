@@ -157,7 +157,7 @@ if (result.isSuccessful()) {
 
 ## Responses
 
-What KBZ Pay puts in each property. See [Results](/nestjs-myanmar-payments/references/results) and [PaymentCallback & Status](/nestjs-myanmar-payments/references/payment-callback) for the full classes.
+What KBZ Pay puts in each property. See [Results](/nestjs-myanmar-payments/references/results) and [PaymentCallback & Status](/nestjs-myanmar-payments/references/payment-callback) for the full classes. `raw` holds plain JavaScript values, with JSON numbers kept as their exact text in a `string` (`1000.50` stays `'1000.50'`).
 
 ### `pwa()` → `RedirectPayment` {#pwa-response}
 
@@ -239,6 +239,6 @@ KBZ signs requests, the in-app `orderInfo` and notifications the same way: every
 | `pwa()`, `qr()`, `app()` | `ApiError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, or without a `prepay_id` |
 | `qr()` | `ApiError` | KBZ returns no `qrCode` |
 | `status()` | `ApiError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, e.g. for an unknown order |
-| `handleCallback()` | `SignatureVerificationError` | `sign` doesn't match |
+| `handleCallback()` | `SignatureVerificationError` | `sign` doesn't match, or a field holds an object or array |
 
 `ApiError` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `gatewayCode` and its `msg` in `gatewayMessage`. When KBZ can't be reached, the calls throw `ApiError` with `httpStatus` `0`.

@@ -31,7 +31,7 @@ const payment = await this.payments.kbzPay().pwa({
 
 `parse()` rejects signs, exponents, spaces and thousands separators (`-1`, `1e5`, ` 10`, `1,000`, `10.`, `.5`), and `kyat()` rejects negatives, fractions, `NaN` and integers beyond `Number.MAX_SAFE_INTEGER` (pass a `bigint` instead), by throwing `InvalidPaymentDataError` with an `amount` error.
 
-An `Amount` exposes `toString()` (as given without leading zeros, also via `JSON.stringify`, which writes a string), `decimalPlaces()`, `wholePart()`, `isZero()`, `isPositive()` and `equals(other)`, which compares with another `Amount` or a decimal string, ignoring trailing fractional zeros.
+An `Amount` exposes `toString()` (as given without leading zeros, also via `JSON.stringify`, which writes a string), `decimalPlaces()`, `wholePart()`, `isZero()`, `isPositive()` and `equals(other)`, which compares with another `Amount` or a decimal string, ignoring leading zeros and trailing fractional zeros; text that is not a plain decimal is never equal.
 
 ## Gateway Rules
 

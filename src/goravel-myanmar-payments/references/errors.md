@@ -5,7 +5,7 @@ description: Every error returned by Goravel Myanmar Payments is one of the SDK'
 
 # Errors
 
-Gateways return the SDK's typed errors from `github.com/laranex/go-myanmar-payments/v4`; match them with `errors.As`.
+Gateways return the SDK's typed errors from `github.com/laranex/go-myanmar-payments/v4`. Each implements `myanmarpayments.PaymentError`, so one `errors.As` covers the package; match a single type with `errors.As` too.
 
 | Error | Returned when |
 |---|---|
@@ -13,6 +13,15 @@ Gateways return the SDK's typed errors from `github.com/laranex/go-myanmar-payme
 | `*APIError` | A gateway rejects a request, answers with an error (including errors sent with HTTP 200), or cannot be reached |
 | `*SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification |
 | `*ConfigurationError` | A gateway is requested without a credential it needs |
+
+```go
+var paymentErr myanmarpayments.PaymentError
+if errors.As(err, &paymentErr) {
+	log.Printf("payment failed: %v", paymentErr)
+}
+```
+
+Every message starts with `myanmarpayments: `, the Go convention; the rest matches the other Laranex packages.
 
 The package adds its own sentinel errors; match them with `errors.Is`:
 
@@ -47,7 +56,7 @@ if errors.As(err, &invalid) {
 }
 ```
 
-Validation runs inside the gateway call, before any request is sent.
+Validation runs inside the gateway call, before any request is sent. `err.Error()` is `myanmarpayments: Invalid payment data: ` followed by the messages, in field-name order.
 
 ## APIError
 
@@ -58,7 +67,7 @@ Validation runs inside the gateway call, before any request is sent.
 | `HTTPStatus` | `int` | HTTP status of the response, `0` when no response was received |
 | `Raw` | `map[string]any` | The decoded response body |
 
-`Message` describes what failed, and `Unwrap()` returns the underlying transport error, if any.
+`Message` describes what failed, e.g. `KBZ Pay precreate failed: [ORDER_ID_USED] Duplicate order`; when the gateway sends a code without a message, it ends with the bracketed code. For a call that could not reach the gateway, `Message` is `Could not reach <url>: …` and `Unwrap()` returns the underlying transport error.
 
 ## SignatureVerificationError
 
@@ -66,4 +75,4 @@ Validation runs inside the gateway call, before any request is sent.
 
 ## ConfigurationError
 
-`Gateway` and `Key` name the gateway and the missing key, and the message reads e.g. `myanmarpayments: the wave_money configuration is missing [merchant_id]`.
+The message names the gateway and the missing key, e.g. `myanmarpayments: The wave_money configuration is missing [merchant_id].` `Gateway` and `Key` hold both.

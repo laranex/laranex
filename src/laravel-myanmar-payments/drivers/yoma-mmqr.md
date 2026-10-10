@@ -126,7 +126,7 @@ if ($result->isSuccessful()) {
 
 ## Responses
 
-What Yoma MMQR puts in each property. See [Results](/laravel-myanmar-payments/references/results) and [PaymentCallback & Status](/laravel-myanmar-payments/references/payment-callback) for the full classes.
+What Yoma MMQR puts in each property. See [Results](/laravel-myanmar-payments/references/results) and [PaymentCallback & Status](/laravel-myanmar-payments/references/payment-callback) for the full classes. `raw` holds plain PHP values (JSON numbers stay `string`s with their exact text).
 
 ### `initiate()` → `QrPayment` {#initiate-response}
 
@@ -185,6 +185,8 @@ The same values as [`initiate()`](#initiate-response) for the `orderId` you pass
 
 Yoma authenticates with an OAuth token that lasts hours. The package caches it in your cache store (see [Configuration](/laravel-myanmar-payments/configuration#cache)) and fetches a new one, retrying once, when Yoma answers `401`. `MyanmarPayments::yomaMmqr()->forgetToken()` drops the cached token, e.g. after rotating the client secret.
 
+The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>`, the same key every Laranex SDK uses, so services in different languages can share one cache (the cache store's own prefix still applies), for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits, so `28800.0` is 28800 seconds; a missing or non-positive value means 3600.
+
 ## Errors
 
 | Call | Throws | When |
@@ -193,6 +195,6 @@ Yoma authenticates with an OAuth token that lasts hours. The package caches it i
 | `initiate()` | `ApiException` | The token request fails, Yoma answers with an HTTP error or an `errorCode` (e.g. `PAYMENT ALREADY EXISTS`), `checkOutStatus` isn't `true`, or there is no `qrString` or `refLabel` |
 | `renewQr()` | `ApiException` | As `initiate()`, without the checkout |
 | `status()` | `ApiException` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
-| `handleCallback()` | `SignatureVerificationException` | `X-Webhook-Secret` is missing or wrong (when a webhook secret is set), `orderNumber` is missing, or `hashValue` doesn't match |
+| `handleCallback()` | `SignatureVerificationException` | `X-Webhook-Secret` is missing or wrong (when a webhook secret is set), `orderNumber` is missing, `orderNumber` or `status` holds an object or array, or `hashValue` doesn't match |
 
 Yoma reports business errors with HTTP 200 and an `errorCode`; `ApiException` carries it in `gatewayCode` and Yoma's `errorDescription` in `gatewayMessage`. When Yoma can't be reached, the calls throw `ApiException` with `httpStatus` `0`.

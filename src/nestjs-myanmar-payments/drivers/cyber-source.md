@@ -125,7 +125,7 @@ A bad signature answers `400` before the handler runs. Only signed fields are tr
 
 ## Responses
 
-What CyberSource puts in each property. See [Results](/nestjs-myanmar-payments/references/results) and [PaymentCallback & Status](/nestjs-myanmar-payments/references/payment-callback) for the full classes.
+What CyberSource puts in each property. See [Results](/nestjs-myanmar-payments/references/results) and [PaymentCallback & Status](/nestjs-myanmar-payments/references/payment-callback) for the full classes. CyberSource posts form fields, so every `raw` value is a `string`, exactly as sent.
 
 ### `initiate()` → `FormPayment` {#initiate-response}
 

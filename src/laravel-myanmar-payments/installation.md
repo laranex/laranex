@@ -83,3 +83,5 @@ $payment = $kbzPay->pwa(new KbzPayPaymentData(
 $callback = $kbzPay->handleCallback(CallbackRequest::fromGlobals());
 $callback->acknowledgement->send();
 ```
+
+To build every gateway from one object, as this package's facade does, use the SDK's `MyanmarPayments`; see [One Object for Every Gateway](/php-myanmar-payments/configuration#one-object-for-every-gateway).

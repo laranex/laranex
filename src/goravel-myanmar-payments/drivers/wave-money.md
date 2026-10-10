@@ -136,7 +136,7 @@ facades.Route().Post("/payments/wave/callback", func(
 
 ## Responses
 
-What Wave Money puts in each field. See [Results](/goravel-myanmar-payments/references/results) and [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for the full types.
+What Wave Money puts in each field. See [Results](/goravel-myanmar-payments/references/results) and [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for the full types. `Raw` holds plain Go values (JSON numbers become `json.Number`s), while the typed fields such as `Amount` keep the exact text Wave sent.
 
 ### `Initiate()` → `*RedirectPayment` {#initiate-response}
 
@@ -184,6 +184,6 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 |---|---|---|
 | `Initiate()` | `*InvalidPaymentDataError` | A value breaks the rules above. Nothing is sent |
 | `Initiate()` | `*APIError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
-| `HandleCallback()` | `*SignatureVerificationError` | `hashValue` doesn't match |
+| `HandleCallback()` | `*SignatureVerificationError` | `hashValue` doesn't match, or a hashed field holds an object or array |
 
 `HTTPStatus` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`GatewayCode` is `VALIDATION_ERROR`). When Wave can't be reached, `Initiate()` returns an `*APIError` with `HTTPStatus` `0`.

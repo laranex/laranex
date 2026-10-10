@@ -28,7 +28,7 @@ Every callback goes through the same steps; KBZ Pay is shown here.
 />
 
 ```ts
-import { PaymentCallback } from '@laranex/myanmar-payments';
+import { Amount, PaymentCallback } from '@laranex/myanmar-payments';
 import {
   AcknowledgeCallback,
   VerifiedCallback,
@@ -48,8 +48,8 @@ export class PaymentsController {
   ): Promise<PaymentCallback> {
     const order = await this.orders.findByReference(callback.orderId);
 
-    // order.amount is a string such as "10000"; compare strings, never floats
-    const paid = callback.amount === order.amount;
+    // order.amount is a string such as "10000"; compare by value, not floats
+    const paid = Amount.parse(order.amount).equals(callback.amount);
 
     if (callback.isSuccessful() && !order.paidAt && paid) {
       await this.orders.markAsPaid(order, callback.gatewayReference);
@@ -137,11 +137,11 @@ async waveCallback(
 }
 ```
 
-`callbackRequestFrom()`, which every helper uses, reads the body from, in order: the exact bytes Nest kept with `rawBody: true`; the request stream, when no body parser read it (Express, unknown content types); the parsed body, encoded again as JSON or as a form. The query string comes from the full URL, global prefix included. AYA's browser return is verified with `ayaPay().verifyRedirect()`, see [AYA Pay](/nestjs-myanmar-payments/drivers/aya-pay#the-return-page).
+`callbackRequestFrom()`, which every helper uses, reads the body from, in order: the exact bytes Nest kept with `rawBody: true`; the request stream, when no body parser read it (Express, unknown content types); the parsed body, encoded again as JSON or as a form. The `CallbackRequest` keeps the exact bytes in `rawBody` and the same body as text in `body`. The query string comes from the full URL, global prefix included. AYA's browser return is verified with `ayaPay().verifyRedirect()`, see [AYA Pay](/nestjs-myanmar-payments/drivers/aya-pay#the-return-page). A body is read as JSON only when it is a single JSON object; any other body is read as a urlencoded form.
 
 ## Rules
 
-- **Verify, then trust.** A callback that fails verification throws `SignatureVerificationError`. Never act on its payload; it carries the unverified data in `error.raw` for logging only.
+- **Verify, then trust.** A callback that fails verification throws `SignatureVerificationError`, and so does one whose signed or hashed field holds an object or array instead of a single value, since no gateway signs nested values. Never act on its payload; it carries the unverified data in `error.raw` for logging only.
 - **Check the amount.** Compare `callback.amount` (as the gateway sent it, a string) with your order before fulfilling. A gateway may format it differently from your order (`10000` or `10000.00`); `Amount.parse(order.amount).equals(callback.amount)` compares decimal strings exactly.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 - **Acknowledge.** Returning the callback from an `@AcknowledgeCallback()` handler (or `acknowledge(res, callback)`) sends the response the gateway expects, e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.

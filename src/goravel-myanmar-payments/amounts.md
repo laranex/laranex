@@ -38,7 +38,7 @@ payment, err := kbz.PWA(ctx, kbzpay.PaymentData{
 
 `ParseAmount()` rejects signs, exponents, spaces and thousands separators (`-1`, `1e5`, ` 10`, `1,000`, `10.`, `.5`) by returning an `*InvalidPaymentDataError` with an `amount` error. `Kyat()` never fails: a negative value yields an amount that every gateway's validation rejects with the same error.
 
-An `Amount` exposes `String()` (as given without leading zeros), `DecimalPlaces()`, `IsSet()`, `Valid()`, `IsZero()` and `IsPositive()`. It encodes to JSON as a string (`"10000.50"`) and decodes from a JSON string or number without passing through a float. The zero value means "not provided".
+An `Amount` exposes `String()` (as given without leading zeros), `DecimalPlaces()`, `WholePart()`, `IsSet()`, `Valid()`, `IsZero()`, `IsPositive()` and `Equals(text)`, which compares with a decimal string, ignoring leading zeros and trailing fractional zeros; text that is not a plain decimal, and an unset amount, is never equal. `==` compares the exact text instead (`1000` and `1000.00` differ). It encodes to JSON as a string (`"10000.50"`) and decodes from a JSON string or number without passing through a float. The zero value means "not provided".
 
 ## Gateway Rules
 
