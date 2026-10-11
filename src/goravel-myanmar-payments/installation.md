@@ -95,10 +95,9 @@ import (
 )
 
 kbz, err := kbzpay.New(kbzpay.Config{
-	AppID:          "...",
-	AppKey:         "...",
-	MerchantCode:   "...",
-	TimeoutSeconds: 30,
+	AppID:        "...",
+	AppKey:       "...",
+	MerchantCode: "...",
 }, nil)
 
 payment, err := kbz.PWA(r.Context(), kbzpay.PaymentData{

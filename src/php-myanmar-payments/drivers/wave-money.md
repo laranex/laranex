@@ -48,7 +48,6 @@ $waveMoney = new WaveMoney(new WaveMoneyConfig(
     secretKey: '...',
     merchantName: 'My Shop',
     timeToLiveSeconds: 300,
-    timeoutSeconds: 30,
 ));
 
 $data = new WaveMoneyPaymentData(

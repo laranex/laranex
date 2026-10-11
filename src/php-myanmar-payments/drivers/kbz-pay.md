@@ -48,7 +48,6 @@ $kbzPay = new KbzPay(new KbzPayConfig(
     appId: '...',
     appKey: '...',
     merchantCode: '...',
-    timeoutSeconds: 30,
 ));
 
 $data = new KbzPayPaymentData(

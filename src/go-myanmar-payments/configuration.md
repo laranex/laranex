@@ -1,11 +1,11 @@
 ---
 title: Configuration
-description: Configure Go Myanmar Payments with one Config struct per gateway or from environment variables. Every setting is required; endpoints default to production. Pass your own HTTP client and token cache.
+description: Configure Go Myanmar Payments with one Config struct per gateway or from environment variables. Every setting is required except the HTTP timeout (30 seconds by default); endpoints default to production. Pass your own HTTP client and token cache.
 ---
 
 # Configuration
 
-Each gateway package has a config struct (`kbzpay.Config`, `wavemoney.Config`, `ayapay.Config`, `yomammqr.Config`, `cybersource.Config`) and a `New` constructor that takes it. Every setting is required except the URL overrides and Yoma's webhook secret: there are no defaults, and a missing or blank setting returns a `*myanmarpayments.ConfigurationError` naming it:
+Each gateway package has a config struct (`kbzpay.Config`, `wavemoney.Config`, `ayapay.Config`, `yomammqr.Config`, `cybersource.Config`) and a `New` constructor that takes it. Every setting is required except the HTTP timeout (`TimeoutSeconds`, 30 seconds by default), the URL overrides and Yoma's webhook secret: there are no other defaults, and a missing or blank setting returns a `*myanmarpayments.ConfigurationError` naming it:
 
 ```go
 package main
@@ -20,10 +20,9 @@ import (
 
 func main() {
 	kbz, err := kbzpay.New(kbzpay.Config{
-		AppID:          "...",
-		AppKey:         "",
-		MerchantCode:   "...",
-		TimeoutSeconds: 30,
+		AppID:        "...",
+		AppKey:       "",
+		MerchantCode: "...",
 	}, nil)
 
 	var configErr *myanmarpayments.ConfigurationError
@@ -37,7 +36,7 @@ func main() {
 
 `err.Error()` reads `myanmarpayments: The kbz_pay configuration is missing [app_key].`
 
-The time settings (`TimeoutSeconds`, and Wave Money's `TimeToLiveSeconds`) must be whole numbers greater than 0. `0` is the zero value, so it counts as missing. A negative value returns the same error with `Invalid` set and the message `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+The time settings (`TimeoutSeconds`, and Wave Money's `TimeToLiveSeconds`) must be whole numbers greater than 0. `0` is the zero value, so it means unset: `TimeoutSeconds` then uses `myanmarpayments.DefaultTimeoutSeconds` (30), and a gateway's `Config()` reports 30, while a missing `TimeToLiveSeconds` returns the error. A negative value returns the same error with `Invalid` set and the message `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
 ## Endpoints
 
@@ -52,7 +51,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `AppID` | `string` | Yes | `appid` issued by KBZ |
 | `AppKey` | `string` | Yes | Secret key used to sign requests |
 | `MerchantCode` | `string` | Yes | `merch_code` issued by KBZ |
-| `TimeoutSeconds` | `int` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
+| `TimeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. `0` (unset) means 30 (`myanmarpayments.DefaultTimeoutSeconds`); a negative one is reported as `timeout_in_seconds` |
 | `APIURL` | `string` | No | Override the API base URL |
 | `PWAURL` | `string` | No | Override the PWA checkout URL. Normalized to end with `/`, e.g. `…/pwa/#/` |
 
@@ -64,7 +63,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `SecretKey` | `string` | Yes | Hash secret key issued by Wave |
 | `MerchantName` | `string` | Yes | Shown on Wave's payment page |
 | `TimeToLiveSeconds` | `int` | Yes | Seconds the customer has to pay. A missing one is reported as `time_to_live_in_seconds` |
-| `TimeoutSeconds` | `int` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
+| `TimeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. `0` (unset) means 30 (`myanmarpayments.DefaultTimeoutSeconds`); a negative one is reported as `timeout_in_seconds` |
 | `BaseURL` | `string` | No | Override the API base URL |
 | `AuthenticateURL` | `string` | No | Override the host the customer is redirected to |
 
@@ -74,7 +73,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 |---|---|---|---|
 | `AppKey` | `string` | Yes | Public application key |
 | `AppSecret` | `string` | Yes | Secret used for checksums |
-| `TimeoutSeconds` | `int` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
+| `TimeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. `0` (unset) means 30 (`myanmarpayments.DefaultTimeoutSeconds`); a negative one is reported as `timeout_in_seconds` |
 | `BaseURL` | `string` | No | Override the gateway base URL |
 
 ### yomammqr.Config
@@ -86,7 +85,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `ClientSecret` | `string` | Yes | OAuth client secret |
 | `WebhookHashKey` | `string` | Yes | Hash key issued by Yoma for verifying callbacks. A missing one is reported as `webhook_hashkey` |
 | `APIVersion` | `string` | Yes | The `{version}` segment of Yoma's API paths, e.g. `v1rc` |
-| `TimeoutSeconds` | `int` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
+| `TimeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. `0` (unset) means 30 (`myanmarpayments.DefaultTimeoutSeconds`); a negative one is reported as `timeout_in_seconds` |
 | `WebhookSecret` | `string` | No | When set, callbacks must carry it in `X-Webhook-Secret` |
 | `BaseURL` | `string` | No | Override the API base URL |
 
@@ -141,7 +140,7 @@ Every variable is required unless it is marked optional. The values after `=` ar
 
 ```env
 # Every gateway that calls an API
-MYANMAR_PAYMENTS_HTTP_TIMEOUT=30
+MYANMAR_PAYMENTS_HTTP_TIMEOUT=30      # optional, defaults to 30
 
 # KBZ Pay
 KBZ_PAY_APP_ID=
@@ -179,7 +178,7 @@ CYBER_SOURCE_SECRET_KEY=
 CYBER_SOURCE_BASE_URL=                # optional override
 ```
 
-`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `TimeoutSeconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR. `ConfigFromEnv` never fails: `New` returns the error, and a time variable that is set but not a whole number greater than 0 gives the `must be a whole number greater than 0` error. The package never reads files itself: load the `.env` file with your framework or with a package such as [`godotenv`](https://github.com/joho/godotenv) before calling `ConfigFromEnv`.
+`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `TimeoutSeconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR; unset or blank, it is 30 (`myanmarpayments.DefaultTimeoutSeconds`). `ConfigFromEnv` never fails: `New` returns the error, and a time variable that is set but not a whole number greater than 0 gives the `must be a whole number greater than 0` error. The package never reads files itself: load the `.env` file with your framework or with a package such as [`godotenv`](https://github.com/joho/godotenv) before calling `ConfigFromEnv`.
 
 ## One Object for Every Gateway
 
@@ -246,7 +245,7 @@ type HTTPDoer interface {
 
 | Argument | Description |
 |---|---|
-| `nil` | Uses an `*http.Client` with the config's `TimeoutSeconds` |
+| `nil` | Uses an `*http.Client` with the config's `TimeoutSeconds` (30 by default) |
 | your `HTTPDoer` | Sends every request. Use it for proxies, tracing, retries or test doubles |
 
 ```go
@@ -258,7 +257,7 @@ client := &http.Client{
 kbz, err := kbzpay.New(kbzpay.ConfigFromEnv(os.Getenv), client)
 ```
 
-A client you pass keeps its own timeout; `TimeoutSeconds` is still required.
+A client you pass keeps its own timeout; `TimeoutSeconds` is still validated, so a negative value returns the `ConfigurationError`.
 
 Every network method takes a `context.Context` first, so request deadlines and cancellation apply to gateway calls:
 

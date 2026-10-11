@@ -47,7 +47,6 @@ import { AyaPay, AyaPayMethod } from '@laranex/myanmar-payments/aya-pay';
 const aya = new AyaPay({
   appKey: '...',
   appSecret: '...',
-  timeoutSeconds: 30,
 });
 
 for (const service of await aya.services()) {

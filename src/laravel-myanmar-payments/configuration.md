@@ -1,19 +1,19 @@
 ---
 title: Configuration
-description: Configure Laravel Myanmar Payments with environment variables. Every setting of the gateways you use is required; endpoints default to production.
+description: Configure Laravel Myanmar Payments with environment variables. Every setting of the gateways you use is required except the HTTP timeout (30 seconds by default); endpoints default to production.
 ---
 
 # Configuration
 
 ## Environment Variables
 
-Add the keys of the gateways you use. Every setting of those gateways is required except the URL overrides and Yoma's webhook secret: there are no defaults. A gateway is configured the first time you call it, and a missing or blank setting throws a `ConfigurationException` naming it, e.g. `The kbz_pay configuration is missing [app_key].` The time settings must be whole numbers greater than 0; any other value throws the same exception with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+Add the keys of the gateways you use. Every setting of those gateways is required except the HTTP timeout (30 seconds by default), the URL overrides and Yoma's webhook secret. A gateway is configured the first time you call it, and a missing or blank setting throws a `ConfigurationException` naming it, e.g. `The kbz_pay configuration is missing [app_key].` The time settings must be whole numbers greater than 0; any other value, such as `0`, `-30`, `2.5` or `thirty`, throws the same exception with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
 The variable names are the ones the [PHP SDK](/php-myanmar-payments/configuration) reads, so one `.env` works for both. The values after `=` are examples:
 
 ```env
-# Every gateway that calls an API (all but CyberSource)
-MYANMAR_PAYMENTS_HTTP_TIMEOUT=30
+# optional, every gateway that calls an API (all but CyberSource), defaults to 30 seconds
+# MYANMAR_PAYMENTS_HTTP_TIMEOUT=30
 # AYA Pay and CyberSource, while the form route is enabled
 MYANMAR_PAYMENTS_FORM_TTL_MINUTES=30
 # optional, store for Yoma access tokens, empty = default store
@@ -59,7 +59,7 @@ CYBER_SOURCE_BASE_URL=                # optional override
 
 | Variable | Config key | Required | Description |
 |---|---|---|---|
-| `MYANMAR_PAYMENTS_HTTP_TIMEOUT` | `http.timeout` | Yes | Seconds before a gateway call gives up. Given to every gateway except CyberSource as its `timeout_in_seconds` |
+| `MYANMAR_PAYMENTS_HTTP_TIMEOUT` | `http.timeout` | No | Seconds before a gateway call gives up, 30 by default. Given to every gateway except CyberSource as its `timeout_in_seconds` |
 | `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` | `form_route.ttl_minutes` | Yes | Minutes an auto-submit form link stays valid. Needed by AYA Pay and CyberSource while the form route is enabled |
 | `MYANMAR_PAYMENTS_CACHE_STORE` | `cache_store` | No | Cache store for Yoma MMQR access tokens; empty means the default store |
 | `KBZ_PAY_APP_ID` | `kbz_pay.app_id` | Yes | `appid` issued by KBZ |
@@ -186,7 +186,7 @@ return [
     ],
 
     'http' => [
-        'timeout' => env('MYANMAR_PAYMENTS_HTTP_TIMEOUT'),
+        'timeout' => env('MYANMAR_PAYMENTS_HTTP_TIMEOUT', 30),
     ],
 
     'cache_store' => env('MYANMAR_PAYMENTS_CACHE_STORE'),
@@ -200,17 +200,17 @@ return [
 ];
 ```
 
-The time settings take an `int` or integer text such as `'30'`. Without the env variables, set the values in the published file instead, e.g. `'timeout' => 30`.
+The time settings take an `int` or integer text such as `'30'`. Without the env variables, set the values in the published file instead, e.g. `'timeout' => 45`.
 
 ## HTTP Client
 
 ```php
 'http' => [
-    'timeout' => env('MYANMAR_PAYMENTS_HTTP_TIMEOUT'),
+    'timeout' => env('MYANMAR_PAYMENTS_HTTP_TIMEOUT', 30),
 ],
 ```
 
-Gateway calls go through Laravel's `Http` client, so `Http::fake()` intercepts them in tests and request events fire for them; see [Testing](/laravel-myanmar-payments/testing). `timeout` is in seconds, applies to gateway calls only and is required: the package passes it to KBZ Pay, Wave Money, AYA and Yoma MMQR as their `timeout_in_seconds`, so a missing one throws `The kbz_pay configuration is missing [timeout_in_seconds].` when you first call KBZ Pay. To give one gateway its own timeout, set `timeout_in_seconds` in its array, e.g. `'kbz_pay' => [..., 'timeout_in_seconds' => 10]`. When a gateway can't be reached, the call throws `ApiException` with `httpStatus` `0`.
+Gateway calls go through Laravel's `Http` client, so `Http::fake()` intercepts them in tests and request events fire for them; see [Testing](/laravel-myanmar-payments/testing). `timeout` is in seconds, applies to gateway calls only and defaults to 30: the package passes it to KBZ Pay, Wave Money, AYA and Yoma MMQR as their `timeout_in_seconds`, and a null or blank one also means 30 seconds. To give one gateway its own timeout, set `timeout_in_seconds` in its array, e.g. `'kbz_pay' => [..., 'timeout_in_seconds' => 10]`. When a gateway can't be reached, the call throws `ApiException` with `httpStatus` `0`.
 
 ## Auto-submit Form Route
 

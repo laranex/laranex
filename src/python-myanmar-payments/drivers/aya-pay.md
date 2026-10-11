@@ -50,7 +50,6 @@ aya = AyaPay(
     AyaPayConfig(
         app_key="...",
         app_secret="...",
-        timeout_seconds=30,
     )
 )
 

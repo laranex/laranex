@@ -127,8 +127,8 @@ php artisan vendor:publish --tag="myanmar-payments-config"
 - The AYA block is renamed `aya_pgw` → `aya_pay`, read from `AYA_PAY_*` with the `AYA_PGW_*` names as fallbacks.
 - KBZ Pay's `base_url` and `pwa.base_redirect_url` keys are now `api_url` and `pwa_url`; the `KBZ_PAY_BASE_URL` and `KBZ_PAY_PWA_BASE_REDIRECT_URL` env names are unchanged. `KBZ_PAY_MERCHANT_NAME` is no longer used.
 - Wave Money redirects the customer to `WAVE_MONEY_AUTHENTICATE_URL` (the Wave host without the API port) instead of the API base URL.
-- `MYANMAR_PAYMENTS_HTTP_TIMEOUT`, `MYANMAR_PAYMENTS_FORM_TTL_MINUTES`, `MYANMAR_PAYMENTS_CACHE_STORE` and the `form_route` options are new.
-- Every setting of the gateways you use is required and has no default, including `MYANMAR_PAYMENTS_HTTP_TIMEOUT`, `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` (for AYA Pay and CyberSource), `WAVE_MONEY_MERCHANT_NAME` (no `APP_NAME` fallback), `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` and `YOMA_MMQR_API_VERSION`. CyberSource payments take `currency`, `transactionType` and `locale`.
+- `MYANMAR_PAYMENTS_HTTP_TIMEOUT` (optional, 30 seconds by default), `MYANMAR_PAYMENTS_FORM_TTL_MINUTES`, `MYANMAR_PAYMENTS_CACHE_STORE` and the `form_route` options are new.
+- Every setting of the gateways you use except the HTTP timeout is required and has no default, including `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` (for AYA Pay and CyberSource), `WAVE_MONEY_MERCHANT_NAME` (no `APP_NAME` fallback), `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` and `YOMA_MMQR_API_VERSION`. CyberSource payments take `currency`, `transactionType` and `locale`.
 
 See [Configuration](/laravel-myanmar-payments/configuration).
 

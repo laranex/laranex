@@ -70,7 +70,6 @@ $kbzPay = new KbzPay(new KbzPayConfig(
     appId: '...',
     appKey: '...',
     merchantCode: '...',
-    timeoutSeconds: 30,
 ));
 
 $payment = $kbzPay->pwa(new KbzPayPaymentData(

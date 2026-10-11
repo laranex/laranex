@@ -46,7 +46,6 @@ Response bodies are described on each [gateway page](/laravel-myanmar-payments/d
 
 ```xml
 <php>
-    <env name="MYANMAR_PAYMENTS_HTTP_TIMEOUT" value="5"/>
     <env name="MYANMAR_PAYMENTS_FORM_TTL_MINUTES" value="30"/>
     <env name="KBZ_PAY_APP_ID" value="kp1"/>
     <env name="KBZ_PAY_APP_KEY" value="test-app-key"/>

@@ -74,4 +74,4 @@ When the gateway sends an error code without a message, `getMessage()` ends with
 | `gateway` | `string` | e.g. `kbz_pay` |
 | `key` | `string` | The setting, e.g. `app_key` |
 
-`getMessage()` is e.g. `The kbz_pay configuration is missing [app_key].`, or `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting. Thrown by each config class (and so by each gateway's constructor and `fromEnv()`), and by `MyanmarPayments` when a gateway is used without configuration.
+`getMessage()` is e.g. `The kbz_pay configuration is missing [app_key].`, or `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting (a missing or blank HTTP timeout is not an error: it defaults to 30 seconds). Thrown by each config class (and so by each gateway's constructor and `fromEnv()`), and by `MyanmarPayments` when a gateway is used without configuration.

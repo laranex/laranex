@@ -1,11 +1,11 @@
 ---
 title: Configuration
-description: Configure PHP Myanmar Payments with one config class per gateway or from environment variables. Every setting is required; endpoints default to production. Pass your own PSR-18 client and PSR-16 cache.
+description: Configure PHP Myanmar Payments with one config class per gateway or from environment variables. Every setting is required except the HTTP timeout (30 seconds by default) and the endpoints, which default to production. Pass your own PSR-18 client and PSR-16 cache.
 ---
 
 # Configuration
 
-Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes named arguments. Gateways take the config object or an array of its snake_case keys. Every setting is required except the URL overrides and Yoma's webhook secret: there are no defaults, and a missing or blank setting throws a `ConfigurationException` naming it:
+Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes named arguments. Gateways take the config object or an array of its snake_case keys. Every setting is required except the HTTP timeout, the URL overrides and Yoma's webhook secret. The HTTP timeout (`timeoutSeconds`) defaults to 30 seconds (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); any other missing or blank setting throws a `ConfigurationException` naming it:
 
 ```php
 use Laranex\PhpMyanmarPayments\Exceptions\ConfigurationException;
@@ -17,7 +17,6 @@ try {
         appId: '...',
         appKey: '',
         merchantCode: '...',
-        timeoutSeconds: 30,
     );
 } catch (ConfigurationException $e) {
     // e.g. kbz_pay "app_key"
@@ -30,7 +29,7 @@ $kbz = new KbzPay($config);
 
 `$e->getMessage()` reads `The kbz_pay configuration is missing [app_key].`
 
-The time settings (`timeoutSeconds`, and Wave Money's `timeToLiveSeconds`) must be whole numbers greater than 0. Any other value throws the same exception with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+The time settings (`timeoutSeconds`, and Wave Money's `timeToLiveSeconds`) must be whole numbers greater than 0. A missing or blank `timeout_in_seconds` means 30 seconds; any other value, such as `0`, `-30`, `2.5` or `'thirty'`, throws the same exception with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
 ## Endpoints
 
@@ -45,7 +44,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `appId` | `string` | Yes | `appid` issued by KBZ |
 | `appKey` | `string` | Yes | Secret key used to sign requests |
 | `merchantCode` | `string` | Yes | `merch_code` issued by KBZ |
-| `timeoutSeconds` | `int` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
+| `timeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); an invalid one is reported as `timeout_in_seconds` |
 | `apiUrl` | `?string` | No | Override the API base URL |
 | `pwaUrl` | `?string` | No | Override the PWA checkout URL. Normalized to end with `/`, e.g. `…/pwa/#/` |
 
@@ -57,7 +56,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `secretKey` | `string` | Yes | Hash secret key issued by Wave |
 | `merchantName` | `string` | Yes | Shown on Wave's payment page |
 | `timeToLiveSeconds` | `int` | Yes | Seconds the customer has to pay. A missing one is reported as `time_to_live_in_seconds` |
-| `timeoutSeconds` | `int` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
+| `timeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); an invalid one is reported as `timeout_in_seconds` |
 | `baseUrl` | `?string` | No | Override the API base URL |
 | `authenticateUrl` | `?string` | No | Override the host the customer is redirected to |
 
@@ -67,7 +66,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 |---|---|---|---|
 | `appKey` | `string` | Yes | Public application key |
 | `appSecret` | `string` | Yes | Secret used for checksums |
-| `timeoutSeconds` | `int` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
+| `timeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); an invalid one is reported as `timeout_in_seconds` |
 | `baseUrl` | `?string` | No | Override the gateway base URL |
 
 ### YomaMmqrConfig
@@ -79,7 +78,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `clientSecret` | `string` | Yes | OAuth client secret |
 | `webhookHashKey` | `string` | Yes | Hash key issued by Yoma for verifying callbacks. A missing one is reported as `webhook_hashkey` |
 | `apiVersion` | `string` | Yes | The `{version}` segment of Yoma's API paths, e.g. `v1rc` |
-| `timeoutSeconds` | `int` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
+| `timeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); an invalid one is reported as `timeout_in_seconds` |
 | `webhookSecret` | `?string` | No | When set, callbacks must carry it in `X-Webhook-Secret` |
 | `baseUrl` | `?string` | No | Override the API base URL |
 
@@ -140,7 +139,7 @@ Every variable is required unless it is marked optional. The values after `=` ar
 
 ```env
 # Every gateway that calls an API
-MYANMAR_PAYMENTS_HTTP_TIMEOUT=30
+# MYANMAR_PAYMENTS_HTTP_TIMEOUT=30    # optional, defaults to 30 seconds
 
 # KBZ Pay
 KBZ_PAY_APP_ID=
@@ -178,7 +177,7 @@ CYBER_SOURCE_SECRET_KEY=
 CYBER_SOURCE_BASE_URL=                # optional override
 ```
 
-`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR. The package never reads files itself: load the `.env` file with your framework or with [`vlucas/phpdotenv`](https://github.com/vlucas/phpdotenv) before calling `fromEnv()`.
+`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR; unset or blank, it is 30 seconds. The package never reads files itself: load the `.env` file with your framework or with [`vlucas/phpdotenv`](https://github.com/vlucas/phpdotenv) before calling `fromEnv()`.
 
 Credentials from a config file go through `fromArray()`, which reads the same settings as snake_case keys:
 
@@ -190,7 +189,7 @@ Credentials from a config file go through `fromArray()`, which reads the same se
 | `YomaMmqrConfig` | `merchant_id`, `client_id`, `client_secret`, `webhook_hashkey`, `api_version`, `timeout_in_seconds`, `webhook_secret`, `base_url` |
 | `CyberSourceConfig` | `profile_id`, `access_key`, `secret_key`, `base_url` |
 
-`time_to_live_in_seconds` and `timeout_in_seconds` take an `int` or integer text such as `'30'`.
+`time_to_live_in_seconds` and `timeout_in_seconds` take an `int` or integer text such as `'30'`. Without `timeout_in_seconds`, or with a blank one, the timeout is 30 seconds.
 
 ## One Object for Every Gateway
 
@@ -205,7 +204,6 @@ $payments = new MyanmarPayments([
         appId: '...',
         appKey: '...',
         merchantCode: '...',
-        timeoutSeconds: 30,
     ),
     'yoma_mmqr' => [
         'merchant_id' => '...',
@@ -213,7 +211,6 @@ $payments = new MyanmarPayments([
         'client_secret' => '...',
         'webhook_hashkey' => '...',
         'api_version' => 'v1rc',
-        'timeout_in_seconds' => 30,
     ],
 ]);
 
@@ -234,7 +231,7 @@ Gateways that call an API take any PSR-18 client as their second argument:
 
 | Argument | Type | Description |
 |---|---|---|
-| `httpClient` | `?Psr\Http\Client\ClientInterface` | Sends every request. Use it for proxies, tracing, retries or test doubles. Without one, the gateway uses Guzzle with the config's `timeoutSeconds` when Guzzle is installed, and otherwise discovers an installed PSR-18 client |
+| `httpClient` | `?Psr\Http\Client\ClientInterface` | Sends every request. Use it for proxies, tracing, retries or test doubles. Without one, the gateway uses Guzzle with the config's `timeoutSeconds` (30 by default) when Guzzle is installed, and otherwise discovers an installed PSR-18 client |
 
 ```php
 use GuzzleHttp\Client;
@@ -251,7 +248,7 @@ $kbz = new KbzPay(KbzPayConfig::fromEnv(), $client);
 
 `fromEnv()` takes the same client: `KbzPay::fromEnv(null, $client)`.
 
-A client you pass keeps its own timeout; `timeoutSeconds` is still required. A discovered client keeps its own timeout too. Request and stream objects are created with discovered PSR-17 factories, so a PSR-7 implementation such as `guzzlehttp/psr7` or `nyholm/psr7` must be installed. Guzzle ships one.
+A client you pass keeps its own timeout, and `timeoutSeconds` only applies to the default client. A discovered client keeps its own timeout too. Request and stream objects are created with discovered PSR-17 factories, so a PSR-7 implementation such as `guzzlehttp/psr7` or `nyholm/psr7` must be installed. Guzzle ships one.
 
 A failed request (connection error, timeout) throws an `ApiException` whose `getPrevious()` is the client's original exception.
 

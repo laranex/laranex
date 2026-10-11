@@ -1,11 +1,11 @@
 ---
 title: Configuration
-description: Configure Node Myanmar Payments with one config class per gateway or from environment variables. Every setting is required; endpoints default to production. Pass your own fetch, HTTP client and token cache.
+description: Configure Node Myanmar Payments with one config class per gateway or from environment variables. Every setting is required except the HTTP timeout, which defaults to 30 seconds; endpoints default to production. Pass your own fetch, HTTP client and token cache.
 ---
 
 # Configuration
 
-Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes an options object. Gateways take the config object or the plain options. Every setting is required except the URL overrides and Yoma's webhook secret: there are no defaults, and a missing or blank setting throws a `ConfigurationError` naming it:
+Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes an options object. Gateways take the config object or the plain options. Every setting is required except the URL overrides, Yoma's webhook secret and the HTTP timeout (`timeoutSeconds`, 30 seconds by default): there are no other defaults, and a missing or blank setting throws a `ConfigurationError` naming it:
 
 ```ts
 import {
@@ -20,7 +20,6 @@ try {
     appId: '...',
     appKey: '',
     merchantCode: '...',
-    timeoutSeconds: 30,
   });
 } catch (error) {
   if (error instanceof ConfigurationError) {
@@ -35,7 +34,7 @@ const kbz = new KbzPay(config);
 
 `error.message` reads `The kbz_pay configuration is missing [app_key].`
 
-The time settings (`timeoutSeconds`, and Wave Money's `timeToLiveSeconds`) must be whole numbers greater than 0. Any other value throws the same error with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+`timeoutSeconds` is optional: when it is unset, `null` or blank, the default HTTP client gives up after 30 seconds (exported as `DEFAULT_TIMEOUT_SECONDS`). The time settings (`timeoutSeconds` when set, and Wave Money's `timeToLiveSeconds`) must be whole numbers greater than 0. Any other value throws the same error with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
 ## Endpoints
 
@@ -50,7 +49,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `appId` | `string` | Yes | `appid` issued by KBZ |
 | `appKey` | `string` | Yes | Secret key used to sign requests |
 | `merchantCode` | `string` | Yes | `merch_code` issued by KBZ |
-| `timeoutSeconds` | `number \| string` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
+| `timeoutSeconds` | `number \| string` | No | Seconds before the default HTTP client gives up. Defaults to `30` when unset or blank; an invalid one is reported as `timeout_in_seconds` |
 | `apiUrl` | `string` | No | Override the API base URL |
 | `pwaUrl` | `string` | No | Override the PWA checkout URL. Normalized to end with `/`, e.g. `…/pwa/#/` |
 
@@ -62,7 +61,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `secretKey` | `string` | Yes | Hash secret key issued by Wave |
 | `merchantName` | `string` | Yes | Shown on Wave's payment page |
 | `timeToLiveSeconds` | `number \| string` | Yes | Seconds the customer has to pay. A missing one is reported as `time_to_live_in_seconds` |
-| `timeoutSeconds` | `number \| string` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
+| `timeoutSeconds` | `number \| string` | No | Seconds before the default HTTP client gives up. Defaults to `30` when unset or blank; an invalid one is reported as `timeout_in_seconds` |
 | `baseUrl` | `string` | No | Override the API base URL |
 | `authenticateUrl` | `string` | No | Override the host the customer is redirected to |
 
@@ -72,7 +71,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 |---|---|---|---|
 | `appKey` | `string` | Yes | Public application key |
 | `appSecret` | `string` | Yes | Secret used for checksums |
-| `timeoutSeconds` | `number \| string` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
+| `timeoutSeconds` | `number \| string` | No | Seconds before the default HTTP client gives up. Defaults to `30` when unset or blank; an invalid one is reported as `timeout_in_seconds` |
 | `baseUrl` | `string` | No | Override the gateway base URL |
 
 ### YomaMmqrConfig
@@ -84,7 +83,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `clientSecret` | `string` | Yes | OAuth client secret |
 | `webhookHashKey` | `string` | Yes | Hash key issued by Yoma for verifying callbacks. A missing one is reported as `webhook_hashkey` |
 | `apiVersion` | `string` | Yes | The `{version}` segment of Yoma's API paths, e.g. `v1rc` |
-| `timeoutSeconds` | `number \| string` | Yes | Seconds before the default HTTP client gives up. A missing one is reported as `timeout_in_seconds` |
+| `timeoutSeconds` | `number \| string` | No | Seconds before the default HTTP client gives up. Defaults to `30` when unset or blank; an invalid one is reported as `timeout_in_seconds` |
 | `webhookSecret` | `string` | No | When set, callbacks must carry it in `X-Webhook-Secret` |
 | `baseUrl` | `string` | No | Override the API base URL |
 
@@ -144,7 +143,7 @@ Every variable is required unless it is marked optional. The values after `=` ar
 
 ```env
 # Every gateway that calls an API
-MYANMAR_PAYMENTS_HTTP_TIMEOUT=30
+MYANMAR_PAYMENTS_HTTP_TIMEOUT=30      # optional, defaults to 30
 
 # KBZ Pay
 KBZ_PAY_APP_ID=
@@ -182,7 +181,7 @@ CYBER_SOURCE_SECRET_KEY=
 CYBER_SOURCE_BASE_URL=                # optional override
 ```
 
-`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR. The package never reads files itself: load the `.env` file with your framework or with `node --env-file=.env` before `fromEnv()`.
+`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR; unset or blank, it is 30 seconds. The package never reads files itself: load the `.env` file with your framework or with `node --env-file=.env` before `fromEnv()`.
 
 ## One Object for Every Gateway
 
@@ -196,7 +195,6 @@ const payments = new MyanmarPayments({
     appId: '...',
     appKey: '...',
     merchantCode: '...',
-    timeoutSeconds: 30,
   },
   yomaMmqr: {
     merchantId: '...',
@@ -204,7 +202,6 @@ const payments = new MyanmarPayments({
     clientSecret: '...',
     webhookHashKey: '...',
     apiVersion: 'v1rc',
-    timeoutSeconds: 30,
   },
 });
 
@@ -239,7 +236,7 @@ const kbz = KbzPay.fromEnv(process.env, {
 });
 ```
 
-A client you pass keeps its own timeout; `timeoutSeconds` is still required.
+A client you pass keeps its own timeout; the config's `timeoutSeconds` (30 seconds by default) only applies to the default client.
 
 `HttpClient` is a one-method interface. Throw on network failures; any status code is a normal response:
 

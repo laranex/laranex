@@ -51,7 +51,6 @@ const yoma = new YomaMmqr({
   clientSecret: '...',
   webhookHashKey: '...',
   apiVersion: 'v1rc',
-  timeoutSeconds: 30,
 });
 
 const data: YomaMmqrPaymentData = {

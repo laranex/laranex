@@ -1,18 +1,18 @@
 ---
 title: Configuration
-description: Configure Goravel Myanmar Payments with environment variables or config/myanmar_payments.go. Every setting of the gateways you use is required; endpoints default to production.
+description: Configure Goravel Myanmar Payments with environment variables or config/myanmar_payments.go. Every setting of the gateways you use is required except the HTTP timeout (30 seconds by default); endpoints default to production.
 ---
 
 # Configuration
 
 ## Environment Variables
 
-Add the keys of the gateways you use. Every setting of those gateways is required except the URL overrides and Yoma's webhook secret: there are no defaults. A gateway is configured the first time you request it, and a missing or blank setting returns a `*myanmarpayments.ConfigurationError` naming it, e.g. `myanmarpayments: The kbz_pay configuration is missing [app_key].` The time settings must be whole numbers greater than 0; any other value returns the same error with `Invalid` set and the message `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+Add the keys of the gateways you use. Every setting of those gateways is required except the HTTP timeout (`MYANMAR_PAYMENTS_HTTP_TIMEOUT`, 30 seconds by default), the URL overrides and Yoma's webhook secret: there are no other defaults. A gateway is configured the first time you request it, and a missing or blank setting returns a `*myanmarpayments.ConfigurationError` naming it, e.g. `myanmarpayments: The kbz_pay configuration is missing [app_key].` The time settings must be whole numbers greater than 0; any other value returns the same error with `Invalid` set and the message `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
 The variable names are the ones the [Go SDK](/go-myanmar-payments/configuration) reads and the same as [Laravel Myanmar Payments](/laravel-myanmar-payments/configuration), so one `.env` works for both. The values after `=` are examples:
 
 ```env
-# Every gateway that calls an API (all but CyberSource)
+# optional, every gateway that calls an API (all but CyberSource), default 30
 MYANMAR_PAYMENTS_HTTP_TIMEOUT=30
 # AYA Pay and CyberSource, while the form route is enabled
 MYANMAR_PAYMENTS_FORM_TTL_MINUTES=30
@@ -61,7 +61,7 @@ CYBER_SOURCE_BASE_URL=                # optional override
 
 | Variable | Config key | Required | Description |
 |---|---|---|---|
-| `MYANMAR_PAYMENTS_HTTP_TIMEOUT` | `http.timeout` | Yes | Seconds before a gateway call gives up. Given to every gateway except CyberSource as its `timeout_in_seconds` |
+| `MYANMAR_PAYMENTS_HTTP_TIMEOUT` | `http.timeout` | No | Seconds before a gateway call gives up; missing or blank means 30. Given to every gateway except CyberSource as its `timeout_in_seconds` |
 | `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` | `form_route.ttl_minutes` | Yes | Minutes an auto-submit form link stays valid. Needed by AYA Pay and CyberSource while the form route is enabled |
 | `MYANMAR_PAYMENTS_HTTP_CLIENT` | `http.client` | No | An entry of `http.clients` in `config/http.go`; empty means the default client |
 | `MYANMAR_PAYMENTS_CACHE_STORE` | `cache_store` | No | Cache store for Yoma MMQR access tokens; empty means the default store |
@@ -210,7 +210,7 @@ func init() {
 
 		"http": map[string]any{
 			"client":  config.Env("MYANMAR_PAYMENTS_HTTP_CLIENT", ""),
-			"timeout": config.Env("MYANMAR_PAYMENTS_HTTP_TIMEOUT", ""),
+			"timeout": config.Env("MYANMAR_PAYMENTS_HTTP_TIMEOUT", 30),
 		},
 
 		"cache_store": config.Env("MYANMAR_PAYMENTS_CACHE_STORE", ""),
@@ -235,11 +235,11 @@ func init() {
 ```go
 "http": map[string]any{
 	"client":  config.Env("MYANMAR_PAYMENTS_HTTP_CLIENT", ""),
-	"timeout": config.Env("MYANMAR_PAYMENTS_HTTP_TIMEOUT", ""),
+	"timeout": config.Env("MYANMAR_PAYMENTS_HTTP_TIMEOUT", 30),
 },
 ```
 
-Gateway calls go through Goravel's HTTP client, so `Fake()` intercepts them in tests; see [Testing](/goravel-myanmar-payments/testing). `client` names an entry of `http.clients` in `config/http.go` (empty means the default client), so its transport settings (connection pool, telemetry) apply. `timeout` is in seconds, applies to gateway calls only and is required: the package passes it to KBZ Pay, Wave Money, AYA and Yoma MMQR as their `TimeoutSeconds`, so a missing one returns `myanmarpayments: The kbz_pay configuration is missing [timeout_in_seconds].` when you first request KBZ Pay. When a gateway can't be reached, the call returns an `*APIError` with `HTTPStatus` `0`.
+Gateway calls go through Goravel's HTTP client, so `Fake()` intercepts them in tests; see [Testing](/goravel-myanmar-payments/testing). `client` names an entry of `http.clients` in `config/http.go` (empty means the default client), so its transport settings (connection pool, telemetry) apply. `timeout` is in seconds, applies to gateway calls only and defaults to 30 (`payments.DefaultHTTPTimeoutSeconds`) when it is missing or blank: the package passes it to KBZ Pay, Wave Money, AYA and Yoma MMQR as their `TimeoutSeconds`, so a value that is not a whole number greater than 0 returns `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` when you first request KBZ Pay. When a gateway can't be reached, the call returns an `*APIError` with `HTTPStatus` `0`.
 
 ## Auto-submit Form Route
 

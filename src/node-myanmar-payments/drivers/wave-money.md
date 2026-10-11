@@ -48,7 +48,6 @@ const wave = new WaveMoney({
   secretKey: '...',
   merchantName: 'My Shop',
   timeToLiveSeconds: 300,
-  timeoutSeconds: 30,
 });
 
 const data: WaveMoneyPaymentData = {

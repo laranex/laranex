@@ -49,7 +49,6 @@ const kbz = new KbzPay({
   appId: '...',
   appKey: '...',
   merchantCode: '...',
-  timeoutSeconds: 30,
 });
 
 const data: KbzPayPaymentData = {

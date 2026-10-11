@@ -113,7 +113,6 @@ const kbzPay = new KbzPay({
   appId: '...',
   appKey: '...',
   merchantCode: '...',
-  timeoutSeconds: 30,
 });
 
 const payment = await kbzPay.pwa({

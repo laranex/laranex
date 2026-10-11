@@ -53,7 +53,6 @@ kbz = KbzPay(
         app_id="...",
         app_key="...",
         merchant_code="...",
-        timeout_seconds=30,
     )
 )
 

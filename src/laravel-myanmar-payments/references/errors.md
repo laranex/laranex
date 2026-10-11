@@ -45,4 +45,4 @@ try {
 
 ## ConfigurationException
 
-The message names the gateway and the key, e.g. `The wave_money configuration is missing [merchant_id].`, or `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting. `gateway` and `key` hold both. A form payment without a form link lifetime throws it with `form_route` and `ttl_minutes`.
+The message names the gateway and the key, e.g. `The wave_money configuration is missing [merchant_id].`, or `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting (a missing or blank HTTP timeout is not an error: it defaults to 30 seconds). `gateway` and `key` hold both. A form payment without a form link lifetime throws it with `form_route` and `ttl_minutes`.

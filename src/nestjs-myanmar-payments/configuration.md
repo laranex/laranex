@@ -1,19 +1,19 @@
 ---
 title: Configuration
-description: Configure NestJS Myanmar Payments with environment variables or module options. Every setting of the gateways you use is required; endpoints default to production.
+description: Configure NestJS Myanmar Payments with environment variables or module options. Every setting of the gateways you use is required except the HTTP timeout, which defaults to 30 seconds; endpoints default to production.
 ---
 
 # Configuration
 
 ## Environment Variables
 
-Add the keys of the gateways you use. Every setting of those gateways is required except the URL overrides and Yoma's webhook secret: there are no defaults. A gateway is configured the first time you call it, and a missing or blank setting throws a `ConfigurationError` naming it, e.g. `The kbz_pay configuration is missing [app_key].` The time settings must be whole numbers greater than 0; any other value throws the same error with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+Add the keys of the gateways you use. Every setting of those gateways is required except the URL overrides, Yoma's webhook secret and the HTTP timeout (`MYANMAR_PAYMENTS_HTTP_TIMEOUT`, 30 seconds when unset or blank): there are no other defaults. A gateway is configured the first time you call it, and a missing or blank setting throws a `ConfigurationError` naming it, e.g. `The kbz_pay configuration is missing [app_key].` The time settings must be whole numbers greater than 0; any other value throws the same error with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
 The variable names are the ones the [Node SDK](/node-myanmar-payments/configuration) reads and the same as the Laravel and Goravel packages, so one `.env` works for all of them. The module reads them from `process.env` unless you pass `env` (a record or `ConfigService`). The values after `=` are examples:
 
 ```env
 # Every gateway that calls an API (all but CyberSource)
-MYANMAR_PAYMENTS_HTTP_TIMEOUT=30
+MYANMAR_PAYMENTS_HTTP_TIMEOUT=30      # optional, defaults to 30
 # AYA Pay and CyberSource, while the form route is enabled
 MYANMAR_PAYMENTS_FORM_TTL_MINUTES=30
 # optional, encrypts form links, falls back to APP_KEY
@@ -61,7 +61,7 @@ CYBER_SOURCE_BASE_URL=                # optional override
 
 | Variable | Module option | Required | Description |
 |---|---|---|---|
-| `MYANMAR_PAYMENTS_HTTP_TIMEOUT` | `timeoutSeconds` of `kbzPay`, `waveMoney`, `ayaPay` and `yomaMmqr` | Yes | Seconds before a gateway call gives up. Read by every gateway except CyberSource; a missing one is reported as `timeout_in_seconds` |
+| `MYANMAR_PAYMENTS_HTTP_TIMEOUT` | `timeoutSeconds` of `kbzPay`, `waveMoney`, `ayaPay` and `yomaMmqr` | No | Seconds before a gateway call gives up. Read by every gateway except CyberSource; defaults to `30` when unset or blank, and an invalid one is reported as `timeout_in_seconds` |
 | `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` | `formLink.ttlMinutes` | Yes | Minutes an auto-submit form link stays valid. Needed by AYA Pay and CyberSource while the form route is enabled |
 | `MYANMAR_PAYMENTS_FORM_KEY` | `formLink.secret` | No | Encrypts form links; falls back to `APP_KEY` |
 | `APP_URL` | `formLink.baseUrl` | No | The scheme and host form links start with |
@@ -146,7 +146,6 @@ import { MyanmarPaymentsModule } from '@laranex/nestjs-myanmar-payments';
 MyanmarPaymentsModule.forRoot(); // process.env
 MyanmarPaymentsModule.forRoot({
   env: {
-    MYANMAR_PAYMENTS_HTTP_TIMEOUT: '30',
     KBZ_PAY_APP_ID: '...',
     KBZ_PAY_APP_KEY: '...',
     KBZ_PAY_MERCHANT_CODE: '...',
@@ -158,7 +157,6 @@ MyanmarPaymentsModule.forRoot({
     appId: '...',
     appKey: '...',
     merchantCode: '...',
-    timeoutSeconds: 30,
   },
 });
 ```
@@ -204,9 +202,9 @@ MyanmarPaymentsModule.forRootAsync({ useClass: PaymentsConfig });
 | Option | Meaning |
 |---|---|
 | `env` | Where variables are read: `process.env` (default), a record, or anything with `get(key)` such as `ConfigService` |
-| `kbzPay`, `waveMoney`, `ayaPay`, `yomaMmqr`, `cyberSource` | A gateway's config, as options (`{ appId, appKey, ... }`) or an SDK config instance (`new KbzPayConfig(...)`). Wins over the environment for that gateway and needs every required setting, including `timeoutSeconds`; see the SDK's [config options](/node-myanmar-payments/configuration) |
+| `kbzPay`, `waveMoney`, `ayaPay`, `yomaMmqr`, `cyberSource` | A gateway's config, as options (`{ appId, appKey, ... }`) or an SDK config instance (`new KbzPayConfig(...)`). Wins over the environment for that gateway and needs every required setting (`timeoutSeconds` is optional, 30 seconds by default); see the SDK's [config options](/node-myanmar-payments/configuration) |
 | `fetch` | The `fetch` gateways call, e.g. a fake one in tests |
-| `httpClient` | An SDK `HttpClient`; takes precedence over `fetch` and keeps its own timeout (`timeoutSeconds` is still required) |
+| `httpClient` | An SDK `HttpClient`; takes precedence over `fetch` and keeps its own timeout (the config's `timeoutSeconds` only applies to the default client) |
 | `tokenCache` | An SDK `TokenCache` for Yoma MMQR access tokens |
 | `useCacheManager` | Use `@nestjs/cache-manager` for the tokens when it is available (default `true`) |
 | `formLink` | `secret`, `ttlMinutes` and `baseUrl` of the auto-submit form links |
@@ -222,7 +220,7 @@ The options object is available under the `MYANMAR_PAYMENTS_OPTIONS` token.
 
 ## HTTP Client
 
-Gateway calls go through the SDK's `fetch` client with each gateway's `timeoutSeconds`, read from `MYANMAR_PAYMENTS_HTTP_TIMEOUT` (required, no default; a missing one throws `The kbz_pay configuration is missing [timeout_in_seconds].` when you first call KBZ Pay). Pass `fetch` to replace the function it calls, for example a fake one in tests, or `httpClient` to send requests yourself (proxies, tracing, retries); see [Testing](/nestjs-myanmar-payments/testing#faking-gateway-calls). When a gateway can't be reached, the call throws `ApiError` with `httpStatus` `0`.
+Gateway calls go through the SDK's `fetch` client with each gateway's `timeoutSeconds`, read from `MYANMAR_PAYMENTS_HTTP_TIMEOUT` (optional; unset or blank means 30 seconds, and an invalid value throws `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` when you first call KBZ Pay). Pass `fetch` to replace the function it calls, for example a fake one in tests, or `httpClient` to send requests yourself (proxies, tracing, retries); see [Testing](/nestjs-myanmar-payments/testing#faking-gateway-calls). When a gateway can't be reached, the call throws `ApiError` with `httpStatus` `0`.
 
 ## Auto-submit Form Route
 
