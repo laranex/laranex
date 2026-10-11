@@ -982,35 +982,11 @@ body {
   color: var(--vp-c-brand-1);
 }
 
-.lx-packages-list {
-  position: relative;
-}
-
-.lx-packages-category {
-  margin-top: 48px;
-}
-
-.lx-packages-category-heading {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin: 0 0 16px;
-  font-family: var(--lx-font-display);
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--vp-c-text-2);
-}
-
-.lx-packages-category-heading .lx-count {
-  font-family: var(--vp-font-family-base);
-}
-
 .lx-cards {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  margin: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 32px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -1019,9 +995,9 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 24px;
+  padding: 16px 18px;
   border: 1px solid var(--vp-c-divider);
-  border-radius: 16px;
+  border-radius: 12px;
   background: var(--lx-card);
   box-shadow: var(--lx-shadow);
   transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
@@ -1036,9 +1012,9 @@ body {
 .lx-card-name {
   margin: 0;
   font-family: var(--lx-font-display);
-  font-size: 19px;
+  font-size: 16px;
   font-weight: 650;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 .lx-card-link {
@@ -1064,11 +1040,16 @@ body {
 }
 
 .lx-card-desc {
+  display: -webkit-box;
   flex: 1;
-  margin: 10px 0 0;
-  font-size: 14.5px;
-  line-height: 1.65;
+  margin: 6px 0 0;
+  overflow: hidden;
+  font-size: 13.5px;
+  line-height: 1.55;
   color: var(--vp-c-text-2);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 
 .lx-card-foot {
@@ -1077,9 +1058,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px dashed var(--vp-c-divider);
+  margin-top: 12px;
 }
 
 .lx-card-badges {
@@ -1207,26 +1186,6 @@ body {
   transition-delay: 0ms;
 }
 
-.lx-category-enter-active,
-.lx-category-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
-}
-
-.lx-category-enter-from,
-.lx-category-leave-to {
-  opacity: 0;
-  transform: translateY(8px);
-}
-
-.lx-category-leave-active {
-  position: absolute;
-  width: 100%;
-}
-
-.lx-category-move {
-  transition: transform 0.3s ease;
-}
-
 /* Small screens */
 
 @media (max-width: 960px) {
@@ -1242,6 +1201,12 @@ body {
     padding: 0 16px 72px;
   }
 
+  .lx-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
   .lx-cards {
     grid-template-columns: minmax(0, 1fr);
   }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { data as categories } from '../../src/packages.data'
+import { data as categories, type PackageBadge, type PackageData } from '../../src/packages.data'
 
 /**
  * Selected category slugs, kept in the `?category=` query (comma separated) so a filtered view can be shared.
@@ -27,7 +27,35 @@ const visibleCategories = computed(() =>
     .filter(({ packages }) => packages.length > 0),
 )
 
-const visibleCount = computed(() => visibleCategories.value.reduce((total, { packages }) => total + packages.length, 0))
+/**
+ * Languages first, each followed by its frameworks.
+ */
+const stacks = ['php', 'laravel', 'go', 'goravel', 'node', 'nestjs', 'python']
+
+function stackRank({ slug }: PackageData): number {
+  const stack = slug.includes('laravel') ? 'laravel' : slug.split('-')[0]
+  const rank = stacks.indexOf(stack)
+
+  return rank === -1 ? stacks.length : rank
+}
+
+/**
+ * Sorted by language and framework; within one, the category order is kept.
+ */
+const visiblePackages = computed(() =>
+  visibleCategories.value.flatMap(({ packages }) => packages).sort((a, b) => stackRank(a) - stackRank(b)),
+)
+
+/**
+ * Cards show the tests badge first, then the version badge.
+ */
+function cardBadges(badges: PackageBadge[]): PackageBadge[] {
+  const [version, tests] = badges
+
+  return [tests, version].filter(Boolean)
+}
+
+const visibleCount = computed(() => visiblePackages.value.length)
 
 function isSelected(slug: string): boolean {
   return selected.value.includes(slug)
@@ -72,7 +100,7 @@ function observeCards(): void {
   root.value.querySelectorAll('.lx-card:not(.is-visible)').forEach((card) => observer?.observe(card))
 }
 
-watch(visibleCategories, () => nextTick(observeCards))
+watch(visiblePackages, () => nextTick(observeCards))
 
 onBeforeUnmount(() => observer?.disconnect())
 
@@ -142,33 +170,26 @@ onMounted(() => {
         <button type="button" class="lx-empty-reset" @click="clear">Show all projects</button>
       </p>
 
-      <TransitionGroup name="lx-category" tag="div" class="lx-packages-list">
-        <section v-for="category in visibleCategories" :key="category.slug" class="lx-packages-category">
-          <h3 class="lx-packages-category-heading">
-            {{ category.name }} <span class="lx-count">{{ category.packages.length }}</span>
+      <ul v-if="visibleCount > 0" class="lx-cards">
+        <li
+          v-for="(pkg, index) in visiblePackages"
+          :key="pkg.slug"
+          class="lx-card"
+          :style="{ '--lx-delay': `${(index % 3) * 70}ms` }"
+        >
+          <h3 class="lx-card-name">
+            <a :href="pkg.docsUrl" class="lx-card-link">{{ pkg.name }}</a>
           </h3>
-          <ul class="lx-cards">
-            <li
-              v-for="(pkg, index) in category.packages"
-              :key="pkg.slug"
-              class="lx-card"
-              :style="{ '--lx-delay': `${(index % 2) * 70}ms` }"
-            >
-              <h4 class="lx-card-name">
-                <a :href="pkg.docsUrl" class="lx-card-link">{{ pkg.name }}</a>
-              </h4>
-              <p class="lx-card-desc">{{ pkg.description }}</p>
-              <div class="lx-card-foot">
-                <p class="lx-card-badges">
-                  <a v-for="badge in pkg.badges.slice(0, 2)" :key="badge.alt" :href="badge.href" target="_blank" rel="noopener noreferrer">
-                    <img :src="badge.src" :alt="badge.alt" height="20" loading="lazy" decoding="async" />
-                  </a>
-                </p>
-              </div>
-            </li>
-          </ul>
-        </section>
-      </TransitionGroup>
+          <p class="lx-card-desc" :title="pkg.description">{{ pkg.description }}</p>
+          <div class="lx-card-foot">
+            <p class="lx-card-badges">
+              <a v-for="badge in cardBadges(pkg.badges)" :key="badge.alt" :href="badge.href" target="_blank" rel="noopener noreferrer">
+                <img :src="badge.src" :alt="badge.alt" height="20" loading="lazy" decoding="async" />
+              </a>
+            </p>
+          </div>
+        </li>
+      </ul>
     </div>
   </section>
 
