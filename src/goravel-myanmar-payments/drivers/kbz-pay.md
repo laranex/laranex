@@ -87,7 +87,7 @@ func (r *CheckoutController) KbzPay(ctx http.Context) http.Response {
 | `Amount` | `myanmarpayments.Amount` | Yes | Kyat, greater than 0, at most 2 decimal places, e.g. `Kyat(10000)` or `MustParseAmount("10000.50")`. KBZ only accepts MMK |
 | `CallbackURL` | `string` | Yes | Public URL KBZ posts the result to. At most 512 characters, no query string |
 | `Title` | `string` | No | Product name shown to the customer |
-| `TimeToLiveSeconds` | `*int` | No | Seconds the customer has to pay, 60 to 7200 in whole minutes (a multiple of 60), because KBZ counts minutes: `1800` is sent as `30m`. E.g. `ttl := 1800` then `TimeToLiveSeconds: &ttl`. `nil` leaves it to KBZ (7200); `0` is rejected |
+| `TimeToLiveMinutes` | `*int` | No | Minutes the customer has to pay, 1 to 120, sent as `timeout_express` (`30` is sent as `30m`). E.g. `ttl := 30` then `TimeToLiveMinutes: &ttl`. `nil` uses `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`. With neither set, `PWA`, `QR` and `App` return `*myanmarpayments.InvalidPaymentDataError` with `The timeToLiveMinutes field is required when the kbz_pay configuration has no [time_to_live_in_minutes].` before any request; `0` is rejected |
 | `CallbackInfo` | `string` | No | Free text echoed back in the callback, at most 512 characters once URL-encoded |
 
 ### PWA Notes
@@ -175,7 +175,7 @@ What KBZ Pay puts in each field. See [Results](/goravel-myanmar-payments/referen
 | `OrderID` | Your `OrderID` |
 | `QRString` | KBZ `qrCode`, a payload to encode into a QR image. Always set |
 | `QRImage` | Always empty |
-| `ExpiresAt` | Now + `TimeToLiveSeconds`. The zero `time.Time` when `TimeToLiveSeconds` is `nil` (KBZ then allows 7200 seconds) |
+| `ExpiresAt` | Now + the time to live: `TimeToLiveMinutes`, else `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`. Always set, because a payment without a time to live is rejected |
 | `Reference` | KBZ `prepay_id`. Always set |
 | `Raw` | The `precreate` response, as for `PWA()` plus `qrCode` |
 | `QRImageDataURI()` | Always empty, as `QRImage` is |

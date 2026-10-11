@@ -96,7 +96,7 @@ export class WaveMoneyCheckoutController {
 
 ### Per-Payment Merchant Name and Time to Live
 
-`merchantName` and `timeToLiveSeconds` override the configured `WAVE_MONEY_MERCHANT_NAME` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` (`waveMoney.merchantName` and `waveMoney.timeToLiveSeconds`) for one payment, including in the request hash. The configured values are still required and apply to every payment that leaves them unset.
+`merchantName` and `timeToLiveSeconds` override the configured `WAVE_MONEY_MERCHANT_NAME` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` (`waveMoney.merchantName` and `waveMoney.timeToLiveSeconds`) for one payment, including in the request hash. The configured merchant name is still required and applies to every payment that leaves it unset; the configured time to live is optional. With neither the configured time to live nor `timeToLiveSeconds` set, `initiate()` throws `InvalidPaymentDataError` with `The timeToLiveSeconds field is required when the wave_money configuration has no [time_to_live_in_seconds].` before any request.
 
 ```ts
 const data: WaveMoneyPaymentData = {

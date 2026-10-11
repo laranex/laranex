@@ -1,13 +1,13 @@
 ---
 title: Configuration
-description: Configure NestJS Myanmar Payments with environment variables or module options. Every setting of the gateways you use is required except the HTTP timeout, which defaults to 30 seconds; endpoints default to production.
+description: Configure NestJS Myanmar Payments with environment variables or module options. Every setting of the gateways you use is required except the HTTP timeout, which defaults to 30 seconds and the time-to-live defaults; endpoints default to production.
 ---
 
 # Configuration
 
 ## Environment Variables
 
-Add the keys of the gateways you use. Every setting of those gateways is required except the URL overrides, Yoma's webhook secret and the HTTP timeout (`MYANMAR_PAYMENTS_HTTP_TIMEOUT`, 30 seconds when unset or blank): there are no other defaults. A gateway is configured the first time you call it, and a missing or blank setting throws a `ConfigurationError` naming it, e.g. `The kbz_pay configuration is missing [app_key].` The time settings must be whole numbers greater than 0; any other value throws the same error with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+Add the keys of the gateways you use. Every setting of those gateways is required except the URL overrides, Yoma's webhook secret, the time-to-live defaults (`KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS`) and the HTTP timeout (`MYANMAR_PAYMENTS_HTTP_TIMEOUT`, 30 seconds when unset or blank): there are no other defaults. A gateway is configured the first time you call it, and a missing or blank setting throws a `ConfigurationError` naming it, e.g. `The kbz_pay configuration is missing [app_key].` The time settings must be whole numbers greater than 0; any other value throws the same error with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
 The variable names are the ones the [Node SDK](/node-myanmar-payments/configuration) reads and the same as the Laravel and Goravel packages, so one `.env` works for all of them. The module reads them from `process.env` unless you pass `env` (a record or `ConfigService`). The values after `=` are examples:
 
@@ -27,6 +27,7 @@ KBZ_PAY_APP_KEY=
 KBZ_PAY_MERCHANT_CODE=
 KBZ_PAY_BASE_URL=                     # optional override
 KBZ_PAY_PWA_BASE_REDIRECT_URL=        # optional override
+KBZ_PAY_TIME_TO_LIVE_IN_MINUTES=      # optional, 1 to 120
 
 # Wave Money
 WAVE_MONEY_MERCHANT_ID=
@@ -70,10 +71,11 @@ CYBER_SOURCE_BASE_URL=                # optional override
 | `KBZ_PAY_MERCHANT_CODE` | `kbzPay.merchantCode` | Yes | `merch_code` issued by KBZ |
 | `KBZ_PAY_BASE_URL` | `kbzPay.apiUrl` | No | Override the API base URL |
 | `KBZ_PAY_PWA_BASE_REDIRECT_URL` | `kbzPay.pwaUrl` | No | Override the PWA checkout URL |
+| `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` | `kbzPay.timeToLiveMinutes` | No | Minutes the customer has to pay each order, 1 to 120. A payment can override it with `KbzPayPaymentData`'s `timeToLiveMinutes`; when it is unset, every payment must set its own |
 | `WAVE_MONEY_MERCHANT_ID` | `waveMoney.merchantId` | Yes | Merchant ID issued by Wave |
 | `WAVE_MONEY_SECRET_KEY` | `waveMoney.secretKey` | Yes | Hash secret key issued by Wave |
 | `WAVE_MONEY_MERCHANT_NAME` | `waveMoney.merchantName` | Yes | Shown on Wave's payment page. A payment can override it with `WaveMoneyPaymentData`'s `merchantName` |
-| `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` | `waveMoney.timeToLiveSeconds` | Yes | Seconds the customer has to pay. A payment can override it with `WaveMoneyPaymentData`'s `timeToLiveSeconds` |
+| `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` | `waveMoney.timeToLiveSeconds` | No | Seconds the customer has to pay. A payment can override it with `WaveMoneyPaymentData`'s `timeToLiveSeconds`; when it is unset, every payment must set its own |
 | `WAVE_MONEY_BASE_URL` | `waveMoney.baseUrl` | No | Override the API base URL |
 | `WAVE_MONEY_AUTHENTICATE_URL` | `waveMoney.authenticateUrl` | No | Override the host the customer is redirected to |
 | `AYA_PAY_APP_KEY` | `ayaPay.appKey` | Yes | Public application key |

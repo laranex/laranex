@@ -98,7 +98,7 @@ def wave_checkout(request, order_id: int):
 
 ### Per-Payment Merchant Name and Time to Live
 
-`merchant_name` and `time_to_live_seconds` override the `WaveMoneyConfig` values for one payment, including in the request hash. The configured values are still required and apply to every payment that leaves them unset.
+`merchant_name` and `time_to_live_seconds` override the `WaveMoneyConfig` values for one payment, including in the request hash. The configured merchant name is still required and applies to every payment that leaves it unset; the configured time to live is optional. With neither the configured time to live nor `time_to_live_seconds` set, `initiate()` raises `InvalidPaymentDataError` with `The time_to_live_seconds field is required when the wave_money configuration has no [time_to_live_in_seconds].` before any request.
 
 ```python
 data = WaveMoneyPaymentData(

@@ -78,7 +78,7 @@ return redirect()->away($payment->url);
 
 ### Per-Payment Merchant Name and Time to Live
 
-`merchantName` and `timeToLiveSeconds` override the configured `WAVE_MONEY_MERCHANT_NAME` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` for one payment, including in the request hash. The configured values are still required and apply to every payment that leaves them `null`.
+`merchantName` and `timeToLiveSeconds` override the configured `WAVE_MONEY_MERCHANT_NAME` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` for one payment, including in the request hash. The configured merchant name is still required and applies to every payment that leaves `merchantName` `null`; the configured time to live is optional. With neither the configured time to live nor `timeToLiveSeconds` set, `initiate()` throws `InvalidPaymentDataException` with `The timeToLiveSeconds field is required when the wave_money configuration has no [time_to_live_in_seconds].` before any request.
 
 ```php
 $data = new WaveMoneyPaymentData(

@@ -1,11 +1,11 @@
 ---
 title: Configuration
-description: Configure Node Myanmar Payments with one config class per gateway or from environment variables. Every setting is required except the HTTP timeout, which defaults to 30 seconds; endpoints default to production. Pass your own fetch, HTTP client and token cache.
+description: Configure Node Myanmar Payments with one config class per gateway or from environment variables. Every setting is required except the HTTP timeout, which defaults to 30 seconds and the time-to-live defaults; endpoints default to production. Pass your own fetch, HTTP client and token cache.
 ---
 
 # Configuration
 
-Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes an options object. Gateways take the config object or the plain options. Every setting is required except the URL overrides, Yoma's webhook secret and the HTTP timeout (`timeoutSeconds`, 30 seconds by default): there are no other defaults, and a missing or blank setting throws a `ConfigurationError` naming it:
+Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes an options object. Gateways take the config object or the plain options. Every setting is required except the URL overrides, Yoma's webhook secret, the time-to-live defaults (KBZ Pay's `timeToLiveMinutes` and Wave Money's `timeToLiveSeconds`) and the HTTP timeout (`timeoutSeconds`, 30 seconds by default): there are no other defaults, and a missing or blank setting throws a `ConfigurationError` naming it:
 
 ```ts
 import {
@@ -52,6 +52,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `timeoutSeconds` | `number \| string` | No | Seconds before the default HTTP client gives up. Defaults to `30` when unset or blank; an invalid one is reported as `timeout_in_seconds` |
 | `apiUrl` | `string` | No | Override the API base URL |
 | `pwaUrl` | `string` | No | Override the PWA checkout URL. Normalized to end with `/`, e.g. `…/pwa/#/` |
+| `timeToLiveMinutes` | `number \| string` | No | Minutes the customer has to pay each order, 1 to 120. A payment's own `timeToLiveMinutes` overrides it; when it is unset, every payment must set its own. Anything else throws `The kbz_pay configuration [time_to_live_in_minutes] must be a whole number from 1 to 120.` |
 
 ### WaveMoneyConfig
 
@@ -60,7 +61,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `merchantId` | `string` | Yes | Merchant ID issued by Wave |
 | `secretKey` | `string` | Yes | Hash secret key issued by Wave |
 | `merchantName` | `string` | Yes | Shown on Wave's payment page. A payment can override it with `WaveMoneyPaymentData`'s `merchantName` |
-| `timeToLiveSeconds` | `number \| string` | Yes | Seconds the customer has to pay. A missing one is reported as `time_to_live_in_seconds`. A payment can override it with `WaveMoneyPaymentData`'s `timeToLiveSeconds` |
+| `timeToLiveSeconds` | `number \| string` | No | Seconds the customer has to pay, greater than 0. A payment can override it with `WaveMoneyPaymentData`'s `timeToLiveSeconds`; when it is unset, every payment must set its own |
 | `timeoutSeconds` | `number \| string` | No | Seconds before the default HTTP client gives up. Defaults to `30` when unset or blank; an invalid one is reported as `timeout_in_seconds` |
 | `baseUrl` | `string` | No | Override the API base URL |
 | `authenticateUrl` | `string` | No | Override the host the customer is redirected to |
@@ -151,6 +152,7 @@ KBZ_PAY_APP_KEY=
 KBZ_PAY_MERCHANT_CODE=
 KBZ_PAY_BASE_URL=                     # optional override
 KBZ_PAY_PWA_BASE_REDIRECT_URL=        # optional override
+KBZ_PAY_TIME_TO_LIVE_IN_MINUTES=      # optional, 1 to 120
 
 # Wave Money
 WAVE_MONEY_MERCHANT_ID=

@@ -1,11 +1,11 @@
 ---
 title: Configuration
-description: Configure PHP Myanmar Payments with one config class per gateway or from environment variables. Every setting is required except the HTTP timeout (30 seconds by default) and the endpoints, which default to production. Pass your own PSR-18 client and PSR-16 cache.
+description: Configure PHP Myanmar Payments with one config class per gateway or from environment variables. Every setting is required except the HTTP timeout (30 seconds by default) and the time-to-live defaults and the endpoints, which default to production. Pass your own PSR-18 client and PSR-16 cache.
 ---
 
 # Configuration
 
-Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes named arguments. Gateways take the config object or an array of its snake_case keys. Every setting is required except the HTTP timeout, the URL overrides and Yoma's webhook secret. The HTTP timeout (`timeoutSeconds`) defaults to 30 seconds (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); any other missing or blank setting throws a `ConfigurationException` naming it:
+Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes named arguments. Gateways take the config object or an array of its snake_case keys. Every setting is required except the HTTP timeout, the URL overrides, Yoma's webhook secret and the time-to-live defaults (KBZ Pay's `timeToLiveMinutes` and Wave Money's `timeToLiveSeconds`). The HTTP timeout (`timeoutSeconds`) defaults to 30 seconds (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); any other missing or blank setting throws a `ConfigurationException` naming it:
 
 ```php
 use Laranex\PhpMyanmarPayments\Exceptions\ConfigurationException;
@@ -47,6 +47,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `timeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); an invalid one is reported as `timeout_in_seconds` |
 | `apiUrl` | `?string` | No | Override the API base URL |
 | `pwaUrl` | `?string` | No | Override the PWA checkout URL. Normalized to end with `/`, e.g. `…/pwa/#/` |
+| `timeToLiveMinutes` | `?int` | No | Minutes the customer has to pay each order, 1 to 120. A payment's own `timeToLiveMinutes` overrides it; when it is unset, every payment must set its own. Anything else throws `The kbz_pay configuration [time_to_live_in_minutes] must be a whole number from 1 to 120.` |
 
 ### WaveMoneyConfig
 
@@ -55,7 +56,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `merchantId` | `string` | Yes | Merchant ID issued by Wave |
 | `secretKey` | `string` | Yes | Hash secret key issued by Wave |
 | `merchantName` | `string` | Yes | Shown on Wave's payment page. A payment can override it with `WaveMoneyPaymentData`'s `merchantName` |
-| `timeToLiveSeconds` | `int` | Yes | Seconds the customer has to pay. A missing one is reported as `time_to_live_in_seconds`. A payment can override it with `WaveMoneyPaymentData`'s `timeToLiveSeconds` |
+| `timeToLiveSeconds` | `?int` | No | Seconds the customer has to pay, greater than 0. A payment can override it with `WaveMoneyPaymentData`'s `timeToLiveSeconds`; when it is unset, every payment must set its own |
 | `timeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); an invalid one is reported as `timeout_in_seconds` |
 | `baseUrl` | `?string` | No | Override the API base URL |
 | `authenticateUrl` | `?string` | No | Override the host the customer is redirected to |
@@ -147,6 +148,7 @@ KBZ_PAY_APP_KEY=
 KBZ_PAY_MERCHANT_CODE=
 KBZ_PAY_BASE_URL=                     # optional override
 KBZ_PAY_PWA_BASE_REDIRECT_URL=        # optional override
+KBZ_PAY_TIME_TO_LIVE_IN_MINUTES=      # optional, 1 to 120
 
 # Wave Money
 WAVE_MONEY_MERCHANT_ID=
@@ -177,7 +179,7 @@ CYBER_SOURCE_SECRET_KEY=
 CYBER_SOURCE_BASE_URL=                # optional override
 ```
 
-`WAVE_MONEY_MERCHANT_NAME` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` stay required; a payment can override them with `WaveMoneyPaymentData`'s `merchantName` and `timeToLiveSeconds`.
+`WAVE_MONEY_MERCHANT_NAME` stays required; a payment can override it with `WaveMoneyPaymentData`'s `merchantName`. `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` are optional defaults that a payment's `timeToLiveMinutes` or `timeToLiveSeconds` overrides; a payment with neither throws `InvalidPaymentDataException` before any request.
 
 `MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR; unset or blank, it is 30 seconds. The package never reads files itself: load the `.env` file with your framework or with [`vlucas/phpdotenv`](https://github.com/vlucas/phpdotenv) before calling `fromEnv()`.
 
@@ -185,7 +187,7 @@ Credentials from a config file go through `fromArray()`, which reads the same se
 
 | Config class | Keys |
 |---|---|
-| `KbzPayConfig` | `app_id`, `app_key`, `merchant_code`, `timeout_in_seconds`, `api_url`, `pwa_url` |
+| `KbzPayConfig` | `app_id`, `app_key`, `merchant_code`, `timeout_in_seconds`, `api_url`, `pwa_url`, `time_to_live_in_minutes` |
 | `WaveMoneyConfig` | `merchant_id`, `secret_key`, `merchant_name`, `time_to_live_in_seconds`, `timeout_in_seconds`, `base_url`, `authenticate_url` |
 | `AyaPayConfig` | `app_key`, `app_secret`, `timeout_in_seconds`, `base_url` |
 | `YomaMmqrConfig` | `merchant_id`, `client_id`, `client_secret`, `webhook_hashkey`, `api_version`, `timeout_in_seconds`, `webhook_secret`, `base_url` |

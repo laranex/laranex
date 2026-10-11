@@ -1,13 +1,13 @@
 ---
 title: Configuration
-description: Configure Goravel Myanmar Payments with environment variables or config/myanmar_payments.go. Every setting of the gateways you use is required except the HTTP timeout (30 seconds by default); endpoints default to production.
+description: Configure Goravel Myanmar Payments with environment variables or config/myanmar_payments.go. Every setting of the gateways you use is required except the HTTP timeout (30 seconds by default) and the time-to-live defaults; endpoints default to production.
 ---
 
 # Configuration
 
 ## Environment Variables
 
-Add the keys of the gateways you use. Every setting of those gateways is required except the HTTP timeout (`MYANMAR_PAYMENTS_HTTP_TIMEOUT`, 30 seconds by default), the URL overrides and Yoma's webhook secret: there are no other defaults. A gateway is configured the first time you request it, and a missing or blank setting returns a `*myanmarpayments.ConfigurationError` naming it, e.g. `myanmarpayments: The kbz_pay configuration is missing [app_key].` The time settings must be whole numbers greater than 0; any other value returns the same error with `Invalid` set and the message `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+Add the keys of the gateways you use. Every setting of those gateways is required except the HTTP timeout (`MYANMAR_PAYMENTS_HTTP_TIMEOUT`, 30 seconds by default), the URL overrides, Yoma's webhook secret and the time-to-live defaults (`KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS`): there are no other defaults. A gateway is configured the first time you request it, and a missing or blank setting returns a `*myanmarpayments.ConfigurationError` naming it, e.g. `myanmarpayments: The kbz_pay configuration is missing [app_key].` The time settings must be whole numbers greater than 0; any other value returns the same error with `Invalid` set and the message `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
 The variable names are the ones the [Go SDK](/go-myanmar-payments/configuration) reads and the same as [Laravel Myanmar Payments](/laravel-myanmar-payments/configuration), so one `.env` works for both. The values after `=` are examples:
 
@@ -27,6 +27,7 @@ KBZ_PAY_APP_KEY=
 KBZ_PAY_MERCHANT_CODE=
 KBZ_PAY_BASE_URL=                     # optional override
 KBZ_PAY_PWA_BASE_REDIRECT_URL=        # optional override
+KBZ_PAY_TIME_TO_LIVE_IN_MINUTES=      # optional, 1 to 120
 
 # Wave Money
 WAVE_MONEY_MERCHANT_ID=
@@ -70,10 +71,11 @@ CYBER_SOURCE_BASE_URL=                # optional override
 | `KBZ_PAY_MERCHANT_CODE` | `kbz_pay.merchant_code` | Yes | `merch_code` issued by KBZ |
 | `KBZ_PAY_BASE_URL` | `kbz_pay.api_url` | No | Override the API base URL |
 | `KBZ_PAY_PWA_BASE_REDIRECT_URL` | `kbz_pay.pwa_url` | No | Override the PWA checkout URL |
+| `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` | `kbz_pay.time_to_live_in_minutes` | No | Minutes the customer has to pay each order, 1 to 120. A payment can override it with `kbzpay.PaymentData`'s `TimeToLiveMinutes`; when it is unset, every payment must set its own |
 | `WAVE_MONEY_MERCHANT_ID` | `wave_money.merchant_id` | Yes | Merchant ID issued by Wave |
 | `WAVE_MONEY_SECRET_KEY` | `wave_money.secret_key` | Yes | Hash secret key issued by Wave |
 | `WAVE_MONEY_MERCHANT_NAME` | `wave_money.merchant_name` | Yes | Shown on Wave's payment page. A payment can override it with `wavemoney.PaymentData`'s `MerchantName` |
-| `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` | `wave_money.time_to_live_in_seconds` | Yes | Seconds the customer has to pay. A payment can override it with `wavemoney.PaymentData`'s `TimeToLiveSeconds` |
+| `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` | `wave_money.time_to_live_in_seconds` | No | Seconds the customer has to pay. A payment can override it with `wavemoney.PaymentData`'s `TimeToLiveSeconds`; when it is unset, every payment must set its own |
 | `WAVE_MONEY_BASE_URL` | `wave_money.base_url` | No | Override the API base URL |
 | `WAVE_MONEY_AUTHENTICATE_URL` | `wave_money.authenticate_url` | No | Override the host the customer is redirected to |
 | `AYA_PAY_APP_KEY` | `aya_pay.app_key` | Yes | Public application key |

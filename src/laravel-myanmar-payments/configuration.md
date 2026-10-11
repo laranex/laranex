@@ -1,13 +1,13 @@
 ---
 title: Configuration
-description: Configure Laravel Myanmar Payments with environment variables. Every setting of the gateways you use is required except the HTTP timeout (30 seconds by default); endpoints default to production.
+description: Configure Laravel Myanmar Payments with environment variables. Every setting of the gateways you use is required except the HTTP timeout (30 seconds by default) and the time-to-live defaults; endpoints default to production.
 ---
 
 # Configuration
 
 ## Environment Variables
 
-Add the keys of the gateways you use. Every setting of those gateways is required except the HTTP timeout (30 seconds by default), the URL overrides and Yoma's webhook secret. A gateway is configured the first time you call it, and a missing or blank setting throws a `ConfigurationException` naming it, e.g. `The kbz_pay configuration is missing [app_key].` The time settings must be whole numbers greater than 0; any other value, such as `0`, `-30`, `2.5` or `thirty`, throws the same exception with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+Add the keys of the gateways you use. Every setting of those gateways is required except the HTTP timeout (30 seconds by default), the URL overrides, Yoma's webhook secret and the time-to-live defaults (`KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS`). A gateway is configured the first time you call it, and a missing or blank setting throws a `ConfigurationException` naming it, e.g. `The kbz_pay configuration is missing [app_key].` The time settings must be whole numbers greater than 0; any other value, such as `0`, `-30`, `2.5` or `thirty`, throws the same exception with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
 The variable names are the ones the [PHP SDK](/php-myanmar-payments/configuration) reads, so one `.env` works for both. The values after `=` are examples:
 
@@ -25,6 +25,7 @@ KBZ_PAY_APP_KEY=
 KBZ_PAY_MERCHANT_CODE=
 KBZ_PAY_BASE_URL=                     # optional override
 KBZ_PAY_PWA_BASE_REDIRECT_URL=        # optional override
+KBZ_PAY_TIME_TO_LIVE_IN_MINUTES=      # optional, 1 to 120
 
 # Wave Money
 WAVE_MONEY_MERCHANT_ID=
@@ -67,10 +68,11 @@ CYBER_SOURCE_BASE_URL=                # optional override
 | `KBZ_PAY_MERCHANT_CODE` | `kbz_pay.merchant_code` | Yes | `merch_code` issued by KBZ |
 | `KBZ_PAY_BASE_URL` | `kbz_pay.api_url` | No | Override the API base URL |
 | `KBZ_PAY_PWA_BASE_REDIRECT_URL` | `kbz_pay.pwa_url` | No | Override the PWA checkout URL |
+| `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` | `kbz_pay.time_to_live_in_minutes` | No | Minutes the customer has to pay each order, 1 to 120. A payment can override it with `KbzPayPaymentData`'s `timeToLiveMinutes`; when it is unset, every payment must set its own |
 | `WAVE_MONEY_MERCHANT_ID` | `wave_money.merchant_id` | Yes | Merchant ID issued by Wave |
 | `WAVE_MONEY_SECRET_KEY` | `wave_money.secret_key` | Yes | Hash secret key issued by Wave |
 | `WAVE_MONEY_MERCHANT_NAME` | `wave_money.merchant_name` | Yes | Shown on Wave's payment page. A payment can override it with `WaveMoneyPaymentData`'s `merchantName` |
-| `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` | `wave_money.time_to_live_in_seconds` | Yes | Seconds the customer has to pay. A payment can override it with `WaveMoneyPaymentData`'s `timeToLiveSeconds` |
+| `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` | `wave_money.time_to_live_in_seconds` | No | Seconds the customer has to pay. A payment can override it with `WaveMoneyPaymentData`'s `timeToLiveSeconds`; when it is unset, every payment must set its own |
 | `WAVE_MONEY_BASE_URL` | `wave_money.base_url` | No | Override the API base URL |
 | `WAVE_MONEY_AUTHENTICATE_URL` | `wave_money.authenticate_url` | No | Override the host the customer is redirected to |
 | `AYA_PAY_APP_KEY` | `aya_pay.app_key` | Yes | Public application key |

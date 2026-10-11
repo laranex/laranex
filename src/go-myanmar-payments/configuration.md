@@ -1,11 +1,11 @@
 ---
 title: Configuration
-description: Configure Go Myanmar Payments with one Config struct per gateway or from environment variables. Every setting is required except the HTTP timeout (30 seconds by default); endpoints default to production. Pass your own HTTP client and token cache.
+description: Configure Go Myanmar Payments with one Config struct per gateway or from environment variables. Every setting is required except the HTTP timeout (30 seconds by default) and the time-to-live defaults; endpoints default to production. Pass your own HTTP client and token cache.
 ---
 
 # Configuration
 
-Each gateway package has a config struct (`kbzpay.Config`, `wavemoney.Config`, `ayapay.Config`, `yomammqr.Config`, `cybersource.Config`) and a `New` constructor that takes it. Every setting is required except the HTTP timeout (`TimeoutSeconds`, 30 seconds by default), the URL overrides and Yoma's webhook secret: there are no other defaults, and a missing or blank setting returns a `*myanmarpayments.ConfigurationError` naming it:
+Each gateway package has a config struct (`kbzpay.Config`, `wavemoney.Config`, `ayapay.Config`, `yomammqr.Config`, `cybersource.Config`) and a `New` constructor that takes it. Every setting is required except the HTTP timeout (`TimeoutSeconds`, 30 seconds by default), the URL overrides, Yoma's webhook secret and the time-to-live defaults (KBZ Pay's `TimeToLiveMinutes` and Wave Money's `TimeToLiveSeconds`): there are no other defaults, and a missing or blank setting returns a `*myanmarpayments.ConfigurationError` naming it:
 
 ```go
 package main
@@ -36,7 +36,7 @@ func main() {
 
 `err.Error()` reads `myanmarpayments: The kbz_pay configuration is missing [app_key].`
 
-The time settings (`TimeoutSeconds`, and Wave Money's `TimeToLiveSeconds`) must be whole numbers greater than 0. `0` is the zero value, so it means unset: `TimeoutSeconds` then uses `myanmarpayments.DefaultTimeoutSeconds` (30), and a gateway's `Config()` reports 30, while a missing `TimeToLiveSeconds` returns the error. A negative value returns the same error with `Invalid` set and the message `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+The time settings (`TimeoutSeconds`, and Wave Money's `TimeToLiveSeconds`) must be whole numbers greater than 0. `0` is the zero value, so it means unset: `TimeoutSeconds` then uses `myanmarpayments.DefaultTimeoutSeconds` (30), and a gateway's `Config()` reports 30, while a `TimeToLiveSeconds` of 0 sets no default, so every Wave payment must set its own. A negative value returns the same error with `Invalid` set and the message `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
 ## Endpoints
 
@@ -54,6 +54,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `TimeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. `0` (unset) means 30 (`myanmarpayments.DefaultTimeoutSeconds`); a negative one is reported as `timeout_in_seconds` |
 | `APIURL` | `string` | No | Override the API base URL |
 | `PWAURL` | `string` | No | Override the PWA checkout URL. Normalized to end with `/`, e.g. `…/pwa/#/` |
+| `TimeToLiveMinutes` | `int` | No | Minutes the customer has to pay each order, 1 to 120. A payment's own `TimeToLiveMinutes` overrides it; 0 means unset, and every payment must then set its own. Anything else throws `The kbz_pay configuration [time_to_live_in_minutes] must be a whole number from 1 to 120.` |
 
 ### wavemoney.Config
 
@@ -62,7 +63,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `MerchantID` | `string` | Yes | Merchant ID issued by Wave |
 | `SecretKey` | `string` | Yes | Hash secret key issued by Wave |
 | `MerchantName` | `string` | Yes | Shown on Wave's payment page. A payment can override it with `wavemoney.PaymentData`'s `MerchantName` |
-| `TimeToLiveSeconds` | `int` | Yes | Seconds the customer has to pay. A missing one is reported as `time_to_live_in_seconds`. A payment can override it with `wavemoney.PaymentData`'s `TimeToLiveSeconds` |
+| `TimeToLiveSeconds` | `int` | No | Seconds the customer has to pay, greater than 0. A payment can override it with `wavemoney.PaymentData`'s `TimeToLiveSeconds`; 0 means unset, and every payment must then set its own |
 | `TimeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. `0` (unset) means 30 (`myanmarpayments.DefaultTimeoutSeconds`); a negative one is reported as `timeout_in_seconds` |
 | `BaseURL` | `string` | No | Override the API base URL |
 | `AuthenticateURL` | `string` | No | Override the host the customer is redirected to |
@@ -148,6 +149,7 @@ KBZ_PAY_APP_KEY=
 KBZ_PAY_MERCHANT_CODE=
 KBZ_PAY_BASE_URL=                     # optional override
 KBZ_PAY_PWA_BASE_REDIRECT_URL=        # optional override
+KBZ_PAY_TIME_TO_LIVE_IN_MINUTES=      # optional, 1 to 120
 
 # Wave Money
 WAVE_MONEY_MERCHANT_ID=

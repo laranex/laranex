@@ -96,7 +96,7 @@ http.Redirect(w, r, payment.URL, http.StatusFound)
 
 ### Per-Payment Merchant Name and Time to Live
 
-`MerchantName` and `TimeToLiveSeconds` override the `wavemoney.Config` values for one payment, including in the request hash. The configured values are still required and apply to every payment that leaves them empty or `nil`.
+`MerchantName` and `TimeToLiveSeconds` override the `wavemoney.Config` values for one payment, including in the request hash. The configured `MerchantName` is still required and applies to every payment that leaves it empty; the configured `TimeToLiveSeconds` is optional. With neither the configured time to live nor `TimeToLiveSeconds` set, `Initiate` returns `*myanmarpayments.InvalidPaymentDataError` with `The timeToLiveSeconds field is required when the wave_money configuration has no [time_to_live_in_seconds].` before any request.
 
 ```go
 seconds := 600

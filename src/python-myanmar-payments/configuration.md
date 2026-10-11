@@ -1,11 +1,11 @@
 ---
 title: Configuration
-description: Configure Python Myanmar Payments with one config class per gateway or from environment variables. Every setting is required except the HTTP timeout (30 seconds by default) and the endpoints, which default to production. Pass your own httpx client and token cache.
+description: Configure Python Myanmar Payments with one config class per gateway or from environment variables. Every setting is required except the HTTP timeout (30 seconds by default) and the time-to-live defaults and the endpoints, which default to production. Pass your own httpx client and token cache.
 ---
 
 # Configuration
 
-Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes keyword arguments. Gateways take the config object or a mapping of its keyword arguments (`KbzPay({"app_id": "...", ...})`). Every setting is required except the HTTP timeout, the URL overrides and Yoma's webhook secret. The HTTP timeout (`timeout_seconds`) defaults to 30 seconds (`DEFAULT_TIMEOUT_SECONDS`); any other missing or blank setting raises a `ConfigurationError` naming it:
+Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes keyword arguments. Gateways take the config object or a mapping of its keyword arguments (`KbzPay({"app_id": "...", ...})`). Every setting is required except the HTTP timeout, the URL overrides, Yoma's webhook secret and the time-to-live defaults (KBZ Pay's `time_to_live_minutes` and Wave Money's `time_to_live_seconds`). The HTTP timeout (`timeout_seconds`) defaults to 30 seconds (`DEFAULT_TIMEOUT_SECONDS`); any other missing or blank setting raises a `ConfigurationError` naming it:
 
 ```python
 from python_myanmar_payments import ConfigurationError, KbzPay, KbzPayConfig
@@ -44,6 +44,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `timeout_seconds` | `int \| str` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`DEFAULT_TIMEOUT_SECONDS`) when unset or blank; an invalid value is reported as `timeout_in_seconds` |
 | `api_url` | `str` | No | Override the API base URL |
 | `pwa_url` | `str` | No | Override the PWA checkout URL. Normalized to end with `/`, e.g. `…/pwa/#/` |
+| `time_to_live_minutes` | `int \| str` | No | Minutes the customer has to pay each order, 1 to 120. A payment's own `time_to_live_minutes` overrides it; when it is unset, every payment must set its own. Anything else throws `The kbz_pay configuration [time_to_live_in_minutes] must be a whole number from 1 to 120.` Reported as `time_to_live_in_minutes` |
 
 ### WaveMoneyConfig
 
@@ -52,7 +53,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `merchant_id` | `str` | Yes | Merchant ID issued by Wave |
 | `secret_key` | `str` | Yes | Hash secret key issued by Wave |
 | `merchant_name` | `str` | Yes | Shown on Wave's payment page |
-| `time_to_live_seconds` | `int \| str` | Yes | Seconds the customer has to pay. A missing one is reported as `time_to_live_in_seconds` |
+| `time_to_live_seconds` | `int \| str` | No | Seconds the customer has to pay, greater than 0. A payment can override it with `WaveMoneyPaymentData`'s `time_to_live_seconds`; when it is unset, every payment must set its own. An invalid one is reported as `time_to_live_in_seconds` |
 | `timeout_seconds` | `int \| str` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`DEFAULT_TIMEOUT_SECONDS`) when unset or blank; an invalid value is reported as `timeout_in_seconds` |
 | `base_url` | `str` | No | Override the API base URL |
 | `authenticate_url` | `str` | No | Override the host the customer is redirected to |
@@ -143,6 +144,7 @@ KBZ_PAY_APP_KEY=
 KBZ_PAY_MERCHANT_CODE=
 KBZ_PAY_BASE_URL=                     # optional override
 KBZ_PAY_PWA_BASE_REDIRECT_URL=        # optional override
+KBZ_PAY_TIME_TO_LIVE_IN_MINUTES=      # optional, 1 to 120
 
 # Wave Money
 WAVE_MONEY_MERCHANT_ID=

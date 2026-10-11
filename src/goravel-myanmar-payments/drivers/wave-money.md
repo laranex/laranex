@@ -95,7 +95,7 @@ func (r *CheckoutController) Wave(ctx http.Context) http.Response {
 
 ### Per-Payment Merchant Name and Time to Live
 
-`MerchantName` and `TimeToLiveSeconds` override the configured `merchant_name` and `time_to_live_in_seconds` for one payment, including in the request hash. `WAVE_MONEY_MERCHANT_NAME` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` are still required and apply to every payment that leaves them empty or `nil`.
+`MerchantName` and `TimeToLiveSeconds` override the configured `merchant_name` and `time_to_live_in_seconds` for one payment, including in the request hash. `WAVE_MONEY_MERCHANT_NAME` is still required and applies to every payment that leaves `MerchantName` empty; `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` is optional. With neither the configured time to live nor `TimeToLiveSeconds` set, `Initiate` returns `*myanmarpayments.InvalidPaymentDataError` with `The timeToLiveSeconds field is required when the wave_money configuration has no [time_to_live_in_seconds].` before any request.
 
 ```go
 seconds := 600

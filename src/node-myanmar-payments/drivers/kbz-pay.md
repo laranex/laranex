@@ -78,7 +78,7 @@ res.end(JSON.stringify(app));
 | `amount` | `Amount \| number \| bigint` | Yes | Kyat, greater than 0, at most 2 decimal places, e.g. `10000` or `Amount.parse('1000.50')`. KBZ only accepts MMK |
 | `callbackUrl` | `string` | Yes | Public URL KBZ posts the result to. Absolute http or https URL, at most 512 characters, no query string |
 | `title` | `string` | No | Product name shown to the customer |
-| `timeToLiveSeconds` | `number` | No | Seconds the customer has to pay, 60 to 7200 in whole minutes (a multiple of 60), because KBZ counts minutes: `1800` is sent as `30m`. Unset leaves it to KBZ (7200) |
+| `timeToLiveMinutes` | `number` | No | Minutes the customer has to pay, 1 to 120, sent as `timeout_express` (`30` is sent as `30m`). Unset uses `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`. With neither set, `pwa()`, `qr()` and `app()` throw `InvalidPaymentDataError` with `The timeToLiveMinutes field is required when the kbz_pay configuration has no [time_to_live_in_minutes].` before any request |
 | `callbackInfo` | `string` | No | Free text echoed back in the callback, at most 512 characters once URL-encoded |
 
 ### PWA Notes
@@ -146,7 +146,7 @@ What KBZ Pay puts in each field. See [Results](/node-myanmar-payments/references
 | `orderId` | Your `data.orderId` |
 | `qrString` | KBZ `qrCode`, a payload to encode into a QR image. Always set |
 | `qrImage` | Always `undefined` |
-| `expiresAt` | Now + `timeToLiveSeconds`. `undefined` when `timeToLiveSeconds` is unset (KBZ then allows 7200 seconds) |
+| `expiresAt` | Now + the time to live: `timeToLiveMinutes`, else `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`. Always set, because a payment without a time to live is rejected |
 | `reference` | KBZ `prepay_id`. Always set |
 | `raw` | The `precreate` response, as for `pwa()` plus `qrCode` |
 | `qrImageDataUri()` | Always `undefined`, as `qrImage` is |
