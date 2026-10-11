@@ -54,8 +54,8 @@ Every gateway uses its production endpoints. There is no switch between test and
 |---|---|---|---|
 | `merchantId` | `string` | Yes | Merchant ID issued by Wave |
 | `secretKey` | `string` | Yes | Hash secret key issued by Wave |
-| `merchantName` | `string` | Yes | Shown on Wave's payment page |
-| `timeToLiveSeconds` | `int` | Yes | Seconds the customer has to pay. A missing one is reported as `time_to_live_in_seconds` |
+| `merchantName` | `string` | Yes | Shown on Wave's payment page. A payment can override it with `WaveMoneyPaymentData`'s `merchantName` |
+| `timeToLiveSeconds` | `int` | Yes | Seconds the customer has to pay. A missing one is reported as `time_to_live_in_seconds`. A payment can override it with `WaveMoneyPaymentData`'s `timeToLiveSeconds` |
 | `timeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); an invalid one is reported as `timeout_in_seconds` |
 | `baseUrl` | `?string` | No | Override the API base URL |
 | `authenticateUrl` | `?string` | No | Override the host the customer is redirected to |
@@ -176,6 +176,8 @@ CYBER_SOURCE_ACCESS_KEY=
 CYBER_SOURCE_SECRET_KEY=
 CYBER_SOURCE_BASE_URL=                # optional override
 ```
+
+`WAVE_MONEY_MERCHANT_NAME` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` stay required; a payment can override them with `WaveMoneyPaymentData`'s `merchantName` and `timeToLiveSeconds`.
 
 `MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR; unset or blank, it is 30 seconds. The package never reads files itself: load the `.env` file with your framework or with [`vlucas/phpdotenv`](https://github.com/vlucas/phpdotenv) before calling `fromEnv()`.
 

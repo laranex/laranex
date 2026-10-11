@@ -71,8 +71,28 @@ return redirect()->away($payment->url);
 | `items` | `list<WaveMoneyItem>` | Yes | At least one item |
 | `amount` | `Amount\|int\|null` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). `null` charges the sum of the items. Wave only accepts MMK |
 | `merchantReferenceId` | `?string` | No | Unique ID of this attempt. `null` or empty means a random ID |
+| `merchantName` | `?string` | No | Business name shown on Wave's page for this payment. `null` uses `WAVE_MONEY_MERCHANT_NAME`; a blank one is rejected |
+| `timeToLiveSeconds` | `?int` | No | Seconds the customer has to pay this payment, greater than 0. `null` uses `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` |
 
 `WaveMoneyItem` takes a `name` and an `amount` (`Amount|int`) in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats.
+
+### Per-Payment Merchant Name and Time to Live
+
+`merchantName` and `timeToLiveSeconds` override the configured `WAVE_MONEY_MERCHANT_NAME` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` for one payment, including in the request hash. The configured values are still required and apply to every payment that leaves them `null`.
+
+```php
+$data = new WaveMoneyPaymentData(
+    orderId: 'ORDER_'.$order->id,
+    callbackUrl: route('payments.wave.callback'),
+    returnUrl: route('orders.show', $order),
+    description: 'Order #'.$order->id,
+    items: [new WaveMoneyItem('Concert ticket', 25000)],
+    merchantName: 'My Shop Events',
+    timeToLiveSeconds: 600,
+);
+```
+
+A blank `merchantName` throws `InvalidPaymentDataException` with `The merchantName field is required.`, and a `timeToLiveSeconds` below 1 with `The timeToLiveSeconds field must be greater than 0.` Nothing is sent.
 
 ### Merchant Reference ID
 

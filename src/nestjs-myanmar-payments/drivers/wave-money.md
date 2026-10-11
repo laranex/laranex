@@ -89,8 +89,28 @@ export class WaveMoneyCheckoutController {
 | `items` | `readonly WaveMoneyItem[]` | Yes | At least one item |
 | `amount` | `AmountInput` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). Unset charges the sum of the items. Wave only accepts MMK |
 | `merchantReferenceId` | `string` | No | Unique ID of this attempt. Unset or empty means a random ID |
+| `merchantName` | `string` | No | Business name shown on Wave's page for this payment. Unset or `null` uses `WAVE_MONEY_MERCHANT_NAME` (`waveMoney.merchantName`); a blank one is rejected |
+| `timeToLiveSeconds` | `number` | No | Seconds the customer has to pay this payment, a whole number greater than 0. Unset or `null` uses `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` (`waveMoney.timeToLiveSeconds`) |
 
 `WaveMoneyItem` takes a `name` and an `amount` (`AmountInput`) in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats.
+
+### Per-Payment Merchant Name and Time to Live
+
+`merchantName` and `timeToLiveSeconds` override the configured `WAVE_MONEY_MERCHANT_NAME` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` (`waveMoney.merchantName` and `waveMoney.timeToLiveSeconds`) for one payment, including in the request hash. The configured values are still required and apply to every payment that leaves them unset.
+
+```ts
+const data: WaveMoneyPaymentData = {
+  orderId: `ORDER_${order.id}`,
+  callbackUrl: 'https://shop.test/payments/wave/callback',
+  returnUrl: `https://shop.test/orders/${order.id}`,
+  description: `Order #${order.id}`,
+  items: [{ name: 'Concert ticket', amount: 25000 }],
+  merchantName: 'My Shop Events',
+  timeToLiveSeconds: 600,
+};
+```
+
+A blank `merchantName` throws `InvalidPaymentDataError` with `The merchantName field is required.`, a `timeToLiveSeconds` that is not a whole number with `The timeToLiveSeconds field must be an integer.`, and one below 1 with `The timeToLiveSeconds field must be greater than 0.` Nothing is sent.
 
 ### Merchant Reference ID
 

@@ -91,8 +91,28 @@ def wave_checkout(request, order_id: int):
 | `items` | `Sequence[WaveMoneyItem]` | Yes | At least one item, as a `list` or `tuple` |
 | `amount` | `Amount \| int \| str \| Decimal` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). Unset charges the sum of the items. Wave only accepts MMK |
 | `merchant_reference_id` | `str` | No | Unique ID of this attempt. Unset or empty means a random ID |
+| `merchant_name` | `str` | No | Business name shown on Wave's page for this payment. Unset uses `WaveMoneyConfig`'s `merchant_name`; a blank one is rejected |
+| `time_to_live_seconds` | `int` | No | Seconds the customer has to pay this payment, an `int` greater than 0 (not a `bool`, `float` or text). Unset uses `WaveMoneyConfig`'s `time_to_live_seconds` |
 
 `WaveMoneyItem(name, amount)` has a `name` and an `amount` in whole kyat, greater than 0. The items are summed with exact `int` arithmetic, never floats; `WaveMoney.resolved_amount(data)` returns the total that will be charged as an `Amount` (`None` when an item amount is invalid).
+
+### Per-Payment Merchant Name and Time to Live
+
+`merchant_name` and `time_to_live_seconds` override the `WaveMoneyConfig` values for one payment, including in the request hash. The configured values are still required and apply to every payment that leaves them unset.
+
+```python
+data = WaveMoneyPaymentData(
+    order_id=f"ORDER_{order.id}",
+    callback_url="https://shop.test/payments/wave/callback",
+    return_url=f"https://shop.test/orders/{order.id}",
+    description=f"Order #{order.id}",
+    items=[WaveMoneyItem(name="Concert ticket", amount=25000)],
+    merchant_name="My Shop Events",
+    time_to_live_seconds=600,
+)
+```
+
+A blank `merchant_name` raises `InvalidPaymentDataError` with `The merchant_name field is required.`, and a `time_to_live_seconds` below 1 with `The time_to_live_seconds field must be greater than 0.` Nothing is sent.
 
 ### Merchant Reference ID
 

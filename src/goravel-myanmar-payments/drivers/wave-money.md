@@ -88,8 +88,29 @@ func (r *CheckoutController) Wave(ctx http.Context) http.Response {
 | `Items` | `[]wavemoney.Item` | Yes | At least one item |
 | `Amount` | `myanmarpayments.Amount` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). Unset charges the sum of the items. Wave only accepts MMK |
 | `MerchantReferenceID` | `string` | No | Unique ID of this attempt. Empty means a random ID |
+| `MerchantName` | `string` | No | Business name shown on Wave's page for this payment. Empty uses the configured `merchant_name` (`WAVE_MONEY_MERCHANT_NAME`); a name made only of whitespace is rejected |
+| `TimeToLiveSeconds` | `*int` | No | Seconds the customer has to pay this payment, greater than 0, e.g. `seconds := 600` then `TimeToLiveSeconds: &seconds`. `nil` uses the configured `time_to_live_in_seconds` (`WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS`); `0` is rejected |
 
 `wavemoney.Item` takes a `Name` and an `Amount` (`myanmarpayments.Amount`) in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats. `Initiate()` takes a pointer to the data, so it can fill in `MerchantReferenceID`.
+
+### Per-Payment Merchant Name and Time to Live
+
+`MerchantName` and `TimeToLiveSeconds` override the configured `merchant_name` and `time_to_live_in_seconds` for one payment, including in the request hash. `WAVE_MONEY_MERCHANT_NAME` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` are still required and apply to every payment that leaves them empty or `nil`.
+
+```go
+seconds := 600
+data := &wavemoney.PaymentData{
+	OrderID:           fmt.Sprintf("ORDER_%d", order.ID),
+	CallbackURL:       "https://shop.test/payments/wave/callback",
+	ReturnURL:         fmt.Sprintf("https://shop.test/orders/%d", order.ID),
+	Description:       fmt.Sprintf("Order #%d", order.ID),
+	Items:             []wavemoney.Item{{Name: "Concert ticket", Amount: myanmarpayments.Kyat(25000)}},
+	MerchantName:      "My Shop Events",
+	TimeToLiveSeconds: &seconds,
+}
+```
+
+A `MerchantName` made only of whitespace returns `*myanmarpayments.InvalidPaymentDataError` with `The merchantName field is required.`, and a `TimeToLiveSeconds` below 1 with `The timeToLiveSeconds field must be greater than 0.` Nothing is sent.
 
 ### Merchant Reference ID
 

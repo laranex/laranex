@@ -72,8 +72,8 @@ CYBER_SOURCE_BASE_URL=                # optional override
 | `KBZ_PAY_PWA_BASE_REDIRECT_URL` | `kbz_pay.pwa_url` | No | Override the PWA checkout URL |
 | `WAVE_MONEY_MERCHANT_ID` | `wave_money.merchant_id` | Yes | Merchant ID issued by Wave |
 | `WAVE_MONEY_SECRET_KEY` | `wave_money.secret_key` | Yes | Hash secret key issued by Wave |
-| `WAVE_MONEY_MERCHANT_NAME` | `wave_money.merchant_name` | Yes | Shown on Wave's payment page |
-| `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` | `wave_money.time_to_live_in_seconds` | Yes | Seconds the customer has to pay |
+| `WAVE_MONEY_MERCHANT_NAME` | `wave_money.merchant_name` | Yes | Shown on Wave's payment page. A payment can override it with `wavemoney.PaymentData`'s `MerchantName` |
+| `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` | `wave_money.time_to_live_in_seconds` | Yes | Seconds the customer has to pay. A payment can override it with `wavemoney.PaymentData`'s `TimeToLiveSeconds` |
 | `WAVE_MONEY_BASE_URL` | `wave_money.base_url` | No | Override the API base URL |
 | `WAVE_MONEY_AUTHENTICATE_URL` | `wave_money.authenticate_url` | No | Override the host the customer is redirected to |
 | `AYA_PAY_APP_KEY` | `aya_pay.app_key` | Yes | Public application key |

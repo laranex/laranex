@@ -61,8 +61,8 @@ Every gateway uses its production endpoints. There is no switch between test and
 |---|---|---|---|
 | `MerchantID` | `string` | Yes | Merchant ID issued by Wave |
 | `SecretKey` | `string` | Yes | Hash secret key issued by Wave |
-| `MerchantName` | `string` | Yes | Shown on Wave's payment page |
-| `TimeToLiveSeconds` | `int` | Yes | Seconds the customer has to pay. A missing one is reported as `time_to_live_in_seconds` |
+| `MerchantName` | `string` | Yes | Shown on Wave's payment page. A payment can override it with `wavemoney.PaymentData`'s `MerchantName` |
+| `TimeToLiveSeconds` | `int` | Yes | Seconds the customer has to pay. A missing one is reported as `time_to_live_in_seconds`. A payment can override it with `wavemoney.PaymentData`'s `TimeToLiveSeconds` |
 | `TimeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. `0` (unset) means 30 (`myanmarpayments.DefaultTimeoutSeconds`); a negative one is reported as `timeout_in_seconds` |
 | `BaseURL` | `string` | No | Override the API base URL |
 | `AuthenticateURL` | `string` | No | Override the host the customer is redirected to |
