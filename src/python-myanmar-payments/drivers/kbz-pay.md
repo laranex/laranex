@@ -97,7 +97,7 @@ def kbz_app(request, order_id: int):
 | `amount` | `Amount \| int \| str \| Decimal` | Yes | Kyat, greater than 0, at most 2 decimal places, e.g. `10000` or `Amount.parse("1000.50")`. KBZ only accepts MMK |
 | `callback_url` | `str` | Yes | Public URL KBZ posts the result to. Absolute http or https URL, at most 512 characters, no query string |
 | `title` | `str` | No | Product name shown to the customer |
-| `timeout_minutes` | `int` | No | An integer from 1 to 120. Unset leaves it to KBZ (120) |
+| `time_to_live_seconds` | `int` | No | Seconds the customer has to pay, 60 to 7200 in whole minutes (a multiple of 60), because KBZ counts minutes: `1800` is sent as `30m`. Unset leaves it to KBZ (7200) |
 | `callback_info` | `str` | No | Free text echoed back in the callback, at most 512 characters once URL-encoded |
 
 ### PWA Notes
@@ -174,7 +174,7 @@ What KBZ Pay puts in each field. See [Results](/python-myanmar-payments/referenc
 | `order_id` | Your `data.order_id` |
 | `qr_string` | KBZ `qrCode`, a payload to encode into a QR image. Always set |
 | `qr_image` | Always `None` |
-| `expires_at` | Now + `timeout_minutes`, in UTC. `None` when `timeout_minutes` is unset (KBZ then allows 120 minutes) |
+| `expires_at` | Now + `time_to_live_seconds`, in UTC. `None` when `time_to_live_seconds` is unset (KBZ then allows 7200 seconds) |
 | `reference` | KBZ `prepay_id`. Always set |
 | `raw` | The `precreate` response, as for `pwa()` plus `qrCode` |
 | `qr_image_data_uri()` | Always `None`, as `qr_image` is |

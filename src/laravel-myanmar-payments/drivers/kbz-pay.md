@@ -71,7 +71,7 @@ return response()->json($payment->toArray());
 | `amount` | `Amount\|int` | Yes | Kyat, greater than 0, at most 2 decimal places, e.g. `10000` or `Amount::parse('10000.50')`. KBZ only accepts MMK |
 | `callbackUrl` | `string` | Yes | Public URL KBZ posts the result to. At most 512 characters, no query string |
 | `title` | `?string` | No | Product name shown to the customer |
-| `timeoutMinutes` | `?int` | No | 1 to 120. `null` leaves it to KBZ (120) |
+| `timeToLiveSeconds` | `?int` | No | Seconds the customer has to pay, 60 to 7200 in whole minutes (a multiple of 60), because KBZ counts minutes: `1800` is sent as `30m`. `null` leaves it to KBZ (7200) |
 | `callbackInfo` | `?string` | No | Free text echoed back in the callback, at most 512 characters once URL-encoded |
 
 ### PWA Notes
@@ -142,7 +142,7 @@ What KBZ Pay puts in each property. See [Results](/laravel-myanmar-payments/refe
 | `orderId` | Your `orderId` |
 | `qrString` | KBZ `qrCode`, a payload to encode into a QR image. Always set |
 | `qrImage` | Always `null` |
-| `expiresAt` | Now + `timeoutMinutes`. `null` when `timeoutMinutes` is `null` (KBZ then allows 120 minutes) |
+| `expiresAt` | Now + `timeToLiveSeconds`. `null` when `timeToLiveSeconds` is `null` (KBZ then allows 7200 seconds) |
 | `reference` | KBZ `prepay_id`. Always set |
 | `raw` | The `precreate` response, as for `pwa()` plus `qrCode` |
 | `qrImageDataUri()` | Always `null`, as `qrImage` is |

@@ -87,7 +87,7 @@ func (r *CheckoutController) KbzPay(ctx http.Context) http.Response {
 | `Amount` | `myanmarpayments.Amount` | Yes | Kyat, greater than 0, at most 2 decimal places, e.g. `Kyat(10000)` or `MustParseAmount("10000.50")`. KBZ only accepts MMK |
 | `CallbackURL` | `string` | Yes | Public URL KBZ posts the result to. At most 512 characters, no query string |
 | `Title` | `string` | No | Product name shown to the customer |
-| `TimeoutMinutes` | `*int` | No | 1 to 120, e.g. `minutes := 30` then `TimeoutMinutes: &minutes`. `nil` leaves it to KBZ (120); `0` is rejected |
+| `TimeToLiveSeconds` | `*int` | No | Seconds the customer has to pay, 60 to 7200 in whole minutes (a multiple of 60), because KBZ counts minutes: `1800` is sent as `30m`. E.g. `ttl := 1800` then `TimeToLiveSeconds: &ttl`. `nil` leaves it to KBZ (7200); `0` is rejected |
 | `CallbackInfo` | `string` | No | Free text echoed back in the callback, at most 512 characters once URL-encoded |
 
 ### PWA Notes
@@ -175,7 +175,7 @@ What KBZ Pay puts in each field. See [Results](/goravel-myanmar-payments/referen
 | `OrderID` | Your `OrderID` |
 | `QRString` | KBZ `qrCode`, a payload to encode into a QR image. Always set |
 | `QRImage` | Always empty |
-| `ExpiresAt` | Now + `TimeoutMinutes`. The zero `time.Time` when `TimeoutMinutes` is `nil` (KBZ then allows 120 minutes) |
+| `ExpiresAt` | Now + `TimeToLiveSeconds`. The zero `time.Time` when `TimeToLiveSeconds` is `nil` (KBZ then allows 7200 seconds) |
 | `Reference` | KBZ `prepay_id`. Always set |
 | `Raw` | The `precreate` response, as for `PWA()` plus `qrCode` |
 | `QRImageDataURI()` | Always empty, as `QRImage` is |
