@@ -85,6 +85,15 @@
           "downloads": 1014
         }
       ]
+    },
+    {
+      "name": "Developer Tools",
+      "packages": [
+        {
+          "slug": "laravel-schema-viewer",
+          "downloads": 0
+        }
+      ]
     }
   ]
 }

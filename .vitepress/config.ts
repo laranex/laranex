@@ -510,6 +510,20 @@ export default defineConfig({
           ],
         },
       ],
+      '/laravel-schema-viewer/': [
+        {
+          text: 'Laravel Schema Viewer',
+          items: [
+            { text: 'Introduction', link: '/laravel-schema-viewer/introduction' },
+            { text: 'Installation', link: '/laravel-schema-viewer/installation' },
+            { text: 'Using the Viewer', link: '/laravel-schema-viewer/viewer' },
+            { text: 'Relationships', link: '/laravel-schema-viewer/relationships' },
+            { text: 'Hints', link: '/laravel-schema-viewer/hints' },
+            { text: 'Downloads & Commands', link: '/laravel-schema-viewer/exports' },
+            { text: 'AI Agent Skill', link: '/laravel-schema-viewer/ai-agent-skill' },
+          ],
+        },
+      ],
       '/laravel-myanmar-nrc/': [
         {
           text: 'Laravel Myanmar NRC',
