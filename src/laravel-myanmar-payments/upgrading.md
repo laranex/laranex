@@ -5,17 +5,6 @@ description: Upgrade Laravel Myanmar Payments from v2.2.7 to v4.0.0. New facade 
 
 # Upgrading
 
-## From a v4 pre-release
-
-If you installed `v4.0.0-alpha.1`, one status was renamed to American English, with no alias:
-
-| v4.0.0-alpha.1 | v4.0.0 |
-|---|---|
-| `PaymentStatus::Cancelled` | `PaymentStatus::Canceled` |
-| `'cancelled'` (enum value) | `'canceled'` |
-
-Update code that references the case, and any statuses you stored as `'cancelled'`. Gateway status literals keep their spelling: Wave Money still sends `PAYMENT_REQUEST_CANCELLED`, and it still maps to `PaymentStatus::Canceled`.
-
 ## From v2.2.7 to v4.0.0
 
 v4 is a rewrite on top of [`laranex/php-myanmar-payments`](/php-myanmar-payments/introduction). The rewrite was developed as v3, but v3 was never released: upgrade straight from v2.2.7 to v4.0.0. Every gateway now takes a typed request object and returns a typed result, and every exception extends `PaymentException`.
@@ -129,7 +118,7 @@ php artisan vendor:publish --tag="myanmar-payments-config"
 - Wave Money redirects the customer to `WAVE_MONEY_AUTHENTICATE_URL` (the Wave host without the API port) instead of the API base URL.
 - `MYANMAR_PAYMENTS_HTTP_TIMEOUT` (optional, 30 seconds by default), `MYANMAR_PAYMENTS_FORM_TTL_MINUTES`, `MYANMAR_PAYMENTS_CACHE_STORE` and the `form_route` options are new.
 - Every setting of the gateways you use except the HTTP timeout and the time to live settings is required and has no default, including `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` (for AYA Pay and CyberSource), `WAVE_MONEY_MERCHANT_NAME` (no `APP_NAME` fallback) and `YOMA_MMQR_API_VERSION`.
-- `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` (new, 1 to 120) and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` are optional defaults for how long a customer has to pay. A payment's own `timeToLiveMinutes` (KBZ) or `timeToLiveSeconds` (Wave) overrides them; a payment with neither throws `InvalidPaymentDataException` before any request, and KBZ no longer falls back to its own 120 minutes. CyberSource payments take `currency`, `transactionType` and `locale`.
+- `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` (new, 1 to 120) and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` are optional defaults for how long a customer has to pay. A payment's own `timeToLiveMinutes` (KBZ) or `timeToLiveSeconds` (Wave) overrides them; a payment with neither throws `InvalidPaymentDataException` before any request. CyberSource payments take `currency`, `transactionType` and `locale`.
 
 See [Configuration](/laravel-myanmar-payments/configuration).
 
