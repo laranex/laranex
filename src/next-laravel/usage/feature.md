@@ -36,7 +36,7 @@ Feature must extend `Laranex\NextLaravel\Cores\Feature` to use the `run` or `run
 | `run(string\|object $unit, array $arguments = [])` | Whatever the unit's `handle` method returns |
 | `runInQueue(string\|object $unit, array $arguments = [], string $queue = 'default')` | The pending dispatch |
 
-Both methods accept an instance, or a class name together with its constructor arguments (positional or named). `runInQueue` throws an `Error` when the unit cannot be queued: operations are never queueable, and jobs must extend `Laranex\NextLaravel\Cores\QueueableJob`.
+Both methods accept an instance, or a class name together with its constructor arguments (positional or named). A class name must extend `Laranex\NextLaravel\Cores\Feature`, `Operation` or `Job`; any other class throws an `InvalidArgumentException` instead of being instantiated. `runInQueue` throws an `Error` when the unit cannot be queued: operations are never queueable, and jobs must extend `Laranex\NextLaravel\Cores\QueueableJob`.
 
 ```php
 use App\Models\Blog;

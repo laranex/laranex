@@ -9,19 +9,19 @@ v4 follows v2.0.0 directly. Version 3 was skipped so that every Laranex package 
 
 ## Requirements
 
-PHP 8.1+ (the floor was 8.2 in v2) and Laravel 10 to 13.
+PHP 8.1+ (the floor was 8.2 in v2) and Laravel 10 (10.48.29 or later), 11, 12 or 13.
 
 ```bash
 composer require laranex/better-laravel:^4.0
 ```
 
-The package no longer depends on `spatie/laravel-package-tools`; it requires `laravel/framework` (10 through 13), since it builds on framework-only classes such as `FormRequest`, `DispatchesJobs` and `ValidatesRequests`. If your application relied on the package to pull in `spatie/laravel-package-tools`, require it yourself.
+The package no longer depends on `spatie/laravel-package-tools`; it requires `laravel/framework` (10 through 13), with a floor of 10.48.29 on the 10.x line (the last Laravel 10 release, which carries every security fix released for 10.x), since it builds on framework-only classes such as `FormRequest`, `DispatchesJobs` and `ValidatesRequests`. If your application relied on the package to pull in `spatie/laravel-package-tools`, require it yourself.
 
 ## Commands
 
 The `better:*` commands now exit with code `1` when generation fails (for example when the file exists and `--force` was not given). In v2 they always returned `0`. Update scripts or CI steps that check the exit code.
 
-Names containing `/` or `\` (for example `better:feature Blog/CreatePost Blog`) are now rejected with an error and exit code `1`; v2 wrote a file whose class name contained the slash.
+Names are now validated (see [Naming rules](/better-laravel/installation#naming-rules)): class, module and domain names must produce a valid PHP identifier, and route names and `versionOrDirectory` segments may only use lowercase letters, numbers, `-` and `_`. Invalid input is rejected with an error and exit code `1`. Names containing `/` or `\` (for example `better:feature Blog/CreatePost Blog`) are rejected too; v2 wrote a file whose class name contained the slash.
 
 ## Stubs
 
@@ -39,7 +39,9 @@ The tags `better-laravel-config`, `better-laravel-views` and `better-laravel-stu
 
 ## Route registration
 
-Route files under `routes/web` and `routes/api` are now registered during the service provider's `boot()` method instead of `register()`, so host configuration (including cached config) is honored. Files are loaded in sorted order. Routes are still skipped when the route cache is in use.
+Route files under `routes/web` and `routes/api` are now registered during the service provider's `boot()` method instead of `register()`, so host configuration (including cached config) is honored. Files are loaded in sorted order. Routes are still skipped when the route cache is in use. Run `php artisan route:cache` in production: until routes are cached, the route directories are scanned on every request.
+
+The route command now generates an empty route group with a commented example instead of a public `GET` route that rendered the welcome view. Route files generated earlier keep their welcome route until you remove it.
 
 ## Extending the package
 

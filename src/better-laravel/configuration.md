@@ -44,13 +44,17 @@ return [
 
 When `enable_routes` is on, the service provider loads every `.php` file under `routes/web` (recursively, in sorted order) with the `web` middleware group and every `.php` file under `routes/api` with the `api` middleware group. Routes are registered in the provider's `boot()` method and are skipped when the application's routes are cached (`php artisan route:cache`), since the cache already contains them.
 
+::: tip Cache your routes in production
+Until the routes are cached, the `routes/web` and `routes/api` directories are scanned on every request. Run `php artisan route:cache` when you deploy to production; cached routes are never scanned or registered again.
+:::
+
 ### Views
 
 ```bash
 php artisan vendor:publish --tag=better-laravel-views
 ```
 
-The package ships a single `better-laravel::welcome` view, which generated route files return as a placeholder.
+The package ships a single `better-laravel::welcome` view. Generated route files no longer use it.
 
 ### Stubs
 
@@ -58,4 +62,4 @@ The package ships a single `better-laravel::welcome` view, which generated route
 php artisan vendor:publish --tag=better-laravel-stubs
 ```
 
-The generator commands read their stubs from `resources/stubs/vendor/better-laravel` when a published copy exists and fall back to the package stubs otherwise. The stubs are `controller.php.stub`, `feature.php.stub`, `operation.php.stub`, `request.php.stub`, `job.php.stub`, `job.queueable.php.stub` and `route.php.stub`. `route.php.stub` receives `{{prefix}}` (for example `v1/blogs`, without a leading slash) plus `{{route}}` and `{{versionOrDirectory}}` (with a leading slash), so route stubs published before v4 keep working.
+The generator commands read their stubs from `resources/stubs/vendor/better-laravel` when a published copy exists and fall back to the package stubs otherwise. The stubs are `controller.php.stub`, `feature.php.stub`, `operation.php.stub`, `request.php.stub`, `job.php.stub`, `job.queueable.php.stub` and `route.php.stub`. `route.php.stub` receives `{{prefix}}` (for example `v1/blogs`, without a leading slash) plus `{{route}}` (for example `blogs`) and `{{versionOrDirectory}}` (with a leading slash, for example `/v1`), so route stubs published before v4 keep working.

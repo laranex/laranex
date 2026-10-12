@@ -9,19 +9,19 @@ v4 follows v1.1.0 directly. Versions 2.x and 3.x were never released, so that ev
 
 ## Requirements
 
-PHP 8.1+ and Laravel 10 to 13 (v1.1 supported Laravel 10 and 11).
+PHP 8.1+ and Laravel 10 (10.48.29 or later), 11, 12 or 13 (v1.1 supported Laravel 10 and 11).
 
 ```bash
 composer require laranex/next-laravel:^4.0
 ```
 
-The package no longer depends on `spatie/laravel-package-tools`; it requires `laravel/framework` (10 through 13), since it builds on framework-only classes such as `FormRequest`, `DispatchesJobs` and `ValidatesRequests`. If your application relied on the package to pull in `spatie/laravel-package-tools`, require it yourself.
+The package no longer depends on `spatie/laravel-package-tools`; it requires `laravel/framework` (10 through 13), with a floor of 10.48.29 on the 10.x line (the last Laravel 10 release, which carries every security fix released for 10.x), since it builds on framework-only classes such as `FormRequest`, `DispatchesJobs` and `ValidatesRequests`. If your application relied on the package to pull in `spatie/laravel-package-tools`, require it yourself.
 
 ## Commands
 
 The generator commands (`next:route`, `next:controller`, `next:request`, `next:feature`, `next:operation`, `next:job`) now exit with code `1` when generation fails (for example when the file already exists and `--force` was not given). In v1.1 they always returned `0`. Update scripts or CI steps that check the exit code.
 
-Names containing `/` or `\` (for example `next:feature Blog/CreatePost Blog`) are now rejected with an error and exit code `1`; v1.1 wrote a file whose class name contained the slash.
+Names are now validated (see [Naming rules](/next-laravel/installation#naming-rules)): class and module names must produce a valid PHP identifier, and route names and `versionOrDirectory` segments may only use lowercase letters, numbers, `-` and `_`. Invalid input is rejected with an error and exit code `1`. Names containing `/` or `\` (for example `next:feature Blog/CreatePost Blog`) are rejected too; v1.1 wrote a file whose class name contained the slash.
 
 The second argument of `next:operation` is now called `module` instead of `domain`, matching the other commands. Positional usage (`php artisan next:operation SlugifyTitle Blog`) is unchanged; only calls that pass the argument by name, such as `Artisan::call('next:operation', ['operation' => 'SlugifyTitle', 'domain' => 'Blog'])`, must use `'module'` instead.
 
@@ -41,7 +41,13 @@ The other stubs keep the same shape: generated route files import the `Route` fa
 
 ## Route registration
 
-Route files under `routes/web` and `routes/api` are now registered during the service provider's `boot()` method instead of `register()`, so host configuration (including cached config) is honored. Files are loaded in sorted order. Routes are still skipped when the route cache is in use.
+Route files under `routes/web` and `routes/api` are now registered during the service provider's `boot()` method instead of `register()`, so host configuration (including cached config) is honored. Files are loaded in sorted order. Routes are still skipped when the route cache is in use. Run `php artisan route:cache` in production: until routes are cached, the route directories are scanned on every request.
+
+The route command now generates an empty route group with a commented example instead of a public `GET` route that rendered the welcome view. Route files generated earlier keep their welcome route until you remove it.
+
+## Dispatching class names
+
+`serve()`, `run()` and `runInQueue()` only instantiate class names that extend `Laranex\NextLaravel\Cores\Feature`, `Operation` or `Job`. Any other class name now throws an `InvalidArgumentException` instead of being instantiated. Instances are dispatched as before.
 
 ## Extending the package
 

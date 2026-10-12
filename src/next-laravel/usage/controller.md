@@ -31,7 +31,7 @@ Generated controller will be at `app/Modules/BlogModule/Http/Controllers/BlogCon
 The controller must extend `Laranex\NextLaravel\Cores\Controller` to use the `serve` method.
 :::
 
-`serve(string|object $feature, array $arguments = []): mixed` dispatches the feature synchronously and returns whatever its `handle` method returns. Pass an instance, or a class name together with the constructor arguments (positional or named). Dependencies type-hinted on `handle` (such as a form request) are resolved from the container.
+`serve(string|object $feature, array $arguments = []): mixed` dispatches the feature synchronously and returns whatever its `handle` method returns. Pass an instance, or a class name together with the constructor arguments (positional or named). Dependencies type-hinted on `handle` (such as a form request) are resolved from the container. A class name must extend `Laranex\NextLaravel\Cores\Feature`, `Operation` or `Job`; any other class throws an `InvalidArgumentException` instead of being instantiated.
 
 ```php
 use App\Modules\BlogModule\Features\StoreBlogFeature;
