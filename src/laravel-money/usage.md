@@ -145,7 +145,7 @@ LaravelMoney::format($money, 'fr_FR');            // "1 234,50 €"
 (string) $money;
 ```
 
-The locale defaults to `money.locale`, then the app locale. Formatting uses `ext-intl` for the locale's currency symbol, separators, grouping (including Indian lakh grouping) and digits, but builds the number from the exact decimal string, so `123456789012345678901.23` formats without losing a digit. Without `ext-intl`, `format()` returns `USD 1234.50`.
+The locale defaults to `money.locale`, then the app locale. Formatting uses `ext-intl` for the locale's currency symbol, separators, grouping (including Indian lakh grouping) and digits, but builds the number from the exact decimal string, so `123456789012345678901.23` formats without losing a digit. Without `ext-intl`, `format()` returns `USD 1234.50`. The `IntlFormatter` caches its patterns per canonical locale, currency and precision, keeping at most 64, so long-running workers that format with user-supplied locales don't grow memory without bound.
 
 ## Serialization
 
