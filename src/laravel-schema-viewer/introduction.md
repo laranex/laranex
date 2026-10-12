@@ -31,11 +31,3 @@ A sample Laravel store with three database connections (the store, billing and a
 </div>
 
 <p class="lx-demo__open"><a href="/laravel-schema-viewer/demo/index.html" target="_blank" rel="noopener">Open the demo full screen →</a></p>
-
-Things to try:
-
-- Click `products`: its variants, reviews, tags, images and comments, the `topReview()` that picks the highest rating, the `published` scope and soft deletes.
-- Follow `Customer::user()` from `billing` across to `users` on the store connection.
-- Open the Hints tab: `products.brand_id` has no foreign key, and `shipments.warehouse_id` has a foreign key that no model uses.
-- Search for `invoice`, `morphTo` or a column such as `user_id`.
-- Press `G` to hide Laravel's framework tables, `1` to `4` to show one kind of line, or `?` for a tour.
