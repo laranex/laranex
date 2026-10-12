@@ -100,6 +100,20 @@ abort_unless($token->revoke(), 401);
 return ['refresh_token' => $token->instance->createRefreshToken()];
 ```
 
+### Revoke on password change
+
+When a password changes or is reset, revoke every active refresh token of the model so a stolen token stops working. `revokeRefreshTokens()` is available on any model that uses `HasRefreshTokens` and returns how many tokens it revoked:
+
+```php
+use Illuminate\Support\Facades\Hash;
+
+$user->forceFill(['password' => Hash::make($password)])->save();
+
+$user->revokeRefreshTokens();
+```
+
+Unlike `$token->revokeAll()`, it needs no verified token, so it fits password reset flows where the user has none.
+
 ## Pruning
 
 Delete expired and revoked tokens. The command reports how many tokens it deleted.
@@ -107,6 +121,14 @@ Delete expired and revoked tokens. The command reports how many tokens it delete
 ```bash
 php artisan refresh-token:prune
 ```
+
+Tokens are deleted in chunks of 1000 (revoked tokens first, then expired ones), so pruning a large table never locks it in one statement. Each pass uses the `revoked` and `expires_at` indexes. Change the chunk size with `--chunk`:
+
+```bash
+php artisan refresh-token:prune --chunk=5000
+```
+
+`--chunk` must be a positive integer.
 
 Or schedule it:
 

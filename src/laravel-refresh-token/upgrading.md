@@ -78,12 +78,14 @@ RefreshToken::refreshTokensExpireIn(now()->subDay());
 
 ## Database
 
-Existing tables keep working. New installs get `id` as the primary key and an index on `refreshable_type` + `refreshable_id`. To add them to an existing table, write a migration of your own:
+Existing tables keep working. New installs get `id` as the primary key, an index on `refreshable_type` + `refreshable_id`, and indexes on `expires_at` and `revoked` that `refresh-token:prune` uses. To add them to an existing table, write a migration of your own:
 
 ```php
 Schema::table('laravel_refresh_tokens', function (Blueprint $table) {
     $table->primary('id');
     $table->index(['refreshable_type', 'refreshable_id']);
+    $table->index('expires_at');
+    $table->index('revoked');
 });
 ```
 
@@ -93,6 +95,7 @@ The model now casts `revoked` to a boolean and `expires_at` to a date.
 
 - `HasRefreshTokens::refreshTokens()` morph-many relation.
 - `expired()` and `revoked()` factory states; the factory's default `refreshable_type` follows the configured user model instead of a hard-coded `App\Models\User`.
-- `refresh-token:prune` reports how many tokens it deleted.
+- `HasRefreshTokens::revokeRefreshTokens()` revokes every active token of the model and returns the count; call it when the password changes or is reset.
+- `refresh-token:prune` reports how many tokens it deleted and deletes in chunks (`--chunk`, default 1000).
 - Token timestamps follow `Carbon::setTestNow()` and `travel()`.
 - New `--tag="refresh-token"` publishes the config and the migration together (the existing `refresh-token-config` and `refresh-token-migrations` tags are unchanged).
