@@ -1343,24 +1343,7 @@ body {
   max-height: 100%;
   border-radius: 10px;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
-  cursor: none;
-}
-
-.lx-preview__lens {
-  position: fixed;
-  z-index: 1;
-  border: 3px solid #fff;
-  border-radius: 50%;
-  background-repeat: no-repeat;
-  background-color: var(--vp-c-bg);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 16px 40px rgba(0, 0, 0, 0.5);
-  pointer-events: none;
-}
-
-@media (hover: none) {
-  .lx-preview img {
-    cursor: default;
-  }
+  cursor: zoom-out;
 }
 
 .lx-preview__close {
