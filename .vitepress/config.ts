@@ -644,10 +644,6 @@ export default defineConfig({
       ],
     },
 
-    nav: [
-      { text: 'Projects', link: '/#projects' },
-    ],
-
     outline: { level: [2, 3], label: 'On this page' },
 
     editLink: {
