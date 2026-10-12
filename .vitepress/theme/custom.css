@@ -1249,13 +1249,8 @@ body {
   }
 }
 
-/* Live demo: the standalone viewer in a frame, on a page wide enough for its desktop layout. */
-.lx-demo-page .VPDoc .container,
-.lx-demo-page .VPDoc .content,
-.lx-demo-page .VPDoc .content-container {
-  max-width: none !important;
-}
-
+/* Live demo: the standalone viewer in a frame. On wide screens it breaks out of the text column, so the viewer
+   keeps its desktop layout. */
 .lx-demo {
   margin: 20px 0 10px;
   overflow: hidden;
@@ -1267,9 +1262,18 @@ body {
 .lx-demo iframe {
   display: block;
   width: 100%;
-  height: min(78vh, 760px);
+  height: min(80vh, 780px);
   min-height: 520px;
   border: 0;
+}
+
+@media (min-width: 1100px) {
+  .lx-demo {
+    position: relative;
+    left: 50%;
+    width: min(1200px, calc(100vw - var(--vp-sidebar-width) - 96px));
+    transform: translateX(-50%);
+  }
 }
 
 .lx-demo__open {
