@@ -44,6 +44,7 @@ php artisan vendor:publish --tag="laravel-schema-viewer-config"
 | `domain` | `SCHEMA_VIEWER_DOMAIN`, unset | Serves the viewer on its own domain. |
 | `middleware` | `['web']` | Route middleware. The `viewSchema` check is always added. |
 | `connections` | `null` | `null` reads the default connection and every connection a model uses. A list reads exactly those, e.g. `['mysql', 'analytics']`. |
+| `default_connection` | `SCHEMA_VIEWER_DEFAULT_CONNECTION`, `all` | What the viewer opens on: `all` puts every connection on one diagram, or name one, e.g. `mysql`. An unknown name opens on all. The HTML export keeps it. |
 | `models` | `null` | Folders scanned for models. `null` scans `app/Models`. |
 | `exclude_tables` | `[]` | Tables never shown. Wildcards allowed, e.g. `telescope_*`. |
 | `framework_tables` | Laravel's own tables, `telescope_*`, `pulse_*` | Shown and tagged, so one toggle hides them. They get no hints. |

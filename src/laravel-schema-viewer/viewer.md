@@ -5,7 +5,7 @@ description: Read the diagram, find tables, read a table's details and use the k
 
 # Using the Viewer
 
-The viewer opens with every table arranged automatically: referenced tables on the left, the tables that point at them on the right. With more than one connection it opens on **All connections**, each connection in its own labeled region.
+The viewer opens with every table arranged automatically: referenced tables on the left, the tables that point at them on the right. With more than one connection it opens on **All connections**, each connection in its own labeled region; set [`default_connection`](./installation#configuration) to open on one connection instead.
 
 ## Tables
 
