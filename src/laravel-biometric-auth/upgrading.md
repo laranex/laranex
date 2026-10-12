@@ -1,6 +1,6 @@
 ---
 title: Upgrading
-description: Upgrade Laravel Biometric Auth from v3 to v4. Padding names for phpseclib 3 and 4, single-use expiring challenges and a typed revoke failure.
+description: Upgrade Laravel Biometric Auth from v3 to v4. A new challenge_issued_at column, padding names for phpseclib 3 and 4, single-use expiring challenges, accepted key types and a per-user device limit.
 ---
 
 # Upgrading to v4 from v3
@@ -17,7 +17,15 @@ The package no longer depends on `spatie/laravel-package-tools`. The publish tag
 
 ## Database
 
-No database changes: the `biometrics` table and its columns are unchanged. If you published the migration under v3, keep it. The package detects a published `*_create_biometrics_table.php` and no longer loads its own copy; without one, the package migration now runs automatically.
+v4 adds a nullable `challenge_issued_at` column. Run the migrations after updating:
+
+```bash
+php artisan migrate
+```
+
+The package's `add_challenge_issued_at_to_biometrics_table` migration adds the column to the existing table (it does nothing when the column already exists). Pending challenges without an issue time are replaced on the next `getBiometric()` call.
+
+If you published the migration under v3, keep it. The package detects a published `*_create_biometrics_table.php` and no longer loads its own copy; without one, the package migration now runs automatically. Publishing the migrations again with `--tag="biometric-auth-migrations"` adds only the new one.
 
 ## RSA padding
 
@@ -37,9 +45,23 @@ The old constant keeps working while you stay on phpseclib 3, but it is a fatal 
 
 `verifyBiometric()` now clears the challenge after a successful verification, so a captured signature cannot be replayed. Clients must request a new challenge with `getBiometric()` after every successful verification. Failed attempts keep the challenge so the device can retry, up to `challenge.max_attempts` (5 by default, `BIOMETRIC_AUTH_CHALLENGE_MAX_ATTEMPTS`); then the challenge is cleared and the client must request a new one. Attempts are counted in the default cache store. Set the option to `0` to keep v3's unlimited retries.
 
-Challenges now expire `challenge.ttl` seconds after they are issued (300 by default, `BIOMETRIC_AUTH_CHALLENGE_TTL`). `getBiometric()` replaces an expired challenge and `verifyBiometric()` throws `BiometricChallengeNotFoundException` for one, so devices must sign within that window. The issue time is the row's `updated_at`, so no column is added. Set the option to `0` to keep v3's challenges that never expire.
+Challenges now expire `challenge.ttl` seconds after they are issued (300 by default, `BIOMETRIC_AUTH_CHALLENGE_TTL`). `getBiometric()` replaces an expired challenge and `verifyBiometric()` throws `BiometricChallengeNotFoundException` for one, so devices must sign within that window. The issue time is stored in the new `challenge_issued_at` column, so other writes to the row (which move `updated_at`) no longer affect expiry. Set the option to `0` to keep v3's challenges that never expire.
 
 `getBiometric()`, `verifyBiometric()` and `revokeBiometric()` throw `BiometricNotFoundException` for an id that is not a UUID instead of querying the database (which failed on PostgreSQL's native `uuid` column). `verifyBiometric()` decodes the signature as strict base64: a signature with characters outside the base64 alphabet returns `false`.
+
+## Accepted public keys
+
+`createBiometric()` only accepts EC P-256, EC P-384, Ed25519 and 2048 to 4096-bit RSA keys, given as strict base64 of at most 8192 characters. DSA, other curves and other RSA sizes throw `InvalidPublicKeyException`, also when a stored key is verified, so devices registered under v3 with a weaker key (for example RSA 1024 or DSA) must register again.
+
+If you use `relaxed_pkcs1` padding, switch to `pkcs1` or `pss`: it tolerates malformed signature encodings and is weaker.
+
+## Devices per user
+
+New `max_per_user` option (`BIOMETRIC_AUTH_MAX_PER_USER`, default `10`): `createBiometric()` throws the new `TooManyBiometricsException` (422) once a model has that many active biometrics. Users who already have more keep them but cannot add more until they revoke some. Set it to `0` or `null` for no limit.
+
+## Model attributes
+
+`Biometric` only mass assigns `public_key`; the owner, the challenge and the revoked flag are set by the package. `challenge`, `authenticable_id` and `authenticable_type` are now hidden from serialization, like `public_key`. If you mass assigned other attributes or read them from the model's JSON, set them with `forceFill()` or read the attributes directly.
 
 ## Revoking
 
@@ -79,4 +101,5 @@ The default code is now an HTTP status instead of `500`: `404` for `BiometricNot
 
 - `HasBiometrics::biometrics()` morph-many relation.
 - `Biometric::active()` scope.
+- `HasBiometrics::revokeAllBiometrics()` revokes every active biometric of the model and returns the count; call it on a password change or a suspected compromise.
 - The migration and the model read the table name from `biometric-auth.table`.

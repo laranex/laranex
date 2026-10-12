@@ -29,5 +29,5 @@ php artisan migrate
 | Tag | Publishes |
 |---|---|
 | `biometric-auth-config` | `config/biometric-auth.php` |
-| `biometric-auth-migrations` | `database/migrations/*_create_biometrics_table.php` |
+| `biometric-auth-migrations` | `database/migrations/*_create_biometrics_table.php` and `*_add_challenge_issued_at_to_biometrics_table.php` |
 | `biometric-auth` | Both |

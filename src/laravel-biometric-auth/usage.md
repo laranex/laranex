@@ -50,7 +50,7 @@ Biometrics are stored with the model's morph class (`getMorphClass()`), so `Rela
 
 ## Registering a biometric
 
-Store the device's base64-encoded public key (PEM or DER). Invalid keys throw `InvalidPublicKeyException`.
+Store the device's base64-encoded public key (PEM or DER). Only EC P-256, EC P-384, Ed25519 and 2048 to 4096-bit RSA keys are accepted, given as strict base64 of at most 8192 characters; anything else throws `InvalidPublicKeyException` (see [Accepted public keys](/laravel-biometric-auth/configuration#accepted-public-keys)).
 
 ```php
 $biometric = $user->createBiometric($publicKeyBase64);
@@ -58,13 +58,34 @@ $biometric = $user->createBiometric($publicKeyBase64);
 $biometric->id; // UUID the device keeps
 ```
 
+A model can have at most `max_per_user` active biometrics (10 by default, `BIOMETRIC_AUTH_MAX_PER_USER`). Once it has that many, `createBiometric()` throws `TooManyBiometricsException`; revoke one first.
+
+### Enrolling a device safely
+
+A registered key keeps working after the bearer token that enrolled it is revoked, so a stolen token alone must not be enough to enroll one. Ask for the current password (or an OTP) in the same request, tell the user a new device was added so an unexpected enrollment gets noticed, and throttle the route:
+
+```php
+Route::post('/biometrics', function (Request $request) {
+    $request->validate(['password' => ['required', 'current_password:sanctum']]);
+
+    $biometric = $request->user()->createBiometric($request->string('public_key')->toString());
+
+    // Your own notification: "A new device can now sign in to your account."
+    $request->user()->notify(new BiometricRegistered($biometric));
+
+    return ['biometric_id' => $biometric->id];
+})->middleware(['auth:sanctum', 'throttle:5,1']);
+```
+
+`BiometricRegistered` stands for a notification of your own; the package doesn't ship one.
+
 Every biometric of a model, revoked ones included, is available through the `biometrics()` morph-many relation. The `active()` scope keeps only biometrics that are not revoked:
 
 ```php
 $user->biometrics()->active()->get();
 ```
 
-The `public_key` attribute is hidden when a `Biometric` is serialized.
+`public_key`, `challenge`, `authenticable_id` and `authenticable_type` are hidden when a `Biometric` is serialized. Only `public_key` is mass assignable: the owner, the challenge and the revoked flag are set by the package.
 
 ## Issuing a challenge
 
@@ -110,6 +131,12 @@ Revoke one of the model's active biometrics so it can no longer be challenged or
 $user->revokeBiometric($biometricId);
 ```
 
+Revoke every device when the password changes or the account may be compromised. `revokeAllBiometrics()` revokes every active biometric of the model and returns how many it revoked:
+
+```php
+$revoked = $user->revokeAllBiometrics();
+```
+
 ## Exceptions
 
 All exceptions live in `Laranex\LaravelBiometricAuth\Exceptions`.
@@ -118,7 +145,8 @@ All exceptions live in `Laranex\LaravelBiometricAuth\Exceptions`.
 |---|---|---|
 | `BiometricNotFoundException` | `404` | `getBiometric()` / `verifyBiometric()` get an unknown, revoked or non-UUID biometric id, or `revokeBiometric()` gets a biometric that does not exist, is already revoked or belongs to another model |
 | `BiometricChallengeNotFoundException` | `422` | `verifyBiometric()` is called with no pending challenge: none was issued, it was consumed by a successful verification, it was cleared after too many failed attempts, or it expired |
-| `InvalidPublicKeyException` | `422` | `createBiometric()` or `verifyBiometric()` cannot load the public key |
+| `InvalidPublicKeyException` | `422` | `createBiometric()` or `verifyBiometric()` cannot load the public key, or it is not an accepted type or size |
+| `TooManyBiometricsException` | `422` | `createBiometric()` is called on a model that already has `max_per_user` active biometrics |
 
 They extend `Laranex\LaravelBiometricAuth\Exceptions\BiometricException`. The status is also the exception code (`getCode()`) and is returned by `getStatusCode()`; passing a custom 4xx/5xx code to the constructor overrides it.
 
