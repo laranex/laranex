@@ -33,12 +33,6 @@ Search matches table names, column names, models and relations. Pick a result to
 
 Drag cards anywhere. Zoom with the buttons, the mouse wheel or a pinch. The last button below the zoom controls arranges every table automatically again.
 
-## On a phone
-
-The viewer works on small screens too. The connection, Download, the line toggles and the keyboard shortcuts move into the `⋯` menu, and a table's details open in a sheet from the bottom.
-
-<Screenshot src="/laravel-schema-viewer/phone" alt="The viewer on a phone, with the search box, the menu button and the details sheet" phone />
-
 ## Tour and shortcuts
 
 The `?` button starts a short tour of every part of the viewer.

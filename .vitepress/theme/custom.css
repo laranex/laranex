@@ -1268,12 +1268,6 @@ body {
   height: auto;
 }
 
-.lx-screenshot--phone a {
-  max-width: 300px;
-  margin: 0 auto;
-  border-radius: 18px;
-}
-
 .lx-screenshot__dark,
 .dark .lx-screenshot__light {
   display: none !important;
