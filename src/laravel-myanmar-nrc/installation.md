@@ -37,4 +37,6 @@ php artisan vendor:publish --tag="laravel-myanmar-nrc-migrations"
 
 Once a migration is published, the package stops loading its own copy, so the tables are never created twice. Publishing again reuses the copies you already have. Don't publish them in an application that already ran the package migrations: the published files have new names, so `migrate` would try to create the existing tables again.
 
+The database backend caches the tables after the first lookup, and `mm-nrc:seed` clears that cache. If you change the tables yourself, run `php artisan mm-nrc:clear-cache` (see [Cache](/laravel-myanmar-nrc/configuration#cache)).
+
 The database is only needed when `db_driven` is `true` (the default). With `db_driven` set to `false`, NRCs are read from the JSON file and you can skip the migration and seeding.

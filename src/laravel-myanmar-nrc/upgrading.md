@@ -80,7 +80,13 @@ The validation message is translated for the application locale `my`. If a custo
 
 The config file is now published with `--tag="laravel-myanmar-nrc-config"` and the translations with `--tag="laravel-myanmar-nrc-lang"`. The migrations can now be published with `--tag="laravel-myanmar-nrc-migrations"`. `--tag="laravel-myanmar-nrc"` publishes all three.
 
+A new `cache` group (`enabled`, `store`, `key`, `ttl`) caches the NRC tables for the database backend. If you published the config file, add it from the package config or re-publish; without it the defaults apply (cached forever in the default store). Run `php artisan mm-nrc:clear-cache` after changing the tables yourself; `mm-nrc:seed` clears the cache for you. See [Cache](./configuration#cache).
+
 `json_file` defaults to `null` (the bundled file). The old `'nrc.json'` value still means the bundled file, which moved to `resources/data/nrc.json`.
+
+## Normalizing
+
+New `MyanmarNrc::normalize()` returns the canonical id form (`012-0284-01-123456` becomes `12-284-1-123456`). Validation still accepts zero-padded ids and surrounding whitespace, so store the normalized value instead of the raw input.
 
 ## Validation rule
 

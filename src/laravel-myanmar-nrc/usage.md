@@ -1,6 +1,6 @@
 ---
 title: Usage
-description: Validate NRC input with the MyanmarNRC rule and parse it into the readable English or Myanmar format.
+description: Validate NRC input with the MyanmarNRC rule, normalize it for storage and parse it into the readable English or Myanmar format.
 ---
 
 # Usage
@@ -69,6 +69,23 @@ $request->validate(
 );
 ```
 
+## Normalizing
+
+Validation accepts zero-padded ids and surrounding whitespace, so `012-0284-01-123456`, ` 12-284-1-123456 ` and `12-284-1-123456` all pass and all refer to the same NRC. Store the canonical form returned by `normalize()` rather than the raw input, so equal NRCs are equal strings and unique checks don't miss duplicates:
+
+```php
+use Laranex\LaravelMyanmarNRC\Facades\MyanmarNrc;
+use Laranex\LaravelMyanmarNRC\Rules\MyanmarNRC;
+
+$validated = $request->validate([
+    'nrc' => ['required', new MyanmarNRC],
+]);
+
+$user->nrc = MyanmarNrc::normalize($validated['nrc']); // "12-284-1-123456"
+```
+
+`normalize(string $nrc, ?bool $dbDriven = null): string` drops surrounding whitespace and leading zeros in the state, township and type ids. The 6-digit number keeps its zeros. It throws `InvalidNrcException` for an NRC that `isValid()` would reject.
+
 ## Parsing
 
 ```php
@@ -77,6 +94,7 @@ use Laranex\LaravelMyanmarNRC\Facades\MyanmarNrc;
 MyanmarNrc::parse('12-284-1-123456');             // "12/DAGAYA(N)123456"
 MyanmarNrc::parse('12-284-1-123456', lang: 'my');  // "၁၂/ဒဂရ(နိုင်)၁၂၃၄၅၆"
 MyanmarNrc::isValid('12-284-1-123456');           // true
+MyanmarNrc::normalize('012-0284-01-123456');      // "12-284-1-123456"
 ```
 
 `parse(string $nrc, ?bool $dbDriven = null, ?string $lang = null): string`
@@ -87,7 +105,7 @@ MyanmarNrc::isValid('12-284-1-123456');           // true
 | `$dbDriven` | config `db_driven` | Use the database (`true`) or the JSON file (`false`) |
 | `$lang` | config `locale` | `en` or `my` |
 
-`parse()` returns `State/Township(Type)Number`. `isValid(string $nrc, ?bool $dbDriven = null): bool` returns a boolean instead.
+`parse()` returns `State/Township(Type)Number`, the same for every spelling of an NRC. `isValid(string $nrc, ?bool $dbDriven = null): bool` returns a boolean instead.
 
 The facade resolves `Laranex\LaravelMyanmarNRC\MyanmarNrc`, which is bound as a singleton, so you can also inject it.
 
