@@ -9,6 +9,8 @@ description: Install Laravel Schema Viewer, open the viewer and review the confi
 composer require laranex/laravel-schema-viewer:^1.0@alpha --dev
 ```
 
+Until v1.0.0 is stable, the `^1.0@alpha` constraint is needed: a plain `composer require` looks for a stable release and finds none.
+
 The service provider registers itself. Open `/schema-viewer` in your local environment; the page loads the built viewer from the package, so there is no `npm install` and nothing to publish.
 
 Install it as a dev dependency unless your team wants the viewer on a server; see [Access](#access).
@@ -49,5 +51,6 @@ php artisan vendor:publish --tag="laravel-schema-viewer-config"
 | `models` | `null` | Folders scanned for models. `null` scans `app/Models`. |
 | `exclude_tables` | `[]` | Tables never shown. Wildcards allowed, e.g. `telescope_*`. |
 | `framework_tables` | Laravel's own tables, `telescope_*`, `pulse_*` | Shown and tagged, so one toggle hides them. They get no hints. |
+| `package_tables` | `true` | Adds the tables of installed packages that own their schema (Passport, spatie/laravel-permission, Filament Breezy) to the framework tables. |
 | `hints.ignore` | `[]` | Hint kinds, or `kind:table` pairs, you have accepted. |
 | `hints.fail_on` | `foreign_key_without_index`, `unresolved_relation`, `model_without_table` | Kinds that make `schema-viewer:check` fail. |
