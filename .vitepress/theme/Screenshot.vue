@@ -3,37 +3,13 @@ import { withBase } from 'vitepress'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 
 // A screenshot taken in both color schemes (`<src>-light.webp` and `<src>-dark.webp` in public/): the page shows the
-// one matching the site's theme. The Preview button, or a click on the image, opens it full size on the page, where a
-// loupe follows the mouse and magnifies what is under it.
+// one matching the site's theme. The Preview button, or a click on the image, opens it full size on the page.
 const props = defineProps<{ src: string; alt: string; caption?: string }>()
 
 const light = computed(() => withBase(`${props.src}-light.webp`))
 const dark = computed(() => withBase(`${props.src}-dark.webp`))
 
 const open = ref(false)
-const ZOOM = 2.5
-const LENS = 240
-const lens = ref<{ x: number; y: number; src: string; bgX: number; bgY: number; bgW: number; bgH: number } | null>(null)
-
-function magnify(event: PointerEvent): void {
-  if (event.pointerType !== 'mouse') {
-    lens.value = null
-    return
-  }
-  const img = event.currentTarget as HTMLImageElement
-  const box = img.getBoundingClientRect()
-  const x = event.clientX - box.left
-  const y = event.clientY - box.top
-  lens.value = {
-    x: event.clientX,
-    y: event.clientY,
-    src: img.currentSrc || img.src,
-    bgW: box.width * ZOOM,
-    bgH: box.height * ZOOM,
-    bgX: LENS / 2 - x * ZOOM,
-    bgY: LENS / 2 - y * ZOOM,
-  }
-}
 const closeButton = ref<HTMLButtonElement | null>(null)
 let opener: HTMLElement | null = null
 
@@ -44,7 +20,6 @@ function show(event: Event): void {
 
 function close(): void {
   open.value = false
-  lens.value = null
 }
 
 function onKey(event: KeyboardEvent): void {
@@ -94,22 +69,8 @@ onBeforeUnmount(() => {
             <path d="M4 4 L12 12 M12 4 L4 12" />
           </svg>
         </button>
-        <img class="lx-screenshot__light" :src="light" :alt="alt" @pointermove="magnify" @pointerleave="lens = null" />
-        <img class="lx-screenshot__dark" :src="dark" :alt="alt" @pointermove="magnify" @pointerleave="lens = null" />
-        <div
-          v-if="lens"
-          class="lx-preview__lens"
-          aria-hidden="true"
-          :style="{
-            width: `${LENS}px`,
-            height: `${LENS}px`,
-            left: `${lens.x - LENS / 2}px`,
-            top: `${lens.y - LENS / 2}px`,
-            backgroundImage: `url(${lens.src})`,
-            backgroundSize: `${lens.bgW}px ${lens.bgH}px`,
-            backgroundPosition: `${lens.bgX}px ${lens.bgY}px`,
-          }"
-        />
+        <img class="lx-screenshot__light" :src="light" :alt="alt" @click="close" />
+        <img class="lx-screenshot__dark" :src="dark" :alt="alt" @click="close" />
       </div>
     </Teleport>
   </figure>
