@@ -21,7 +21,7 @@ The Download menu saves the selected connection's database schema: tables, colum
 
 The server builds each file, so a large schema downloads the same as a small one.
 
-**Standalone viewer (HTML)**, below the formats, saves the whole viewer with every connection as one HTML file, the same file as [`--format=html`](#standalone-viewer). Your browser builds it from the page it is on.
+**This page as HTML**, under **Use it offline**, saves the whole viewer with every connection as one HTML file that opens in any browser, offline, the same file as [`--format=html`](#standalone-viewer). Your browser builds it from the page it is on.
 
 ## `schema-viewer:export`
 
