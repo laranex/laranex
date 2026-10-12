@@ -1,6 +1,6 @@
 ---
 title: Downloads & Commands
-description: Download the database schema as Mermaid, DBML, Markdown or JSON, and check the schema in CI.
+description: Download the database schema as Mermaid, DBML, Markdown or JSON, export the viewer as a standalone HTML file, and check the schema in CI.
 ---
 
 # Downloads & Commands
@@ -31,6 +31,20 @@ php artisan schema-viewer:export --format=json
 ```
 
 `--format=json` on the command line writes everything the viewer knows, for every connection: the tables, plus `models`, `relations`, `links` and `hints`. Use it when a script or an AI agent needs the Laravel side too.
+
+## Standalone viewer
+
+Export the whole viewer as one HTML file and host it anywhere, without the Laravel app or its API:
+
+```bash
+php artisan schema-viewer:export --format=html
+php artisan schema-viewer:export --format=html --output=build/schema-viewer
+php artisan schema-viewer:export --format=html --output=docs/schema.html
+```
+
+`--output` takes a folder, written as `index.html` (default `schema-viewer`), or a `.html` file. The file carries everything: the viewer, its fonts, every connection's tables, models, relations and hints, and the Mermaid, DBML, Markdown and JSON downloads. Open it from disk, or upload it to GitHub Pages, Netlify, an S3 bucket or any static host, for example as a CI step after migrations.
+
+It shows the schema as it was when exported, so export again after a migration. Anyone who can open the file can read the schema: host it where only your team can.
 
 ## `schema-viewer:check`
 
