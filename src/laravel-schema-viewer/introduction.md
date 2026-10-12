@@ -9,11 +9,7 @@ aside: false
 
 A sample Laravel store with three database connections (the store, billing and analytics), 53 tables, 35 models and 81 relations. Everything works as it does in your app, downloads included.
 
-<div class="lx-demo">
-  <iframe src="/laravel-schema-viewer/demo/index.html" title="Laravel Schema Viewer live demo" loading="lazy"></iframe>
-</div>
-
-<p class="lx-demo__open"><a href="/laravel-schema-viewer/demo/index.html" target="_blank" rel="noopener">Open the demo full screen →</a></p>
+<LiveDemo title="Laravel Schema Viewer live demo" />
 
 ## Why Laravel Schema Viewer
 

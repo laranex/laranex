@@ -7,7 +7,7 @@ description: Where the database and the models disagree, and how to act on each 
 
 Hints point at places where the database and the models disagree. They are informational: the Hints tab lists them, the table card shows a count, and `schema-viewer:check` can fail your CI on the kinds you choose. Framework tables never get hints.
 
-<Screenshot src="/laravel-schema-viewer/hints" alt="The Hints tab listing warnings and notes, each with a link to its table" />
+<LiveDemo title="The live demo on its Hints tab: open Ignore… under a hint for the rules that leave it out" shortcut="h" />
 
 | Kind | Meaning | Usual fix |
 |---|---|---|

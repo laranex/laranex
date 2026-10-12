@@ -12,7 +12,7 @@ Laravel Schema Viewer draws a line for every link between two tables, from two s
 
 When a foreign key and one or more relations use the same columns, they become one line.
 
-<Screenshot src="/laravel-schema-viewer/lines" alt="Relationship lines between users, roles, posts and comments, each labeled with its relation methods and kind" />
+<LiveDemo title="The live demo: click a table to follow its relationship lines" />
 
 ## Line styles
 

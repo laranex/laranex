@@ -9,7 +9,7 @@ description: Download the database schema as Mermaid, DBML, Markdown or JSON, ex
 
 The Download menu saves the selected connection's database schema: tables, columns, keys, indexes and foreign keys. The files describe the database only, without models or relations, so any tool can read them.
 
-<Screenshot src="/laravel-schema-viewer/download" alt="The Download menu with Mermaid, DBML, Markdown and JSON for the selected connection" />
+<LiveDemo title="The live demo: open Download at the top right" />
 
 | Format | File | For |
 |---|---|---|
