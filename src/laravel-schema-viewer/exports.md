@@ -32,7 +32,7 @@ php artisan schema-viewer:export --format=dbml --connection=analytics --output=d
 php artisan schema-viewer:export --format=json
 ```
 
-`--format=json` on the command line writes everything the viewer knows, for every connection: the tables, plus `models`, `relations`, `links` and `hints`. Use it when a script or an AI agent needs the Laravel side too.
+`--format=json` on the command line writes everything the viewer knows, for every connection: the tables, plus `models`, `relations`, `links` and `hints`. Each model and relation carries its `source`: the file, relative to the app's root, and the line that declares it. Use it when a script or an AI agent needs the Laravel side too.
 
 ## Standalone viewer
 
@@ -45,6 +45,8 @@ php artisan schema-viewer:export --format=html --output=docs/schema.html
 ```
 
 `--output` takes a folder, written as `index.html` (default `schema-viewer`), or a `.html` file. The file carries everything: the viewer, its fonts, every connection's tables, models, relations and hints, and the Mermaid, DBML, Markdown and JSON downloads. Open it from disk, or upload it to GitHub Pages, Netlify, an S3 bucket or any static host, for example as a CI step after migrations.
+
+**Copy link** works in the file too: a link such as `schema.html#connection=all&table=mysql:orders&focus=1` opens it on the `orders` table with focus mode on, so a pull request can point at the tables it changes. Editor links are left out, since the file may be opened anywhere.
 
 It shows the schema as it was when exported, so export again after a migration. Anyone who can open the file can read the schema: host it where only your team can.
 
