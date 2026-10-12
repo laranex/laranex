@@ -21,7 +21,7 @@ The Download menu saves the selected connection's database schema: tables, colum
 
 The server builds each file, so a large schema downloads the same as a small one.
 
-**This page as HTML**, under **Use it offline**, saves the whole viewer with every connection as one HTML file that opens in any browser, offline, the same file as [`--format=html`](#standalone-viewer). Your browser builds it from the page it is on.
+**This page as HTML**, under **Use it offline**, saves the whole viewer with every connection as one HTML file that opens in any current browser, offline, the same file as [`--format=html`](#standalone-viewer). Your browser builds it from the page it is on.
 
 ## `schema-viewer:export`
 
@@ -45,7 +45,7 @@ php artisan schema-viewer:export --format=html --output=build/schema-viewer
 php artisan schema-viewer:export --format=html --output=docs/schema.html
 ```
 
-`--output` takes a folder, written as `index.html` (default `schema-viewer`), or a `.html` file. The file carries everything: the viewer, its fonts, every connection's tables, models, relations and hints, and the Mermaid, DBML, Markdown and JSON downloads. Open it from disk, or upload it to GitHub Pages, Netlify, an S3 bucket or any static host, for example as a CI step after migrations.
+`--output` takes a folder, written as `index.html` (default `schema-viewer`), or a `.html` file. The file carries everything: the viewer, its fonts, every connection's tables, models, relations and hints, and the Mermaid, DBML, Markdown and JSON downloads. The viewer and the data are stored compressed, so a large schema stays small; the file needs a current browser (Safari 16.4 or later). Open it from disk, or upload it to GitHub Pages, Netlify, an S3 bucket or any static host, for example as a CI step after migrations.
 
 **Copy link** works in the file too: a link such as `schema.html#connection=all&table=mysql:orders&focus=1` opens it on the `orders` table with focus mode on, so a pull request can point at the tables it changes. Editor links are left out, since the file may be opened anywhere.
 

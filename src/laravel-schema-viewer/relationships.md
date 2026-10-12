@@ -31,7 +31,7 @@ Crow's feet mark the many side of a line. The label names the relation methods a
 | Relation | Drawn as |
 |---|---|
 | `belongsTo`, `hasOne`, `hasMany` | A line between the key columns, one-to-one or one-to-many |
-| `hasOne()->latestOfMany()`, or a relation with `where` conditions | The same line; the details panel lists the conditions |
+| `hasOne()->latestOfMany()`, or a relation with `where` conditions | The same line; the details panel lists the conditions, with values shown as `?` |
 | `belongsToMany` | Lines from the pivot table to both sides; the pivot model (`using()`), `withPivot()` columns and accessor (`as()`) are in the details |
 | `morphTo`, `morphOne`, `morphMany` | A polymorphic line from the id column to every model whose relation points back at it |
 | `morphToMany`, `morphedByMany` | Polymorphic many-to-many lines through the pivot table |
