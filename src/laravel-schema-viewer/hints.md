@@ -1,6 +1,7 @@
 ---
 title: Hints
 description: Where the database and the models disagree, and how to act on each hint.
+aside: false
 ---
 
 # Hints

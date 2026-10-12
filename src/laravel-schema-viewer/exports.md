@@ -1,6 +1,7 @@
 ---
 title: Downloads & Commands
 description: Download the database schema as Mermaid, DBML, Markdown or JSON, export the viewer as a standalone HTML file, and check the schema in CI.
+aside: false
 ---
 
 # Downloads & Commands
@@ -9,7 +10,7 @@ description: Download the database schema as Mermaid, DBML, Markdown or JSON, ex
 
 The Download menu saves the selected connection's database schema: tables, columns, keys, indexes and foreign keys. The files describe the database only, without models or relations, so any tool can read them.
 
-<LiveDemo title="The live demo: open Download at the top right" />
+<LiveDemo title="The live demo with its Download menu open" open="download" />
 
 | Format | File | For |
 |---|---|---|

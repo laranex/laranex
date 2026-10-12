@@ -1,6 +1,7 @@
 ---
 title: Relationships
 description: How foreign keys and Eloquent relations become lines, and what each line style means.
+aside: false
 ---
 
 # Relationships
@@ -12,7 +13,7 @@ Laravel Schema Viewer draws a line for every link between two tables, from two s
 
 When a foreign key and one or more relations use the same columns, they become one line.
 
-<LiveDemo title="The live demo: click a table to follow its relationship lines" />
+<LiveDemo title="The live demo focused on products and its neighbors: click a line or a table to follow it" hash="connection=sqlite&table=sqlite:products&focus=1" shortcut="f" />
 
 ## Line styles
 
