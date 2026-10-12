@@ -79,11 +79,15 @@ function badges(install: string, github: string): PackageBadge[] {
     ]
   }
 
+  // vendor/package, without a version constraint such as :^1.0@alpha; a pre-release constraint shows pre-releases.
+  const name = target.replace(/:.*$/, '')
+  const prerelease = /@(dev|alpha|beta|rc)\b/i.test(target) ? '&include_prereleases' : ''
+
   return [
-    { alt: 'Latest Version on Packagist', src: `https://img.shields.io/packagist/v/${target}.svg?style=flat-square`, href: `https://packagist.org/packages/${target}` },
+    { alt: 'Latest Version on Packagist', src: `https://img.shields.io/packagist/v/${name}.svg?style=flat-square${prerelease}`, href: `https://packagist.org/packages/${name}` },
     tests,
-    { alt: 'Total Downloads', src: `https://img.shields.io/packagist/dt/${target}.svg?style=flat-square`, href: `https://packagist.org/packages/${target}` },
-    { alt: 'License', src: `https://img.shields.io/packagist/l/${target}.svg?style=flat-square`, href: license },
+    { alt: 'Total Downloads', src: `https://img.shields.io/packagist/dt/${name}.svg?style=flat-square`, href: `https://packagist.org/packages/${name}` },
+    { alt: 'License', src: `https://img.shields.io/packagist/l/${name}.svg?style=flat-square`, href: license },
   ]
 }
 
