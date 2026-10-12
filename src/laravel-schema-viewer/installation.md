@@ -51,6 +51,6 @@ php artisan vendor:publish --tag="laravel-schema-viewer-config"
 | `models` | `null` | Folders scanned for models. `null` scans `app/Models`. |
 | `exclude_tables` | `[]` | Tables never shown. Wildcards allowed, e.g. `telescope_*`. |
 | `framework_tables` | Laravel's own tables, `telescope_*`, `pulse_*` | Shown and tagged, so one toggle hides them. They get no hints. |
-| `package_tables` | `true` | Adds the tables of installed packages that own their schema (Passport, spatie/laravel-permission, Filament Breezy) to the framework tables. |
-| `hints.ignore` | `[]` | Hint kinds, or `kind:table` pairs, you have accepted. |
+| `package_tables` | `true` | Tags the tables of installed packages (Passport, spatie/laravel-permission, Filament Breezy), so one toggle hides them. They still get hints. |
+| `hints.ignore` | `[]` | Rules for the hints you have accepted, such as `['connection' => 'mysql', 'table' => 'audit_logs']`; see [Ignoring hints](./hints#ignoring-hints). |
 | `hints.fail_on` | `foreign_key_without_index`, `unresolved_relation`, `model_without_table` | Kinds that make `schema-viewer:check` fail. |

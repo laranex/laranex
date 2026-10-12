@@ -24,14 +24,47 @@ Polymorphic relations and relations across connections cannot have a foreign key
 
 ## Package tables
 
-Some packages own tables that skip foreign keys by design. While Passport (`oauth_*`), spatie/laravel-permission (its five tables, renamed ones included) or Filament Breezy (`breezy_*`) is installed, their tables count as framework tables: shown, tagged and free of hints. Set `package_tables` to `false` to treat them as your own.
+Tables that a known package creates are tagged with it: Passport (`oauth_*`), spatie/laravel-permission (its five tables, renamed ones included) and Filament Breezy (`breezy_*`). The **Package tables** toggle (<kbd>P</kbd>) shows or hides them. They get hints like your own tables; ignore the ones you accept as below. Set `package_tables` to `false` to leave them untagged.
 
 ## Ignoring hints
 
-Accept a hint for good in `config/schema-viewer.php`, by kind or for one table:
+Accept a hint for good by adding a rule to `hints.ignore` in `config/schema-viewer.php`. A hint is left out when it matches **every field the rule names**; a field you leave out matches anything.
 
 ```php
 'hints' => [
-    'ignore' => ['morph_without_map', 'relation_without_foreign_key:audit_logs'],
+    'ignore' => [
+        // A kind, everywhere
+        ['kind' => 'morph_without_map'],
+
+        // A whole connection
+        ['connection' => 'legacy'],
+
+        // A whole table on one connection
+        ['connection' => 'mysql', 'table' => 'audit_logs'],
+
+        // Tables on any connection, by wildcard (here Passport's)
+        ['table' => 'oauth_*'],
+
+        // A kind on one table
+        ['connection' => 'mysql', 'table' => 'posts', 'kind' => 'relation_without_foreign_key'],
+
+        // One hint, by its columns
+        ['connection' => 'mysql', 'table' => 'comments', 'kind' => 'relation_without_foreign_key', 'columns' => 'user_id'],
+
+        // One hint, by its relation
+        ['kind' => 'unresolved_relation', 'relation' => 'App\Models\User::team'],
+    ],
 ],
 ```
+
+| Field | Matches | Wildcards |
+|---|---|---|
+| `connection` | The connection name | Yes, such as `analytics_*` |
+| `table` | The table name | Yes, such as `oauth_*` |
+| `kind` | A hint kind from the table above | No |
+| `columns` | The columns the hint is about, comma separated: `user_id` or `user_id,team_id` | No |
+| `relation` | The relation method, for hints about a relation that could not be read | No |
+
+You rarely type a rule. Under each hint, **Ignore…** in the Hints tab and in the table details lists the rules that leave it out, from only this hint to every hint of its kind, each with a Copy button. `schema-viewer:check` prints the narrowest one under each hint, and the JSON export carries all of them in each hint's `ignore`.
+
+An unknown field or kind stops `schema-viewer:check` with an error, so a typo never ignores the wrong hints.
