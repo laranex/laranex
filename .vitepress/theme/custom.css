@@ -1248,3 +1248,44 @@ body {
     transform: none;
   }
 }
+
+/* Screenshots: one image per color scheme, framed like a window. */
+.lx-screenshot {
+  margin: 20px 0 24px;
+}
+
+.lx-screenshot a {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  box-shadow: var(--lx-shadow);
+}
+
+.lx-screenshot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.lx-screenshot--phone a {
+  max-width: 300px;
+  margin: 0 auto;
+  border-radius: 18px;
+}
+
+.lx-screenshot__dark,
+.dark .lx-screenshot__light {
+  display: none !important;
+}
+
+.dark .lx-screenshot__dark {
+  display: block !important;
+}
+
+.lx-screenshot figcaption {
+  margin-top: 8px;
+  color: var(--vp-c-text-2);
+  font-size: 14px;
+  text-align: center;
+}

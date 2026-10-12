@@ -7,6 +7,8 @@ description: Where the database and the models disagree, and how to act on each 
 
 Hints point at places where the database and the models disagree. They are informational: the Hints tab lists them, the table card shows a count, and `schema-viewer:check` can fail your CI on the kinds you choose. Framework tables never get hints.
 
+<Screenshot src="/laravel-schema-viewer/hints" alt="The Hints tab listing warnings and notes, each with a link to its table" />
+
 | Kind | Meaning | Usual fix |
 |---|---|---|
 | `relation_without_foreign_key` | A relation uses columns with no foreign key, so rows can point at deleted ones | Add a foreign key in a migration, or ignore it when intended |

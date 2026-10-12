@@ -8,6 +8,8 @@ title: Introduction
 
 Laravel has no single schema file. The tables live in the database, and the relationships live in your Eloquent models. Laravel Schema Viewer reads both and draws them together, so anyone on the team can see how the data fits without reading migrations or models.
 
+<Screenshot src="/laravel-schema-viewer/overview" alt="The schema viewer showing every table of a connection, joined by labeled relationship lines" />
+
 - **Every table, with or without a model.** Tables, columns, indexes and foreign keys come straight from the database, framework tables included.
 - **Every relation your models declare.** `belongsTo`, `hasMany`, `belongsToMany` with its pivot, polymorphic relations, through relations, dynamic relations and third-party relation types. Each one is read from the object the method returns, without running a query.
 - **One line per relationship.** A foreign key and the relations that use the same columns become one edge, labeled with the methods and the kind of relationship: one-to-many, many-to-many, polymorphic, has-many-through.

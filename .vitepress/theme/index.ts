@@ -8,6 +8,7 @@ import HomePackages from './HomePackages.vue'
 import NavPackageName from './NavPackageName.vue'
 import NotFound from './NotFound.vue'
 import PackageIntroduction from './PackageIntroduction.vue'
+import Screenshot from './Screenshot.vue'
 import SequenceDiagram from './SequenceDiagram.vue'
 import './custom.css'
 
@@ -16,6 +17,7 @@ export default {
   enhanceApp({ app }: { app: any }) {
     app.component('CopyOrDownloadAsMarkdownButtons', CopyOrDownloadAsMarkdownButtons)
     app.component('PackageIntroduction', PackageIntroduction)
+    app.component('Screenshot', Screenshot)
     app.component('SequenceDiagram', SequenceDiagram)
   },
   Layout() {

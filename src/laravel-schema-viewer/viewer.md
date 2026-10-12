@@ -21,17 +21,31 @@ Each card is a table. The header shows the table name and the model that uses it
 
 Click a card to open its details: every column with its type, default and cast, the relations its model declares, the relations on other models that point at it, its indexes, and the model's settings (key, timestamps, soft deletes, fillable, hidden, appends, scopes, global scopes and observers).
 
+<Screenshot src="/laravel-schema-viewer/table" alt="The posts table selected, with its hints, columns, casts and relations in the details panel" />
+
 ## Finding a table
 
 Search matches table names, column names, models and relations. Pick a result to jump to the table. The connection picker switches between connections; a relation to a table on another connection shows as a dashed card you can click.
+
+<Screenshot src="/laravel-schema-viewer/search" alt="Searching for user lists matching tables, columns and relations" />
 
 ## Arranging
 
 Drag cards anywhere. Zoom with the buttons, the mouse wheel or a pinch. The last button below the zoom controls arranges every table automatically again.
 
+## On a phone
+
+The viewer works on small screens too. The connection, Download, the line toggles and the keyboard shortcuts move into the `⋯` menu, and a table's details open in a sheet from the bottom.
+
+<Screenshot src="/laravel-schema-viewer/phone" alt="The viewer on a phone, with the search box, the menu button and the details sheet" phone />
+
 ## Tour and shortcuts
 
-The `?` button starts a short tour of every part of the viewer. The Keyboard shortcuts button lists every key; its switch also shows each key next to its control.
+The `?` button starts a short tour of every part of the viewer.
+
+<Screenshot src="/laravel-schema-viewer/tour" alt="A step of the tour spotlighting a relationship label" />
+
+The Keyboard shortcuts button lists every key; its switch also shows each key next to its control.
 
 | Key | Action |
 |---|---|
@@ -47,3 +61,5 @@ The `?` button starts a short tour of every part of the viewer. The Keyboard sho
 | `Shift A` | Arrange tables automatically |
 | `S` | The shortcut list |
 | `?` | The tour |
+
+<Screenshot src="/laravel-schema-viewer/shortcuts" alt="The Keyboard shortcuts dialog with its switch for showing keys next to controls" />
