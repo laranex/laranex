@@ -5,7 +5,7 @@ description: Read the diagram, find tables, read a table's details and use the k
 
 # Using the Viewer
 
-The viewer opens on the default connection with every table arranged automatically: referenced tables on the left, the tables that point at them on the right.
+The viewer opens with every table arranged automatically: referenced tables on the left, the tables that point at them on the right. With more than one connection it opens on **All connections**, each connection in its own labeled region.
 
 ## Tables
 
@@ -25,7 +25,7 @@ Click a card to open its details: every column with its type, default and cast, 
 
 ## Finding a table
 
-Search matches table names, column names, models and relations. Pick a result to jump to the table. The connection picker switches between connections; a relation to a table on another connection shows as a dashed card you can click. **All connections** puts every connection on one diagram, each in its own labeled region, with relations across connections drawn as lines; search and hints then cover them all.
+Search matches table names, column names, models and relations. Pick a result to jump to the table. The connection picker switches between connections; a relation to a table on another connection shows as a dashed card you can click. **All connections**, where the viewer starts when there is more than one, puts every connection on one diagram with relations across connections drawn as lines; search and hints then cover them all.
 
 <Screenshot src="/laravel-schema-viewer/search" alt="Searching for user lists matching tables, columns and relations" />
 

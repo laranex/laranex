@@ -27,8 +27,8 @@ A sample Laravel store, opened in the viewer: three database connections, 53 tab
 
 - Click `products`: its variants, reviews, tags, images and comments, the `topReview()` that picks the highest rating, the `published` scope and soft deletes.
 - Open the Hints tab: `products.brand_id` has no foreign key, and `shipments.warehouse_id` has a foreign key that no model uses.
-- Pick **All connections** in the connection picker: the store, billing and analytics side by side, with `Customer::user()` and `Visitor::user()` drawn across to `users`.
-- Switch to `billing` alone and follow `Customer::user()` to the dashed `users` card, which opens the store connection.
+- Start on **All connections**: the store, billing and analytics side by side, with `Customer::user()` and `Visitor::user()` drawn across to `users`.
+- Pick `billing` alone in the connection picker and follow `Customer::user()` to the dashed `users` card, which opens the store connection.
 - Press `G` to hide Laravel's framework tables, or `1` to `4` to show only one kind of line.
 - Search for `invoice`, `morphTo` or a column such as `user_id`.
 - Download the `billing` connection as Mermaid or DBML, or the whole viewer as one HTML file.
