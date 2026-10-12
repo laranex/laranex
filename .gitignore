@@ -4,3 +4,5 @@
 .vitepress/cache
 .vitepress/dist
 src/.vitepress
+pnpm-lock.yaml
+pnpm-workspace.yaml
