@@ -31,7 +31,7 @@ Search matches table names, column names, models and relations. Pick a result to
 
 ## Arranging
 
-Drag cards anywhere. Zoom with the buttons, the mouse wheel or a pinch. The last button below the zoom controls arranges every table automatically again.
+Drag cards anywhere. Zoom with the buttons, or the mouse wheel. The last button below the zoom controls arranges every table automatically again.
 
 ## Tour and shortcuts
 

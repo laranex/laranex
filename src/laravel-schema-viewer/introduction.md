@@ -21,7 +21,3 @@ Open `/schema-viewer` in your local environment and the diagram is there; nothin
 ```bash
 composer require laranex/laravel-schema-viewer:^1.0@alpha --dev
 ```
-
-::: warning Alpha
-This is the first alpha. The viewer and the commands work, and the configuration may still change before v1.0.0.
-:::
