@@ -1249,6 +1249,35 @@ body {
   }
 }
 
+/* Live demo: the standalone viewer in a frame, on a page wide enough for its desktop layout. */
+.lx-demo-page .VPDoc .container,
+.lx-demo-page .VPDoc .content,
+.lx-demo-page .VPDoc .content-container {
+  max-width: none !important;
+}
+
+.lx-demo {
+  margin: 20px 0 10px;
+  overflow: hidden;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  box-shadow: var(--lx-shadow);
+}
+
+.lx-demo iframe {
+  display: block;
+  width: 100%;
+  height: min(78vh, 760px);
+  min-height: 520px;
+  border: 0;
+}
+
+.lx-demo__open {
+  margin: 0 0 24px;
+  font-weight: 600;
+  text-align: right;
+}
+
 /* Screenshots: one image per color scheme, framed like a window, with an in-page full-size preview. */
 .lx-screenshot {
   margin: 20px 0 24px;

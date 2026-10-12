@@ -16,7 +16,7 @@ Laravel has no single schema file. The tables live in the database, and the rela
 - **Hints where the two disagree.** Relations without a foreign key, foreign keys without a relation or an index, models without a table.
 - **Downloads and commands.** The database schema as Mermaid, DBML, Markdown or JSON, and a check that fails your CI on the hints you choose.
 
-Open `/schema-viewer` in your local environment and the diagram is there; nothing to configure.
+Open `/schema-viewer` in your local environment and the diagram is there; nothing to configure. Or try the [live demo](./live-demo) first.
 
 ```bash
 composer require laranex/laravel-schema-viewer:^1.0@alpha --dev

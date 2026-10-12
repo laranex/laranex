@@ -515,6 +515,7 @@ export default defineConfig({
           text: 'Laravel Schema Viewer',
           items: [
             { text: 'Introduction', link: '/laravel-schema-viewer/introduction' },
+            { text: 'Live Demo', link: '/laravel-schema-viewer/live-demo' },
             { text: 'Installation', link: '/laravel-schema-viewer/installation' },
             { text: 'Using the Viewer', link: '/laravel-schema-viewer/viewer' },
             { text: 'Relationships', link: '/laravel-schema-viewer/relationships' },
