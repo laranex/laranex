@@ -5,6 +5,16 @@ aside: false
 
 <PackageIntroduction />
 
+## Live demo
+
+A sample Laravel store with three database connections (the store, billing and analytics), 53 tables, 35 models and 81 relations. Everything works as it does in your app, downloads included.
+
+<div class="lx-demo">
+  <iframe src="/laravel-schema-viewer/demo/index.html" title="Laravel Schema Viewer live demo" loading="lazy"></iframe>
+</div>
+
+<p class="lx-demo__open"><a href="/laravel-schema-viewer/demo/index.html" target="_blank" rel="noopener">Open the demo full screen →</a></p>
+
 ## Why Laravel Schema Viewer
 
 Laravel has no single schema file. The tables live in the database, and the relationships live in your Eloquent models. Laravel Schema Viewer reads both and draws them together, so anyone on the team can see how the data fits without reading migrations or models.
@@ -21,13 +31,3 @@ Open `/schema-viewer` in your local environment and the diagram is there; nothin
 ```bash
 composer require laranex/laravel-schema-viewer:^1.0@alpha --dev
 ```
-
-## Live demo
-
-A sample Laravel store with three database connections (the store, billing and analytics), 53 tables, 35 models and 81 relations. Everything works as it does in your app, downloads included.
-
-<div class="lx-demo">
-  <iframe src="/laravel-schema-viewer/demo/index.html" title="Laravel Schema Viewer live demo" loading="lazy"></iframe>
-</div>
-
-<p class="lx-demo__open"><a href="/laravel-schema-viewer/demo/index.html" target="_blank" rel="noopener">Open the demo full screen →</a></p>
