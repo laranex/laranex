@@ -6,10 +6,8 @@ description: Install Laravel Schema Viewer, open the viewer and review the confi
 # Installation
 
 ```bash
-composer require laranex/laravel-schema-viewer:^1.0@alpha --dev
+composer require laranex/laravel-schema-viewer --dev
 ```
-
-Until v1.0.0 is stable, the `^1.0@alpha` constraint is needed: a plain `composer require` looks for a stable release and finds none.
 
 The service provider registers itself. Open `/schema-viewer` in your local environment; the page loads the built viewer from the package, so there is no `npm install` and nothing to publish.
 

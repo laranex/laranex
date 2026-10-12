@@ -27,5 +27,5 @@ Laravel has no single schema file. The tables live in the database, and the rela
 Open `/schema-viewer` in your local environment and the diagram is there; nothing to configure.
 
 ```bash
-composer require laranex/laravel-schema-viewer:^1.0@alpha --dev
+composer require laranex/laravel-schema-viewer --dev
 ```
