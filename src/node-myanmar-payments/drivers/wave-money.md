@@ -72,13 +72,13 @@ res.writeHead(302, { Location: payment.url }).end();
 
 | Field | Type | Required | Rules |
 |---|---|---|---|
-| `orderId` | `string` | Yes | Your order ID. One order can have several payment attempts |
+| `orderId` | `string` | Yes | Your order ID: letters, digits, `_` and `-` only. One order can have several payment attempts |
 | `callbackUrl` | `string` | Yes | Absolute http or https URL that Wave posts the result to. Wave may require HTTPS with a CA-issued certificate in production |
 | `returnUrl` | `string` | Yes | Absolute http or https URL Wave sends the customer back to. Not proof of payment |
 | `description` | `string` | Yes | Shown to the customer |
 | `items` | `WaveMoneyItem[]` | Yes | At least one item |
 | `amount` | `Amount \| number \| bigint` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). Unset charges the sum of the items. Wave only accepts MMK |
-| `merchantReferenceId` | `string` | No | Unique ID of this attempt. Unset or empty means a random ID |
+| `merchantReferenceId` | `string` | No | Unique ID of this attempt: letters, digits, `_` and `-` only. Unset or empty means a random ID |
 | `merchantName` | `string` | No | Business name shown on Wave's page for this payment. Unset or `null` uses the configured `merchantName`; a blank one is rejected |
 | `timeToLiveSeconds` | `number` | No | Seconds the customer has to pay this payment, a whole number greater than 0. Unset or `null` uses the configured `timeToLiveSeconds` |
 
@@ -130,6 +130,8 @@ try {
 
 `callback.orderId` falls back to `merchantReferenceId` when Wave's `orderId` is missing, null or empty.
 
+Wave hashes the values joined with no separator, so a matching `hashValue` alone doesn't pin down where one value ends and the next begins. After the hash matches, `amount` must be a decimal (e.g. `10000` or `10000.00`), at least one of `orderId` and `merchantReferenceId` must be present, and each one sent may only hold letters, digits, `_` and `-`; otherwise `handleCallback()` throws `SignatureVerificationError`. New payments are held to the same ID rules, so every callback for a payment made with this package passes them.
+
 ## Responses
 
 What Wave Money puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `undefined`. `raw` holds plain JavaScript values, with JSON numbers kept as their exact text in a `string` (`1000.50` stays `"1000.50"`).
@@ -179,6 +181,6 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 |---|---|---|
 | `initiate()` | `InvalidPaymentDataError` | `WaveMoney.validate(data)` fails. Nothing is sent and `data` is left untouched. Item errors use `items.0.amount` keys |
 | `initiate()` | `ApiError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
-| `handleCallback()` | `SignatureVerificationError` | `hashValue` doesn't match, or a hashed field holds an object or array |
+| `handleCallback()` | `SignatureVerificationError` | `hashValue` doesn't match, a hashed field holds an object or array, `amount` isn't a decimal, both `orderId` and `merchantReferenceId` are empty, or either holds anything but letters, digits, `_` and `-` |
 
 The async calls reject with these errors. `httpStatus` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`gatewayCode` is `VALIDATION_ERROR`). When Wave can't be reached, the request times out or the `signal` aborts, `initiate()` throws `ApiError` with the original error as `cause`.

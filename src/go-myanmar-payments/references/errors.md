@@ -30,7 +30,7 @@ if err != nil {
 |---|---|
 | `*InvalidPaymentDataError` | Payment data breaks the gateway's documented rules, or `ParseAmount` gets bad input. Returned before any request is sent |
 | `*APIError` | The gateway rejected the request, answered with an error (including errors sent with HTTP 200), or could not be reached |
-| `*SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification |
+| `*SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification, including one whose signed values are malformed (an AYA Pay value holding `:`, a CyberSource `signed_field_names` that doesn't sign itself or an unknown `decision`, a Wave Money amount or ID out of format) |
 | `*ConfigurationError` | A gateway setting is missing or blank, or a time setting is not a whole number greater than 0 |
 
 To match any of the four, use the interface:
@@ -64,6 +64,10 @@ Every message starts with `myanmarpayments: `, the Go convention; the rest match
 | `Err` | `error` | The underlying network error, if any; returned by `Unwrap()` |
 
 When the gateway sends an error code without a message, `Message` ends with the bracketed code, e.g. `KBZ Pay precreate failed: [ORDER_ID_USED]`. For a call that could not reach the gateway, `Message` is `Could not reach <url>: …` and `Err` is the error from the `HTTPDoer`, so `errors.Is(err, context.DeadlineExceeded)` works for timed-out calls.
+
+## ErrCallbackBodyTooLarge
+
+`NewCallbackRequestFromHTTP` reads at most `myanmarpayments.MaxCallbackBodyBytes` (64 KiB) and returns an error wrapping `myanmarpayments.ErrCallbackBodyTooLarge` for a larger body, without reading past the limit. It is a plain sentinel, not one of the four types above: test it with `errors.Is(err, myanmarpayments.ErrCallbackBodyTooLarge)` and answer `413`.
 
 ## SignatureVerificationError
 

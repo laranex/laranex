@@ -81,7 +81,7 @@ facades.Route().Post("/payments/kbz/callback", func(
 | Helper | What it does |
 |---|---|
 | `kbz.HandleCallback(request)` | Verifies the callback. Takes the SDK's `*myanmarpayments.CallbackRequest` |
-| `payments.CallbackRequestFromContext(ctx)` | Builds that request from the current Goravel request: the raw body, the headers and the query string |
+| `payments.CallbackRequestFromContext(ctx)` | Builds that request from the current Goravel request: the raw body, the headers and the query string. A body over `payments.MaxCallbackBodyBytes` (64 KiB) returns `payments.ErrCallbackBodyTooLarge` |
 | `manager.HandleCallback(gateway, request)` | The same, by gateway name, for one route that serves every gateway; see [Handling Webhooks](/goravel-myanmar-payments/webhooks#route-and-controller) |
 | `manager.Gateway(name)` | The gateway for `kbz-pay`, `wave-money`, `aya-pay`, `yoma-mmqr` or `cyber-source` (`payments.GatewayNames()` lists them), as a `payments.CallbackHandler`. An unknown name returns an error wrapping `payments.ErrUnknownGateway` |
 | `payments.Acknowledge(ctx, callback)` | The response the gateway expects, written as the Goravel response. With a nil callback, an empty 200 |
@@ -98,10 +98,24 @@ Signatures are computed over the exact bytes the gateway sent, so always build t
 
 A body is read as JSON only when it is a single JSON object; any other body is read as a urlencoded form, skipping a malformed pair.
 
+### Body Size Limit
+
+Gateway callbacks are a few kilobytes at most. `CallbackRequestFromContext` reads at most `payments.MaxCallbackBodyBytes` (64 KiB) and returns `payments.ErrCallbackBodyTooLarge` for a larger body, or a larger form rebuilt from parsed fields; answer it with `413`:
+
+```go
+request, err := payments.CallbackRequestFromContext(ctx)
+if errors.Is(err, payments.ErrCallbackBodyTooLarge) {
+	return ctx.Response().String(http.StatusRequestEntityTooLarge, "too large")
+}
+```
+
+Goravel parses form bodies before your handler runs, so this check can't stop a large form from being read. Keep a body size limit on your server or in middleware as well.
+
 ## Rules
 
 - **Verify, then trust.** A callback that fails verification returns a `*myanmarpayments.SignatureVerificationError`, and so does one whose signed or hashed field holds an object or array instead of a single value, since no gateway signs nested values. Never act on its payload; it carries the unverified data in `Raw` for logging only.
-- **Check the amount.** Compare `callback.Amount` (as the gateway sent it, a string) with your order before fulfilling. A gateway may format it differently from your order (`10000` or `10000.00`); `amount.Equals(callback.Amount)`, with `amount` parsed from your order by `myanmarpayments.ParseAmount()`, compares decimal strings exactly.
+- **Check the amount.** Compare `callback.Amount` (as the gateway sent it, a string) with your order before fulfilling. A gateway may format it differently from your order (`10000` or `10000.00`); `amount.Equals(callback.Amount)`, with `amount` parsed from your order by `myanmarpayments.ParseAmount()`, compares decimal strings exactly. Yoma MMQR callbacks carry no amount: confirm those with [`Status()`](/goravel-myanmar-payments/drivers/yoma-mmqr#status-checks).
+- **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Money), the package also rejects values that could be re-split into other fields. See each driver's Handling Callbacks section.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 - **Acknowledge.** `payments.Acknowledge(ctx, callback)` returns the response the gateway expects, e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
 

@@ -30,7 +30,7 @@ Returned by `$aya->initiate()` and `$cs->initiate()`.
 | `action` | `string` | The gateway URL the form posts to |
 | `fields` | `array<string, string>` | The signed hidden fields, name => value, in order. Post them unchanged |
 | `enctype` | `string` | The encoding the gateway expects; `application/x-www-form-urlencoded` unless the gateway needs another (AYA: `multipart/form-data`) |
-| `toHtml()` | `string` | A complete, escaped page that submits the form on load |
+| `toHtml(?string $nonce = null)` | `string` | A complete, escaped page that submits the form on load. Pass your Content-Security-Policy nonce to add it to the inline `<script>` |
 | `field($name)` | `?string` | One field's value |
 | `values()` | `array<string, string>` | The fields as an array |
 | `autoSubmitUrl` | `?string` | Link to a page that renders the form. `null` unless set with `withAutoSubmitUrl()` |

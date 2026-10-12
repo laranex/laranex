@@ -70,7 +70,7 @@ The module works with whatever is registered:
 | `fetch` (global, or the `fetch` / `httpClient` option) | Gateway calls, so a fake `fetch` works in tests | Always available on Node.js 20+ |
 | `@nestjs/cache-manager` | Sharing Yoma MMQR access tokens (Redis and so on) | An in-memory cache per process |
 | `@nestjs/config` | `forRootAsync({ inject: [ConfigService], useFactory: (config) => ({ env: config }) })` | `process.env` or a plain record |
-| `formLink.secret`, `MYANMAR_PAYMENTS_FORM_KEY` or `APP_KEY` | Encrypting auto-submit form links | `autoSubmitUrl()` throws a `ConfigurationError` |
+| `formLink.secret`, `MYANMAR_PAYMENTS_FORM_KEY` or `APP_KEY` (at least 32 bytes) | Encrypting auto-submit form links | `autoSubmitUrl()` throws a `ConfigurationError` |
 | Nest's router | The auto-submit form route | Set `formRoute.enabled` to `false` and serve `toHtml()` yourself |
 
 ## What It Provides

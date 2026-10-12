@@ -97,7 +97,7 @@ Signatures are checked against what the gateway actually sent, so build the requ
 
 | Constructor | Use when |
 |---|---|
-| `myanmarpayments.NewCallbackRequestFromHTTP(r)` | Every framework that exposes an `*http.Request`: reads the body once and keeps the headers and query. The body of `r` is restored, so it can still be read |
+| `myanmarpayments.NewCallbackRequestFromHTTP(r)` | Every framework that exposes an `*http.Request`: reads the body once and keeps the headers and query. The body of `r` is restored, so it can still be read. A body over `MaxCallbackBodyBytes` (64 KiB) returns an error wrapping `ErrCallbackBodyTooLarge` |
 | `myanmarpayments.NewCallbackRequest(body, header, query)` | Any other server: pass the raw body bytes, an `http.Header` and `url.Values`. `nil` header and query are allowed |
 | `myanmarpayments.NewCallbackRequestFromJSON(payload, header)` | Replaying a payload you stored as decoded JSON, e.g. from a queue or a failed-callback table |
 
@@ -120,7 +120,9 @@ Signatures are checked against what the gateway actually sent, so build the requ
 ## Rules
 
 - **Verify, then trust.** A callback that fails verification returns `*myanmarpayments.SignatureVerificationError`, and so does one whose signed or hashed field holds an object or array instead of a single value, since no gateway signs nested values. Never act on its payload; `Raw` carries the unverified data for logging only.
-- **Check the amount.** Compare `callback.Amount` (the exact text the gateway sent) with your order before fulfilling, e.g. with `Amount.Equals`.
+- **Check the amount.** Compare `callback.Amount` (the exact text the gateway sent) with your order before fulfilling, e.g. with `Amount.Equals`. Yoma MMQR callbacks carry no amount: confirm those with [`Status`](/go-myanmar-payments/drivers/yoma-mmqr#status-checks).
+- **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Money), the package also rejects values that could be re-split into other fields. See each driver's Handling Callbacks section.
+- **Bound the body.** `NewCallbackRequestFromHTTP` reads at most 64 KiB (`myanmarpayments.MaxCallbackBodyBytes`); a larger body returns an error wrapping `myanmarpayments.ErrCallbackBodyTooLarge`, so check `errors.Is(err, myanmarpayments.ErrCallbackBodyTooLarge)` and answer `413`.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 - **Acknowledge.** `callback.Acknowledgement` holds the response the gateway expects (`Status`, `Body`, `Headers`), e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
 

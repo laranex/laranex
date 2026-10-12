@@ -119,6 +119,8 @@ html := []byte(form.HTML())
 return ctx.Response().Data(http.StatusOK, "text/html; charset=utf-8", html)
 ```
 
+Under a Content-Security-Policy that allows scripts by nonce (`script-src 'nonce-…'`), use `form.HTMLWithNonce(nonce)`, which renders `<script nonce="…">`. The package's own form route doesn't add a nonce, so render the page yourself when your policy needs one.
+
 ```html
 <form id="payment-form" method="POST" action="{{ .Action }}"
       enctype="{{ .Enctype }}">

@@ -140,6 +140,8 @@ facades.Route().Post("/payments/cybersource/callback", func(
 
 Only signed fields are trusted: `decision` and `req_reference_number` must be listed in `signed_field_names`, `transaction_id` and the amount are read only when they are signed, and `Raw` keeps only the signed fields plus `signature`. An unsigned extra field, such as `decision=ACCEPT` added to a re-posted checkout form, can't change the result.
 
+The signed text is `name=value` pairs joined with `,`, and a signed value (a billing name, say) may contain both, so `signed_field_names` itself is checked too: it must list `signed_field_names`, and no name may be empty, repeated or contain `=`. `decision` must be `ACCEPT`, `DECLINE`, `REVIEW`, `ERROR` or `CANCEL` (any case); an unknown decision fails verification instead of returning `StatusUnknown`.
+
 ## Responses
 
 What CyberSource puts in each field. See [Results](/goravel-myanmar-payments/references/results) and [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for the full types. CyberSource posts form fields, so every `Raw` value is a `string`, exactly as sent.
@@ -153,6 +155,7 @@ What CyberSource puts in each field. See [Results](/goravel-myanmar-payments/ref
 | `Fields` | The signed fields below, in this order. Post them unchanged |
 | `Enctype` | `application/x-www-form-urlencoded` |
 | `HTML()` | A full HTML page that posts `Fields` to `Action` on load |
+| `HTMLWithNonce(nonce)` | The same page with `nonce` on its inline script, for a Content-Security-Policy |
 
 `payments.AutoSubmitURL(form)` returns the encrypted link to the `myanmar-payments.form` route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. It expires after `form_route.ttl_minutes`. With `form_route.enabled` set to `false` it returns `payments.ErrFormRouteDisabled`.
 
@@ -199,13 +202,14 @@ What CyberSource puts in each field. See [Results](/goravel-myanmar-payments/ref
 | `REVIEW` | `StatusPending` |
 | `DECLINE`, `ERROR` | `StatusFailed` |
 | `CANCEL` | `StatusCanceled` |
-| anything else | `StatusUnknown` |
+
+Any other `decision` returns a `*SignatureVerificationError`, so a verified callback never has `StatusUnknown`.
 
 ## Errors
 
 | Call | Returns | When |
 |---|---|---|
 | `Initiate()` | `*InvalidPaymentDataError` | A value breaks the rules above. Nothing is signed |
-| `HandleCallback()` | `*SignatureVerificationError` | `signature` doesn't match, a field listed in `signed_field_names` is missing, or `decision` or `req_reference_number` isn't signed |
+| `HandleCallback()` | `*SignatureVerificationError` | `signature` doesn't match, a field listed in `signed_field_names` is missing, `decision` or `req_reference_number` isn't signed, `signed_field_names` doesn't list itself or has an empty, repeated or `=`-containing name, or `decision` isn't one of the five above |
 
 CyberSource makes no HTTP calls, so nothing returns an `*APIError`.

@@ -88,6 +88,8 @@ def aya_checkout(request):
     return HttpResponse(payment.to_html())
 ```
 
+Under a Content Security Policy that allows scripts by nonce (`script-src 'nonce-…'`), pass the nonce so the inline script runs: `payment.to_html(nonce)` (or `to_html(nonce=nonce)`) renders `<script nonce="…">`. Send the page with `Referrer-Policy: strict-origin` if you serve it from a URL that holds anything secret, so the gateway only sees your origin.
+
 To build the form yourself, use `action`, `fields` (a tuple of `FormField(name, value)`) and `enctype` with your template engine, which escapes every value:
 
 ```html

@@ -31,10 +31,12 @@ try {
 |---|---|
 | `InvalidPaymentDataError` | Payment data breaks the gateway's documented rules, or `Amount.kyat` / `Amount.parse` / `Amount.from` get bad input. Thrown before any request is sent |
 | `ApiError` | The gateway rejected the request, answered with an error (including errors sent with HTTP 200), or could not be reached |
-| `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification |
+| `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification, including one whose signed values are malformed (an AYA Pay value holding `:`, a CyberSource `signed_field_names` that doesn't sign itself or an unknown `decision`, a Wave Money amount or ID out of format) |
 | `ConfigurationError` | A gateway setting is missing or blank, or a time setting is not a whole number greater than 0 |
 
 Each error's `name` is its class name, e.g. `ApiError`.
+
+`CallbackRequest.fromNodeRequest()` and `fromWebRequest()` throw a plain `PaymentError` when the body is larger than `maxBodyBytes` (64 KiB by default); see [Body Size Limit](/node-myanmar-payments/callbacks#body-size-limit).
 
 ## InvalidPaymentDataError
 

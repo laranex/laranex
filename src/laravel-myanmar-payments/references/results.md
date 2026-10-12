@@ -32,7 +32,7 @@ Returned by `ayaPay()->initiate()` and `cyberSource()->initiate()`.
 | `values()` | `array<string, string>` | The fields as an array, e.g. for your own template |
 | `autoSubmitUrl` | `?string` | Link to the package's auto-submitting page. `null` when the form route is disabled |
 | `withAutoSubmitUrl($url)` | `FormPayment` | A copy with `autoSubmitUrl` set |
-| `toHtml()` | `string` | A full HTML page that posts the form on load |
+| `toHtml(?string $nonce = null)` | `string` | A full HTML page that posts the form on load. Pass your Content-Security-Policy nonce to add it to the inline `<script>` |
 
 ## QrPayment
 

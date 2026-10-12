@@ -89,13 +89,15 @@ return redirect($payment->autoSubmitUrl);
 
 | Parameter | Type | Required | Rules |
 |---|---|---|---|
-| `orderId` | `string` | Yes | Unique, 6 to 40 characters (`merchOrderId`) |
+| `orderId` | `string` | Yes | Unique, 6 to 40 characters (`merchOrderId`), no `:` |
 | `amount` | `Amount\|int` | Yes | Whole kyat, greater than 0, e.g. `10000` or `Amount::kyat(10000)`. AYA documents no decimals and only accepts MMK (`104`) |
 | `channel` | `string` | Yes | A key from `services()` |
 | `method` | `AyaPayMethod` | Yes | A method the channel supports |
 | `returnUrl` | `?string` | No | Absolute http or https URL. `null` uses the URL registered with AYA |
-| `description` | `?string` | No | Shown to the customer |
-| `userRefs` | `list<string>` | No | Up to 5 of your own values, echoed back in the callback |
+| `description` | `?string` | No | Shown to the customer, no `:` |
+| `userRefs` | `list<string>` | No | Up to 5 of your own values, echoed back in the callback, none containing `:` |
+
+AYA joins the signed values with `:`, so `orderId`, `description` and `userRefs` can't contain one.
 
 ### Form Encoding
 
@@ -128,6 +130,16 @@ Route::post('/payments/aya/callback', function (Request $request) {
 ```
 
 AYA signs only the fields present in its payload (wallet payments leave out the card fields); the package verifies them in the order the specification lists.
+
+Because AYA joins the signed values with `:`, a matching `checkSum` alone could let a value be re-split into other fields. A payload is therefore only accepted when, besides the checksum:
+
+- no signed value contains `:`, except `dateTime`, which must have the form `YYYY-MM-DD HH:MM:SS`;
+- `merchOrderId` and `tranId` are present;
+- `amount` is a decimal, e.g. `10000` or `10000.00`;
+- the currency code is `104` (MMK);
+- `statusCode` is two digits.
+
+Anything else throws `SignatureVerificationException`. The same checks apply to the return page and to `status()`.
 
 ## The Return Page
 
@@ -194,7 +206,7 @@ Entries AYA sends without a `key` are skipped.
 | `fields` | The signed fields below. Post them unchanged |
 | `enctype` | `multipart/form-data` |
 | `autoSubmitUrl` | Encrypted link to the `myanmar-payments.form` route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. Expires after `form_route.ttl_minutes`. `null` when `form_route.enabled` is `false` |
-| `toHtml()` | A full HTML page that posts `fields` to `action` on load |
+| `toHtml(?string $nonce = null)` | A full HTML page that posts `fields` to `action` on load; `$nonce` is added to its inline script |
 
 `fields`, in the order AYA signs them:
 
@@ -218,7 +230,7 @@ Entries AYA sends without a `key` are skipped.
 
 | Property | AYA Pay value |
 |---|---|
-| `orderId` | AYA `merchOrderId`, falling back to the `orderId` you passed. Always set |
+| `orderId` | AYA `merchOrderId`. Always set: an enquiry payload without it fails verification |
 | `status` | `statusCode` mapped, see [Statuses](#statuses) |
 | `gatewayStatus` | AYA `statusCode`, trimmed, e.g. `00` |
 | `gatewayReference` | AYA `tranId` |
@@ -264,7 +276,7 @@ The same values as [`handleCallback()`](#handlecallback-response), read from the
 | `new AyaPayPaymentData(...)` | `InvalidPaymentDataException` | A value breaks the rules above. Nothing is signed |
 | `services()` | `ApiException` | AYA answers with an HTTP error or a `status` other than `00` |
 | `status()` | `ApiException` | AYA answers with an HTTP error or a `status` other than `00`, e.g. `20` Transaction not found |
-| `status()` | `SignatureVerificationException` | The enquiry payload's `checkSum` doesn't match |
-| `handleCallback()`, `verifyRedirect()` | `SignatureVerificationException` | `payload` is missing or not base64 JSON, a signed field holds an object or array, or `checkSum` doesn't match |
+| `status()` | `SignatureVerificationException` | The enquiry payload's `checkSum` doesn't match, or the payload is malformed (see [Handling Callbacks](#handling-callbacks)) |
+| `handleCallback()`, `verifyRedirect()` | `SignatureVerificationException` | `payload` is missing or not base64 JSON, a signed field holds an object or array, `checkSum` doesn't match, or a signed value breaks the rules in [Handling Callbacks](#handling-callbacks) (a `:` outside `dateTime`, a missing `merchOrderId` or `tranId`, a non-decimal `amount`, a currency other than `104`, a `statusCode` that isn't two digits) |
 
 `ApiException` carries AYA's `status` (e.g. `20` Transaction not found, `09` Duplicate order ID) in `gatewayCode` and its `message` in `gatewayMessage`. When AYA can't be reached, the calls throw `ApiException` with `httpStatus` `0`.

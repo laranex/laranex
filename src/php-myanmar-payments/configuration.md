@@ -275,4 +275,8 @@ $cache = new Psr16Cache(new RedisAdapter(
 $yoma = new YomaMmqr(YomaMmqrConfig::fromEnv(), null, $cache);
 ```
 
-The default is an in-memory `ArrayCache` that only lives for the current PHP process, so with PHP-FPM every request fetches a new token. Pass a shared cache (Redis, APCu, filesystem) in production. Pass `cache` to `MyanmarPayments` to share one cache with the Yoma gateway it builds. The token is stored under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>`, the same key in every Laranex SDK, so services in different languages can share one cache. `$yoma->forgetToken()` drops a cached token, e.g. after rotating the client secret.
+::: warning A shared cache is required in production
+The default is an in-memory `ArrayCache` that only lives for the current PHP process, so with PHP-FPM or CGI every request fetches a new token: slower, and it may hit Yoma's token rate limits. Pass a shared cache (Redis, APCu, filesystem, your framework's cache) in production, with `new YomaMmqr($config, $client, $cache)` or `MyanmarPayments::fromEnv(cache: $cache)`. Long-running workers keep the token for their own lifetime, but several workers or servers should still share one cache.
+:::
+
+ Pass `cache` to `MyanmarPayments` to share one cache with the Yoma gateway it builds. The token is stored under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>`, the same key in every Laranex SDK, so services in different languages can share one cache. `$yoma->forgetToken()` drops a cached token, e.g. after rotating the client secret.

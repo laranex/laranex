@@ -255,7 +255,7 @@ Gateway calls go through Goravel's HTTP client, so `Fake()` intercepts them in t
 },
 ```
 
-AYA Pay and CyberSource need the customer's browser to POST a signed form. The package registers a `GET /myanmar-payments/form` route (named `myanmar-payments.form`) that renders that form and submits it, and `payments.AutoSubmitURL(form)` returns an encrypted link to it. Links expire after `ttl_minutes`; an invalid or expired link answers `410 Gone`. The page is sent with `Cache-Control: no-store`.
+AYA Pay and CyberSource need the customer's browser to POST a signed form. The package registers a `GET /myanmar-payments/form` route (named `myanmar-payments.form`) that renders that form and submits it, and `payments.AutoSubmitURL(form)` returns an encrypted link to it. Links expire after `ttl_minutes`; an invalid or expired link answers `410 Gone`. The page is sent with `Cache-Control: no-store` and `Referrer-Policy: strict-origin`, so the gateway sees only your origin, never the encrypted link. Its inline script carries no Content-Security-Policy nonce; under a nonce-based policy, render the form yourself with `form.HTMLWithNonce(nonce)` (see [Form Payments](/goravel-myanmar-payments/payment-flows#form-payments)).
 
 | Key | Meaning |
 |---|---|

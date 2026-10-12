@@ -88,6 +88,8 @@ To render the form yourself, for example with your own loading state, return `to
 return response($payment->toHtml());
 ```
 
+Under a Content-Security-Policy that allows scripts by nonce, pass it so the inline script runs: `$payment->toHtml(Vite::cspNonce())` renders `<script nonce="…">`.
+
 ```blade
 <form id="payment-form" method="POST" action="{{ $payment->action }}"
       enctype="{{ $payment->enctype }}">

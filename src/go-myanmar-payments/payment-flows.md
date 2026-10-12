@@ -89,6 +89,8 @@ func ayaCheckout(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
+Under a Content-Security-Policy that allows scripts by nonce (`script-src 'nonce-…'`), write `payment.HTMLWithNonce(nonce)` instead: it renders `<script nonce="…">`. Send the page with `Referrer-Policy: strict-origin` if you serve it from a URL that holds anything secret, so the gateway only sees your origin.
+
 To build the form yourself, use `Action`, `Fields` (an ordered `[]FormField`) and `Enctype` with `html/template`, which escapes every value:
 
 ```go

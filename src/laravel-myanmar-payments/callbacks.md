@@ -65,7 +65,8 @@ Signatures are computed over the exact bytes the gateway sent; the package reads
 ## Rules
 
 - **Verify, then trust.** A callback that fails verification throws `SignatureVerificationException`, and so does one whose signed or hashed field holds an object or array instead of a single value, since no gateway signs nested values. Never act on its payload; it carries the unverified data in `$e->raw` for logging only.
-- **Check the amount.** Compare `$callback->amount` (as the gateway sent it, a string) with your order before fulfilling. A gateway may format it differently from your order (`10000` or `10000.00`); `Amount::parse($order->amount)->equals($callback->amount)` compares decimal strings exactly.
+- **Check the amount.** Compare `$callback->amount` (as the gateway sent it, a string) with your order before fulfilling. A gateway may format it differently from your order (`10000` or `10000.00`); `Amount::parse($order->amount)->equals($callback->amount)` compares decimal strings exactly. Yoma MMQR callbacks carry no amount: confirm those with [`status()`](/laravel-myanmar-payments/drivers/yoma-mmqr#status-checks).
+- **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Money), the package also rejects values that could be re-split into other fields. See each driver's Handling Callbacks section.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 - **Acknowledge.** `MyanmarPayments::acknowledge($callback)` returns the response the gateway expects, e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
 

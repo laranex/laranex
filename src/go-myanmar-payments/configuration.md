@@ -325,4 +325,4 @@ func NewYoma(client *redis.Client) (*yomammqr.Gateway, error) {
 }
 ```
 
-`yoma.ForgetToken()` drops a cached token, e.g. after rotating the client secret.
+`yoma.ForgetToken()` drops a cached token, e.g. after rotating the client secret. A token request already in flight when you call it is not cached, so later calls fetch a new token.

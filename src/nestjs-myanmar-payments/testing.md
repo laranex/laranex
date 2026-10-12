@@ -129,7 +129,7 @@ Code that takes the callback as an argument can be called with it directly, e.g.
 
 ## Following Form Links
 
-`autoSubmitUrl()` points at the module's form route, so a test can follow it. It needs a secret and a lifetime: put `MYANMAR_PAYMENTS_FORM_KEY` and `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` in the test `env` (or `formLink: { secret, ttlMinutes }`).
+`autoSubmitUrl()` points at the module's form route, so a test can follow it. It needs a secret and a lifetime: put `MYANMAR_PAYMENTS_FORM_KEY` (at least 32 bytes) and `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` in the test `env` (or `formLink: { secret, ttlMinutes }`).
 
 ```ts
 const payment = payments.ayaPay().initiate(data);

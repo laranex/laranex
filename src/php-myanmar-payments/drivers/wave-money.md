@@ -73,13 +73,13 @@ exit;
 
 | Parameter | Type | Required | Rules |
 |---|---|---|---|
-| `orderId` | `string` | Yes | Your order ID. One order can have several payment attempts |
+| `orderId` | `string` | Yes | Your order ID: letters, digits, `_` and `-` only. One order can have several payment attempts |
 | `callbackUrl` | `string` | Yes | Absolute http or https URL that Wave posts the result to. Wave may require HTTPS with a CA-issued certificate in production |
 | `returnUrl` | `string` | Yes | Absolute http or https URL Wave sends the customer back to. Not proof of payment |
 | `description` | `string` | Yes | Shown to the customer |
 | `items` | `list<WaveMoneyItem>` | Yes | At least one item |
 | `amount` | `Amount\|int\|null` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). `null` charges the sum of the items. Wave only accepts MMK |
-| `merchantReferenceId` | `?string` | No | Unique ID of this attempt. `null` or empty means a random ID |
+| `merchantReferenceId` | `?string` | No | Unique ID of this attempt: letters, digits, `_` and `-` only. `null` or empty means a random ID |
 | `merchantName` | `?string` | No | Business name shown on Wave's page for this payment. `null` uses `WaveMoneyConfig`'s `merchantName`; a blank one is rejected |
 | `timeToLiveSeconds` | `?int` | No | Seconds the customer has to pay this payment, greater than 0. `null` uses `WaveMoneyConfig`'s `timeToLiveSeconds` |
 
@@ -133,6 +133,8 @@ $callback->acknowledgement->send();
 
 `$callback->orderId` falls back to `merchantReferenceId` when Wave's `orderId` is missing, null or empty.
 
+Wave hashes the values joined with no separator, so a matching `hashValue` alone doesn't pin down where one value ends and the next begins. After the hash matches, `amount` must be a decimal (e.g. `10000` or `10000.00`) and `orderId` and `merchantReferenceId`, when sent, may only hold letters, digits, `_` and `-`; otherwise `handleCallback()` throws `SignatureVerificationException`. New payments are held to the same ID rules, so every callback for a payment made with this package passes them.
+
 ## Responses
 
 What Wave Money puts in each property. See [Results](/php-myanmar-payments/references/results) and [PaymentCallback & Status](/php-myanmar-payments/references/payment-callback) for the full classes. A property the gateway didn't send is `null`. `raw` holds plain PHP values (JSON numbers stay `string`s with their exact text), while the typed properties such as `amount` keep the exact text Wave sent.
@@ -183,6 +185,6 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 | `new WaveMoneyItem(...)` | `InvalidPaymentDataException` | Its `amount` is a negative `int` |
 | `new WaveMoneyPaymentData(...)` | `InvalidPaymentDataException` | A value breaks the rules above. Nothing is sent. Item errors use `items.0.name` and `items.0.amount` keys |
 | `initiate()` | `ApiException` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
-| `handleCallback()` | `SignatureVerificationException` | `hashValue` doesn't match, or a hashed field holds an object or array |
+| `handleCallback()` | `SignatureVerificationException` | `hashValue` doesn't match, a hashed field holds an object or array, `amount` isn't a decimal, or `orderId` or `merchantReferenceId` holds anything but letters, digits, `_` and `-` |
 
 `httpStatus` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`gatewayCode` is `VALIDATION_ERROR`). When Wave can't be reached, `initiate()` throws `ApiException` with `httpStatus` `0` and the original error as `getPrevious()`.

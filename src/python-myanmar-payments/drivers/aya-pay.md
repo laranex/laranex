@@ -102,13 +102,15 @@ def aya_checkout(request, order_id: int):
 
 | Field | Type | Required | Rules |
 |---|---|---|---|
-| `order_id` | `str` | Yes | Unique, 6 to 40 characters (`merchOrderId`) |
+| `order_id` | `str` | Yes | Unique, 6 to 40 characters (`merchOrderId`), no `:` |
 | `amount` | `Amount \| int \| str \| Decimal` | Yes | Whole kyat, greater than 0, e.g. `10000` or `Amount.kyat(10000)`. AYA documents no decimals and only accepts MMK (`104`) |
 | `channel` | `str` | Yes | A key from `services()` |
 | `method` | `AyaPayMethod` | Yes | `AyaPayMethod.WEB`, `.QR` or `.NOTI` (or the strings `"WEB"`, `"QR"`, `"NOTI"`) |
 | `return_url` | `str` | No | Absolute http or https URL. Unset uses the URL registered with AYA |
-| `description` | `str` | No | Shown to the customer |
-| `user_refs` | `Sequence[str]` | No | Up to 5 of your own values, as a `list` or `tuple`, echoed back in the callback |
+| `description` | `str` | No | Shown to the customer, no `:` |
+| `user_refs` | `Sequence[str]` | No | Up to 5 of your own values, as a `list` or `tuple`, echoed back in the callback, none containing `:` |
+
+AYA joins the signed values with `:`, so `order_id`, `description` and `user_refs` can't contain one (`The order_id field must not contain a colon (:).`).
 
 ### Form Encoding
 
@@ -147,6 +149,16 @@ def aya_callback(request):
 ```
 
 AYA signs only the fields present in its payload (wallet payments leave out the card fields); the package verifies them in the order the specification lists.
+
+Because AYA joins the signed values with `:`, a matching `checkSum` alone could let a value be re-split into other fields. A payload is therefore only accepted when, besides the checksum:
+
+- no signed value contains `:`, except `dateTime`, which must have the form `YYYY-MM-DD HH:MM:SS`;
+- `merchOrderId` and `tranId` are present;
+- `amount` is a decimal, e.g. `10000` or `10000.00`;
+- the currency code is `104` (MMK);
+- `statusCode` is two digits.
+
+Anything else raises `SignatureVerificationError`. The same checks apply to the return page and to `status()`.
 
 ## The Return Page
 
@@ -216,7 +228,7 @@ Entries AYA sends without a `key` are skipped.
 | `action` | `{base_url}/v1/payment/request`, e.g. `https://pgw.ayainnovation.com/v1/payment/request` |
 | `fields` | The signed fields below, in signing order. Post them unchanged |
 | `enctype` | `multipart/form-data` |
-| `to_html()` | A full HTML page that posts `fields` to `action` on load |
+| `to_html(nonce=None)` | A full HTML page that posts `fields` to `action` on load; `nonce` is added to its inline script |
 
 | Form field | Value |
 |---|---|
@@ -238,7 +250,7 @@ Entries AYA sends without a `key` are skipped.
 
 | Field | AYA Pay value |
 |---|---|
-| `order_id` | AYA `merchOrderId`, falling back to the `order_id` you passed. Always set |
+| `order_id` | AYA `merchOrderId`. Always set: an enquiry payload without it fails verification |
 | `status` | `statusCode` mapped, see [Statuses](#statuses) |
 | `gateway_status` | AYA `statusCode`, trimmed, e.g. `00` |
 | `gateway_reference` | AYA `tranId` |
@@ -280,7 +292,7 @@ The same values as [`handle_callback()`](#handle-callback-response), read from t
 | `initiate()` | `InvalidPaymentDataError` | `AyaPay.validate(data)` fails. Nothing is signed |
 | `services()` | `ApiError` | AYA answers with an HTTP error or a `status` other than `00` |
 | `status()` | `ApiError` | AYA answers with an HTTP error or a `status` other than `00`, e.g. `20` Transaction not found |
-| `status()` | `SignatureVerificationError` | The enquiry payload's `checkSum` doesn't match |
-| `handle_callback()`, `verify_redirect()` | `SignatureVerificationError` | `payload` is missing or not base64 JSON, a signed field holds an object or a list, or `checkSum` doesn't match |
+| `status()` | `SignatureVerificationError` | The enquiry payload's `checkSum` doesn't match, or the payload is malformed (see [Handling Callbacks](#handling-callbacks)) |
+| `handle_callback()`, `verify_redirect()` | `SignatureVerificationError` | `payload` is missing or not base64 JSON, a signed field holds an object or a list, `checkSum` doesn't match, or a signed value breaks the rules in [Handling Callbacks](#handling-callbacks) (a `:` outside `dateTime`, a missing `merchOrderId` or `tranId`, a non-decimal `amount`, a currency other than `104`, a `statusCode` that isn't two digits) |
 
 `AsyncAyaPay` raises the same errors. `ApiError` carries AYA's `status` (e.g. `20` Transaction not found, `09` Duplicate order ID) in `gateway_code` and its `message` in `gateway_message`. When AYA can't be reached or the request times out, the calls raise `ApiError` with the original `httpx` error as `__cause__`.

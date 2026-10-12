@@ -104,6 +104,10 @@ $callback->acknowledgement->send();
 
 The callback URL is registered with Yoma, not sent per order. When `webhookSecret` is configured, callbacks must carry it in the `X-Webhook-Secret` header. The hash is checked with HMAC-SHA256 keyed with your order number plus `webhookHashKey`; booleans are hashed as `true` / `false`.
 
+::: warning Callbacks carry no amount
+Yoma signs only `orderNumber` and `status`, and the callback has no amount (`$callback->amount` is `null`). Before fulfilling, confirm the payment with `$yomaMmqr->status($reference)`, using the `reference` of the QR you created for the order's stored amount, rather than trusting the callback alone.
+:::
+
 ## QR Lifetime and Renewal
 
 A QR is payable for 120 seconds (`YomaMmqr::QR_LIFETIME_SECONDS`); `$payment->expiresAt` tells you when. Yoma accepts each order number **once**, so never call `initiate()` again for the same order. Renew the QR instead:
@@ -171,7 +175,7 @@ The same values as [`initiate()`](#initiate-response) for the `orderId` you pass
 | `status` | `status` mapped case-insensitively, see [Statuses](#statuses) |
 | `gatewayStatus` | Yoma `status`, trimmed, as sent, e.g. `success` |
 | `gatewayReference` | Always `null`: Yoma's callback has no reference |
-| `amount` | Always `null`: Yoma's callback has no amount |
+| `amount` | Always `null`: Yoma signs only `orderNumber` and `status` and sends no amount. Confirm with [`status()`](#status-checks) before fulfilling |
 | `raw` | The verified body: `orderNumber`, `status`, `hashValue` |
 | `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
@@ -187,7 +191,7 @@ The same values as [`initiate()`](#initiate-response) for the `orderId` you pass
 
 ## Access Tokens
 
-Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in the [token cache](/php-myanmar-payments/configuration#token-cache) and fetches a new token, retrying once, when Yoma answers `401`. Without a cache it keeps the token in memory, so every PHP request fetches a new one. `$yomaMmqr->forgetToken()` drops the cached token, e.g. after rotating the client secret.
+Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in the [token cache](/php-myanmar-payments/configuration#token-cache) and fetches a new token, retrying once, when Yoma answers `401`. Without a cache it keeps the token in memory, so every PHP request fetches a new one: pass a shared PSR-16 cache in production. `$yomaMmqr->forgetToken()` drops the cached token, e.g. after rotating the client secret.
 
 The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>` (the prefix is `YomaMmqr::TOKEN_CACHE_PREFIX`), the same key every Laranex SDK uses, so services in different languages can share one cache, for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits, so `28800.0` is 28800 seconds; a missing or non-positive value means 3600.
 

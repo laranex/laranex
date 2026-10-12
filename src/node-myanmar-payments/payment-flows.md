@@ -92,6 +92,8 @@ async function ayaCheckout(
 }
 ```
 
+Under a Content Security Policy that allows scripts by nonce (`script-src 'nonce-…'`), pass the nonce so the inline script runs: `payment.toHtml(nonce)` renders `<script nonce="…">`. Send the page with `Referrer-Policy: strict-origin` if you serve it from a URL that holds anything secret, so the gateway only sees your origin.
+
 To build the form yourself, use `action`, `fields` (an ordered array of `{ name, value }`) and `enctype` with your template engine, which escapes every value:
 
 ```tsx

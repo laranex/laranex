@@ -114,6 +114,8 @@ $callback->acknowledgement->send();
 
 Only signed fields are trusted: `decision` and `req_reference_number` must be listed in `signed_field_names`, `transaction_id` and the amount are read only when they are signed, and `raw` keeps only the signed fields plus `signature`. An unsigned extra field, such as `decision=ACCEPT` added to a re-posted checkout form, can't change the result.
 
+The signed text is `name=value` pairs joined with `,`, and a signed value (a billing name, say) may contain both, so `signed_field_names` itself is checked too: it must list `signed_field_names`, and no name may be empty, repeated or contain `=`. `decision` must be `ACCEPT`, `DECLINE`, `REVIEW`, `ERROR` or `CANCEL` (any case); an unknown decision fails verification instead of returning an `Unknown` status.
+
 ## Responses
 
 What CyberSource puts in each property. See [Results](/php-myanmar-payments/references/results) and [PaymentCallback & Status](/php-myanmar-payments/references/payment-callback) for the full classes. A property the gateway didn't send is `null`. CyberSource posts form fields, so every `raw` value is a `string`, exactly as sent.
@@ -129,7 +131,7 @@ What CyberSource puts in each property. See [Results](/php-myanmar-payments/refe
 | `enctype` | `application/x-www-form-urlencoded` |
 | `autoSubmitUrl` | `null` in plain PHP until you call `withAutoSubmitUrl()` |
 | `withAutoSubmitUrl($url)` | Returns a copy with `autoSubmitUrl` set |
-| `toHtml()` | A full HTML page that posts `fields` to `action` on load |
+| `toHtml(?string $nonce = null)` | A full HTML page that posts `fields` to `action` on load; `$nonce` is added to its inline script |
 
 | Form field | Value |
 |---|---|
@@ -170,13 +172,14 @@ What CyberSource puts in each property. See [Results](/php-myanmar-payments/refe
 | `REVIEW` | `Pending` |
 | `DECLINE`, `ERROR` | `Failed` |
 | `CANCEL` | `Canceled` |
-| anything else | `Unknown` |
+
+Any other `decision` throws `SignatureVerificationException`, so a verified callback never has the `Unknown` status.
 
 ## Errors
 
 | Call | Throws | When |
 |---|---|---|
 | `new CyberSourcePaymentData(...)` | `InvalidPaymentDataException` | A value breaks the rules above. Nothing is signed |
-| `handleCallback()` | `SignatureVerificationException` | `signature` doesn't match, a field listed in `signed_field_names` is missing or holds an object or array, or `decision` or `req_reference_number` isn't signed |
+| `handleCallback()` | `SignatureVerificationException` | `signature` doesn't match, a field listed in `signed_field_names` is missing or holds an object or array, `decision` or `req_reference_number` isn't signed, `signed_field_names` doesn't list itself or has an empty, repeated or `=`-containing name, or `decision` isn't one of the five above |
 
 CyberSource makes no HTTP calls, so nothing throws `ApiException`.

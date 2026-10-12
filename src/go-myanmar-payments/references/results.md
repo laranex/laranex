@@ -31,6 +31,7 @@ Returned by `aya.Initiate()` and `cs.Initiate()`.
 | `Fields` | `[]FormField` | The signed hidden fields in order. Post them unchanged |
 | `Enctype` | `string` | The encoding the gateway expects: `multipart/form-data` (AYA) or `application/x-www-form-urlencoded` (CyberSource) |
 | `HTML()` | `string` | A complete page that submits the form on load. Every value is HTML-escaped (`"` as `&#34;`, `'` as `&#39;`), so the page is byte-for-byte the same in every Laranex SDK |
+| `HTMLWithNonce(nonce)` | `string` | The `HTML()` page with your Content-Security-Policy `nonce` (escaped) on the inline `<script>`. An empty nonce gives the same page as `HTML()` |
 | `Field(name)` | `(string, bool)` | One field's value |
 | `Values()` | `map[string]string` | The fields as a map |
 

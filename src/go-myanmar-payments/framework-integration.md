@@ -151,7 +151,7 @@ func writeJSON(w http.ResponseWriter, status int, body any) {
 }
 ```
 
-`NewCallbackRequestFromHTTP` reads the body once and puts it back, so later middleware can still read `r.Body`. Never call `r.ParseForm()` or decode the body before it: the signature needs the body bytes exactly as the gateway sent them.
+`NewCallbackRequestFromHTTP` reads the body once and puts it back, so later middleware can still read `r.Body`. It reads at most `myanmarpayments.MaxCallbackBodyBytes` (64 KiB); a larger body returns an error wrapping `myanmarpayments.ErrCallbackBodyTooLarge`. Never call `r.ParseForm()` or decode the body before it: the signature needs the body bytes exactly as the gateway sent them.
 
 ## chi
 

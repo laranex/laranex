@@ -121,6 +121,10 @@ callback.Acknowledgement.Write(w)
 
 The callback URL is registered with Yoma, not sent per order. When `WebhookSecret` is configured, callbacks must carry it in the `X-Webhook-Secret` header. The hash is checked with HMAC-SHA256 keyed with your order number plus `WebhookHashKey`.
 
+::: warning Callbacks carry no amount
+Yoma signs only `orderNumber` and `status`, and the callback has no amount (`callback.Amount` is `""`). Before fulfilling, confirm the payment with `yoma.Status(ctx, reference)`, using the `Reference` of the QR you created for the order's stored amount, rather than trusting the callback alone.
+:::
+
 ## QR Lifetime and Renewal
 
 A QR is payable for 120 seconds (`yomammqr.QRLifetime`); `payment.ExpiresAt` tells you when. Yoma accepts each order number **once**, so never call `Initiate` again for the same order. Renew the QR instead:
@@ -196,7 +200,7 @@ The same values as [`Initiate()`](#initiate-response) for the `orderID` you pass
 | `Status` | `status` mapped case-insensitively, see [Statuses](#statuses) |
 | `GatewayStatus` | Yoma `status`, trimmed, as sent, e.g. `success` |
 | `GatewayReference` | Always `""`: Yoma's callback has no reference |
-| `Amount` | Always `""`: Yoma's callback has no amount |
+| `Amount` | Always `""`: Yoma signs only `orderNumber` and `status` and sends no amount. Confirm with [`Status`](#status-checks) before fulfilling |
 | `Raw` | The verified body: `orderNumber`, `status`, `hashValue` |
 | `Acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
@@ -212,7 +216,7 @@ The same values as [`Initiate()`](#initiate-response) for the `orderID` you pass
 
 ## Access Tokens
 
-Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in the [token cache](/go-myanmar-payments/configuration#token-cache), shares one token request between concurrent calls, and fetches a new token, retrying once, when Yoma answers `401`. The shared token request runs without any one call's cancellation and is bounded by the HTTP client timeout, so canceling one call's `ctx` never fails the others; that call stops waiting and returns an `*APIError`. `yoma.ForgetToken()` drops the cached token, e.g. after rotating the client secret.
+Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in the [token cache](/go-myanmar-payments/configuration#token-cache), shares one token request between concurrent calls, and fetches a new token, retrying once, when Yoma answers `401`. The shared token request runs without any one call's cancellation and is bounded by the configured `TimeoutSeconds` (30 by default), so a stuck request can't block later calls and canceling one call's `ctx` never fails the others; that call stops waiting and returns an `*APIError`. `yoma.ForgetToken()` drops the cached token, e.g. after rotating the client secret; a token request already in flight is not cached when it completes, and later calls request a new one.
 
 The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseURL|clientID)>`, the same key every Laranex SDK uses, so services in different languages can share one cache, for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits, so `28800.0` is 28800 seconds; a missing or non-positive value means 3600.
 

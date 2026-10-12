@@ -129,6 +129,8 @@ export class CyberSourceCallbackController {
 
 A bad signature answers `400` before the handler runs. Only signed fields are trusted: `decision` and `req_reference_number` must be listed in `signed_field_names`, `transaction_id` and the amount are read only when they are signed, and `raw` keeps only the signed fields plus `signature`. An unsigned extra field, such as `decision=ACCEPT` added to a re-posted checkout form, can't change the result.
 
+The signed text is `name=value` pairs joined with `,`, and a signed value (a billing name, say) may contain both, so `signed_field_names` itself is checked too: it must list `signed_field_names`, and no name may be empty, repeated or contain `=`. `decision` must be `ACCEPT`, `DECLINE`, `REVIEW`, `ERROR` or `CANCEL` (any case); an unknown decision fails verification (a `400`) instead of returning an `Unknown` status.
+
 ## Responses
 
 What CyberSource puts in each property. See [Results](/nestjs-myanmar-payments/references/results) and [PaymentCallback & Status](/nestjs-myanmar-payments/references/payment-callback) for the full classes. CyberSource posts form fields, so every `raw` value is a `string`, exactly as sent.
@@ -141,7 +143,7 @@ What CyberSource puts in each property. See [Results](/nestjs-myanmar-payments/r
 | `action` | `{baseUrl}/pay`, e.g. `https://testsecureacceptance.cybersource.com/pay` |
 | `fields` | The signed fields below. Post them unchanged |
 | `enctype` | `application/x-www-form-urlencoded` |
-| `toHtml()` | A full HTML page that posts `fields` to `action` on load |
+| `toHtml(nonce?)` | A full HTML page that posts `fields` to `action` on load; `nonce` is added to its inline script |
 
 `this.payments.autoSubmitUrl(payment)` returns an encrypted link to the module's form route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. It expires after `formLink.ttlMinutes`; the call throws when `formRoute.enabled` is `false`.
 
@@ -188,13 +190,14 @@ What CyberSource puts in each property. See [Results](/nestjs-myanmar-payments/r
 | `REVIEW` | `Pending` |
 | `DECLINE`, `ERROR` | `Failed` |
 | `CANCEL` | `Canceled` |
-| anything else | `Unknown` |
+
+Any other `decision` throws `SignatureVerificationError`, so a verified callback never has the `Unknown` status.
 
 ## Errors
 
 | Call | Throws | When |
 |---|---|---|
 | `initiate()` | `InvalidPaymentDataError` | A value breaks the rules above. Nothing is signed |
-| `handleCallback()` | `SignatureVerificationError` | `signature` doesn't match, a field listed in `signed_field_names` is missing, or `decision` or `req_reference_number` isn't signed |
+| `handleCallback()` | `SignatureVerificationError` | `signature` doesn't match, a field listed in `signed_field_names` is missing, `decision` or `req_reference_number` isn't signed, `signed_field_names` doesn't list itself or has an empty, repeated or `=`-containing name, or `decision` isn't one of the five above |
 
 CyberSource makes no HTTP calls, so nothing throws `ApiError`.

@@ -111,6 +111,8 @@ async ayaPay(@Param('id') id: string): Promise<string> {
 }
 ```
 
+Under a Content Security Policy that allows scripts by nonce (`script-src 'nonce-…'`), pass the nonce so the inline script runs: `toHtml(nonce)` renders `<script nonce="…">`. The module's own form route does this for you with helmet's nonce or `formRoute.nonce`.
+
 ```handlebars
 <form id="payment-form" method="POST" action="{{payment.action}}"
       enctype="{{payment.enctype}}">

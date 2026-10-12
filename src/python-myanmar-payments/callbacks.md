@@ -97,7 +97,8 @@ Signatures are checked against what the gateway actually sent, so build the requ
 ## Rules
 
 - **Verify, then trust.** A callback that fails verification raises `SignatureVerificationError`, and so does one whose signed or hashed field holds an object or a list instead of a single value, since no gateway signs nested values. Never act on its payload; `raw` carries the unverified data for logging only.
-- **Check the amount.** Compare `callback.amount` (the exact text the gateway sent) with your order before fulfilling, e.g. with `Amount.equals`.
+- **Check the amount.** Compare `callback.amount` (the exact text the gateway sent) with your order before fulfilling, e.g. with `Amount.equals`. Yoma MMQR callbacks carry no amount: confirm those with [`status()`](/python-myanmar-payments/drivers/yoma-mmqr#status-checks).
+- **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Money), the package also rejects values that could be re-split into other fields. See each driver's Handling Callbacks section.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 - **Acknowledge.** `callback.acknowledgement` holds the response the gateway expects (`status`, `body`, `headers`), e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
 

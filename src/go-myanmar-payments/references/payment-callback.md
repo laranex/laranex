@@ -53,7 +53,7 @@ Returned by `kbz.Status()`, `aya.Status()` and `yoma.Status()`. A struct.
 
 | Member | Type | Description |
 |---|---|---|
-| `NewCallbackRequestFromHTTP(r)` | `(*CallbackRequest, error)` | From an `*http.Request`: reads the body once and restores it |
+| `NewCallbackRequestFromHTTP(r)` | `(*CallbackRequest, error)` | From an `*http.Request`: reads the body once and restores it. A body over `MaxCallbackBodyBytes` (64 KiB) returns an error wrapping `ErrCallbackBodyTooLarge` |
 | `NewCallbackRequest(body, header, query)` | `*CallbackRequest` | From the raw parts: the body as `[]byte`, the headers as an `http.Header`, the query string as `url.Values`; `nil` header and query are allowed |
 | `NewCallbackRequestFromJSON(payload, header)` | `(*CallbackRequest, error)` | From a decoded payload, encoded as a JSON body with `Content-Type: application/json` |
 | `Body` | `[]byte` | The raw body, exactly as received |

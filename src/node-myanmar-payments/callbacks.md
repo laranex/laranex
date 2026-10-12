@@ -85,6 +85,19 @@ Signatures are checked against what the gateway actually sent, so build the requ
 
 When a body parser such as `express.json()` already consumed the stream, `fromNodeRequest` encodes the parsed `req.body` again as JSON or a form. That usually verifies, but a JSON number such as `1000.50` comes back as `1000.5`, so prefer [`express.raw()` on callback routes](/node-myanmar-payments/framework-integration#express).
 
+### Body Size Limit
+
+`fromNodeRequest` and `fromWebRequest` read at most `MAX_CALLBACK_BODY_BYTES` (64 KiB), far above any gateway callback. A larger body throws a `PaymentError` (`The callback request body is larger than 65536 bytes.`) without reading the rest of the stream; a declared `Content-Length` over the limit fails before anything is read. Answer it with `413`. Change the limit with `CallbackReadOptions`, the second argument:
+
+```ts
+import { CallbackRequest, MAX_CALLBACK_BODY_BYTES } from '@laranex/myanmar-payments';
+
+const request = await CallbackRequest.fromNodeRequest(req, { maxBodyBytes: 16 * 1024 });
+const fromFetch = await CallbackRequest.fromWebRequest(webRequest, { maxBodyBytes: MAX_CALLBACK_BODY_BYTES });
+```
+
+`maxBodyBytes` must be a whole number greater than 0 (otherwise a `RangeError`). `CallbackRequest.from()` takes a body you already read, so cap it in your server or body parser.
+
 | Member | Description |
 |---|---|
 | `rawBody` | The raw body as a `Uint8Array`, exactly as received |
@@ -99,7 +112,8 @@ When a body parser such as `express.json()` already consumed the stream, `fromNo
 ## Rules
 
 - **Verify, then trust.** A callback that fails verification throws `SignatureVerificationError`, and so does one whose signed or hashed field holds an object or array instead of a single value, since no gateway signs nested values. Never act on its payload; `raw` carries the unverified data for logging only.
-- **Check the amount.** Compare `callback.amount` (the exact text the gateway sent) with your order before fulfilling, e.g. with `Amount.equals`.
+- **Check the amount.** Compare `callback.amount` (the exact text the gateway sent) with your order before fulfilling, e.g. with `Amount.equals`. Yoma MMQR callbacks carry no amount: confirm those with [`status()`](/node-myanmar-payments/drivers/yoma-mmqr#status-checks).
+- **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Money), the package also rejects values that could be re-split into other fields. See each driver's Handling Callbacks section.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 - **Acknowledge.** `callback.acknowledgement` holds the response the gateway expects (`status`, `body`, `headers`), e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
 

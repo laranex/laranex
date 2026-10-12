@@ -196,7 +196,7 @@ return [
     'form_route' => [
         'enabled'     => true,
         'path'        => 'myanmar-payments/form',
-        'middleware'  => ['web'],
+        'middleware'  => [],
         'ttl_minutes' => env('MYANMAR_PAYMENTS_FORM_TTL_MINUTES'),
     ],
 ];
@@ -212,7 +212,7 @@ The time settings take an `int` or integer text such as `'30'`. Without the env 
 ],
 ```
 
-Gateway calls go through Laravel's `Http` client, so `Http::fake()` intercepts them in tests and request events fire for them; see [Testing](/laravel-myanmar-payments/testing). `timeout` is in seconds, applies to gateway calls only and defaults to 30: the package passes it to KBZ Pay, Wave Money, AYA and Yoma MMQR as their `timeout_in_seconds`, and a null or blank one also means 30 seconds. To give one gateway its own timeout, set `timeout_in_seconds` in its array, e.g. `'kbz_pay' => [..., 'timeout_in_seconds' => 10]`. When a gateway can't be reached, the call throws `ApiException` with `httpStatus` `0`.
+Gateway calls go through Laravel's `Http` client, so `Http::fake()` intercepts them in tests and request events fire for them; see [Testing](/laravel-myanmar-payments/testing). `timeout` is in seconds, applies to gateway calls only and defaults to 30: the package passes it to KBZ Pay, Wave Money, AYA and Yoma MMQR as their `timeout_in_seconds`, and a null or blank one also means 30 seconds. To give one gateway its own timeout, set `timeout_in_seconds` in its array, e.g. `'kbz_pay' => [..., 'timeout_in_seconds' => 10]`. Redirects are returned as they are, never followed. When a gateway can't be reached, the call throws `ApiException` with `httpStatus` `0`.
 
 ## Auto-submit Form Route
 
@@ -220,18 +220,18 @@ Gateway calls go through Laravel's `Http` client, so `Http::fake()` intercepts t
 'form_route' => [
     'enabled'     => true,
     'path'        => 'myanmar-payments/form',
-    'middleware'  => ['web'],
+    'middleware'  => [],
     'ttl_minutes' => env('MYANMAR_PAYMENTS_FORM_TTL_MINUTES'),
 ],
 ```
 
-AYA Pay and CyberSource need the customer's browser to POST a signed form. The package registers a `GET myanmar-payments/form` route (named `myanmar-payments.form`) that renders that form and submits it, and sets `FormPayment::$autoSubmitUrl` to an encrypted link to it. Links expire after `ttl_minutes`; an invalid or expired link answers `410 Gone`. The page is sent with `Cache-Control: no-store`.
+AYA Pay and CyberSource need the customer's browser to POST a signed form. The package registers a `GET myanmar-payments/form` route (named `myanmar-payments.form`) that renders that form and submits it, and sets `FormPayment::$autoSubmitUrl` to an encrypted link to it. Links expire after `ttl_minutes`; an invalid or expired link answers `410 Gone`. The page is sent with `Cache-Control: no-store` and `Referrer-Policy: strict-origin`, so the gateway sees only your origin, never the encrypted link. It needs no session or cookies, so the route runs without middleware by default. When your app sets a Content-Security-Policy nonce with `Vite::useCspNonce()`, the page's inline script carries it.
 
 | Key | Meaning |
 |---|---|
 | `enabled` | Register the route. When `false`, `autoSubmitUrl` is `null`; build the form yourself, see [Form Payments](/laravel-myanmar-payments/payment-flows#form-payments) |
 | `path` | The route path |
-| `middleware` | Middleware for the route, e.g. rate limiting. Don't add authentication: the customer may arrive from a gateway or another device |
+| `middleware` | Middleware for the route, `[]` by default, e.g. `['throttle:60,1']` or the middleware that calls `Vite::useCspNonce()`. Don't add authentication: the customer may arrive from a gateway or another device |
 | `ttl_minutes` | Minutes a link stays valid. Required while the route is enabled: AYA Pay and CyberSource throw `The form_route configuration is missing [ttl_minutes].` without it, and the invalid-value message for a value that is not a whole number greater than 0 |
 
 Links are encrypted with `APP_KEY` and start with your app's URL (`APP_URL`, or the current request's host).

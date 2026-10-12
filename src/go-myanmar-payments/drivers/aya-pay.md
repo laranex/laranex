@@ -110,13 +110,15 @@ io.WriteString(w, payment.HTML())
 
 | Field | Type | Required | Rules |
 |---|---|---|---|
-| `OrderID` | `string` | Yes | Unique, 6 to 40 characters (`merchOrderId`) |
+| `OrderID` | `string` | Yes | Unique, 6 to 40 characters (`merchOrderId`), no `:` |
 | `Amount` | `myanmarpayments.Amount` | Yes | Whole kyat, greater than 0, e.g. `Kyat(10000)`. AYA documents no decimals and only accepts MMK (`104`) |
 | `Channel` | `string` | Yes | A key from `Services` |
 | `Method` | `ayapay.Method` | Yes | `MethodWeb`, `MethodQR` or `MethodNoti` |
 | `ReturnURL` | `string` | No | Absolute http or https URL. Empty uses the URL registered with AYA |
-| `Description` | `string` | No | Shown to the customer |
-| `UserRefs` | `[]string` | No | Up to 5 of your own values, echoed back in the callback |
+| `Description` | `string` | No | Shown to the customer, no `:` |
+| `UserRefs` | `[]string` | No | Up to 5 of your own values, echoed back in the callback, none containing `:` |
+
+AYA joins the signed values with `:`, so `OrderID`, `Description` and `UserRefs` can't contain one. A `:` in a user ref is reported under its index, e.g. `userRefs.0`.
 
 ### Form Encoding
 
@@ -154,6 +156,16 @@ callback.Acknowledgement.Write(w)
 ```
 
 AYA signs only the fields present in its payload (wallet payments leave out the card fields); the package verifies them in the order the specification lists.
+
+Because AYA joins the signed values with `:`, a matching `checkSum` alone could let a value be re-split into other fields. A payload is therefore only accepted when, besides the checksum:
+
+- no signed value contains `:`, except `dateTime`, which must have the form `YYYY-MM-DD HH:MM:SS`;
+- `merchOrderId` and `tranId` are present;
+- `amount` is a decimal, e.g. `10000` or `10000.00`;
+- the currency code is `104` (MMK);
+- `statusCode` is two digits.
+
+Anything else returns `*myanmarpayments.SignatureVerificationError`. The same checks apply to the return page and to `Status`.
 
 ## The Return Page
 
@@ -234,6 +246,7 @@ Entries AYA sends without a `key` are skipped.
 | `Fields` | The signed fields below, in signing order. Post them unchanged |
 | `Enctype` | `multipart/form-data` |
 | `HTML()` | A full HTML page that posts `Fields` to `Action` on load |
+| `HTMLWithNonce(nonce)` | The same page with `nonce` on its inline script, for a Content-Security-Policy |
 
 | Form field | Value |
 |---|---|
@@ -255,7 +268,7 @@ Entries AYA sends without a `key` are skipped.
 
 | Field | AYA Pay value |
 |---|---|
-| `OrderID` | AYA `merchOrderId`, falling back to the `orderID` you passed. Always set |
+| `OrderID` | AYA `merchOrderId`. Always set: an enquiry payload without it fails verification |
 | `Status` | `statusCode` mapped, see [Statuses](#statuses) |
 | `GatewayStatus` | AYA `statusCode`, trimmed, e.g. `00` |
 | `GatewayReference` | AYA `tranId` |
@@ -297,7 +310,7 @@ The same values as [`HandleCallback()`](#handlecallback-response), read from the
 | `Initiate()` | `*InvalidPaymentDataError` | `data.Validate()` fails. Nothing is signed |
 | `Services()` | `*APIError` | AYA answers with an HTTP error or a `status` other than `00` |
 | `Status()` | `*APIError` | AYA answers with an HTTP error or a `status` other than `00`, e.g. `20` Transaction not found |
-| `Status()` | `*SignatureVerificationError` | The enquiry payload's `checkSum` doesn't match |
-| `HandleCallback()`, `VerifyRedirect()` | `*SignatureVerificationError` | `payload` is missing or not base64 JSON, a signed field holds an object or array, or `checkSum` doesn't match |
+| `Status()` | `*SignatureVerificationError` | The enquiry payload's `checkSum` doesn't match, or the payload is malformed (see [Handling Callbacks](#handling-callbacks)) |
+| `HandleCallback()`, `VerifyRedirect()` | `*SignatureVerificationError` | `payload` is missing or not base64 JSON, a signed field holds an object or array, `checkSum` doesn't match, or a signed value breaks the rules in [Handling Callbacks](#handling-callbacks) (a `:` outside `dateTime`, a missing `merchOrderId` or `tranId`, a non-decimal `amount`, a currency other than `104`, a `statusCode` that isn't two digits) |
 
 The error types live in the root `myanmarpayments` package. `*APIError` carries AYA's `status` (e.g. `20` Transaction not found, `09` Duplicate order ID) in `GatewayCode` and its `message` in `GatewayMessage`. When AYA can't be reached or `ctx` is canceled, the calls return `*APIError`, which unwraps to the cause (`errors.Is(err, context.DeadlineExceeded)`).

@@ -101,6 +101,10 @@ try {
 
 The callback URL is registered with Yoma, not sent per order. When `webhookSecret` is configured, callbacks must carry it in the `X-Webhook-Secret` header. The hash is checked with HMAC-SHA256 keyed with your order number plus `webhookHashKey`.
 
+::: warning Callbacks carry no amount
+Yoma signs only `orderNumber` and `status`, and the callback has no amount (`callback.amount` is `undefined`). Before fulfilling, confirm the payment with `await yoma.status(reference)`, using the `reference` of the QR you created for the order's stored amount, rather than trusting the callback alone.
+:::
+
 ## QR Lifetime and Renewal
 
 A QR is payable for 120 seconds (`YomaMmqr.QR_LIFETIME_SECONDS`); `payment.expiresAt` tells you when. Yoma accepts each order number **once**, so never call `initiate()` again for the same order. Renew the QR instead:
@@ -168,7 +172,7 @@ The same values as [`initiate()`](#initiate-response) for the `orderId` you pass
 | `status` | `status` mapped case-insensitively, see [Statuses](#statuses) |
 | `gatewayStatus` | Yoma `status`, trimmed, as sent, e.g. `success` |
 | `gatewayReference` | Always `undefined`: Yoma's callback has no reference |
-| `amount` | Always `undefined`: Yoma's callback has no amount |
+| `amount` | Always `undefined`: Yoma signs only `orderNumber` and `status` and sends no amount. Confirm with [`status()`](#status-checks) before fulfilling |
 | `raw` | The verified body: `orderNumber`, `status`, `hashValue` |
 | `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 

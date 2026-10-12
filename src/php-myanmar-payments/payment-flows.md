@@ -83,6 +83,8 @@ header('Content-Type: text/html; charset=UTF-8');
 echo $payment->toHtml();
 ```
 
+Under a Content-Security-Policy that allows scripts by nonce (`script-src 'nonce-…'`), pass the nonce so the inline script runs: `$payment->toHtml($nonce)` renders `<script nonce="…">`. Send the page with `Referrer-Policy: strict-origin` if you serve it from a URL that holds anything secret, so the gateway only sees your origin.
+
 To build the form yourself, use `action`, `fields` (an array of name => value, in order) and `enctype` with your template engine, and escape every value:
 
 ```php

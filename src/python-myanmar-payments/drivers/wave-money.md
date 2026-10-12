@@ -84,13 +84,13 @@ def wave_checkout(request, order_id: int):
 
 | Field | Type | Required | Rules |
 |---|---|---|---|
-| `order_id` | `str` | Yes | Your order ID. One order can have several payment attempts |
+| `order_id` | `str` | Yes | Your order ID: letters, digits, `_` and `-` only. One order can have several payment attempts |
 | `callback_url` | `str` | Yes | Absolute http or https URL that Wave posts the result to. Wave may require HTTPS with a CA-issued certificate in production |
 | `return_url` | `str` | Yes | Absolute http or https URL Wave sends the customer back to. Not proof of payment |
 | `description` | `str` | Yes | Shown to the customer |
 | `items` | `Sequence[WaveMoneyItem]` | Yes | At least one item, as a `list` or `tuple` |
 | `amount` | `Amount \| int \| str \| Decimal` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). Unset charges the sum of the items. Wave only accepts MMK |
-| `merchant_reference_id` | `str` | No | Unique ID of this attempt. Unset or empty means a random ID |
+| `merchant_reference_id` | `str` | No | Unique ID of this attempt: letters, digits, `_` and `-` only. Unset or empty means a random ID |
 | `merchant_name` | `str` | No | Business name shown on Wave's page for this payment. Unset uses `WaveMoneyConfig`'s `merchant_name`; a blank one is rejected |
 | `time_to_live_seconds` | `int` | No | Seconds the customer has to pay this payment, an `int` greater than 0 (not a `bool`, `float` or text). Unset uses `WaveMoneyConfig`'s `time_to_live_seconds` |
 
@@ -150,6 +150,8 @@ def wave_callback(request):
 
 `callback.order_id` falls back to `merchantReferenceId` when Wave's `orderId` is missing, null or empty.
 
+Wave hashes the values joined with no separator, so a matching `hashValue` alone doesn't pin down where one value ends and the next begins. After the hash matches, `amount` must be a decimal (e.g. `10000` or `10000.00`), at least one of `orderId` and `merchantReferenceId` must be present, and each one sent may only hold letters, digits, `_` and `-`; otherwise `handle_callback()` raises `SignatureVerificationError`. New payments are held to the same ID rules, so every callback for a payment made with this package passes them.
+
 ## Responses
 
 What Wave Money puts in each field. See [Results](/python-myanmar-payments/references/results) and [PaymentCallback & Status](/python-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `None`. `raw` holds plain Python values; every JSON number is kept as its exact text in a `str` (`1000.50` stays `"1000.50"`), never a `float`.
@@ -199,6 +201,6 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 |---|---|---|
 | `initiate()` | `InvalidPaymentDataError` | `WaveMoney.validate(data)` fails. Nothing is sent and `data` is left untouched. Item errors use `items.0.amount` keys |
 | `initiate()` | `ApiError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
-| `handle_callback()` | `SignatureVerificationError` | `hashValue` doesn't match, or a hashed field holds an object or a list |
+| `handle_callback()` | `SignatureVerificationError` | `hashValue` doesn't match, a hashed field holds an object or a list, `amount` isn't a decimal, both `orderId` and `merchantReferenceId` are empty, or one of them holds anything but letters, digits, `_` and `-` |
 
 `AsyncWaveMoney` raises the same errors. `http_status` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`gateway_code` is `VALIDATION_ERROR`). When Wave can't be reached or the request times out, `initiate()` raises `ApiError` with the original `httpx` error as `__cause__`.

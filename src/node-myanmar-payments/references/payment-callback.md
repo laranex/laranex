@@ -56,8 +56,8 @@ Returned by `kbz.status()`, `aya.status()` and `yoma.status()`. A class with rea
 |---|---|---|
 | `CallbackRequest.from({ body, headers, query })` | `CallbackRequest` | From the raw parts: the body as a `string`, `Buffer`, `Uint8Array` or `ArrayBuffer`, the headers as an object or `[name, value]` pairs, the query string as a `string`, `URLSearchParams` or an object. All three are optional |
 | `CallbackRequest.fromJson(payload, headers?)` | `CallbackRequest` | From a decoded payload, encoded as a JSON body |
-| `CallbackRequest.fromNodeRequest(req)` | `Promise<CallbackRequest>` | From a `node:http` `IncomingMessage` (Express `req`, or Koa `ctx.req` without a body parser) |
-| `CallbackRequest.fromWebRequest(request)` | `Promise<CallbackRequest>` | From a Fetch API `Request`, read from a clone |
+| `CallbackRequest.fromNodeRequest(req, options?)` | `Promise<CallbackRequest>` | From a `node:http` `IncomingMessage` (Express `req`, or Koa `ctx.req` without a body parser). Reads at most `options.maxBodyBytes` (default `MAX_CALLBACK_BODY_BYTES`, 64 KiB); a larger body throws `PaymentError` |
+| `CallbackRequest.fromWebRequest(request, options?)` | `Promise<CallbackRequest>` | From a Fetch API `Request`, read from a clone, with the same `maxBodyBytes` limit |
 | `rawBody` | `Uint8Array` | The raw body, exactly as received |
 | `body` | `string` | The raw body, decoded as UTF-8 |
 | `headers` | `Record<string, string>` | Headers with lowercase names; repeated headers joined with `, ` |
