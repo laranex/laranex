@@ -23,8 +23,12 @@ Log::channel('newrelic')->error('Payment failed', ['exception' => $e]);
 | `host` | `NEW_RELIC_LOG_HOST` | `null` | Logs API host. When empty, it is picked from the license key's region. |
 | `app_name` | `NEW_RELIC_APP_NAME` | `null` | APM application that Octane transactions are reported to. Falls back to the agent's `newrelic.appname` INI value. |
 | `transactions.octane` | `NEW_RELIC_OCTANE_TRANSACTIONS` | `true` | One web transaction per Octane request, named after its route. Cast to a boolean. |
-| `transport.timeout` | `NEW_RELIC_LOG_TIMEOUT` | `5` | Seconds to wait for the Logs API, for both the connection and the whole request. |
-| `transport.retries` | `NEW_RELIC_LOG_RETRIES` | `3` | Attempts before a failed Logs API request is given up. |
+| `logs.include.ip` | `NEW_RELIC_LOG_INCLUDE_IP` | `false` | Add the client IP (`extra.ip`) to every record. It is personal data, so it is off by default. |
+| `logs.include.user_email` | `NEW_RELIC_LOG_INCLUDE_USER_EMAIL` | `false` | Add the authenticated user's email (`user.email`) to every record. It is personal data, so it is off by default. |
+| `logs.buffer_limit` | `NEW_RELIC_LOG_BUFFER_LIMIT` | `1000` | Records the buffered channel holds before it sends them early. `0` removes the limit. |
+| `transport.timeout` | `NEW_RELIC_LOG_TIMEOUT` | `5` | Seconds to wait for the whole Logs API request. |
+| `transport.connect_timeout` | `NEW_RELIC_LOG_CONNECT_TIMEOUT` | `2` | Seconds to wait for the connection to the Logs API. |
+| `transport.retries` | `NEW_RELIC_LOG_RETRIES` | `1` | Attempts before a failed Logs API request is given up. |
 
 ## License key and region
 
@@ -49,10 +53,16 @@ The package registers this channel unless your `config/logging.php` already defi
 |---|---|---|
 | `level` | `debug` | Minimum level shipped to New Relic. |
 | `bubble` | `true` | Whether records bubble up to the next handler. |
-| `buffer` | `true` | Buffer records and send them as one batch (a JSON array) after each Octane request, task or tick, after each queue job (processed or failed), and when the process exits. `false` sends each record immediately. |
+| `buffer` | `true` | Buffer records and send them as one batch (a JSON array) after each Octane request, task or tick, after each queue job (processed or failed), when the buffer holds `newrelic.logs.buffer_limit` records, and when the process exits. `false` sends each record immediately. |
 | `name` | `newrelic` | The Monolog channel name, sent as `channel`. |
 
-Records below `level` are dropped. Requests are sent with cURL, a 5 second timeout (for both the connection and the whole request) and up to 3 attempts by default (at least one attempt is always made). Tune them with `NEW_RELIC_LOG_TIMEOUT` and `NEW_RELIC_LOG_RETRIES`. A batch bigger than the Logs API's 1 MB payload limit is split into several requests.
+Records below `level` are dropped. Once the buffer holds `newrelic.logs.buffer_limit` records (1000 by default, `NEW_RELIC_LOG_BUFFER_LIMIT`), it is sent early, so a long request, job or worker never grows memory without bound; `0` removes the limit and holds every record until the next flush.
+
+Requests are sent with cURL, a 2 second connect timeout, a 5 second timeout for the whole request and 1 attempt by default (at least one attempt is always made). Tune them with `NEW_RELIC_LOG_CONNECT_TIMEOUT`, `NEW_RELIC_LOG_TIMEOUT` and `NEW_RELIC_LOG_RETRIES`. A batch bigger than the Logs API's 1 MB payload limit is split into several requests.
+
+::: tip Keep the timeouts and retries low
+Batches are sent synchronously, at the end of the request or job, so a slow or unreachable Logs API delays the worker by up to the transport timeout for every attempt. The defaults keep that delay short; raise them only if you accept the wait.
+:::
 
 Logging never breaks your app: when the Logs API cannot be reached after the last attempt or answers with an HTTP error status (for example `403` for a wrong license key), the failure is written to PHP's error log (`error_log`, without the payload or the key) and the request or job carries on.
 
@@ -64,11 +74,19 @@ Each record is sent as a JSON object with the `message`, the numeric Monolog `le
 |---|---|
 | `service` | `config('app.name')` |
 | `hostname` | The server's hostname (the agent's `hostname` linking metadata wins when the agent is loaded) |
-| `extra.ip` | The client IP, when a request is bound in the container |
-| `user` | The authenticated user's `id` (`getAuthIdentifier()`) and `email` from the default guard, when a request is bound and a user is logged in (`email` is `null` when the user has none or reading it throws) |
+| `user` | The authenticated user's `id` (`getAuthIdentifier()`) from the default guard, when a request is bound and a user is logged in |
+| `extra.ip` | Only with `newrelic.logs.include.ip`: the client IP, when a request is bound in the container |
+| `user.email` | Only with `newrelic.logs.include.user_email`: the user's email (`null` when the user has none or reading it throws) |
 | `entity.guid`, `trace.id`, `span.id`, ... | The agent's linking metadata at the top level (`trace.id` left-padded with zeros to 32 characters), when the agent is loaded |
 
-The request and user are resolved per record, so they stay correct on Octane.
+The client IP and the user's email are personal data, so they are only sent when you opt in:
+
+```env
+NEW_RELIC_LOG_INCLUDE_IP=true
+NEW_RELIC_LOG_INCLUDE_USER_EMAIL=true
+```
+
+The request is resolved per record. The user is resolved once per request or job and resolved again when an Octane request, task or tick or a queue job starts or ends, and on every `Login`, `Logout` or `Authenticated` event, so a worker never logs one request with another's user.
 
 ## Transactions
 
