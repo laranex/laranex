@@ -3,3 +3,4 @@
 .idea
 .vitepress/cache
 .vitepress/dist
+src/.vitepress
