@@ -1249,23 +1249,65 @@ body {
   }
 }
 
-/* Screenshots: one image per color scheme, framed like a window. */
+/* Screenshots: one image per color scheme, framed like a window, with an in-page full-size preview. */
 .lx-screenshot {
   margin: 20px 0 24px;
 }
 
-.lx-screenshot a {
-  display: block;
+.lx-screenshot__frame {
+  position: relative;
   overflow: hidden;
   border: 1px solid var(--vp-c-divider);
   border-radius: 10px;
   box-shadow: var(--lx-shadow);
 }
 
-.lx-screenshot img {
+.lx-screenshot__image {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
+.lx-screenshot__image img {
   display: block;
   width: 100%;
   height: auto;
+}
+
+.lx-screenshot__preview {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  background: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--lx-shadow);
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.lx-screenshot__preview:hover,
+.lx-screenshot__preview:focus-visible {
+  border-color: var(--vp-c-brand-2);
+  color: var(--vp-c-brand-1);
+}
+
+.lx-screenshot__preview svg,
+.lx-preview__close svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .lx-screenshot__dark,
@@ -1282,4 +1324,47 @@ body {
   color: var(--vp-c-text-2);
   font-size: 14px;
   text-align: center;
+}
+
+.lx-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 24px 24px;
+  background: rgba(8, 14, 18, 0.82);
+  backdrop-filter: blur(4px);
+}
+
+.lx-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 10px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  cursor: zoom-out;
+}
+
+.lx-preview__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.lx-preview__close:hover,
+.lx-preview__close:focus-visible {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+html.lx-preview-open {
+  overflow: hidden;
 }
