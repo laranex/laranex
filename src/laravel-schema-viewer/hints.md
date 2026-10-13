@@ -6,7 +6,7 @@ aside: false
 
 # Hints
 
-Hints point at places where the database and the models disagree. They are informational: the Hints tab lists them, the table card shows a count, and `schema-viewer:check` can fail your CI on the kinds you choose. Framework tables never get hints.
+Hints point at places where the database and the models disagree. They are informational: the Hints tab (<kbd>H</kbd>) lists them, the table card shows a count, and `schema-viewer:check` can fail your CI on the kinds you choose. Framework tables never get hints.
 
 <LiveDemo title="The live demo on its Hints tab: open Ignore… under a hint for the rules that leave it out" shortcut="h" />
 
@@ -66,6 +66,6 @@ Accept a hint for good by adding a rule to `hints.ignore` in `config/schema-view
 | `columns` | The columns the hint is about, comma separated: `user_id` or `user_id,team_id` | No |
 | `relation` | The relation method, for hints about a relation that could not be read | No |
 
-You rarely type a rule. Under each hint, **Ignore…** in the Hints tab and in the table details lists the rules that leave it out, from only this hint to every hint of its kind, each with a Copy button. `schema-viewer:check` prints the narrowest one under each hint, and the JSON export carries all of them in each hint's `ignore`.
+You rarely type a rule. Under each hint, **Ignore…** in the Hints tab and in the details of a table, relationship or column lists the rules that leave it out, from only this hint to every hint of its kind, each with a Copy button. `schema-viewer:check` prints the narrowest one under each hint, and the JSON export carries all of them in each hint's `ignore`.
 
 An unknown field or kind stops `schema-viewer:check` with an error, so a typo never ignores the wrong hints.

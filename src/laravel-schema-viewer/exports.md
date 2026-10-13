@@ -8,7 +8,7 @@ aside: false
 
 ## Downloads
 
-The Download menu saves the selected connection's database schema: tables, columns, keys, indexes and foreign keys. The files describe the database only, without models or relations, so any tool can read them.
+The Download menu in the top bar (under **⋯** on a phone) saves the selected connection's database schema: tables, columns, keys, indexes and foreign keys. The files describe the database only, without models or relations, so any tool can read them.
 
 <LiveDemo title="The live demo with its Download menu open" open="download" />
 
@@ -47,7 +47,7 @@ php artisan schema-viewer:export --format=html --output=docs/schema.html
 
 `--output` takes a folder, written as `index.html` (default `schema-viewer`), or a `.html` file. The file carries everything: the viewer, its fonts, every connection's tables, models, relations and hints, and the Mermaid, DBML, Markdown and JSON downloads. The viewer and the data are stored compressed, so a large schema stays small; the file needs a current browser (Safari 16.4 or later). Open it from disk, or upload it to GitHub Pages, Netlify, an S3 bucket or any static host, for example as a CI step after migrations.
 
-The link button in the bar at the bottom (<kbd>Shift</kbd> <kbd>C</kbd>) copies a link to exactly what is on screen, and it works in the file too. A link such as `schema.html#connection=all&table=mysql:orders&focus=1` opens it on the `orders` table with focus mode on; `relationship=…` or `column=mysql:orders.user_id` opens a relationship or a column instead, and the copied link also keeps the zoom and the columns shown. A pull request can point at exactly what it changes. Editor links are left out, since the file may be opened anywhere.
+**Copy link** in the details panel (<kbd>Shift</kbd> <kbd>C</kbd>) copies a link to exactly what is on screen, and it works in the file too. A link such as `schema.html#connection=all&table=mysql:orders&focus=1` opens it on the `orders` table with focus mode on; `relationship=…` or `column=mysql:orders.user_id` opens a relationship or a column instead, and the copied link also keeps the zoom and the columns shown. A pull request can point at exactly what it changes. Editor links are left out, since the file may be opened anywhere.
 
 It shows the schema as it was when exported, so export again after a migration. Anyone who can open the file can read the schema: host it where only your team can.
 

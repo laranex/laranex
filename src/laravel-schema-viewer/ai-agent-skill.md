@@ -1,28 +1,34 @@
 ---
 title: AI Agent Skill
-description: Laravel Schema Viewer is built for humans and AI agents. Install its agent skill so Claude Code, Codex, Cursor and other coding agents read your schema before changing it.
+description: Laravel Schema Viewer is built for humans and AI agents. Install its agent skills so Claude Code, Codex, Cursor and other coding agents set it up and read your schema before changing it.
 ---
 
 # AI Agent Skill
 
-Laravel Schema Viewer is built for humans and AI agents. These docs are written for developers, and the package also ships an agent skill: a short guide that teaches coding agents such as Claude Code, Codex and Cursor to read the real schema before writing a migration, a model or a query.
+Laravel Schema Viewer is built for humans and AI agents. These docs are written for developers, and the package also ships two agent skills: short guides that teach coding agents such as Claude Code, Codex and Cursor to set the package up and to read the real schema before writing a migration, a model or a query.
 
-## Installing the skill
+## Installing the skills
 
-If your app uses [Laravel Boost](https://github.com/laravel/boost), the skill is installed for you by `php artisan boost:install`; run `php artisan boost:update` after updating Laravel Schema Viewer to refresh it. With any other agent:
+If your app uses [Laravel Boost](https://github.com/laravel/boost), both skills are installed for you by `php artisan boost:install`; run `php artisan boost:update` after updating Laravel Schema Viewer to refresh them. With any other agent, one command installs both:
 
 ```bash
 npx skills add laranex/laravel-schema-viewer
 ```
 
-Or copy `skills/laravel-schema-viewer` from the [repository](https://github.com/laranex/laravel-schema-viewer) into your project's `.claude/skills` or `.agents/skills` folder.
+Or copy `skills/laravel-schema-viewer` and `skills/laravel-schema-viewer-schema` from the [repository](https://github.com/laranex/laravel-schema-viewer) into your project's `.claude/skills` or `.agents/skills` folder.
 
-## What the skill covers
+## What the skills cover
 
-Understand a Laravel app's database before changing it: read every table, column, index and foreign key together with the Eloquent models and relations that use them, find mismatches between the two, and export the schema as Markdown, JSON, Mermaid or DBML.
+### `laravel-schema-viewer`: set it up
 
-It covers when to use the package, installing and configuring it, reading the schema with `schema-viewer:export`, checking it with `schema-viewer:check` and what each hint means, testing your app and what to avoid. It is written from the package source and kept in the repository next to the code.
+Install, configure and share the package: installing it, its settings, who may open the viewer with the `viewSchema` gate, accepting hints with `hints.ignore`, failing CI with `schema-viewer:check`, exporting a standalone HTML viewer, testing your app and what to avoid.
 
-## Keeping it current
+### `laravel-schema-viewer-schema`: read the schema
 
-The skill lives in the package repository and is versioned with it, so it always describes the release you install. When you update Laravel Schema Viewer, update the skill the same way you installed it.
+Learn the app's real database before changing it: read every table, column, index and foreign key with `schema-viewer:export --format=markdown`, and the models and relations with `--format=json`. It shows how to answer questions from the JSON (which relation uses a column, whether a foreign key backs it through each link's `state`, where it is declared through `source`, what a model adds, through relations in `derivedLinks`), what each hint kind means and what to do about it, and how to link a person to a table, relationship or column in the viewer.
+
+Both are written from the package source and kept in the repository next to the code.
+
+## Keeping them current
+
+The skills live in the package repository and are versioned with it, so they always describe the release you install. When you update Laravel Schema Viewer, update the skills the same way you installed them.

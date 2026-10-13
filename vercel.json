@@ -8,11 +8,6 @@
       "statusCode": 301
     },
     {
-      "source": "/laravel-schema-viewer/viewer",
-      "destination": "/laravel-schema-viewer/introduction",
-      "statusCode": 301
-    },
-    {
       "source": "/goravel-myanmar-payments/usage",
       "destination": "/goravel-myanmar-payments/payment-flows",
       "statusCode": 301

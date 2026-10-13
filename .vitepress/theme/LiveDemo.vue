@@ -25,8 +25,10 @@ function act(win: Window & typeof globalThis): void {
     win.dispatchEvent(new win.KeyboardEvent('keydown', { key: props.shortcut, bubbles: true }))
   }
   if (props.open === 'download') {
-    // The menu opens on pointer down, like a click.
-    win.document.querySelector('[data-tour="actions"] button')?.dispatchEvent(new win.PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }))
+    // The menu opens on pointer down, like a click. On a phone it lives in the More actions menu.
+    const doc = win.document
+    const menu = doc.querySelector('[data-tour="actions"] button') ?? doc.querySelector('button[aria-label="More actions"]')
+    menu?.dispatchEvent(new win.PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }))
   }
 }
 

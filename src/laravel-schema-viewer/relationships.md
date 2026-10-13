@@ -13,7 +13,7 @@ Laravel Schema Viewer draws a line for every link between two tables, from two s
 
 When a foreign key and one or more relations use the same columns, they become one line.
 
-<LiveDemo title="The live demo focused on products and its neighbors: click a line or a table to follow it" hash="connection=sqlite&table=sqlite:products&focus=1" shortcut="f" />
+<LiveDemo title="The live demo focused on the orders → users relationship: its keys, foreign key and relations are in Details" hash="connection=sqlite&relationship=sqlite:l3fc8b97506&focus=1" />
 
 ## Line styles
 
@@ -24,7 +24,9 @@ When a foreign key and one or more relations use the same columns, they become o
 | Solid grey | A foreign key that no model declares |
 | Dotted blue | A through relation (`hasOneThrough`, `hasManyThrough`) |
 
-Crow's feet mark the many side of a line. The label names the relation methods and the kind of relationship.
+Crow's feet mark the many side of a line. The label names the relation methods and the kind of relationship; hover it for the exact columns. The **Relationships** menu in the bar shows or hides each kind (<kbd>1</kbd>–<kbd>4</kbd>).
+
+Click a line to pick it: it lights up, the rest dims, and Details shows its keys, its foreign key (name, on update, on delete, index) and every relation that uses it. Double-click it to focus on the two tables it joins. With more than 60 tables on screen, lines are thin and muted and only the picked table's lines are labeled; see [Using the Viewer](./viewer).
 
 ## Relation types
 
