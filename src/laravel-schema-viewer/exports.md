@@ -1,6 +1,6 @@
 ---
 title: Downloads & Commands
-description: Download the database schema as Mermaid, DBML, Markdown or JSON, export the viewer as a standalone HTML file, and check the schema in CI.
+description: Download the diagram as SVG or PNG and the database schema as Mermaid, DBML, Markdown or JSON, export the viewer as a standalone HTML file, and check the schema in CI.
 aside: false
 ---
 
@@ -18,6 +18,17 @@ aside: false
 | DBML | `schema-<connection>.dbml` | [dbdiagram.io](https://dbdiagram.io) and other DBML tools |
 | Markdown | `schema-<connection>.md` | A readable reference of every table |
 | JSON | `schema-<connection>.json` | Scripts and tools |
+
+### Diagram image
+
+**Diagram image** saves the diagram itself, as it is shown: the connection or connections in view, the kinds of lines and tables you show, focus mode, folded cards, relation names when **Relation names** is on, and the current light or dark theme. Hover, selection, dimming, the grid, the minimap and the controls are left out. **Whole diagram** (the default) frames every card; **What's on screen** keeps the area in view. The dialog says how many tables the image shows.
+
+| Format | File | For |
+|---|---|---|
+| SVG | `schema-<connection>.svg` (`schema-all.svg` for every connection) | Docs, slides and print: sharp at any size, with the fonts inside |
+| PNG | `schema-<connection>.png` | Chats, issues and pull requests |
+
+A PNG is painted at twice the diagram's size. Browsers paint at most 16,384 pixels a side and a limited area, so a very large diagram is saved smaller and the viewer says at what scale; the SVG always keeps every detail. The connection picked above applies to the text formats only. Images work in an exported HTML file too.
 
 The Markdown and DBML files carry your [notes](./configuration#notes) next to the database's comments: the project note under the Markdown title and in a DBML `Project` block, table and column notes as `comment · note`.
 

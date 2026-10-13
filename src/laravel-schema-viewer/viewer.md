@@ -59,6 +59,10 @@ Click a table, a line or a column row on the diagram to pick it, and its details
 
 Double-click a table, a line or a column to focus on it: only it and the tables around it stay on the diagram. The bar at the top chooses **1**, **2** or **3 links** away; for a relationship or a column, **1 link** keeps just the tables it touches. <kbd>Shift</kbd> <kbd>F</kbd> focuses on what is picked, or leaves focus mode. <kbd>Esc</kbd> leaves focus mode first, then clears the pick.
 
+## Saving the diagram
+
+**Download** saves the diagram as an SVG or PNG image, as it is shown, the whole of it or what is on screen; see [Diagram image](./exports#diagram-image).
+
 ## Sharing a view
 
 The viewer keeps what is on screen in the URL, so a link opens the same place:
