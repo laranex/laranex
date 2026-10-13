@@ -19,19 +19,19 @@ aside: false
 | Markdown | `schema-<connection>.md` | A readable reference of every table |
 | JSON | `schema-<connection>.json` | Scripts and tools |
 
-The files come from the snapshot `schema-viewer:build` wrote, so a large schema downloads the same as a small one, and they match the diagram on screen.
+The page carries every file, from the snapshot `schema-viewer:build` wrote, so a download needs no request to the app and matches the diagram on screen.
 
 **This page as HTML**, under **Use it offline**, saves the whole viewer with every connection as one HTML file that opens in any current browser, offline, the same file as [`--format=html`](#standalone-viewer). Your browser builds it from the page it is on.
 
 ## `schema-viewer:build`
 
-Reads the database and the models and writes the snapshot the viewer serves, `schema-viewer.json` in the project root by default:
+Reads the database and the models and writes the snapshot the viewer's page carries, always `schema-viewer.json` in the project root:
 
 ```bash
 php artisan schema-viewer:build
 ```
 
-Run it again after migrating; on a server, run it in your deploy script. The file is readable JSON: `format`, the full `document` (the same as `--format=json` below) and the `downloads` of each connection. Scripts and AI agents can read it directly. See [The schema snapshot](./installation#the-schema-snapshot).
+Run it again after migrating; on a server, run it in your deploy script. The file is readable JSON: `format`, the full `document` (the same as `--format=json` below) and the `downloads` of each connection. Scripts and AI agents read it directly; the viewer has no API. See [The schema snapshot](./installation#the-schema-snapshot).
 
 ## `schema-viewer:export`
 
@@ -47,7 +47,7 @@ php artisan schema-viewer:export --format=json
 
 ## Standalone viewer
 
-Export the whole viewer as one HTML file and host it anywhere, without the Laravel app or its API:
+Export the whole viewer as one HTML file and host it anywhere, without the Laravel app:
 
 ```bash
 php artisan schema-viewer:export --format=html

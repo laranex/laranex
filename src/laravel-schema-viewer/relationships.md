@@ -45,7 +45,7 @@ Relations registered with `Model::resolveRelationUsing()` and relation classes f
 
 ## What runs when the snapshot is built
 
-Reading relations runs your code, in the `schema-viewer:build` process (or after `migrate`, in that process) and never in a web request:
+Reading relations runs your code, in the `schema-viewer:build` process and never in a web request (the viewer's page only carries the snapshot):
 
 - Every model in the scanned folders is constructed, so its constructor, `boot()`, `booted()` and trait initializers run.
 - Every candidate method is called on that blank model, with no row loaded, and so is every relation registered with `Model::resolveRelationUsing()`.

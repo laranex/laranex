@@ -19,7 +19,7 @@ Install it as a dev dependency unless your team wants the viewer on a server; se
 
 ## The schema snapshot
 
-`schema-viewer:build` reads the database and your Eloquent models and writes `schema-viewer.json` in the project root: the schema document plus each connection's Mermaid, DBML and Markdown downloads, as readable JSON. The viewer's page, its API and its downloads only read that file. No model code runs in a web request, in any environment.
+`schema-viewer:build` reads the database and your Eloquent models and writes `schema-viewer.json` in the project root: the schema document plus each connection's Mermaid, DBML and Markdown downloads, as readable JSON. It is always written there, never under `public/`. The viewer has no API: its page carries the schema and the downloads from that file, the way a [standalone export](./exports#standalone-viewer) does, and is sent compressed. No model code runs in a web request, in any environment.
 
 Run the build again after you migrate or change a model; the viewer shows the snapshot it last wrote. On a server, run it in your deploy script after `migrate`:
 
@@ -34,12 +34,10 @@ Building runs your models: each one is constructed, and every relation method is
 
 ### Commit it or ignore it
 
-Both work; pick one for the team.
+The file lists every table and column, the models' details (fillable, hidden, casts, scopes) and the source file paths, so commit it only when the repository is private.
 
-- **Commit `schema-viewer.json`.** Every clone and every server has the viewer without a database, and pull requests show schema changes as a diff of one readable file. Rebuild it with your migrations, as you would update a schema dump.
+- **Commit `schema-viewer.json`** (private repositories only). Every clone and every server has the viewer without a database, and pull requests show schema changes as a diff of one readable file. Rebuild it with your migrations, as you would update a schema dump.
 - **Ignore it.** Add `/schema-viewer.json` to `.gitignore` and let each machine build its own: locally after migrating, on a server in the deploy script.
-
-To keep it somewhere else, set `snapshot` (`SCHEMA_VIEWER_SNAPSHOT`), e.g. `storage/app/schema-viewer.json`; see [Configuration](./configuration).
 
 ## Access
 
@@ -57,7 +55,7 @@ SCHEMA_VIEWER_ENABLED=true
 
 Without the gate, the viewer answers 403 outside `local`. Schema details help an attacker, so keep the gate strict.
 
-To decide yourself, in every environment, call `SchemaViewer::auth()` in a service provider's `boot()`. Its callback replaces both checks (local and the gate), like `Telescope::auth()`:
+To decide yourself, in every environment, call `SchemaViewer::auth()` in a service provider's `boot()`. Its callback replaces both checks (local, with its host check, and the gate), like `Telescope::auth()`:
 
 ```php
 use Illuminate\Http\Request;
@@ -68,8 +66,8 @@ SchemaViewer::auth(fn (Request $request): bool => $request->user()?->isAdmin() ?
 
 The callback receives each request; keep request and user state out of the closure itself.
 
-::: warning Local means anyone who can reach the app
-In `local`, without `SchemaViewer::auth()`, the viewer skips the gate. If the app is reachable from outside, through Herd Share, Expose, ngrok, `artisan serve --host=0.0.0.0`, Docker ports or a server misconfigured as `local`, anyone with the link sees the full schema. Set `SCHEMA_VIEWER_ENABLED=false` while sharing the app, or decide who may open it with `SchemaViewer::auth()`.
+::: warning Local opens on this machine's hosts only
+In `local`, without `SchemaViewer::auth()`, the viewer skips the gate and checks the host instead: it opens on `APP_URL`'s host, `localhost`, `127.0.0.1` and `::1`, and answers 403 on any other host. A tunnel's own hostname (Herd Share, Expose, ngrok) or a web page that rebinds its name to your machine is refused. Someone who reaches the app under one of those hosts, for example through `artisan serve --host=0.0.0.0`, Docker ports or a server misconfigured as `local` with a matching `APP_URL`, still sees the full schema: set `SCHEMA_VIEWER_ENABLED=false` there. For Docker or a remote machine reached under another hostname, decide who may open it with `SchemaViewer::auth()`, which replaces the host check too.
 :::
 
 Every setting has a default; see [Configuration](./configuration) to change one.
