@@ -25,7 +25,7 @@ Polymorphic relations and relations across connections cannot have a foreign key
 
 ## Package tables
 
-Tables that a known package creates are tagged with it: Passport (`oauth_*`), spatie/laravel-permission (its five tables, renamed ones included) and Filament Breezy (`breezy_*`). The **Package tables** toggle (<kbd>P</kbd>) shows or hides them. They get hints like your own tables; ignore the ones you accept as below. Set `package_tables` to `false` to leave them untagged.
+Tables that a known package creates are tagged with it: Passport (`oauth_*`), spatie/laravel-permission (its five tables, renamed ones included) and Filament Breezy (`breezy_*`). **Package tables** in the **Tables** menu (<kbd>P</kbd>) shows or hides them. They get hints like your own tables; ignore the ones you accept as below. Set `package_tables` to `false` to leave them untagged.
 
 ## Ignoring hints
 
