@@ -72,4 +72,4 @@ The callback receives each request; keep request and user state out of the closu
 In `local`, without `SchemaViewer::auth()`, the viewer skips the gate. If the app is reachable from outside, through Herd Share, Expose, ngrok, `artisan serve --host=0.0.0.0`, Docker ports or a server misconfigured as `local`, anyone with the link sees the full schema. Set `SCHEMA_VIEWER_ENABLED=false` while sharing the app, or decide who may open it with `SchemaViewer::auth()`.
 :::
 
-Every setting has a default; see [Configuration](./configuration) to change one. Coming from v1? See [Upgrading](./upgrading).
+Every setting has a default; see [Configuration](./configuration) to change one.
