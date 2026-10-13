@@ -1,12 +1,12 @@
 ---
 title: Using the Viewer
-description: The floating bar, the Browse, Details and Hints tabs, focus mode, shared links and keyboard shortcuts of Laravel Schema Viewer.
+description: The floating bar, the Browse, Details, Hints and Changes tabs, focus mode, shared links and keyboard shortcuts of Laravel Schema Viewer.
 aside: false
 ---
 
 # Using the Viewer
 
-Each card is a table, and each line a relationship between two of them. Referenced tables sit to the left of the tables that point at them. Drag cards to arrange them, scroll or pinch to zoom, and drag the background to move around. The **?** button in the bar takes a one-minute tour.
+Each card is a table, and each line a relationship between two of them. Hover a column's type for its comment and [note](./configuration#notes). Referenced tables sit to the left of the tables that point at them. Drag cards to arrange them, scroll or pinch to zoom, and drag the background to move around. The **?** button in the bar takes a one-minute tour.
 
 <LiveDemo title="The live demo on its Browse tab: switch between tables, relationships and columns, and pick one" shortcut="a" />
 
@@ -33,16 +33,25 @@ Large schemas stay readable: a connection with more than 40 tables is laid out i
 
 ## The side panel
 
-The panel on the right has three tabs:
+The panel on the right has four tabs:
 
 - **Browse** (<kbd>A</kbd>) lists every **Table**, **Relationship** or **Column**, with one filter. Pick a row to show it on the diagram.
 - **Details** (<kbd>D</kbd>) shows what is picked, with **Focus** and **Copy link** at the top:
-  - a table: its columns, relations, the tables that use it, indexes and model. An index is marked **partial**, **expression** (a key part such as `lower(email)` or a prefix such as `name(10)`) or with its structure (`fulltext`, `gin`, `hash`…), and lists its `INCLUDE` columns;
+  - nothing yet: the project's [note](./configuration#notes), when you set one;
+  - a table: its comment and note, its columns, relations, the tables that use it, indexes and model. An index is marked **partial**, **expression** (a key part such as `lower(email)` or a prefix such as `name(10)`) or with its structure (`fulltext`, `gin`, `hash`…), and lists its `INCLUDE` columns;
   - a relationship: its keys, its state (FK + relation, relation only or FK only), the foreign key's name, on update and on delete actions and index, and the relations that use it;
-  - a column: its type, null, default, casts, indexes, foreign keys in and out, and the relationships that use it.
+  - a column: its type, null, default, comment and note, casts, indexes, foreign keys in and out, and the relationships that use it.
 - **Hints** (<kbd>H</kbd>) lists where the database and the models disagree, and where the database itself could be better. A hint marked **likely** is inferred from names or conventions; **All**, **Certain** and **Likely** filter them. See [Hints](./hints).
 
+- **Changes** (<kbd>W</kbd>) lists what changed since the previous build that changed the schema; see [Changes](#changes).
+
 Drag the grip on the panel's edge to widen or narrow it; double-click it to reset. The diagram always keeps room for the bar. With an [editor](./configuration) set, model and relation names open in it at their line.
+
+## Changes
+
+Each `schema-viewer:build` compares the schema with the snapshot it replaces, and the **Changes** tab lists the difference, grouped by table: tables, columns, indexes and foreign keys added, removed or changed (with the old and new values), models and relations, relationships that gained or lost their foreign key, and hints that appeared or went away. Click a row to open its table, column or relationship; removed rows are struck through. On the diagram, a filled dot marks a new table and a ring a changed one.
+
+The tab follows the connections in view. Before a second build has found a different schema it says there is nothing to compare yet. A renamed table or column shows as one removed and one added. Only the last step is kept: building again with the same schema keeps the list, and the next change replaces it. To see a longer stretch, compare with an older file using [`schema-viewer:diff`](./exports#schema-viewer-diff).
 
 ## Picking and focus
 
@@ -79,7 +88,7 @@ The viewer keeps what is on screen in the URL, so a link opens the same place:
 | <kbd>Y</kbd> <kbd>G</kbd> <kbd>P</kbd> | Show or hide your own, framework or package tables |
 | <kbd>L</kbd> | Relation names on every line |
 | <kbd>C</kbd> | All columns, keys only, or names only |
-| <kbd>A</kbd> <kbd>D</kbd> <kbd>H</kbd> | Browse, Details or Hints |
+| <kbd>A</kbd> <kbd>D</kbd> <kbd>H</kbd> <kbd>W</kbd> | Browse, Details, Hints or Changes |
 | <kbd>[</kbd> <kbd>]</kbd> | Previous or next connection |
 | <kbd>Shift</kbd> <kbd>F</kbd> | Focus on what is picked, or leave focus |
 | <kbd>Shift</kbd> <kbd>A</kbd> | Arrange automatically |

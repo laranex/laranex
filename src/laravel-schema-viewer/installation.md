@@ -19,7 +19,7 @@ Install it as a dev dependency unless your team wants the viewer on a server; se
 
 ## The schema snapshot
 
-`schema-viewer:build` reads the database and your Eloquent models and writes `schema-viewer.json` in the project root: the schema document plus each connection's Mermaid, DBML and Markdown downloads, as readable JSON. It is always written there, never under `public/`. The viewer has no API: its page carries the schema and the downloads from that file, the way a [standalone export](./exports#standalone-viewer) does, and is sent compressed. No model code runs in a web request, in any environment.
+`schema-viewer:build` reads the database and your Eloquent models and writes `schema-viewer.json` in the project root: the schema document plus each connection's Mermaid, DBML and Markdown downloads, and `changes`, what changed since the previous build that changed the schema, as readable JSON. It is always written there, never under `public/`. The viewer has no API: its page carries the schema and the downloads from that file, the way a [standalone export](./exports#standalone-viewer) does, and is sent compressed. No model code runs in a web request, in any environment.
 
 Run the build again after you migrate or change a model; the viewer shows the snapshot it last wrote. On a server, run it in your deploy script after `migrate`:
 
@@ -29,6 +29,8 @@ php artisan schema-viewer:build
 ```
 
 Without a snapshot, the viewer shows what to run instead of a diagram.
+
+Each build compares the schema with the snapshot it replaces. When they differ, `changes` lists what changed: tables, columns, indexes, foreign keys, models, relations, relationships that gained or lost a foreign key, and hints. When they are the same, the previous list is kept, so building twice changes nothing. The first build, or a build over a file from another version, writes `null`. The viewer's [Changes tab](./viewer#changes) and [`schema-viewer:diff`](./exports#schema-viewer-diff) show the list. Only the last step is kept: run the diff command against an older file to compare across several builds.
 
 Building runs your models: each one is constructed, and every relation method is called. While it runs, every database connection pretends (queries are logged, never sent), model events are off, and jobs, mail, notifications, HTTP calls, events and the cache are faked; see [Relationships](./relationships#what-runs-when-the-snapshot-is-built).
 

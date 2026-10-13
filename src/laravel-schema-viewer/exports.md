@@ -19,6 +19,8 @@ aside: false
 | Markdown | `schema-<connection>.md` | A readable reference of every table |
 | JSON | `schema-<connection>.json` | Scripts and tools |
 
+The Markdown and DBML files carry your [notes](./configuration#notes) next to the database's comments: the project note under the Markdown title and in a DBML `Project` block, table and column notes as `comment · note`.
+
 The page carries every file, from the snapshot `schema-viewer:build` wrote, so a download needs no request to the app and matches the diagram on screen.
 
 **This page as HTML**, under **Use it offline**, saves the whole viewer with every connection as one HTML file that opens in any current browser, offline, the same file as [`--format=html`](#standalone-viewer). Your browser builds it from the page it is on.
@@ -40,6 +42,30 @@ php artisan schema-viewer:build --check
 It exits with 0 and `Schema snapshot [schema-viewer.json] is up to date.` when they match, and with 1 when the file is missing or out of date, followed by up to ten lines on what differs (tables added, removed or changed, models, relations, hints) or that the file was written by another version of the package. A UTF-8 BOM and CRLF line endings do not count as a difference. See [Commit it](./installation#commit-it-or-ignore-it) for the CI step.
 
 Run it again after migrating; on a server, run it in your deploy script. The file is readable JSON: `format`, the full `document` (the same as `--format=json` below) and the `downloads` of each connection. Scripts and AI agents read it directly; the viewer has no API. See [The schema snapshot](./installation#the-schema-snapshot).
+
+## `schema-viewer:diff`
+
+Shows what changed in the schema, as text, Markdown or JSON:
+
+```bash
+# What changed since the previous build that changed the schema, from the snapshot alone
+php artisan schema-viewer:diff
+
+# An older snapshot against the schema now (reads the database and the models, writes nothing)
+php artisan schema-viewer:diff base.json
+
+# Two snapshots, without the database or the models
+php artisan schema-viewer:diff base.json --against=schema-viewer.json --format=markdown
+```
+
+Changes are grouped by table. Each one is a table, column, index or foreign key added, removed or changed with its old and new values, a model or relation, a relationship that gained or lost its foreign key, or a hint that appeared or went away. A renamed table or column shows as one removed and one added. `--format=json` prints `{"version": 1, "changes": [...]}`, each change with its `type`, `change` (added, removed or changed), `connection`, `table`, `name` and `fields` (`[before, after]`); `changes` is `null` when the snapshot has nothing to compare yet. It exits with 0, or with 2 when a file is missing, damaged or written by another version of the package.
+
+In a pull request, compare with the base branch's committed snapshot and write the result to the job summary:
+
+```bash
+git show origin/main:schema-viewer.json > base.json
+php artisan schema-viewer:diff base.json --against=schema-viewer.json --format=markdown >> "$GITHUB_STEP_SUMMARY"
+```
 
 ## `schema-viewer:export`
 

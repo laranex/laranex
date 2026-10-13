@@ -24,6 +24,7 @@ php artisan vendor:publish --tag="laravel-schema-viewer-config"
 | `exclude_tables` | `[]` | Tables never shown. Wildcards allowed, e.g. `telescope_*`. |
 | `framework_tables` | Laravel's own tables, `telescope_*`, `pulse_*` | Shown and tagged, so one toggle hides them. They get no hints. |
 | `package_tables` | Laravel's own packages, below | Table patterns by Composer package name. While a package is installed, its tables are tagged with its name, so one toggle hides them; they still get hints. Add your own packages, or set `false` to tag nothing. |
+| `notes` | none | Your own notes on the project, tables and columns, shown in the viewer and written into the exports; see [Notes](#notes). |
 | `hints.ignore` | `[]` | Rules for the hints you have accepted, such as `['connection' => 'mysql', 'table' => 'audit_logs']`; see [Ignoring hints](./hints#ignoring-hints). |
 | `hints.fail_on` | `foreign_key_without_index`, `unresolved_relation`, `model_without_table` | Kinds that make `schema-viewer:check` fail. |
 
@@ -43,4 +44,28 @@ The default list holds Laravel's own packages that create tables. Add any other 
 ],
 ```
 
-`framework_tables` is a plain list in the same way: Laravel's own tables (`migrations`, `jobs`, `job_batches`, `failed_jobs`, `cache`, `cache_locks`, `sessions`, `password_reset_tokens`, `personal_access_tokens`, `notifications`), plus `telescope_*` and `pulse_*`. Framework tables get no hints.
+### Notes
+
+Explain what the schema does not say: what a table holds, which values a column takes, who to ask. Notes show in the viewer beside the database's own comments, and go into the Markdown and DBML downloads and the JSON.
+
+```php
+'notes' => [
+    'project' => 'The shop and its analytics. Orders are placed by users and paid through Stripe.',
+    'tables' => [
+        'orders' => 'One row per checkout, kept after a refund.',
+        // Only the events table of the analytics connection
+        'analytics:events' => 'Raw tracking events, cleared after 90 days.',
+    ],
+    'columns' => [
+        'orders' => ['status' => 'pending, paid, shipped or refunded.'],
+    ],
+],
+```
+
+A table name without a connection applies on every connection that has that table; `connection:table` picks one, and wins over the plain name. Both the database comment and the note are kept: the viewer shows the comment, then the note, and formats with one place for it (Markdown's Comment column, DBML's `note`) write `comment · note`. The project note shows in the Details tab before anything is picked, under the title of the Markdown download and in a DBML `Project` block.
+
+Every note must be a string; anything else stops `schema-viewer:build` with an error. A note on a table or column that does not exist is not an error: the build warns, for example `2 notes match nothing: orders.stauts, invoices.`. Notes are part of the snapshot and of an HTML export, so they are seen by everyone who can open them.
+
+### Framework tables
+
+`framework_tables` is a plain list of table patterns: Laravel's own tables (`migrations`, `jobs`, `job_batches`, `failed_jobs`, `cache`, `cache_locks`, `sessions`, `password_reset_tokens`, `personal_access_tokens`, `notifications`), plus `telescope_*` and `pulse_*`. Framework tables get no hints.

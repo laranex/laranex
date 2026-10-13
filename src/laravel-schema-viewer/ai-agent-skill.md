@@ -25,7 +25,7 @@ Install, configure and share the package: installing it, building the schema sna
 
 ### `laravel-schema-viewer-schema`: read the schema
 
-Learn the app's real database before changing it: read `schema-viewer.json` in the project root when it is there, or every table, column, index and foreign key with `schema-viewer:export --format=markdown`, and the models and relations with `--format=json`. It shows how to answer questions from the JSON (which relation uses a column, whether a foreign key backs it through each link's `state`, where it is declared through `source`, what a model adds, through relations in `derivedLinks`), what each hint kind means, which are only likely, and what to do about it, reading `schema-viewer:check --format=json`, and how to link a person to a table, relationship or column in the viewer.
+Learn the app's real database before changing it: read `schema-viewer.json` in the project root when it is there, or every table, column, index and foreign key with `schema-viewer:export --format=markdown`, and the models and relations with `--format=json`. It shows how to answer questions from the JSON (which relation uses a column, whether a foreign key backs it through each link's `state`, where it is declared through `source`, what a model adds, through relations in `derivedLinks`), what each hint kind means, which are only likely, and what to do about it, reading `schema-viewer:check --format=json`, what changed with `schema-viewer:diff`, the notes your team wrote, and how to link a person to a table, relationship or column in the viewer.
 
 Both are written from the package source and kept in the repository next to the code.
 
