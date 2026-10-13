@@ -2,6 +2,7 @@ import '@fontsource-variable/geist'
 import '@fontsource-variable/geist-mono'
 import DefaultTheme from 'vitepress/theme'
 import CopyOrDownloadAsMarkdownButtons from 'vitepress-plugin-llms/vitepress-components/CopyOrDownloadAsMarkdownButtons.vue'
+import { inject } from '@vercel/analytics'
 import { h } from 'vue'
 import HomeHero from './HomeHero.vue'
 import HomePackages from './HomePackages.vue'
@@ -19,6 +20,7 @@ export default {
     app.component('PackageIntroduction', PackageIntroduction)
     app.component('LiveDemo', LiveDemo)
     app.component('SequenceDiagram', SequenceDiagram)
+    inject()
   },
   Layout() {
     return h(DefaultTheme.Layout, null, {
