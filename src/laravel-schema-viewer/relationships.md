@@ -9,7 +9,7 @@ aside: false
 Laravel Schema Viewer draws a line for every link between two tables, from two sources:
 
 1. **Foreign keys** read from the database.
-2. **Eloquent relations** read from your models: each public method that returns a relation, or whose body calls `$this->hasMany(`, `$this->belongsTo(` and the other builders, is called on a fresh model. Building a relation runs no query, and the object it returns gives the exact keys, pivot table, morph columns and conditions.
+2. **Eloquent relations** read from your models when `php artisan schema-viewer:build` runs: each public method that returns a relation, or whose body calls `$this->hasMany(`, `$this->belongsTo(` and the other builders, is called on a fresh model. The object it returns gives the exact keys, pivot table, morph columns and conditions.
 
 When a foreign key and one or more relations use the same columns, they become one line.
 
@@ -42,3 +42,25 @@ Click a line to pick it: it lights up, the rest dims, and Details shows its keys
 | Related model on another connection | A line to a dashed card for that connection |
 
 Relations registered with `Model::resolveRelationUsing()` and relation classes from other packages are found too. A method that throws when called is reported as a hint instead of breaking the viewer.
+
+## What runs when the snapshot is built
+
+Reading relations runs your code, in the `schema-viewer:build` process (or after `migrate`, in that process) and never in a web request:
+
+- Every model in the scanned folders is constructed, so its constructor, `boot()`, `booted()` and trait initializers run.
+- Every candidate method is called on that blank model, with no row loaded, and so is every relation registered with `Model::resolveRelationUsing()`.
+
+While that code runs:
+
+| Kept from the outside world | How |
+|---|---|
+| Database writes and reads | Every configured connection pretends: queries are logged, never sent. Connections opened only for the build are closed again. |
+| Model events and observers | Off while relation methods run. |
+| Jobs, queued jobs, mail, notifications | Faked. |
+| HTTP calls through Laravel's `Http` client | Answered by a fake; nothing is sent. |
+| Events dispatched by a relation method | Faked. |
+| Cache writes | Kept in a store of their own, in memory. |
+
+Everything is put back when the build ends. Code that writes files, logs, or calls a service without Laravel's clients still runs, so keep relation methods to building the relation. `schema-viewer:export` and `schema-viewer:check` read the models the same way, with connections pretending and model events off, but without the fakes.
+
+A model that cannot be constructed, or a method that throws, is reported as a hint instead of breaking the build. Raw conditions (`whereRaw`) are shown with their literals as `?`.

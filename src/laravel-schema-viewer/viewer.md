@@ -10,6 +10,8 @@ Each card is a table, and each line a relationship between two of them. Referenc
 
 <LiveDemo title="The live demo on its Browse tab: switch between tables, relationships and columns, and pick one" shortcut="a" />
 
+The viewer shows the snapshot `php artisan schema-viewer:build` last wrote; it never reads the database or the models itself, so there is no button to read them again. In `local` the build runs after every `php artisan migrate`. After you alter a table by hand or change a model, run the build and reload the page. See [The schema snapshot](./installation#the-schema-snapshot).
+
 ## The floating bar
 
 The bar at the bottom of the diagram holds every view control:
@@ -20,7 +22,6 @@ The bar at the bottom of the diagram holds every view control:
 | Fit | Fits the whole diagram on screen (<kbd>F</kbd>). |
 | Hand | Pan mode: drag anywhere, even over a table, to move around. Or hold <kbd>Space</kbd>. |
 | Arrange | Arranges the tables automatically (<kbd>Shift</kbd> <kbd>A</kbd>). |
-| Read again | Reads the database and models again (<kbd>Shift</kbd> <kbd>R</kbd>). In your app only, not in an exported file. |
 | **Relationships** | Shows or hides each kind of line, with its legend: FK + relation, relation only, FK only, through (<kbd>1</kbd>–<kbd>4</kbd>). The button says **N off** while kinds are hidden. |
 | **Tables** | Shows or hides **Framework tables** (<kbd>G</kbd>) and **Package tables** (<kbd>P</kbd>). |
 | **Show** | **Relation names** on every line (<kbd>L</kbd>), the **Grid**, and **Columns**: **All**, only the **Keys** and the columns relations use, or only the table **Names** (<kbd>C</kbd>). A card's own arrow folds just that card. |

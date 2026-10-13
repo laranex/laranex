@@ -16,13 +16,12 @@ php artisan vendor:publish --tag="laravel-schema-viewer-config"
 | `enabled` | `SCHEMA_VIEWER_ENABLED`, unset | Unset: on in `local`, off elsewhere. `true` or `false` decides for every environment. |
 | `path` | `SCHEMA_VIEWER_PATH`, `schema-viewer` | The URL path of the viewer. |
 | `domain` | `SCHEMA_VIEWER_DOMAIN`, unset | Serves the viewer on its own domain. |
-| `middleware` | `['web']` | Route middleware. The `viewSchema` check is always added. |
+| `middleware` | `['web']` | Route middleware. The access check (`SchemaViewer::auth()`, or local and the `viewSchema` gate) is always added. |
 | `connections` | `null` | `null` reads the default connection and every connection a model uses. A list reads exactly those, e.g. `['mysql', 'analytics']`. |
 | `default_connection` | `SCHEMA_VIEWER_DEFAULT_CONNECTION`, `all` | What the viewer opens on: `all` puts every connection on one diagram, or name one, e.g. `mysql`. An unknown name opens on all. The HTML export keeps it. |
 | `editor` | `SCHEMA_VIEWER_EDITOR`, `null` | Opens models and relations in your editor at their line: `phpstorm`, `vscode`, `cursor`, `zed`, `sublime` and the other names Laravel's `app.editor` takes, or `['href' => 'myeditor://open?file={file}&line={line}']`. Add `'base_path'` when the editor sees the project at another path (Docker, Sail, WSL). `null` uses `app.editor`, in `local` only; without either there are no editor links. Links with unsafe schemes such as `javascript:` are dropped. |
-| `cache.enabled` | `SCHEMA_VIEWER_CACHE`, `true` | Keeps the schema the viewer read until a model file, this config, a connection's migrations or an SQLite database file changes. The refresh button (<kbd>Shift</kbd> <kbd>R</kbd>) reads it again, e.g. after altering a table by hand. The artisan commands never cache. |
-| `cache.store` | `SCHEMA_VIEWER_CACHE_STORE`, `null` | The cache store; `null` uses the default. |
-| `cache.ttl` | `3600` | Seconds before the schema is read again anyway. |
+| `snapshot` | `SCHEMA_VIEWER_SNAPSHOT`, `null` | Where `schema-viewer:build` writes the snapshot the viewer serves. `null` writes `schema-viewer.json` in the project root; a relative path starts there too. |
+| `build_after_migrate` | `SCHEMA_VIEWER_BUILD_AFTER_MIGRATE`, unset | Builds the snapshot again whenever migrations finish in the console, while the viewer is enabled. Unset: on in `local`, off elsewhere. A build that fails never fails the migration. |
 | `models` | `null` | Folders scanned for models. `null` scans `app/Models`. |
 | `exclude_tables` | `[]` | Tables never shown. Wildcards allowed, e.g. `telescope_*`. |
 | `framework_tables` | Laravel's own tables, `telescope_*`, `pulse_*` | Shown and tagged, so one toggle hides them. They get no hints. |

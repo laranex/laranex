@@ -522,6 +522,7 @@ export default defineConfig({
             { text: 'Hints', link: '/laravel-schema-viewer/hints' },
             { text: 'Downloads & Commands', link: '/laravel-schema-viewer/exports' },
             { text: 'AI Agent Skill', link: '/laravel-schema-viewer/ai-agent-skill' },
+            { text: 'Upgrading', link: '/laravel-schema-viewer/upgrading' },
           ],
         },
       ],

@@ -19,13 +19,23 @@ aside: false
 | Markdown | `schema-<connection>.md` | A readable reference of every table |
 | JSON | `schema-<connection>.json` | Scripts and tools |
 
-The server builds each file, so a large schema downloads the same as a small one.
+The files come from the snapshot `schema-viewer:build` wrote, so a large schema downloads the same as a small one, and they match the diagram on screen.
 
 **This page as HTML**, under **Use it offline**, saves the whole viewer with every connection as one HTML file that opens in any current browser, offline, the same file as [`--format=html`](#standalone-viewer). Your browser builds it from the page it is on.
 
+## `schema-viewer:build`
+
+Reads the database and the models and writes the snapshot the viewer serves, `schema-viewer.json` in the project root by default:
+
+```bash
+php artisan schema-viewer:build
+```
+
+It runs by itself after migrations in `local`; on a server, run it in your deploy script. The file is readable JSON: `format`, the full `document` (the same as `--format=json` below) and the `downloads` of each connection. Scripts and AI agents can read it directly. See [The schema snapshot](./installation#the-schema-snapshot).
+
 ## `schema-viewer:export`
 
-The same formats from the command line, plus the full document:
+The same formats from the command line, plus the full document, read from the database and the models now rather than from the snapshot:
 
 ```bash
 php artisan schema-viewer:export --format=markdown
