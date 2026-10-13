@@ -41,7 +41,7 @@ The file lists every table and column, the models' details (fillable, hidden, ca
 
 ## Access
 
-The viewer is on in the `local` environment, where it opens on `APP_URL`'s host and `localhost`, and off everywhere else. To open it on a staging or production server, turn it on and say who may see it with the `viewSchema` gate, for example in `AppServiceProvider::boot()`:
+The viewer is on in the `local` environment and off everywhere else. To open it on a staging or production server, turn it on and say who may see it with the `viewSchema` gate, for example in `AppServiceProvider::boot()`:
 
 ```php
 use Illuminate\Support\Facades\Gate;
@@ -55,7 +55,7 @@ SCHEMA_VIEWER_ENABLED=true
 
 Without the gate, the viewer answers 403 outside `local`. Schema details help an attacker, so keep the gate strict.
 
-To decide yourself, in every environment, call `SchemaViewer::auth()` in a service provider's `boot()`. Its callback replaces both checks (local, with its host check, and the gate), like `Telescope::auth()`:
+To decide yourself, in every environment, call `SchemaViewer::auth()` in a service provider's `boot()`. Its callback replaces both checks (local and the gate), like `Telescope::auth()`:
 
 ```php
 use Illuminate\Http\Request;
