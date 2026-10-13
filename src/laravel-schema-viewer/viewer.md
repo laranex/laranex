@@ -10,7 +10,7 @@ Each card is a table, and each line a relationship between two of them. Referenc
 
 <LiveDemo title="The live demo on its Browse tab: switch between tables, relationships and columns, and pick one" shortcut="a" />
 
-The viewer shows the snapshot `php artisan schema-viewer:build` last wrote; it never reads the database or the models itself, so there is no button to read them again. In `local` the build runs after every `php artisan migrate`. After you alter a table by hand or change a model, run the build and reload the page. See [The schema snapshot](./installation#the-schema-snapshot).
+The viewer shows the snapshot `php artisan schema-viewer:build` last wrote; it never reads the database or the models itself, so there is no button to read them again. After you migrate, alter a table by hand or change a model, run the build again and reload the page. See [The schema snapshot](./installation#the-schema-snapshot).
 
 ## The floating bar
 

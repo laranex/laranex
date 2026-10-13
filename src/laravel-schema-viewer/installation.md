@@ -15,15 +15,13 @@ The service provider registers itself. Build the schema snapshot, then open `/sc
 php artisan schema-viewer:build
 ```
 
-The page loads the built viewer from the package, so there is no `npm install` and nothing to publish.
-
 Install it as a dev dependency unless your team wants the viewer on a server; see [Access](#access).
 
 ## The schema snapshot
 
 `schema-viewer:build` reads the database and your Eloquent models and writes `schema-viewer.json` in the project root: the schema document plus each connection's Mermaid, DBML and Markdown downloads, as readable JSON. The viewer's page, its API and its downloads only read that file. No model code runs in a web request, in any environment.
 
-In the `local` environment the build runs again by itself whenever `php artisan migrate` (or `migrate:fresh`, `migrate:rollback` and the others) finishes, so the viewer follows your migrations. A table you alter by hand, or a model you edit, shows after the next build. Elsewhere, run the build yourself, for example in your deploy script after `migrate`:
+Run the build again after you migrate or change a model; the viewer shows the snapshot it last wrote. On a server, run it in your deploy script after `migrate`:
 
 ```bash
 php artisan migrate --force
@@ -39,7 +37,7 @@ Building runs your models: each one is constructed, and every relation method is
 Both work; pick one for the team.
 
 - **Commit `schema-viewer.json`.** Every clone and every server has the viewer without a database, and pull requests show schema changes as a diff of one readable file. Rebuild it with your migrations, as you would update a schema dump.
-- **Ignore it.** Add `/schema-viewer.json` to `.gitignore` and let each machine build its own: locally after `migrate`, on a server in the deploy script.
+- **Ignore it.** Add `/schema-viewer.json` to `.gitignore` and let each machine build its own: locally after migrating, on a server in the deploy script.
 
 To keep it somewhere else, set `snapshot` (`SCHEMA_VIEWER_SNAPSHOT`), e.g. `storage/app/schema-viewer.json`; see [Configuration](./configuration).
 

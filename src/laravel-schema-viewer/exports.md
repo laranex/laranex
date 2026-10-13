@@ -31,7 +31,7 @@ Reads the database and the models and writes the snapshot the viewer serves, `sc
 php artisan schema-viewer:build
 ```
 
-It runs by itself after migrations in `local`; on a server, run it in your deploy script. The file is readable JSON: `format`, the full `document` (the same as `--format=json` below) and the `downloads` of each connection. Scripts and AI agents can read it directly. See [The schema snapshot](./installation#the-schema-snapshot).
+Run it again after migrating; on a server, run it in your deploy script. The file is readable JSON: `format`, the full `document` (the same as `--format=json` below) and the `downloads` of each connection. Scripts and AI agents can read it directly. See [The schema snapshot](./installation#the-schema-snapshot).
 
 ## `schema-viewer:export`
 

@@ -21,7 +21,6 @@ php artisan vendor:publish --tag="laravel-schema-viewer-config"
 | `default_connection` | `SCHEMA_VIEWER_DEFAULT_CONNECTION`, `all` | What the viewer opens on: `all` puts every connection on one diagram, or name one, e.g. `mysql`. An unknown name opens on all. The HTML export keeps it. |
 | `editor` | `SCHEMA_VIEWER_EDITOR`, `null` | Opens models and relations in your editor at their line: `phpstorm`, `vscode`, `cursor`, `zed`, `sublime` and the other names Laravel's `app.editor` takes, or `['href' => 'myeditor://open?file={file}&line={line}']`. Add `'base_path'` when the editor sees the project at another path (Docker, Sail, WSL). `null` uses `app.editor`, in `local` only; without either there are no editor links. Links with unsafe schemes such as `javascript:` are dropped. |
 | `snapshot` | `SCHEMA_VIEWER_SNAPSHOT`, `null` | Where `schema-viewer:build` writes the snapshot the viewer serves. `null` writes `schema-viewer.json` in the project root; a relative path starts there too. |
-| `build_after_migrate` | `SCHEMA_VIEWER_BUILD_AFTER_MIGRATE`, unset | Builds the snapshot again whenever migrations finish in the console, while the viewer is enabled. Unset: on in `local`, off elsewhere. A build that fails never fails the migration. |
 | `models` | `null` | Folders scanned for models. `null` scans `app/Models`. |
 | `exclude_tables` | `[]` | Tables never shown. Wildcards allowed, e.g. `telescope_*`. |
 | `framework_tables` | Laravel's own tables, `telescope_*`, `pulse_*` | Shown and tagged, so one toggle hides them. They get no hints. |

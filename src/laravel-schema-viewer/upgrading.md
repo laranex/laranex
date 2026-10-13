@@ -23,7 +23,7 @@ After upgrading, run it once:
 php artisan schema-viewer:build
 ```
 
-- **Locally**, it then runs by itself after every `php artisan migrate`. Turn that off with `SCHEMA_VIEWER_BUILD_AFTER_MIGRATE=false`.
+- **Locally**, run it again after migrating or changing a model.
 - **On a server** where the viewer is enabled, add it to the deploy script after `migrate`, or commit the file. See [Commit it or ignore it](./installation#commit-it-or-ignore-it).
 
 Until a snapshot exists, the page says what to run and `api/schema` and `api/export` answer 503 with the same message.
@@ -42,7 +42,6 @@ Until a snapshot exists, the page says what to run and `api/schema` and `api/exp
 | Key | Default | What it does |
 |---|---|---|
 | `snapshot` | `SCHEMA_VIEWER_SNAPSHOT`, `null` | Where the snapshot lives; `null` is `schema-viewer.json` in the project root. |
-| `build_after_migrate` | `SCHEMA_VIEWER_BUILD_AFTER_MIGRATE`, unset | Builds again after migrations in the console. Unset: `local` only. |
 
 If you published the config file, add both keys or publish it again.
 
