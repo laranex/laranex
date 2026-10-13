@@ -21,11 +21,11 @@ Or copy `skills/laravel-schema-viewer` and `skills/laravel-schema-viewer-schema`
 
 ### `laravel-schema-viewer`: set it up
 
-Install, configure and share the package: installing it, building the schema snapshot with `schema-viewer:build`, its settings, who may open the viewer with the `viewSchema` gate or `SchemaViewer::auth()`, accepting hints with `hints.ignore`, failing CI with `schema-viewer:check`, exporting a standalone HTML viewer, testing your app and what to avoid.
+Install, configure and share the package: installing it, building the schema snapshot with `schema-viewer:build`, its settings, who may open the viewer with the `viewSchema` gate or `SchemaViewer::auth()`, accepting hints with `hints.ignore`, failing CI with `schema-viewer:check` and on a stale snapshot with `schema-viewer:build --check`, exporting a standalone HTML viewer, testing your app and what to avoid.
 
 ### `laravel-schema-viewer-schema`: read the schema
 
-Learn the app's real database before changing it: read `schema-viewer.json` in the project root when it is there, or every table, column, index and foreign key with `schema-viewer:export --format=markdown`, and the models and relations with `--format=json`. It shows how to answer questions from the JSON (which relation uses a column, whether a foreign key backs it through each link's `state`, where it is declared through `source`, what a model adds, through relations in `derivedLinks`), what each hint kind means and what to do about it, and how to link a person to a table, relationship or column in the viewer.
+Learn the app's real database before changing it: read `schema-viewer.json` in the project root when it is there, or every table, column, index and foreign key with `schema-viewer:export --format=markdown`, and the models and relations with `--format=json`. It shows how to answer questions from the JSON (which relation uses a column, whether a foreign key backs it through each link's `state`, where it is declared through `source`, what a model adds, through relations in `derivedLinks`), what each hint kind means, which are only likely, and what to do about it, reading `schema-viewer:check --format=json`, and how to link a person to a table, relationship or column in the viewer.
 
 Both are written from the package source and kept in the repository next to the code.
 

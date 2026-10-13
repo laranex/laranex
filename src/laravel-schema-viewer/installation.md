@@ -39,6 +39,14 @@ The file lists every table and column, the models' details (fillable, hidden, ca
 - **Commit `schema-viewer.json`** (private repositories only). Every clone and every server has the viewer without a database, and pull requests show schema changes as a diff of one readable file. Rebuild it with your migrations, as you would update a schema dump.
 - **Ignore it.** Add `/schema-viewer.json` to `.gitignore` and let each machine build its own: locally after migrating, on a server in the deploy script.
 
+When you commit it, let CI catch a migration or a model change that was not rebuilt:
+
+```bash
+php artisan migrate --force && php artisan schema-viewer:build --check
+```
+
+The check builds the snapshot in memory and fails when the committed file is missing or out of date; see [`schema-viewer:build`](./exports#schema-viewer-build). CI must run the same database engine with the same connection names as the machine that built the file, since each engine reports types and indexes its own way. Adding `schema-viewer.json text eol=lf` to `.gitattributes` keeps line endings stable across systems; the check accepts CRLF checkouts either way.
+
 ## Access
 
 The viewer is on in the `local` environment and off everywhere else. To open it on a staging or production server, turn it on and say who may see it with the `viewSchema` gate, for example in `AppServiceProvider::boot()`:

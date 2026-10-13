@@ -31,6 +31,14 @@ Reads the database and the models and writes the snapshot the viewer's page carr
 php artisan schema-viewer:build
 ```
 
+`--check` builds the same file in memory and compares it with the one on disk, without writing anything:
+
+```bash
+php artisan schema-viewer:build --check
+```
+
+It exits with 0 and `Schema snapshot [schema-viewer.json] is up to date.` when they match, and with 1 when the file is missing or out of date, followed by up to ten lines on what differs (tables added, removed or changed, models, relations, hints) or that the file was written by another version of the package. A UTF-8 BOM and CRLF line endings do not count as a difference. See [Commit it](./installation#commit-it-or-ignore-it) for the CI step.
+
 Run it again after migrating; on a server, run it in your deploy script. The file is readable JSON: `format`, the full `document` (the same as `--format=json` below) and the `downloads` of each connection. Scripts and AI agents read it directly; the viewer has no API. See [The schema snapshot](./installation#the-schema-snapshot).
 
 ## `schema-viewer:export`
@@ -70,4 +78,44 @@ php artisan schema-viewer:check
 php artisan schema-viewer:check --fail-on=foreign_key_without_index
 ```
 
-The failing kinds come from `hints.fail_on` unless you pass `--fail-on`. Add it to CI to keep the schema and the models in step.
+The failing kinds come from `hints.fail_on` unless you pass `--fail-on`. Add it to CI to keep the schema and the models in step. Each hint prints as `FAIL` or `NOTE` with its connection, table and kind, followed by `· likely` when it is inferred from names or conventions (see [Hints](./hints)), its message and the narrowest rule that ignores it.
+
+### JSON output
+
+`--format=json` prints the same result as one JSON document, for scripts and AI agents:
+
+```bash
+php artisan schema-viewer:check --format=json
+```
+
+```json
+{
+    "version": 1,
+    "passed": false,
+    "failOn": ["foreign_key_without_index", "unresolved_relation", "model_without_table"],
+    "summary": {
+        "hints": 2,
+        "failing": 1,
+        "bySeverity": { "warning": 2 },
+        "byCertainty": { "certain": 1, "likely": 1 },
+        "byKind": { "foreign_key_without_index": 1, "morph_without_index": 1 }
+    },
+    "hints": [
+        {
+            "kind": "foreign_key_without_index",
+            "severity": "warning",
+            "certainty": "certain",
+            "connection": "pgsql",
+            "table": "role_user",
+            "columns": "role_id",
+            "relation": null,
+            "message": "role_user.role_id has a foreign key but no index that starts with it, so deleting or updating a role row scans the whole table.",
+            "fails": true,
+            "ignore": { "hint": { "connection": "pgsql", "table": "role_user", "kind": "foreign_key_without_index", "columns": "role_id" }, "kindOnTable": { … }, "table": { … }, "kind": { … } },
+            "ignorePhp": "['connection' => 'pgsql', 'table' => 'role_user', 'kind' => 'foreign_key_without_index', 'columns' => 'role_id'],"
+        }
+    ]
+}
+```
+
+The hints come in the order the check lists them, `fails` follows `--fail-on` or `hints.fail_on`, and `ignorePhp` is the rule the text output prints. The exit codes stay the same: 0 when it passes, 1 when a failing hint remains or the schema cannot be read, 2 for an unknown kind or a bad `hints.ignore` rule. When it cannot run, the document is `{"version": 1, "passed": false, "error": "…"}`.
