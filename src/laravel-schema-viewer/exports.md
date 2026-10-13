@@ -8,9 +8,9 @@ aside: false
 
 ## Downloads
 
-The Download menu in the top bar (under **⋯** on a phone) saves the selected connection's database schema: tables, columns, keys, indexes and foreign keys. The files describe the database only, without models or relations, so any tool can read them.
+**Download** in the top bar (under **⋯** on a phone) opens a dialog: pick a connection, then save its database schema (tables, columns, keys, indexes and foreign keys) in one of the formats below, or the whole viewer as an offline page. The files describe the database only, without models or relations, so any tool can read them.
 
-<LiveDemo title="The live demo with its Download menu open" open="download" />
+<LiveDemo title="The live demo with its Download dialog open" open="download" />
 
 | Format | File | For |
 |---|---|---|

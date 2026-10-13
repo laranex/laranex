@@ -25,10 +25,19 @@ function act(win: Window & typeof globalThis): void {
     win.dispatchEvent(new win.KeyboardEvent('keydown', { key: props.shortcut, bubbles: true }))
   }
   if (props.open === 'download') {
-    // The menu opens on pointer down, like a click. On a phone it lives in the More actions menu.
+    // The Download button opens its dialog. On a phone it is "Download…" in the More actions menu, which opens on
+    // pointer down.
     const doc = win.document
-    const menu = doc.querySelector('[data-tour="actions"] button') ?? doc.querySelector('button[aria-label="More actions"]')
-    menu?.dispatchEvent(new win.PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }))
+    const button = doc.querySelector<HTMLButtonElement>('[data-tour="actions"] button')
+    if (button) {
+      button.click()
+      return
+    }
+    doc.querySelector('button[aria-label="More actions"]')?.dispatchEvent(new win.PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }))
+    window.setTimeout(() => {
+      const item = [...doc.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((el) => el.textContent?.startsWith('Download'))
+      item?.click()
+    }, 150)
   }
 }
 
