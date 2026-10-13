@@ -41,7 +41,7 @@ The file lists every table and column, the models' details (fillable, hidden, ca
 
 ## Access
 
-The viewer is on in the `local` environment and off everywhere else. To open it on a staging or production server, turn it on and say who may see it with the `viewSchema` gate, for example in `AppServiceProvider::boot()`:
+The viewer is on in the `local` environment, where it opens on `APP_URL`'s host and `localhost`, and off everywhere else. To open it on a staging or production server, turn it on and say who may see it with the `viewSchema` gate, for example in `AppServiceProvider::boot()`:
 
 ```php
 use Illuminate\Support\Facades\Gate;
@@ -65,9 +65,5 @@ SchemaViewer::auth(fn (Request $request): bool => $request->user()?->isAdmin() ?
 ```
 
 The callback receives each request; keep request and user state out of the closure itself.
-
-::: warning Local opens on this machine's hosts only
-In `local`, without `SchemaViewer::auth()`, the viewer skips the gate and checks the host instead: it opens on `APP_URL`'s host, `localhost`, `127.0.0.1` and `::1`, and answers 403 on any other host. A tunnel's own hostname (Herd Share, Expose, ngrok) or a web page that rebinds its name to your machine is refused. Someone who reaches the app under one of those hosts, for example through `artisan serve --host=0.0.0.0`, Docker ports or a server misconfigured as `local` with a matching `APP_URL`, still sees the full schema: set `SCHEMA_VIEWER_ENABLED=false` there. For Docker or a remote machine reached under another hostname, decide who may open it with `SchemaViewer::auth()`, which replaces the host check too.
-:::
 
 Every setting has a default; see [Configuration](./configuration) to change one.
