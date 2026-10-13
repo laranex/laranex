@@ -23,7 +23,7 @@ The bar at the bottom of the diagram holds every view control:
 | Hand | Pan mode: drag anywhere, even over a table, to move around. Or hold <kbd>Space</kbd>. |
 | Arrange | Arranges the tables automatically (<kbd>Shift</kbd> <kbd>A</kbd>). |
 | **Relationships** | Shows or hides each kind of line, with its legend: FK + relation, relation only, FK only, through (<kbd>1</kbd>–<kbd>4</kbd>). The button says **N off** while kinds are hidden. |
-| **Tables** | Shows or hides **Framework tables** (<kbd>G</kbd>) and **Package tables** (<kbd>P</kbd>). |
+| **Tables** | Shows or hides each kind of table, with its count: **Your tables** (<kbd>Y</kbd>), **Framework tables** (<kbd>G</kbd>) and **Package tables** (<kbd>P</kbd>). |
 | **Show** | **Relation names** on every line (<kbd>L</kbd>), the **Grid**, and **Columns**: **All**, only the **Keys** and the columns relations use, or only the table **Names** (<kbd>C</kbd>). A card's own arrow folds just that card. |
 | **?** | Takes the tour. |
 
@@ -76,7 +76,7 @@ The viewer keeps what is on screen in the URL, so a link opens the same place:
 | <kbd>+</kbd> <kbd>−</kbd> | Zoom in or out |
 | <kbd>Space</kbd> | Hold to pan |
 | <kbd>1</kbd>–<kbd>4</kbd> | Show or hide each kind of line |
-| <kbd>G</kbd> <kbd>P</kbd> | Show or hide framework or package tables |
+| <kbd>Y</kbd> <kbd>G</kbd> <kbd>P</kbd> | Show or hide your own, framework or package tables |
 | <kbd>L</kbd> | Relation names on every line |
 | <kbd>C</kbd> | All columns, keys only, or names only |
 | <kbd>A</kbd> <kbd>D</kbd> <kbd>H</kbd> | Browse, Details or Hints |
