@@ -38,7 +38,7 @@ The panel on the right has four tabs:
 - **Browse** (<kbd>A</kbd>) lists every **Table**, **Relationship** or **Column**, with one filter. Pick a row to show it on the diagram.
 - **Details** (<kbd>D</kbd>) shows what is picked, with **Focus** and **Copy link** at the top:
   - nothing yet: the project's [note](./configuration#notes), when you set one;
-  - a table: its comment and note, its columns, relations, the tables that use it, indexes and model. An index is marked **partial**, **expression** (a key part such as `lower(email)` or a prefix such as `name(10)`) or with its structure (`fulltext`, `gin`, `hash`…), and lists its `INCLUDE` columns;
+  - a table: its comment and note, its columns with each one's comment and note, relations, the tables that use it, indexes and model. An index is marked **partial**, **expression** (a key part such as `lower(email)` or a prefix such as `name(10)`) or with its structure (`fulltext`, `gin`, `hash`…), and lists its `INCLUDE` columns;
   - a relationship: its keys, its state (FK + relation, relation only or FK only), the foreign key's name, on update and on delete actions and index, and the relations that use it;
   - a column: its type, null, default, comment and note, casts, indexes, foreign keys in and out, and the relationships that use it.
 - **Hints** (<kbd>H</kbd>) lists where the database and the models disagree, and where the database itself could be better. A hint marked **likely** is inferred from names or conventions; **All**, **Certain** and **Likely** filter them. See [Hints](./hints).

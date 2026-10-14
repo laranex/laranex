@@ -28,6 +28,10 @@ php artisan vendor:publish --tag="laravel-schema-viewer-config"
 | `hints.ignore` | `[]` | Rules for the hints you have accepted, such as `['connection' => 'mysql', 'table' => 'audit_logs']`; see [Ignoring hints](./hints#ignoring-hints). |
 | `hints.fail_on` | `foreign_key_without_index`, `unresolved_relation`, `model_without_table` | Kinds that make `schema-viewer:check` fail. |
 
+### Framework tables
+
+`framework_tables` is a plain list of table patterns: the tables Laravel itself creates (`migrations`, `jobs`, `job_batches`, `failed_jobs`, `cache`, `cache_locks`, `sessions`, `password_reset_tokens`, `notifications`). Framework tables get no hints. Tables of Laravel's packages, such as Telescope, Pulse and Sanctum, are package tables.
+
 ### Package tables
 
 The default list holds Laravel's own packages that create tables. Add any other package by its Composer name; its tables are tagged only while it is installed. Wildcards are allowed.
@@ -68,7 +72,3 @@ Explain what the schema does not say: what a table holds, which values a column 
 A table name without a connection applies on every connection that has that table; `connection:table` picks one, and wins over the plain name. Both the database comment and the note are kept: the viewer shows the comment, then the note, and formats with one place for it (Markdown's Comment column, DBML's `note`) write `comment · note`. The project note shows in the Details tab before anything is picked, under the title of the Markdown download and in a DBML `Project` block.
 
 Every note must be a string; anything else stops `schema-viewer:build` with an error. A note on a table or column that does not exist is not an error: the build warns, for example `2 notes match nothing: orders.stauts, invoices.`. Notes are part of the snapshot and of an HTML export, so they are seen by everyone who can open them.
-
-### Framework tables
-
-`framework_tables` is a plain list of table patterns: the tables Laravel itself creates (`migrations`, `jobs`, `job_batches`, `failed_jobs`, `cache`, `cache_locks`, `sessions`, `password_reset_tokens`, `notifications`). Framework tables get no hints. Tables of Laravel's packages, such as Telescope, Pulse and Sanctum, are package tables.
