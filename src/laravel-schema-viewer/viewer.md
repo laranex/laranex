@@ -6,7 +6,7 @@ aside: false
 
 # Using the Viewer
 
-Each card is a table, and each line a relationship between two of them. A note icon marks a table or a column that has a comment or a [note](./configuration#notes): hover it to read them, or turn on **Notes** under **Show** (<kbd>N</kbd>) to write each table's and column's note on its card, on a row of its own. The same icon on a line's label marks a relationship with a note; hover the label to read it. Referenced tables sit to the left of the tables that point at them. Drag cards to arrange them. Scroll, sideways too, or drag the background to move around; hold <kbd>Ctrl</kbd>, <kbd>⌘</kbd> or the Windows key while scrolling, or pinch, to zoom. At 40% and below, the diagram shows a picture of itself with each column as a placeholder bar, the way dbdiagram does: it moves smoothly however many tables there are, the picked table and its lines stay live and readable on it, and a click or double-click on a table works as on its card. The **?** button in the bar takes a one-minute tour.
+Each card is a table, and each line a relationship between two of them. A note icon marks a table or a column that has a comment or a [note](./configuration#notes): hover it to read them, or turn on **Notes** under **Show** (<kbd>N</kbd>) to write each table's and column's note on its card, on a row of its own. The same icon on a line's label marks a relationship with a note; hover the label to read it. Referenced tables sit to the left of the tables that point at them. Drag cards to arrange them; <kbd>Shift</kbd>+click several tables, or drag a box around them on the background, to select them and move them together (<kbd>Esc</kbd> clears the selection, and Details lists them). Scroll, sideways too, to move around, or drag with the hand or <kbd>Space</kbd> held; hold <kbd>Ctrl</kbd>, <kbd>⌘</kbd> or the Windows key while scrolling, or pinch, to zoom. At 40% and below, the diagram shows a picture of itself with each column as a placeholder bar, the way dbdiagram does: it moves smoothly however many tables there are, the picked table and its lines stay live and readable on it, and a click or double-click on a table works as on its card. The **?** button in the bar takes a one-minute tour.
 
 <LiveDemo title="The live demo on its Browse tab: switch between tables, relationships and columns, and pick one" shortcut="a" />
 
@@ -20,7 +20,7 @@ The bar at the bottom of the diagram holds every view control:
 |---|---|
 | **−** / **100%** / **+** | Zoom out and in. Click the percentage to type a zoom from 2 to 200%. |
 | Fit | Fits the whole diagram on screen (<kbd>F</kbd>). |
-| Hand | Pan mode: drag anywhere, even over a table, to move around; a click still picks a table, a column or a line. Or hold <kbd>Space</kbd>. |
+| Hand | Pan mode: drag anywhere, the background or a table, to move around; a click still picks a table, a column or a line. Or hold <kbd>Space</kbd>. Outside pan mode a drag on the background draws a selection box. |
 | Arrange | Arranges the tables automatically, three ways: **Left-right**, along the relationships with referenced tables to the left (the default); **Snowflake**, the most connected tables in the middle and the tables they join around them; **Compact**, a tight rectangle in name order. |
 | **Relationships** | Shows or hides each kind of line, with its legend: FK + relation, relation only, FK only, through (<kbd>1</kbd>–<kbd>4</kbd>). The button says **N off** while kinds are hidden. |
 | **Tables** | Shows or hides each kind of table, with its count: **Your tables** (<kbd>Y</kbd>), **Framework tables** (<kbd>G</kbd>) and **Package tables** (<kbd>P</kbd>). |
@@ -90,6 +90,8 @@ The viewer keeps what is on screen in the URL, so a link opens the same place:
 | <kbd>Ctrl</kbd> / <kbd>⌘</kbd> + scroll, pinch | Zoom in or out at the pointer |
 | Scroll | Move the diagram up, down or sideways |
 | <kbd>Space</kbd> | Hold to pan |
+| <kbd>Shift</kbd> + click | Add a table to the selection, or take it out |
+| Drag on the background | Select every table the box touches |
 | <kbd>1</kbd>–<kbd>4</kbd> | Show or hide each kind of line |
 | <kbd>Y</kbd> <kbd>G</kbd> <kbd>P</kbd> | Show or hide your own, framework or package tables |
 | <kbd>L</kbd> | Relation names on every line |
