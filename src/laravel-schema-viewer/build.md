@@ -5,7 +5,7 @@ description: The model code schema-viewer:build runs, what Laravel Schema Viewer
 
 # What Runs on Build
 
-To draw a relation, the viewer needs the object the relation method returns, so `php artisan schema-viewer:build` runs your models' code:
+To draw a relation, the viewer needs the object the relation method returns, so `php artisan schema-viewer:build` ([`BuildCommand`](https://github.com/laranex/laravel-schema-viewer/blob/main/src/Console/BuildCommand.php)) runs your models' code:
 
 - Every model in the scanned folders is constructed, so its constructor, `boot()`, `booted()` and trait initializers run.
 - Every candidate method is called on that blank model, with no row loaded, and so is every relation registered with `Model::resolveRelationUsing()`.
@@ -79,3 +79,11 @@ public function plan(): BelongsTo
 ```
 
 `boot()` and `booted()` run once per model class in a process. In the build's own process that first run is during the build, so the check sees `true`.
+
+## In the source
+
+- [`src/Console/BuildCommand.php`](https://github.com/laranex/laravel-schema-viewer/blob/main/src/Console/BuildCommand.php): the `schema-viewer:build` command and its `--check`.
+- [`src/Snapshot.php`](https://github.com/laranex/laravel-schema-viewer/blob/main/src/Snapshot.php): builds the document inside the isolation, compares it with the previous file and writes `schema-viewer.json`.
+- [`src/Build/Isolation.php`](https://github.com/laranex/laravel-schema-viewer/blob/main/src/Build/Isolation.php): the fakes for jobs, mail, notifications, HTTP, events and the cache, and how each one is put back.
+- [`src/SchemaViewer.php`](https://github.com/laranex/laravel-schema-viewer/blob/main/src/SchemaViewer.php): `document()`, which constructs each model and calls its relation methods, and `building()`.
+- [`src/Inspection/RelationResolver.php`](https://github.com/laranex/laravel-schema-viewer/blob/main/src/Inspection/RelationResolver.php): how every connection pretends, and how a relation method is called on a blank model.
