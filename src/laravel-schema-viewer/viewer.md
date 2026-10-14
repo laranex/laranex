@@ -6,7 +6,7 @@ aside: false
 
 # Using the Viewer
 
-Each card is a table, and each line a relationship between two of them. A note icon marks a table or a column that has a comment or a [note](./configuration#notes): hover it to read them, or turn on **Notes** under **Show** (<kbd>N</kbd>) to write each table's and column's note on its card, on a row of its own. The same icon on a line's label marks a relationship with a note; hover the label to read it. Referenced tables sit to the left of the tables that point at them. Drag cards to arrange them, scroll or pinch to zoom, and drag the background to move around. The **?** button in the bar takes a one-minute tour.
+Each card is a table, and each line a relationship between two of them. A note icon marks a table or a column that has a comment or a [note](./configuration#notes): hover it to read them, or turn on **Notes** under **Show** (<kbd>N</kbd>) to write each table's and column's note on its card, on a row of its own. The same icon on a line's label marks a relationship with a note; hover the label to read it. Referenced tables sit to the left of the tables that point at them. Drag cards to arrange them. Scroll, sideways too, or drag the background to move around; hold <kbd>Ctrl</kbd>, <kbd>⌘</kbd> or the Windows key while scrolling, or pinch, to zoom. At 40% and below, the diagram shows a picture of itself with each column as a placeholder bar, the way dbdiagram does: it moves smoothly however many tables there are, the picked table and its lines stay live and readable on it, and a click or double-click on a table works as on its card. The **?** button in the bar takes a one-minute tour.
 
 <LiveDemo title="The live demo on its Browse tab: switch between tables, relationships and columns, and pick one" shortcut="a" />
 
@@ -20,7 +20,7 @@ The bar at the bottom of the diagram holds every view control:
 |---|---|
 | **−** / **100%** / **+** | Zoom out and in. Click the percentage to type a zoom from 2 to 200%. |
 | Fit | Fits the whole diagram on screen (<kbd>F</kbd>). |
-| Hand | Pan mode: drag anywhere, even over a table, to move around. Or hold <kbd>Space</kbd>. |
+| Hand | Pan mode: drag anywhere, even over a table, to move around; a click still picks a table, a column or a line. Or hold <kbd>Space</kbd>. |
 | Arrange | Arranges the tables automatically (<kbd>Shift</kbd> <kbd>A</kbd>). |
 | **Relationships** | Shows or hides each kind of line, with its legend: FK + relation, relation only, FK only, through (<kbd>1</kbd>–<kbd>4</kbd>). The button says **N off** while kinds are hidden. |
 | **Tables** | Shows or hides each kind of table, with its count: **Your tables** (<kbd>Y</kbd>), **Framework tables** (<kbd>G</kbd>) and **Package tables** (<kbd>P</kbd>). |
@@ -35,7 +35,7 @@ Relation names show on every line by default. Large schemas stay readable: a con
 
 The panel on the right has four tabs:
 
-- **Browse** (<kbd>A</kbd>) lists every **Table**, **Relationship** or **Column**, with one filter. Pick a row to show it on the diagram.
+- **Browse** (<kbd>A</kbd>) lists every table with its models (**Tables & Models**), every **Relationship** or every **Column**, with one filter. Pick a row to show it on the diagram.
 - **Details** (<kbd>D</kbd>) shows what is picked, with **Focus** and **Copy link** at the top:
   - nothing yet: the project's [note](./configuration#notes), when you set one;
   - a table: its comment and note, its columns with each one's comment and note, relations, the tables that use it, indexes and model. An index is marked **partial**, **expression** (a key part such as `lower(email)` or a prefix such as `name(10)`) or with its structure (`fulltext`, `gin`, `hash`…), and lists its `INCLUDE` columns;
@@ -87,6 +87,8 @@ The viewer keeps what is on screen in the URL, so a link opens the same place:
 | <kbd>Esc</kbd> | Leave focus mode, clear the pick, close a panel |
 | <kbd>F</kbd> | Fit the diagram |
 | <kbd>+</kbd> <kbd>−</kbd> | Zoom in or out |
+| <kbd>Ctrl</kbd> / <kbd>⌘</kbd> + scroll, pinch | Zoom in or out at the pointer |
+| Scroll | Move the diagram up, down or sideways |
 | <kbd>Space</kbd> | Hold to pan |
 | <kbd>1</kbd>–<kbd>4</kbd> | Show or hide each kind of line |
 | <kbd>Y</kbd> <kbd>G</kbd> <kbd>P</kbd> | Show or hide your own, framework or package tables |
