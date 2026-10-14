@@ -29,7 +29,7 @@ The bar at the bottom of the diagram holds every view control:
 
 When the diagram is narrow, as on a phone or beside a wide panel, the three menus show as icons.
 
-Relation names show on every line by default. Large schemas stay readable: a connection with more than 40 tables is laid out in packed columns, and with more than 60 tables on screen the lines are thin and muted. Turn **Relation names** off to label only the picked table's lines.
+Relation names show on every line by default. Large schemas stay readable and smooth: a connection with more than 40 tables is laid out in packed columns, and with more than 60 tables on screen the lines are thin and muted. Zoomed out below 40%, where text is too small to read, each card shows its name with its rows as plain bars, and only the picked table's lines keep their labels; zoom in and everything comes back. Turn **Relation names** off to label only the picked table's lines at any zoom.
 
 ## The side panel
 
