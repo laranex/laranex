@@ -6,7 +6,7 @@ aside: false
 
 # Using the Viewer
 
-Each card is a table, and each line a relationship between two of them. Hover a column's type for its comment and [note](./configuration#notes), and a line's label for its relationship's note. Referenced tables sit to the left of the tables that point at them. Drag cards to arrange them, scroll or pinch to zoom, and drag the background to move around. The **?** button in the bar takes a one-minute tour.
+Each card is a table, and each line a relationship between two of them. A note icon marks a table or a column that has a comment or a [note](./configuration#notes): hover it to read them. Hover a line's label for its relationship's note. Referenced tables sit to the left of the tables that point at them. Drag cards to arrange them, scroll or pinch to zoom, and drag the background to move around. The **?** button in the bar takes a one-minute tour.
 
 <LiveDemo title="The live demo on its Browse tab: switch between tables, relationships and columns, and pick one" shortcut="a" />
 
