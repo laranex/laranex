@@ -6,7 +6,7 @@ aside: false
 
 # Using the Viewer
 
-Each card is a table, and each line a relationship between two of them. A note icon marks a table or a column that has a comment or a [note](./configuration#notes): hover it to read them. The same icon on a line's label marks a relationship with a note; hover the label to read it. Referenced tables sit to the left of the tables that point at them. Drag cards to arrange them, scroll or pinch to zoom, and drag the background to move around. The **?** button in the bar takes a one-minute tour.
+Each card is a table, and each line a relationship between two of them. A note icon marks a table or a column that has a comment or a [note](./configuration#notes): hover it to read them, or turn on **Notes** under **Show** (<kbd>N</kbd>) to write each table's and column's note on its card, on a row of its own. The same icon on a line's label marks a relationship with a note; hover the label to read it. Referenced tables sit to the left of the tables that point at them. Drag cards to arrange them, scroll or pinch to zoom, and drag the background to move around. The **?** button in the bar takes a one-minute tour.
 
 <LiveDemo title="The live demo on its Browse tab: switch between tables, relationships and columns, and pick one" shortcut="a" />
 
@@ -24,7 +24,7 @@ The bar at the bottom of the diagram holds every view control:
 | Arrange | Arranges the tables automatically (<kbd>Shift</kbd> <kbd>A</kbd>). |
 | **Relationships** | Shows or hides each kind of line, with its legend: FK + relation, relation only, FK only, through (<kbd>1</kbd>–<kbd>4</kbd>). The button says **N off** while kinds are hidden. |
 | **Tables** | Shows or hides each kind of table, with its count: **Your tables** (<kbd>Y</kbd>), **Framework tables** (<kbd>G</kbd>) and **Package tables** (<kbd>P</kbd>). |
-| **Show** | **Relation names** on every line, on by default (<kbd>L</kbd>), the **Grid**, and **Columns**: **All**, only the **Keys** and the columns relations use, or only the table **Names** (<kbd>C</kbd>). A card's own arrow folds just that card. |
+| **Show** | **Relation names** on every line, on by default (<kbd>L</kbd>), **Notes** written out on the cards (<kbd>N</kbd>), the **Grid**, and **Columns**: **All**, only the **Keys** and the columns relations use, or only the table **Names** (<kbd>C</kbd>). A card's own arrow folds just that card. |
 | **?** | Takes the tour. |
 
 When the diagram is narrow, as on a phone or beside a wide panel, the three menus show as icons.
@@ -91,6 +91,7 @@ The viewer keeps what is on screen in the URL, so a link opens the same place:
 | <kbd>1</kbd>–<kbd>4</kbd> | Show or hide each kind of line |
 | <kbd>Y</kbd> <kbd>G</kbd> <kbd>P</kbd> | Show or hide your own, framework or package tables |
 | <kbd>L</kbd> | Relation names on every line |
+| <kbd>N</kbd> | Notes on the cards |
 | <kbd>C</kbd> | All columns, keys only, or names only |
 | <kbd>A</kbd> <kbd>D</kbd> <kbd>H</kbd> <kbd>W</kbd> | Browse, Details, Hints or Changes |
 | <kbd>[</kbd> <kbd>]</kbd> | Previous or next connection |
