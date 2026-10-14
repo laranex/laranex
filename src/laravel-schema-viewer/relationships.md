@@ -9,7 +9,7 @@ aside: false
 Laravel Schema Viewer draws a line for every link between two tables, from two sources:
 
 1. **Foreign keys** read from the database.
-2. **Eloquent relations** read from your models when `php artisan schema-viewer:build` runs: each public method that returns a relation, or whose body calls `$this->hasMany(`, `$this->belongsTo(` and the other builders, is called on a fresh model. The object it returns gives the exact keys, pivot table, morph columns and conditions.
+2. **Eloquent relations** read from your models when `php artisan schema-viewer:build` runs: each public method that returns a relation, or whose body calls `$this->hasMany(`, `$this->belongsTo(` and the other builders, is called on a fresh model (see [What Runs on Build](./build)). The object it returns gives the exact keys, pivot table, morph columns and conditions.
 
 When a foreign key and one or more relations use the same columns, they become one line.
 
@@ -41,10 +41,4 @@ Click a line to pick it: it lights up, the rest dims, and Details shows its keys
 | Self-referencing (`parent_id`) | A loop on the table |
 | Related model on another connection | A line to a dashed card for that connection |
 
-Relations registered with `Model::resolveRelationUsing()` and relation classes from other packages are found too. A method that throws when called is reported as a hint instead of breaking the viewer.
-
-## What runs when the snapshot is built
-
-Reading relations runs your models' code in `schema-viewer:build`, never in a web request. See [What Runs on Build](./build) for what is faked, what still runs, and how to skip your own side effects with `SchemaViewer::building()`.
-
-A model that cannot be constructed, or a method that throws, is reported as a hint instead of breaking the build. Raw conditions (`whereRaw`) are shown with their literals as `?`.
+Relations registered with `Model::resolveRelationUsing()` and relation classes from other packages are found too. A method that throws when called is reported as a hint instead of breaking the viewer. Raw conditions (`whereRaw`) are shown with their literals as `?`.
