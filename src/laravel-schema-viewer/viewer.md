@@ -21,7 +21,7 @@ The bar at the bottom of the diagram holds every view control:
 | **−** / **100%** / **+** | Zoom out and in. Click the percentage to type a zoom from 2 to 200%. |
 | Fit | Fits the whole diagram on screen (<kbd>F</kbd>). |
 | Hand | Pan mode: drag anywhere, even over a table, to move around; a click still picks a table, a column or a line. Or hold <kbd>Space</kbd>. |
-| Arrange | Arranges the tables automatically (<kbd>Shift</kbd> <kbd>A</kbd>). |
+| Arrange | Arranges the tables automatically, three ways: **Left-right**, along the relationships with referenced tables to the left (the default); **Snowflake**, the most connected tables in the middle and the tables they join around them; **Compact**, a tight rectangle in name order. The viewer remembers your choice, and <kbd>Shift</kbd> <kbd>A</kbd> arranges that way again. |
 | **Relationships** | Shows or hides each kind of line, with its legend: FK + relation, relation only, FK only, through (<kbd>1</kbd>–<kbd>4</kbd>). The button says **N off** while kinds are hidden. |
 | **Tables** | Shows or hides each kind of table, with its count: **Your tables** (<kbd>Y</kbd>), **Framework tables** (<kbd>G</kbd>) and **Package tables** (<kbd>P</kbd>). |
 | **Show** | **Relation names** on every line, on by default (<kbd>L</kbd>), **Notes** written out on the cards (<kbd>N</kbd>), the **Grid**, and **Columns**: **All**, only the **Keys** and the columns relations use, or only the table **Names** (<kbd>C</kbd>). A card's own arrow folds just that card. |
@@ -98,7 +98,7 @@ The viewer keeps what is on screen in the URL, so a link opens the same place:
 | <kbd>A</kbd> <kbd>D</kbd> <kbd>H</kbd> <kbd>W</kbd> | Browse, Details, Hints or Changes |
 | <kbd>[</kbd> <kbd>]</kbd> | Previous or next connection |
 | <kbd>Shift</kbd> <kbd>F</kbd> | Focus on what is picked, or leave focus |
-| <kbd>Shift</kbd> <kbd>A</kbd> | Arrange automatically |
+| <kbd>Shift</kbd> <kbd>A</kbd> | Arrange again, the way chosen under Arrange |
 | <kbd>Shift</kbd> <kbd>R</kbd> | Read the schema again (app only) |
 | <kbd>Shift</kbd> <kbd>C</kbd> | Copy a link to this view |
 | <kbd>?</kbd> | Take the tour |
