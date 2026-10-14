@@ -45,7 +45,7 @@ Index hints compare only plain indexes of the same structure. A partial index (P
 
 ## Package tables
 
-Tables a package creates are tagged with it while Composer has the package installed: by default Laravel's own, Passport (`oauth_*`), Cashier, Cashier Paddle and Pennant; add others in `package_tables` (see [Configuration](./configuration)). **Package tables** in the **Tables** menu (<kbd>P</kbd>) shows or hides them. They get hints like your own tables; ignore the ones you accept as below. Set `package_tables` to `false` to leave them untagged.
+Tables a package creates are tagged with it while Composer has the package installed: by default Laravel's own packages: Passport (`oauth_*`), Cashier, Cashier Paddle, Pennant, Pulse (`pulse_*`), Sanctum (`personal_access_tokens`) and Telescope (`telescope_*`); add others in `package_tables` (see [Configuration](./configuration)). **Package tables** in the **Tables** menu (<kbd>P</kbd>) shows or hides them. They get hints like your own tables; ignore the ones you accept as below. Set `package_tables` to `false` to leave them untagged.
 
 ## Ignoring hints
 
