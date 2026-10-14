@@ -45,39 +45,6 @@ Relations registered with `Model::resolveRelationUsing()` and relation classes f
 
 ## What runs when the snapshot is built
 
-Reading relations runs your code, in the `schema-viewer:build` process and never in a web request (the viewer's page only carries the snapshot):
-
-- Every model in the scanned folders is constructed, so its constructor, `boot()`, `booted()` and trait initializers run.
-- Every candidate method is called on that blank model, with no row loaded, and so is every relation registered with `Model::resolveRelationUsing()`.
-
-While that code runs:
-
-| Kept from the outside world | How |
-|---|---|
-| Database writes and reads | Every configured connection pretends: queries are logged, never sent. Connections opened only for the build are closed again. |
-| Model events and observers | Off while relation methods run. |
-| Jobs, queued jobs, mail, notifications | Faked. |
-| HTTP calls through Laravel's `Http` client | Answered by a fake; nothing is sent. |
-| Events dispatched by a relation method | Faked. |
-| Cache writes | Kept in a store of their own, in memory. |
-
-Everything is put back when the build ends. `schema-viewer:export` and `schema-viewer:check` read the models the same way, with connections pretending and model events off, but without the fakes.
-
-### What still runs for real
-
-Only Laravel's own facades and clients can be faked. Code that goes around them runs as usual, every time the build runs, deploy scripts included:
-
-```php
-protected static function booted(): void
-{
-    (new \GuzzleHttp\Client)->post('https://hooks.slack.com/...'); // a real request
-    \Stripe\Customer::create([...]);                               // a real API call
-    Redis::connection()->incr('models_booted');                    // a real Redis write
-    file_put_contents(storage_path('boot.log'), 'booted');         // a real file
-    Log::info('Order booted');                                     // a real log line
-}
-```
-
-The same goes for a relation method that calls a service to decide what to return, and for static state a constructor sets. Most models never do this: a relation method that only returns `$this->belongsTo(...)` has nothing to run. Check models with a custom constructor, heavy `boot()` or `booted()` logic, or relations that do more than build the relation, and keep that work out of them.
+Reading relations runs your models' code in `schema-viewer:build`, never in a web request. See [What Runs on Build](./build) for what is faked, what still runs, and how to skip your own side effects with `SchemaViewer::building()`.
 
 A model that cannot be constructed, or a method that throws, is reported as a hint instead of breaking the build. Raw conditions (`whereRaw`) are shown with their literals as `?`.

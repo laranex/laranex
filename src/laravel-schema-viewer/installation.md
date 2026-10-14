@@ -32,7 +32,7 @@ Without a snapshot, the viewer shows what to run instead of a diagram.
 
 Each build compares the schema with the snapshot it replaces. When they differ, `changes` lists what changed: tables, columns, indexes, foreign keys, models, relations, and relationships that gained or lost a foreign key. Hints are not part of it; they have their own list. When none of that differs, the previous list is kept, so building twice changes nothing. The first build, or a build over a file from another version, writes `null`. The viewer's [Changes tab](./viewer#changes) and [`schema-viewer:diff`](./exports#schema-viewer-diff) show the list. Only the last step is kept: run the diff command against an older file to compare across several builds.
 
-Building runs your models: each one is constructed, and every relation method is called. While it runs, every database connection pretends (queries are logged, never sent), model events are off, and jobs, mail, notifications, HTTP calls, events and the cache are faked; see [Relationships](./relationships#what-runs-when-the-snapshot-is-built).
+Building runs your models: each one is constructed, and every relation method is called. While it runs, every database connection pretends (queries are logged, never sent), model events are off, and jobs, mail, notifications, HTTP calls, events and the cache are faked; see [What Runs on Build](./build).
 
 ### Commit it or ignore it
 

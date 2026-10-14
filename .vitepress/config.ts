@@ -519,6 +519,7 @@ export default defineConfig({
             { text: 'Configuration', link: '/laravel-schema-viewer/configuration' },
             { text: 'Using the Viewer', link: '/laravel-schema-viewer/viewer' },
             { text: 'Relationships', link: '/laravel-schema-viewer/relationships' },
+            { text: 'What Runs on Build', link: '/laravel-schema-viewer/build' },
             { text: 'Hints', link: '/laravel-schema-viewer/hints' },
             { text: 'Downloads & Commands', link: '/laravel-schema-viewer/exports' },
             { text: 'AI Agent Skill', link: '/laravel-schema-viewer/ai-agent-skill' },
