@@ -61,6 +61,23 @@ While that code runs:
 | Events dispatched by a relation method | Faked. |
 | Cache writes | Kept in a store of their own, in memory. |
 
-Everything is put back when the build ends. Code that writes files, logs, or calls a service without Laravel's clients still runs, so keep relation methods to building the relation. `schema-viewer:export` and `schema-viewer:check` read the models the same way, with connections pretending and model events off, but without the fakes.
+Everything is put back when the build ends. `schema-viewer:export` and `schema-viewer:check` read the models the same way, with connections pretending and model events off, but without the fakes.
+
+### What still runs for real
+
+Only Laravel's own facades and clients can be faked. Code that goes around them runs as usual, every time the build runs, deploy scripts included:
+
+```php
+protected static function booted(): void
+{
+    (new \GuzzleHttp\Client)->post('https://hooks.slack.com/...'); // a real request
+    \Stripe\Customer::create([...]);                               // a real API call
+    Redis::connection()->incr('models_booted');                    // a real Redis write
+    file_put_contents(storage_path('boot.log'), 'booted');         // a real file
+    Log::info('Order booted');                                     // a real log line
+}
+```
+
+The same goes for a relation method that calls a service to decide what to return, and for static state a constructor sets. Most models never do this: a relation method that only returns `$this->belongsTo(...)` has nothing to run. Check models with a custom constructor, heavy `boot()` or `booted()` logic, or relations that do more than build the relation, and keep that work out of them.
 
 A model that cannot be constructed, or a method that throws, is reported as a hint instead of breaking the build. Raw conditions (`whereRaw`) are shown with their literals as `?`.
