@@ -43,15 +43,15 @@ The panel on the right has four tabs:
   - a column: its type, null, default, comment and note, casts, indexes, foreign keys in and out, and the relationships that use it.
 - **Hints** (<kbd>H</kbd>) lists where the database and the models disagree, and where the database itself could be better. A hint marked **likely** is inferred from names or conventions; **All**, **Certain** and **Likely** filter them. See [Hints](./hints).
 
-- **Changes** (<kbd>W</kbd>) lists what changed since the previous build that changed the schema; see [Changes](#changes).
+- **Changes** (<kbd>W</kbd>) lists what the last build that found a difference changed; see [Changes](#changes).
 
 Drag the grip on the panel's edge to widen or narrow it; double-click it to reset. The diagram always keeps room for the bar. With an [editor](./configuration) set, model and relation names open in it at their line.
 
 ## Changes
 
-Each `schema-viewer:build` compares the schema with the snapshot it replaces, and the **Changes** tab lists the difference, grouped by table: tables, columns, indexes and foreign keys added, removed or changed (with the old and new values), models and relations, relationships that gained or lost their foreign key, and hints that appeared or went away. Click a row to open its table, column or relationship; removed rows are struck through. On the diagram, a filled dot marks a new table and a ring a changed one.
+Each `schema-viewer:build` compares the schema with the snapshot it replaces, and the **Changes** tab lists the difference, grouped by table: tables, columns, indexes and foreign keys added, removed or changed (with the old and new values), models and relations, and relationships that gained or lost their foreign key. Hints have their own tab and are not listed here. Click a row to open its table, column or relationship; removed rows are struck through. On the diagram, a filled dot marks a new table and a ring a changed one.
 
-The tab follows the connections in view. Before a second build has found a different schema it says there is nothing to compare yet. A renamed table or column shows as one removed and one added. Only the last step is kept: building again with the same schema keeps the list, and the next change replaces it. To see a longer stretch, compare with an older file using [`schema-viewer:diff`](./exports#schema-viewer-diff).
+The tab follows the connections in view. Before a second build has found a different schema it says there is nothing to compare yet. A renamed table or column shows as one removed and one added. Only the last step is kept: a build that changes none of it keeps the list, even when only hints differ, and the next change replaces it. To see a longer stretch, compare with an older file using [`schema-viewer:diff`](./exports#schema-viewer-diff).
 
 ## Picking and focus
 

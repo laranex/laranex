@@ -59,7 +59,7 @@ Run it again after migrating; on a server, run it in your deploy script. The fil
 Shows what changed in the schema, as text, Markdown or JSON:
 
 ```bash
-# What changed since the previous build that changed the schema, from the snapshot alone
+# What the last build that found a difference changed, from the snapshot alone
 php artisan schema-viewer:diff
 
 # An older snapshot against the schema now (reads the database and the models, writes nothing)
