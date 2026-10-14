@@ -26,7 +26,7 @@ When a foreign key and one or more relations use the same columns, they become o
 
 Crow's feet mark the many side of a line. The label names the relation methods and the kind of relationship; hover it for the exact columns. The **Relationships** menu in the bar shows or hides each kind (<kbd>1</kbd>–<kbd>4</kbd>).
 
-Click a line to pick it: it lights up, the rest dims, and Details shows its keys, its foreign key (name, on update, on delete, index) and every relation that uses it. Double-click it to focus on the two tables it joins. With more than 60 tables on screen, lines are thin and muted and only the picked table's lines are labeled; see [Using the Viewer](./viewer).
+Click a line to pick it: it lights up, the rest dims, and Details shows its keys, its foreign key (name, on update, on delete, index) and every relation that uses it. Double-click it to focus on the two tables it joins. With more than 60 tables on screen, lines are thin and muted; turn off **Relation names** to label only the picked table's lines. A [note](./configuration#notes) on a relationship shows in its details and when you hover its label; see [Using the Viewer](./viewer).
 
 ## Relation types
 

@@ -53,7 +53,7 @@ The default list holds Laravel's own packages that create tables. Add any other 
 
 ### Notes
 
-Explain what the schema does not say: what a table holds, which values a column takes, who to ask. Notes show in the viewer beside the database's own comments, and go into the Markdown and DBML downloads and the JSON.
+Explain what the schema does not say: what a table holds, which values a column takes, what a relationship means, who to ask. Notes show in the viewer beside the database's own comments, and go into the JSON; table and column notes also go into the Markdown and DBML downloads.
 
 ```php
 'notes' => [
@@ -66,9 +66,16 @@ Explain what the schema does not say: what a table holds, which values a column 
     'columns' => [
         'orders' => ['status' => 'pending, paid, shipped or refunded.'],
     ],
+    // By the table and the columns that hold the key
+    'relationships' => [
+        'orders' => ['user_id' => 'The customer who placed the order.'],
+        'order_items' => ['order_id,line' => 'A composite key: columns comma separated.'],
+    ],
 ],
 ```
 
 A table name without a connection applies on every connection that has that table; `connection:table` picks one, and wins over the plain name. Both the database comment and the note are kept: the viewer shows the comment, then the note, and formats with one place for it (Markdown's Comment column, DBML's `note`) write `comment · note`. The project note shows in the Details tab before anything is picked, under the title of the Markdown download and in a DBML `Project` block.
 
-Every note must be a string; anything else stops `schema-viewer:build` with an error. A note on a table or column that does not exist is not an error: the build warns, for example `2 notes match nothing: orders.stauts, invoices.`. Notes are part of the snapshot and of an HTML export, so they are seen by everyone who can open them.
+A relationship is named by the side that holds the key: the table and its columns, as in its line's details (`orders.user_id → users.id` is `'orders' => ['user_id' => …]`). The note applies to every line from those columns, whether a foreign key, a relation or both draws it; a polymorphic `_id` column's note applies to the line to each of its tables. It shows in the relationship's details and when you hover its label, and its own `note` in the JSON's `links`. The Markdown and DBML downloads describe the database only, so they leave relationship notes out.
+
+Every note must be a string; anything else stops `schema-viewer:build` with an error. A note on a table, column or relationship that does not exist is not an error: the build warns, for example `3 notes match nothing: orders.stauts, invoices, relationship orders.usr_id.`. Notes are part of the snapshot and of an HTML export, so they are seen by everyone who can open them.

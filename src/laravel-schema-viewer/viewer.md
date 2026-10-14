@@ -6,7 +6,7 @@ aside: false
 
 # Using the Viewer
 
-Each card is a table, and each line a relationship between two of them. Hover a column's type for its comment and [note](./configuration#notes). Referenced tables sit to the left of the tables that point at them. Drag cards to arrange them, scroll or pinch to zoom, and drag the background to move around. The **?** button in the bar takes a one-minute tour.
+Each card is a table, and each line a relationship between two of them. Hover a column's type for its comment and [note](./configuration#notes), and a line's label for its relationship's note. Referenced tables sit to the left of the tables that point at them. Drag cards to arrange them, scroll or pinch to zoom, and drag the background to move around. The **?** button in the bar takes a one-minute tour.
 
 <LiveDemo title="The live demo on its Browse tab: switch between tables, relationships and columns, and pick one" shortcut="a" />
 
@@ -24,12 +24,12 @@ The bar at the bottom of the diagram holds every view control:
 | Arrange | Arranges the tables automatically (<kbd>Shift</kbd> <kbd>A</kbd>). |
 | **Relationships** | Shows or hides each kind of line, with its legend: FK + relation, relation only, FK only, through (<kbd>1</kbd>–<kbd>4</kbd>). The button says **N off** while kinds are hidden. |
 | **Tables** | Shows or hides each kind of table, with its count: **Your tables** (<kbd>Y</kbd>), **Framework tables** (<kbd>G</kbd>) and **Package tables** (<kbd>P</kbd>). |
-| **Show** | **Relation names** on every line (<kbd>L</kbd>), the **Grid**, and **Columns**: **All**, only the **Keys** and the columns relations use, or only the table **Names** (<kbd>C</kbd>). A card's own arrow folds just that card. |
+| **Show** | **Relation names** on every line, on by default (<kbd>L</kbd>), the **Grid**, and **Columns**: **All**, only the **Keys** and the columns relations use, or only the table **Names** (<kbd>C</kbd>). A card's own arrow folds just that card. |
 | **?** | Takes the tour. |
 
 When the diagram is narrow, as on a phone or beside a wide panel, the three menus show as icons.
 
-Large schemas stay readable: a connection with more than 40 tables is laid out in packed columns, and with more than 60 tables on screen the lines are thin and muted and the relation names show only on the picked table's lines, until **Relation names** puts them back.
+Relation names show on every line by default. Large schemas stay readable: a connection with more than 40 tables is laid out in packed columns, and with more than 60 tables on screen the lines are thin and muted. Turn **Relation names** off to label only the picked table's lines.
 
 ## The side panel
 
@@ -39,7 +39,7 @@ The panel on the right has four tabs:
 - **Details** (<kbd>D</kbd>) shows what is picked, with **Focus** and **Copy link** at the top:
   - nothing yet: the project's [note](./configuration#notes), when you set one;
   - a table: its comment and note, its columns with each one's comment and note, relations, the tables that use it, indexes and model. An index is marked **partial**, **expression** (a key part such as `lower(email)` or a prefix such as `name(10)`) or with its structure (`fulltext`, `gin`, `hash`…), and lists its `INCLUDE` columns;
-  - a relationship: its keys, its state (FK + relation, relation only or FK only), the foreign key's name, on update and on delete actions and index, and the relations that use it;
+  - a relationship: its note, its keys, its state (FK + relation, relation only or FK only), the foreign key's name, on update and on delete actions and index, and the relations that use it;
   - a column: its type, null, default, comment and note, casts, indexes, foreign keys in and out, and the relationships that use it.
 - **Hints** (<kbd>H</kbd>) lists where the database and the models disagree, and where the database itself could be better. A hint marked **likely** is inferred from names or conventions; **All**, **Certain** and **Likely** filter them. See [Hints](./hints).
 
