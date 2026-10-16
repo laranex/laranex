@@ -138,8 +138,6 @@ Each gateway issues separate UAT credentials. To use them, set the URLs to the g
 | Yoma MMQR | `YOMA_MMQR_BASE_URL` | `yomaMmqr.baseUrl` | `https://devapi.yomabank.net` |
 | CyberSource | `CYBER_SOURCE_BASE_URL` | `cyberSource.baseUrl` | `https://testsecureacceptance.cybersource.com` |
 
-Wave Money's URLs are used as they are, port included: payments are requested at the base URL's `/payment` and the customer is sent to the base redirect URL's `/authenticate`. Switch to production's URLs and credentials when you go live. Quote the KBZ PWA URL in `.env`, because of its `#`:
-
 ```env
 # UAT
 KBZ_PAY_BASE_URL=http://api-uat.kbzpay.com/payment/gateway/uat

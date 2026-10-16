@@ -130,8 +130,6 @@ Each gateway issues separate UAT credentials. To use them, set the URLs to the g
 | Yoma MMQR | `YOMA_MMQR_BASE_URL` | `BaseURL` | `https://devapi.yomabank.net` |
 | CyberSource | `CYBER_SOURCE_BASE_URL` | `BaseURL` | `https://testsecureacceptance.cybersource.com` |
 
-Wave Money's URLs are used as they are, port included: payments are requested at the base URL's `/payment` and the customer is sent to the base redirect URL's `/authenticate`. Switch to production's URLs and credentials when you go live.
-
 ## From Environment Variables
 
 Every gateway package has `ConfigFromEnv(getenv)`, which takes a lookup function: `os.Getenv`, or any `func(string) string` instead, such as a map lookup in tests. The variable names match the [Laravel package](/laravel-myanmar-payments/configuration), so one `.env` file works for both.
