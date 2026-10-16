@@ -49,6 +49,7 @@ use Laranex\PhpMyanmarPayments\AyaPay\AyaPayMethod;
 $ayaPay = new AyaPay(new AyaPayConfig(
     appKey: '...',
     appSecret: '...',
+    baseUrl: AyaPayConfig::PRODUCTION_URL,
 ));
 
 foreach ($ayaPay->services() as $service) {

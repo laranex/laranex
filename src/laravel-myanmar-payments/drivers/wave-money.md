@@ -60,6 +60,8 @@ $order->update(['wave_reference' => $data->merchantReferenceId]);
 return redirect()->away($payment->url);
 ```
 
+Wave Money takes two URLs, both required: `WAVE_MONEY_BASE_URL` (`wave_money.base_url`), where `initiate()` posts the payment request to `{base_url}/payment`, and `WAVE_MONEY_BASE_REDIRECT_URL` (`wave_money.base_redirect_url`), where the customer is sent to `{base_redirect_url}/authenticate?transaction_id=…`. In production both are `https://payments.wavemoney.io`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [Testing Against UAT](/laravel-myanmar-payments/configuration#testing-against-uat)).
+
 ### WaveMoneyPaymentData
 
 | Parameter | Type | Required | Rules |
@@ -72,13 +74,13 @@ return redirect()->away($payment->url);
 | `amount` | `Amount\|int\|null` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). `null` charges the sum of the items. Wave only accepts MMK |
 | `merchantReferenceId` | `?string` | No | Unique ID of this attempt: letters, digits, `_` and `-` only. `null` or empty means a random ID |
 | `merchantName` | `?string` | No | Business name shown on Wave's page for this payment. `null` uses `WAVE_MONEY_MERCHANT_NAME`; a blank one is rejected |
-| `timeToLiveSeconds` | `?int` | No | Seconds the customer has to pay this payment, greater than 0. `null` uses `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` |
+| `timeToLiveSeconds` | `?int` | No | Seconds the customer has to pay this payment, greater than 0. `null` uses the required `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` |
 
 `WaveMoneyItem` takes a `name` and an `amount` (`Amount|int`) in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats.
 
 ### Per-Payment Merchant Name and Time to Live
 
-`merchantName` and `timeToLiveSeconds` override the configured `WAVE_MONEY_MERCHANT_NAME` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` for one payment, including in the request hash. The configured merchant name is still required and applies to every payment that leaves `merchantName` `null`; the configured time to live is optional. With neither the configured time to live nor `timeToLiveSeconds` set, `initiate()` throws `InvalidPaymentDataException` with `The timeToLiveSeconds field is required when the wave_money configuration has no [time_to_live_in_seconds].` before any request.
+`merchantName` and `timeToLiveSeconds` override the configured `WAVE_MONEY_MERCHANT_NAME` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` for one payment, including in the request hash. The configured merchant name and time to live are still required and apply to every payment that leaves `merchantName` or `timeToLiveSeconds` `null`.
 
 ```php
 $data = new WaveMoneyPaymentData(
@@ -136,7 +138,7 @@ What Wave Money puts in each property. See [Results](/laravel-myanmar-payments/r
 | Property | Wave Money value |
 |---|---|
 | `orderId` | Your `orderId` |
-| `url` | `{base_url}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
+| `url` | `{base_redirect_url}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
 | `gatewayReference` | Wave `transaction_id`. Always set |
 | `raw` | Wave's `/payment` response: `message` (`success`), `transaction_id` |
 

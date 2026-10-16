@@ -12,7 +12,7 @@ Gateways return the SDK's typed errors from `github.com/laranex/go-myanmar-payme
 | `*InvalidPaymentDataError` | Payment data has values the gateway would reject |
 | `*APIError` | A gateway rejects a request, answers with an error (including errors sent with HTTP 200), or cannot be reached |
 | `*SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification, or its signed values are malformed (an AYA Pay value holding `:`, a CyberSource `signed_field_names` that doesn't sign itself or an unknown `decision`, a Wave Money amount or ID out of format) |
-| `*ConfigurationError` | A gateway is requested without a setting it needs, or a time setting is not a whole number greater than 0 |
+| `*ConfigurationError` | A gateway is requested without a setting it needs (URLs, time to live and Yoma's webhook secret included), or a time setting is out of range |
 
 ```go
 var paymentErr myanmarpayments.PaymentError

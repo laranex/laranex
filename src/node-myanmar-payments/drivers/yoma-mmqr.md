@@ -41,6 +41,7 @@ Yoma checks each order out once, then issues QR codes that each stay payable for
 ```ts
 import {
   YomaMmqr,
+  YomaMmqrConfig,
   type YomaMmqrPaymentData,
 } from '@laranex/myanmar-payments/yoma-mmqr';
 
@@ -51,6 +52,8 @@ const yoma = new YomaMmqr({
   clientSecret: '...',
   webhookHashKey: '...',
   apiVersion: 'v1rc',
+  webhookSecret: '...',
+  baseUrl: YomaMmqrConfig.PRODUCTION_URL,
 });
 
 const data: YomaMmqrPaymentData = {
@@ -99,7 +102,7 @@ try {
 }
 ```
 
-The callback URL is registered with Yoma, not sent per order. When `webhookSecret` is configured, callbacks must carry it in the `X-Webhook-Secret` header. The hash is checked with HMAC-SHA256 keyed with your order number plus `webhookHashKey`.
+The callback URL is registered with Yoma, not sent per order. Every callback must carry the configured `webhookSecret` in the `X-Webhook-Secret` header, compared in constant time; a missing or wrong header fails verification. The hash is checked with HMAC-SHA256 keyed with your order number plus `webhookHashKey`.
 
 ::: warning Callbacks carry no amount
 Yoma signs only `orderNumber` and `status`, and the callback has no amount (`callback.amount` is `undefined`). Before fulfilling, confirm the payment with `await yoma.status(reference)`, using the `reference` of the QR you created for the order's stored amount, rather than trusting the callback alone.
@@ -200,6 +203,6 @@ The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clie
 | `initiate()` | `ApiError` | The token request fails, Yoma answers with an HTTP error or an `errorCode` (e.g. `PAYMENT ALREADY EXISTS`), `checkOutStatus` isn't `true`, or there is no `qrString` or `refLabel` |
 | `renewQr()` | `ApiError` | As `initiate()`, without the checkout |
 | `status()` | `ApiError` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
-| `handleCallback()` | `SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong (when `webhookSecret` is set), `orderNumber` is missing, `status` holds an object or array, or `hashValue` doesn't match |
+| `handleCallback()` | `SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong, `orderNumber` is missing, `status` holds an object or array, or `hashValue` doesn't match |
 
 The async calls reject with these errors. Yoma reports business errors with HTTP 200 and an `errorCode`; `ApiError` carries it in `gatewayCode` and Yoma's `errorDescription` in `gatewayMessage`. When Yoma can't be reached, the request times out or the `signal` aborts, the calls throw `ApiError` with the original error as `cause`.

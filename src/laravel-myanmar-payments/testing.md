@@ -50,6 +50,9 @@ Response bodies are described on each [gateway page](/laravel-myanmar-payments/d
     <env name="KBZ_PAY_APP_ID" value="kp1"/>
     <env name="KBZ_PAY_APP_KEY" value="test-app-key"/>
     <env name="KBZ_PAY_MERCHANT_CODE" value="1"/>
+    <env name="KBZ_PAY_BASE_URL" value="http://api-uat.kbzpay.com/payment/gateway/uat"/>
+    <env name="KBZ_PAY_PWA_BASE_REDIRECT_URL" value="https://static.kbzpay.com/pgw/uat/pwa/#/"/>
+    <env name="KBZ_PAY_TIME_TO_LIVE_IN_MINUTES" value="15"/>
 </php>
 ```
 

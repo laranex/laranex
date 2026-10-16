@@ -42,11 +42,16 @@ AYA posts the result to your callback URL and also signs the query string it add
 `channel` is a lowercase key such as `aya_pay`, `kbz_pay` or `visa`; `method` is how the customer pays through it. Which ones you have depends on your merchant account, so list them:
 
 ```ts
-import { AyaPay, AyaPayMethod } from '@laranex/myanmar-payments/aya-pay';
+import {
+  AyaPay,
+  AyaPayConfig,
+  AyaPayMethod,
+} from '@laranex/myanmar-payments/aya-pay';
 
 const aya = new AyaPay({
   appKey: '...',
   appSecret: '...',
+  baseUrl: AyaPayConfig.PRODUCTION_URL,
 });
 
 for (const service of await aya.services()) {

@@ -21,6 +21,9 @@ CONFIG = KbzPayConfig(
     app_id="kp1",
     app_key="kbz-secret",
     merchant_code="1",
+    api_url="http://api-uat.kbzpay.com/payment/gateway/uat",
+    pwa_url="https://static.kbzpay.com/pgw/uat/pwa/#/",
+    time_to_live_minutes=15,
     timeout_seconds=5,
 )
 
@@ -77,6 +80,9 @@ TEST_ENV = {
     "KBZ_PAY_APP_ID": "kp1",
     "KBZ_PAY_APP_KEY": "kbz-secret",
     "KBZ_PAY_MERCHANT_CODE": "1",
+    "KBZ_PAY_BASE_URL": "http://api-uat.kbzpay.com/payment/gateway/uat",
+    "KBZ_PAY_PWA_BASE_REDIRECT_URL": "https://static.kbzpay.com/pgw/uat/pwa/#/",
+    "KBZ_PAY_TIME_TO_LIVE_IN_MINUTES": "15",
     "MYANMAR_PAYMENTS_HTTP_TIMEOUT": "5",
 }
 
@@ -99,6 +105,9 @@ CONFIG = KbzPayConfig(
     app_id="kp1",
     app_key="kbz-secret",
     merchant_code="1",
+    api_url="http://api-uat.kbzpay.com/payment/gateway/uat",
+    pwa_url="https://static.kbzpay.com/pgw/uat/pwa/#/",
+    time_to_live_minutes=15,
     timeout_seconds=5,
 )
 
@@ -142,6 +151,9 @@ CONFIG = KbzPayConfig(
     app_id="kp1",
     app_key="kbz-secret",
     merchant_code="1",
+    api_url="http://api-uat.kbzpay.com/payment/gateway/uat",
+    pwa_url="https://static.kbzpay.com/pgw/uat/pwa/#/",
+    time_to_live_minutes=15,
     timeout_seconds=5,
 )
 
@@ -182,6 +194,9 @@ CONFIG = KbzPayConfig(
     app_id="kp1",
     app_key="kbz-secret",
     merchant_code="1",
+    api_url="http://api-uat.kbzpay.com/payment/gateway/uat",
+    pwa_url="https://static.kbzpay.com/pgw/uat/pwa/#/",
+    time_to_live_minutes=15,
     timeout_seconds=5,
 )
 

@@ -20,6 +20,9 @@ const config = new KbzPayConfig({
   appId: 'kp1',
   appKey: 'kbz-secret',
   merchantCode: '1',
+  apiUrl: KbzPayConfig.PRODUCTION_API_URL,
+  pwaUrl: KbzPayConfig.PRODUCTION_PWA_URL,
+  timeToLiveMinutes: 15,
   timeoutSeconds: 5,
 });
 
@@ -73,6 +76,9 @@ const testEnv = {
   KBZ_PAY_APP_ID: 'kp1',
   KBZ_PAY_APP_KEY: 'kbz-secret',
   KBZ_PAY_MERCHANT_CODE: '1',
+  KBZ_PAY_BASE_URL: 'http://api-uat.kbzpay.com/payment/gateway/uat',
+  KBZ_PAY_PWA_BASE_REDIRECT_URL: 'https://static.kbzpay.com/pgw/uat/pwa/#/',
+  KBZ_PAY_TIME_TO_LIVE_IN_MINUTES: '15',
   MYANMAR_PAYMENTS_HTTP_TIMEOUT: '5',
 };
 
@@ -95,6 +101,9 @@ const config = new KbzPayConfig({
   appId: 'kp1',
   appKey: 'kbz-secret',
   merchantCode: '1',
+  apiUrl: KbzPayConfig.PRODUCTION_API_URL,
+  pwaUrl: KbzPayConfig.PRODUCTION_PWA_URL,
+  timeToLiveMinutes: 15,
   timeoutSeconds: 5,
 });
 
@@ -141,6 +150,9 @@ const config = new KbzPayConfig({
   appId: 'kp1',
   appKey: 'kbz-secret',
   merchantCode: '1',
+  apiUrl: KbzPayConfig.PRODUCTION_API_URL,
+  pwaUrl: KbzPayConfig.PRODUCTION_PWA_URL,
+  timeToLiveMinutes: 15,
   timeoutSeconds: 5,
 });
 

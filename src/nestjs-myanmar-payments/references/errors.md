@@ -12,7 +12,7 @@ Every error extends `PaymentError` from `@laranex/myanmar-payments`, so one `cat
 | `InvalidPaymentDataError` | A payment is started with values the gateway would reject |
 | `ApiError` | A gateway rejects a request, answers with an error (including errors sent with HTTP 200), or cannot be reached |
 | `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification |
-| `ConfigurationError` | A gateway is used without a setting it needs, a time setting is not a whole number greater than 0, or the form link secret is shorter than 32 bytes |
+| `ConfigurationError` | A gateway is used without a setting it needs (URLs, time to live and Yoma's webhook secret included), a time setting is out of range, or the form link secret is shorter than 32 bytes |
 
 ## InvalidPaymentDataError
 

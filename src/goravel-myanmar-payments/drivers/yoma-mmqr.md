@@ -127,7 +127,7 @@ facades.Route().Post("/payments/yoma/callback", func(
 })
 ```
 
-The callback URL is registered with Yoma, not sent per order. When `YOMA_MMQR_WEBHOOK_SECRET` is set, callbacks must carry it in the `X-Webhook-Secret` header. The hash is checked with HMAC-SHA256 keyed with your order number plus `YOMA_MMQR_WEBHOOK_HASHKEY`.
+The callback URL is registered with Yoma, not sent per order. Every callback must carry the required `YOMA_MMQR_WEBHOOK_SECRET` in the `X-Webhook-Secret` header, compared in constant time; a missing or wrong header fails verification. The hash is checked with HMAC-SHA256 keyed with your order number plus `YOMA_MMQR_WEBHOOK_HASHKEY`.
 
 ::: warning Callbacks carry no amount
 Yoma signs only `orderNumber` and `status`, and the callback has no amount (`callback.Amount` is empty). Before fulfilling, confirm the payment with `yoma.Status(ctx, reference)`, using the `Reference` of the QR you created for the order's stored amount, rather than trusting the callback alone.
@@ -238,6 +238,6 @@ The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseURL|clie
 | `Initiate()` | `*APIError` | The token request fails, Yoma answers with an HTTP error or an `errorCode` (e.g. `PAYMENT ALREADY EXISTS`), `checkOutStatus` isn't `true`, or there is no `qrString` or `refLabel` |
 | `RenewQR()` | `*APIError` | As `Initiate()`, without the checkout |
 | `Status()` | `*APIError` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
-| `HandleCallback()` | `*SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong (when a webhook secret is set), `orderNumber` is missing, `orderNumber` or `status` holds an object or array, or `hashValue` doesn't match |
+| `HandleCallback()` | `*SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong, `orderNumber` is missing, `orderNumber` or `status` holds an object or array, or `hashValue` doesn't match |
 
 Yoma reports business errors with HTTP 200 and an `errorCode`; `*APIError` carries it in `GatewayCode` and Yoma's `errorDescription` in `GatewayMessage`. When Yoma can't be reached, the calls return an `*APIError` with `HTTPStatus` `0`.

@@ -1,15 +1,15 @@
 ---
 title: Configuration
-description: Configure Goravel Myanmar Payments with environment variables or config/myanmar_payments.go. Every setting of the gateways you use is required except the HTTP timeout (30 seconds by default) and the time-to-live defaults; endpoints default to production.
+description: Configure Goravel Myanmar Payments with environment variables or config/myanmar_payments.go. Every setting of the gateways you use is required except the HTTP timeout (30 seconds by default), URLs and time to live included.
 ---
 
 # Configuration
 
 ## Environment Variables
 
-Add the keys of the gateways you use. Every setting of those gateways is required except the HTTP timeout (`MYANMAR_PAYMENTS_HTTP_TIMEOUT`, 30 seconds by default), the URL overrides, Yoma's webhook secret and the time-to-live defaults (`KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS`): there are no other defaults. A gateway is configured the first time you request it, and a missing or blank setting returns a `*myanmarpayments.ConfigurationError` naming it, e.g. `myanmarpayments: The kbz_pay configuration is missing [app_key].` The time settings must be whole numbers greater than 0; any other value returns the same error with `Invalid` set and the message `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+Add the keys of the gateways you use. Every setting of those gateways is required and has no default, except the HTTP timeout (`MYANMAR_PAYMENTS_HTTP_TIMEOUT`, 30 seconds by default): that includes the URLs, the time to live (`KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS`) and Yoma's webhook secret. A gateway is configured the first time you request it, and a missing or blank setting returns a `*myanmarpayments.ConfigurationError` naming it, e.g. `myanmarpayments: The kbz_pay configuration is missing [app_key].` The time settings must be whole numbers greater than 0 (KBZ Pay's time to live from 1 to 120); any other value returns the same error with `Invalid` set and the message `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
-The variable names are the ones the [Go SDK](/go-myanmar-payments/configuration) reads and the same as [Laravel Myanmar Payments](/laravel-myanmar-payments/configuration), so one `.env` works for both. The values after `=` are examples:
+The variable names are the ones the [Go SDK](/go-myanmar-payments/configuration) reads and the same as [Laravel Myanmar Payments](/laravel-myanmar-payments/configuration), so one `.env` works for both. Set the URLs to [production's](#production-endpoints) or the gateway's [UAT ones](#testing-against-uat). The values after `=` are examples:
 
 ```env
 # optional, every gateway that calls an API (all but CyberSource), default 30
@@ -25,21 +25,22 @@ MYANMAR_PAYMENTS_CACHE_STORE=
 KBZ_PAY_APP_ID=
 KBZ_PAY_APP_KEY=
 KBZ_PAY_MERCHANT_CODE=
-KBZ_PAY_BASE_URL=                     # optional override
-KBZ_PAY_PWA_BASE_REDIRECT_URL=        # optional override
-KBZ_PAY_TIME_TO_LIVE_IN_MINUTES=      # optional, 1 to 120
+KBZ_PAY_BASE_URL=
+KBZ_PAY_PWA_BASE_REDIRECT_URL=
+KBZ_PAY_TIME_TO_LIVE_IN_MINUTES=15    # 1 to 120
 
 # Wave Money
 WAVE_MONEY_MERCHANT_ID=
 WAVE_MONEY_SECRET_KEY=
 WAVE_MONEY_MERCHANT_NAME=
-WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS=   # optional, greater than 0
-WAVE_MONEY_BASE_URL=                  # optional override
+WAVE_MONEY_BASE_URL=                  # payments are requested at its /payment
+WAVE_MONEY_BASE_REDIRECT_URL=         # the customer is sent to its /authenticate
+WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS=900   # greater than 0
 
 # AYA Payment Gateway (AYA_PGW_* names are read too)
 AYA_PAY_APP_KEY=
 AYA_PAY_APP_SECRET=
-AYA_PAY_BASE_URL=                     # optional override
+AYA_PAY_BASE_URL=
 
 # Yoma MMQR
 YOMA_MMQR_MERCHANT_ID=
@@ -47,14 +48,14 @@ YOMA_MMQR_CLIENT_ID=
 YOMA_MMQR_CLIENT_SECRET=
 YOMA_MMQR_WEBHOOK_HASHKEY=
 YOMA_MMQR_API_VERSION=v1rc
-YOMA_MMQR_WEBHOOK_SECRET=             # optional
-YOMA_MMQR_BASE_URL=                   # optional override
+YOMA_MMQR_WEBHOOK_SECRET=             # every callback carries it in X-Webhook-Secret
+YOMA_MMQR_BASE_URL=
 
 # CyberSource Secure Acceptance
 CYBER_SOURCE_PROFILE_ID=
 CYBER_SOURCE_ACCESS_KEY=
 CYBER_SOURCE_SECRET_KEY=
-CYBER_SOURCE_BASE_URL=                # optional override
+CYBER_SOURCE_BASE_URL=
 ```
 
 ## Settings
@@ -68,34 +69,35 @@ CYBER_SOURCE_BASE_URL=                # optional override
 | `KBZ_PAY_APP_ID` | `kbz_pay.app_id` | Yes | `appid` issued by KBZ |
 | `KBZ_PAY_APP_KEY` | `kbz_pay.app_key` | Yes | Secret key used to sign requests |
 | `KBZ_PAY_MERCHANT_CODE` | `kbz_pay.merchant_code` | Yes | `merch_code` issued by KBZ |
-| `KBZ_PAY_BASE_URL` | `kbz_pay.api_url` | No | Override the API base URL |
-| `KBZ_PAY_PWA_BASE_REDIRECT_URL` | `kbz_pay.pwa_url` | No | Override the PWA checkout URL |
-| `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` | `kbz_pay.time_to_live_in_minutes` | No | Minutes the customer has to pay each order, 1 to 120. A payment can override it with `kbzpay.PaymentData`'s `TimeToLiveMinutes`; when it is unset, every payment must set its own |
+| `KBZ_PAY_BASE_URL` | `kbz_pay.api_url` | Yes | The API base URL |
+| `KBZ_PAY_PWA_BASE_REDIRECT_URL` | `kbz_pay.pwa_url` | Yes | The PWA checkout URL |
+| `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` | `kbz_pay.time_to_live_in_minutes` | Yes | Minutes the customer has to pay each order, 1 to 120. A payment can override it with `kbzpay.PaymentData`'s `TimeToLiveMinutes` |
 | `WAVE_MONEY_MERCHANT_ID` | `wave_money.merchant_id` | Yes | Merchant ID issued by Wave |
 | `WAVE_MONEY_SECRET_KEY` | `wave_money.secret_key` | Yes | Hash secret key issued by Wave |
 | `WAVE_MONEY_MERCHANT_NAME` | `wave_money.merchant_name` | Yes | Shown on Wave's payment page. A payment can override it with `wavemoney.PaymentData`'s `MerchantName` |
-| `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` | `wave_money.time_to_live_in_seconds` | No | Seconds the customer has to pay. A payment can override it with `wavemoney.PaymentData`'s `TimeToLiveSeconds`; when it is unset, every payment must set its own |
-| `WAVE_MONEY_BASE_URL` | `wave_money.base_url` | No | Override the API base URL |
+| `WAVE_MONEY_BASE_URL` | `wave_money.base_url` | Yes | The API base URL. Payments are requested at its `/payment` |
+| `WAVE_MONEY_BASE_REDIRECT_URL` | `wave_money.base_redirect_url` | Yes | The host the customer is sent to. The customer approves the payment at its `/authenticate` |
+| `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` | `wave_money.time_to_live_in_seconds` | Yes | Seconds the customer has to pay, greater than 0. A payment can override it with `wavemoney.PaymentData`'s `TimeToLiveSeconds` |
 | `AYA_PAY_APP_KEY` | `aya_pay.app_key` | Yes | Public application key |
 | `AYA_PAY_APP_SECRET` | `aya_pay.app_secret` | Yes | Secret used for checksums |
-| `AYA_PAY_BASE_URL` | `aya_pay.base_url` | No | Override the gateway base URL |
+| `AYA_PAY_BASE_URL` | `aya_pay.base_url` | Yes | The gateway base URL |
 | `YOMA_MMQR_MERCHANT_ID` | `yoma_mmqr.merchant_id` | Yes | Merchant ID issued by Yoma |
 | `YOMA_MMQR_CLIENT_ID` | `yoma_mmqr.client_id` | Yes | OAuth client ID |
 | `YOMA_MMQR_CLIENT_SECRET` | `yoma_mmqr.client_secret` | Yes | OAuth client secret |
 | `YOMA_MMQR_WEBHOOK_HASHKEY` | `yoma_mmqr.webhook_hashkey` | Yes | Hash key issued by Yoma for verifying callbacks |
 | `YOMA_MMQR_API_VERSION` | `yoma_mmqr.api_version` | Yes | The `{version}` segment of Yoma's API paths, e.g. `v1rc` |
-| `YOMA_MMQR_WEBHOOK_SECRET` | `yoma_mmqr.webhook_secret` | No | When set, callbacks must carry it in `X-Webhook-Secret` |
-| `YOMA_MMQR_BASE_URL` | `yoma_mmqr.base_url` | No | Override the API base URL |
+| `YOMA_MMQR_WEBHOOK_SECRET` | `yoma_mmqr.webhook_secret` | Yes | Every callback must carry it in the `X-Webhook-Secret` header, compared in constant time |
+| `YOMA_MMQR_BASE_URL` | `yoma_mmqr.base_url` | Yes | The API base URL |
 | `CYBER_SOURCE_PROFILE_ID` | `cyber_source.profile_id` | Yes | Secure Acceptance profile ID |
 | `CYBER_SOURCE_ACCESS_KEY` | `cyber_source.access_key` | Yes | Profile access key |
 | `CYBER_SOURCE_SECRET_KEY` | `cyber_source.secret_key` | Yes | Profile secret key used to sign fields |
-| `CYBER_SOURCE_BASE_URL` | `cyber_source.base_url` | No | Override the Secure Acceptance base URL |
+| `CYBER_SOURCE_BASE_URL` | `cyber_source.base_url` | Yes | The Secure Acceptance base URL |
 
 Only the gateways you call need their settings: an app that only uses KBZ Pay never reads the Wave Money keys.
 
 ## Endpoints
 
-Every gateway uses its production endpoints. There is no switch between test and production: to test against a gateway's UAT environment, or to go through a proxy, set the URL overrides (see [Testing Against UAT](#testing-against-uat)). A blank override means unset.
+Every gateway URL is a required setting with no default. There is no switch between test and production: set production's URLs (see [Production Endpoints](#production-endpoints)) or the gateway's UAT ones (see [Testing Against UAT](#testing-against-uat)), or a proxy's.
 
 ## Production Endpoints
 
@@ -104,30 +106,46 @@ Every gateway uses its production endpoints. There is no switch between test and
 | KBZ Pay API | `https://api.kbzpay.com/payment/gateway` |
 | KBZ Pay PWA | `https://wap.kbzpay.com/pgw/pwa/#/` |
 | Wave Money API | `https://payments.wavemoney.io` |
+| Wave Money redirect | `https://payments.wavemoney.io` |
 | AYA Payment Gateway | `https://pgw.ayainnovation.com` |
 | Yoma MMQR | `https://paymenthubapi.yomabank.com` |
 | CyberSource | `https://secureacceptance.cybersource.com` |
 
+The Go SDK names them with constants, not used as defaults: `kbzpay.ProductionAPIURL`, `kbzpay.ProductionPWAURL`, `wavemoney.ProductionURL` (both Wave URLs), and `ProductionURL` in `ayapay`, `yomammqr` and `cybersource`.
+
+```env
+# Production
+KBZ_PAY_BASE_URL=https://api.kbzpay.com/payment/gateway
+KBZ_PAY_PWA_BASE_REDIRECT_URL="https://wap.kbzpay.com/pgw/pwa/#/"
+WAVE_MONEY_BASE_URL=https://payments.wavemoney.io
+WAVE_MONEY_BASE_REDIRECT_URL=https://payments.wavemoney.io
+AYA_PAY_BASE_URL=https://pgw.ayainnovation.com
+YOMA_MMQR_BASE_URL=https://paymenthubapi.yomabank.com
+CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
+```
+
 ## Testing Against UAT
 
-Each gateway issues separate UAT credentials. To use them, set the URL overrides to the gateway's UAT endpoints together with the UAT credentials:
+Each gateway issues separate UAT credentials. To use them, set the URLs to the gateway's UAT endpoints instead of production's, together with the UAT credentials:
 
 | Gateway | Variable | Config key | UAT value |
 |---|---|---|---|
 | KBZ Pay | `KBZ_PAY_BASE_URL` | `kbz_pay.api_url` | `http://api-uat.kbzpay.com/payment/gateway/uat` |
 | KBZ Pay | `KBZ_PAY_PWA_BASE_REDIRECT_URL` | `kbz_pay.pwa_url` | `https://static.kbzpay.com/pgw/uat/pwa/#/` |
 | Wave Money | `WAVE_MONEY_BASE_URL` | `wave_money.base_url` | `https://preprodpayments.wavemoney.io:8107` |
+| Wave Money | `WAVE_MONEY_BASE_REDIRECT_URL` | `wave_money.base_redirect_url` | `https://preprodpayments.wavemoney.io` |
 | AYA Payment Gateway | `AYA_PAY_BASE_URL` | `aya_pay.base_url` | `https://uat-pgw.ayainnovation.com` |
 | Yoma MMQR | `YOMA_MMQR_BASE_URL` | `yoma_mmqr.base_url` | `https://devapi.yomabank.net` |
 | CyberSource | `CYBER_SOURCE_BASE_URL` | `cyber_source.base_url` | `https://testsecureacceptance.cybersource.com` |
 
-Wave Money's base URL is used as it is, port included: payments are requested at its `/payment` and the customer is sent to its `/authenticate`. Remove the overrides, and switch to the production credentials, when you go live. Quote the KBZ PWA URL in `.env`, because of its `#`:
+Wave Money's URLs are used as they are, port included: payments are requested at the base URL's `/payment` and the customer is sent to the base redirect URL's `/authenticate`. Switch to production's URLs and credentials when you go live. Quote the KBZ PWA URL in `.env`, because of its `#`:
 
 ```env
 # UAT
 KBZ_PAY_BASE_URL=http://api-uat.kbzpay.com/payment/gateway/uat
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://static.kbzpay.com/pgw/uat/pwa/#/"
 WAVE_MONEY_BASE_URL=https://preprodpayments.wavemoney.io:8107
+WAVE_MONEY_BASE_REDIRECT_URL=https://preprodpayments.wavemoney.io
 AYA_PAY_BASE_URL=https://uat-pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://devapi.yomabank.net
 CYBER_SOURCE_BASE_URL=https://testsecureacceptance.cybersource.com
@@ -157,6 +175,9 @@ func init() {
 			"pwa_url": config.Env(
 				"KBZ_PAY_PWA_BASE_REDIRECT_URL", "",
 			),
+			"time_to_live_in_minutes": config.Env(
+				"KBZ_PAY_TIME_TO_LIVE_IN_MINUTES", "",
+			),
 		},
 
 		"wave_money": map[string]any{
@@ -169,6 +190,9 @@ func init() {
 				"WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS", "",
 			),
 			"base_url": config.Env("WAVE_MONEY_BASE_URL", ""),
+			"base_redirect_url": config.Env(
+				"WAVE_MONEY_BASE_REDIRECT_URL", "",
+			),
 		},
 
 		"aya_pay": map[string]any{

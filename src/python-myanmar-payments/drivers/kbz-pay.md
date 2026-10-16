@@ -53,6 +53,9 @@ kbz = KbzPay(
         app_id="...",
         app_key="...",
         merchant_code="...",
+        api_url=KbzPayConfig.PRODUCTION_API_URL,
+        pwa_url=KbzPayConfig.PRODUCTION_PWA_URL,
+        time_to_live_minutes=15,
     )
 )
 
@@ -97,7 +100,7 @@ def kbz_app(request, order_id: int):
 | `amount` | `Amount \| int \| str \| Decimal` | Yes | Kyat, greater than 0, at most 2 decimal places, e.g. `10000` or `Amount.parse("1000.50")`. KBZ only accepts MMK |
 | `callback_url` | `str` | Yes | Public URL KBZ posts the result to. Absolute http or https URL, at most 512 characters, no query string |
 | `title` | `str` | No | Product name shown to the customer |
-| `time_to_live_minutes` | `int` | No | Minutes the customer has to pay, 1 to 120, sent as `timeout_express` (`30` is sent as `30m`). Unset uses `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`. With neither set, `pwa()`, `qr()` and `app()` raise `InvalidPaymentDataError` with `The time_to_live_minutes field is required when the kbz_pay configuration has no [time_to_live_in_minutes].` before any request |
+| `time_to_live_minutes` | `int` | No | Minutes the customer has to pay, 1 to 120, sent as `timeout_express` (`30` is sent as `30m`). Unset uses `KbzPayConfig`'s required `time_to_live_minutes` (`KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`) |
 | `callback_info` | `str` | No | Free text echoed back in the callback, at most 512 characters once URL-encoded |
 
 ### PWA Notes
@@ -174,7 +177,7 @@ What KBZ Pay puts in each field. See [Results](/python-myanmar-payments/referenc
 | `order_id` | Your `data.order_id` |
 | `qr_string` | KBZ `qrCode`, a payload to encode into a QR image. Always set |
 | `qr_image` | Always `None` |
-| `expires_at` | Now + the time to live: `time_to_live_minutes`, else `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`, in UTC. Always set, because a payment without a time to live is rejected |
+| `expires_at` | Now + the time to live: `time_to_live_minutes`, else `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`, in UTC. Always set, because the configured time to live is required |
 | `reference` | KBZ `prepay_id`. Always set |
 | `raw` | The `precreate` response, as for `pwa()` plus `qrCode` |
 | `qr_image_data_uri()` | Always `None`, as `qr_image` is |

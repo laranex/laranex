@@ -64,9 +64,12 @@ MYANMAR_PAYMENTS_FORM_TTL_MINUTES=30
 KBZ_PAY_APP_ID=kp1
 KBZ_PAY_APP_KEY=test-app-key
 KBZ_PAY_MERCHANT_CODE=1
+KBZ_PAY_BASE_URL=http://api-uat.kbzpay.com/payment/gateway/uat
+KBZ_PAY_PWA_BASE_REDIRECT_URL="https://static.kbzpay.com/pgw/uat/pwa/#/"
+KBZ_PAY_TIME_TO_LIVE_IN_MINUTES=15
 ```
 
-Pointing a gateway's base URL at a test host (`KBZ_PAY_BASE_URL`, `WAVE_MONEY_BASE_URL`, `AYA_PAY_BASE_URL`, `YOMA_MMQR_BASE_URL`) keeps the fake patterns short. Yoma access tokens are kept in your cache store; clear it between tests that fake the token call.
+The base URLs are required too; pointing them at a test host (`KBZ_PAY_BASE_URL`, `WAVE_MONEY_BASE_URL`, `AYA_PAY_BASE_URL`, `YOMA_MMQR_BASE_URL`) keeps the fake patterns short. Yoma access tokens are kept in your cache store; clear it between tests that fake the token call.
 
 ## Sending Signed Callbacks
 

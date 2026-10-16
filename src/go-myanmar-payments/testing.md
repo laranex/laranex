@@ -28,7 +28,10 @@ import (
 
 var config = kbzpay.Config{
 	AppID: "kp1", AppKey: "kbz-secret", MerchantCode: "1",
-	TimeoutSeconds: 5,
+	APIURL:            "http://api-uat.kbzpay.com/payment/gateway/uat",
+	PWAURL:            "https://static.kbzpay.com/pgw/uat/pwa/#/",
+	TimeToLiveMinutes: 15,
+	TimeoutSeconds:    5,
 }
 
 // doerFunc turns a function into a myanmarpayments.HTTPDoer.
@@ -102,10 +105,13 @@ import (
 )
 
 var testEnv = map[string]string{
-	"KBZ_PAY_APP_ID":                "kp1",
-	"KBZ_PAY_APP_KEY":               "kbz-secret",
-	"KBZ_PAY_MERCHANT_CODE":         "1",
-	"MYANMAR_PAYMENTS_HTTP_TIMEOUT": "5",
+	"KBZ_PAY_APP_ID":                  "kp1",
+	"KBZ_PAY_APP_KEY":                 "kbz-secret",
+	"KBZ_PAY_MERCHANT_CODE":           "1",
+	"KBZ_PAY_BASE_URL":                "http://api-uat.kbzpay.com/payment/gateway/uat",
+	"KBZ_PAY_PWA_BASE_REDIRECT_URL":   "https://static.kbzpay.com/pgw/uat/pwa/#/",
+	"KBZ_PAY_TIME_TO_LIVE_IN_MINUTES": "15",
+	"MYANMAR_PAYMENTS_HTTP_TIMEOUT":   "5",
 }
 
 func makePayments(doer myanmarpayments.HTTPDoer) *payments.Gateways {
@@ -116,7 +122,7 @@ func makePayments(doer myanmarpayments.HTTPDoer) *payments.Gateways {
 
 ### With httptest.Server
 
-[`httptest.Server`](https://pkg.go.dev/net/http/httptest#Server) runs a real local server. Point the gateway at it with the config's URL override, and the gateway sends real HTTP requests to your handler:
+[`httptest.Server`](https://pkg.go.dev/net/http/httptest#Server) runs a real local server. Point the gateway at it by setting the config's URL to `server.URL`, and the gateway sends real HTTP requests to your handler:
 
 ```go
 package shop_test
@@ -146,11 +152,13 @@ func TestReportsAPaidOrder(t *testing.T) {
 	defer server.Close()
 
 	kbz, err := kbzpay.New(kbzpay.Config{
-		AppID:        "kp1",
-		AppKey:       "kbz-secret",
-		MerchantCode:   "1",
-		TimeoutSeconds: 5,
-		APIURL:         server.URL,
+		AppID:             "kp1",
+		AppKey:            "kbz-secret",
+		MerchantCode:      "1",
+		APIURL:            server.URL,
+		PWAURL:            "https://static.kbzpay.com/pgw/uat/pwa/#/",
+		TimeToLiveMinutes: 15,
+		TimeoutSeconds:    5,
 	}, server.Client())
 	if err != nil {
 		t.Fatal(err)
@@ -167,7 +175,7 @@ func TestReportsAPaidOrder(t *testing.T) {
 }
 ```
 
-Every config has a URL override: `APIURL` (KBZ Pay) and `BaseURL` (Wave Money, AYA, Yoma, CyberSource).
+Every config has a required API URL to point at the server: `APIURL` (KBZ Pay) and `BaseURL` (Wave Money, AYA, Yoma, CyberSource).
 
 ## Replaying Signed Callbacks
 
@@ -185,7 +193,10 @@ import (
 
 var config = kbzpay.Config{
 	AppID: "kp1", AppKey: "kbz-secret", MerchantCode: "1",
-	TimeoutSeconds: 5,
+	APIURL:            "http://api-uat.kbzpay.com/payment/gateway/uat",
+	PWAURL:            "https://static.kbzpay.com/pgw/uat/pwa/#/",
+	TimeToLiveMinutes: 15,
+	TimeoutSeconds:    5,
 }
 
 func signedKBZCallback(

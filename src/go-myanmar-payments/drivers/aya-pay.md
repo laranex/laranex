@@ -47,6 +47,7 @@ import "github.com/laranex/go-myanmar-payments/v4/ayapay"
 aya, err := ayapay.New(ayapay.Config{
 	AppKey:         "...",
 	AppSecret:      "...",
+	BaseURL:        ayapay.ProductionURL,
 	TimeoutSeconds: 30,
 }, nil)
 if err != nil {

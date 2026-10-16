@@ -47,6 +47,8 @@ $waveMoney = new WaveMoney(new WaveMoneyConfig(
     merchantId: '...',
     secretKey: '...',
     merchantName: 'My Shop',
+    baseUrl: WaveMoneyConfig::PRODUCTION_URL,
+    baseRedirectUrl: WaveMoneyConfig::PRODUCTION_URL,
     timeToLiveSeconds: 300,
 ));
 
@@ -69,6 +71,8 @@ header('Location: '.$payment->url);
 exit;
 ```
 
+Wave Money takes two URLs, both required: `baseUrl` (`WAVE_MONEY_BASE_URL`), where `initiate()` posts the payment request to `{baseUrl}/payment`, and `baseRedirectUrl` (`WAVE_MONEY_BASE_REDIRECT_URL`), where the customer is sent to `{baseRedirectUrl}/authenticate?transaction_id=…`. In production both are `WaveMoneyConfig::PRODUCTION_URL`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [Testing Against UAT](/php-myanmar-payments/configuration#testing-against-uat)).
+
 ### WaveMoneyPaymentData
 
 | Parameter | Type | Required | Rules |
@@ -87,7 +91,7 @@ exit;
 
 ### Per-Payment Merchant Name and Time to Live
 
-`merchantName` and `timeToLiveSeconds` override the `WaveMoneyConfig` values for one payment, including in the request hash. The configured merchant name is still required and applies to every payment that leaves `merchantName` `null`; the configured time to live is optional. With neither the configured time to live nor `timeToLiveSeconds` set, `initiate()` throws `InvalidPaymentDataException` with `The timeToLiveSeconds field is required when the wave_money configuration has no [time_to_live_in_seconds].` before any request.
+`merchantName` and `timeToLiveSeconds` override the `WaveMoneyConfig` values for one payment, including in the request hash. The configured merchant name and time to live are still required and apply to every payment that leaves `merchantName` or `timeToLiveSeconds` `null`.
 
 ```php
 $data = new WaveMoneyPaymentData(
@@ -145,7 +149,7 @@ What Wave Money puts in each property. See [Results](/php-myanmar-payments/refer
 |---|---|
 | `flow()` | `PaymentFlow::Redirect` |
 | `orderId` | Your `$data->orderId` |
-| `url` | `{baseUrl}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
+| `url` | `{baseRedirectUrl}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
 | `gatewayReference` | Wave `transaction_id`. Always set |
 | `raw` | Wave's `/payment` response: `message` (`success`), `transaction_id` |
 

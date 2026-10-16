@@ -50,6 +50,7 @@ aya = AyaPay(
     AyaPayConfig(
         app_key="...",
         app_secret="...",
+        base_url=AyaPayConfig.PRODUCTION_URL,
     )
 )
 

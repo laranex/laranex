@@ -55,6 +55,8 @@ wave = WaveMoney(
         merchant_id="...",
         secret_key="...",
         merchant_name="My Shop",
+        base_url=WaveMoneyConfig.PRODUCTION_URL,
+        base_redirect_url=WaveMoneyConfig.PRODUCTION_URL,
         time_to_live_seconds=300,
     )
 )
@@ -80,6 +82,8 @@ def wave_checkout(request, order_id: int):
     return redirect(payment.url)
 ```
 
+Wave Money takes two URLs, both required: `base_url` (`WAVE_MONEY_BASE_URL`), where `initiate()` posts the payment request to `{base_url}/payment`, and `base_redirect_url` (`WAVE_MONEY_BASE_REDIRECT_URL`), where the customer is sent to `{base_redirect_url}/authenticate?transaction_id=…`. In production both are `WaveMoneyConfig.PRODUCTION_URL`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [Testing Against UAT](/python-myanmar-payments/configuration#testing-against-uat)).
+
 ### WaveMoneyPaymentData
 
 | Field | Type | Required | Rules |
@@ -98,7 +102,7 @@ def wave_checkout(request, order_id: int):
 
 ### Per-Payment Merchant Name and Time to Live
 
-`merchant_name` and `time_to_live_seconds` override the `WaveMoneyConfig` values for one payment, including in the request hash. The configured merchant name is still required and applies to every payment that leaves it unset; the configured time to live is optional. With neither the configured time to live nor `time_to_live_seconds` set, `initiate()` raises `InvalidPaymentDataError` with `The time_to_live_seconds field is required when the wave_money configuration has no [time_to_live_in_seconds].` before any request.
+`merchant_name` and `time_to_live_seconds` override the `WaveMoneyConfig` values for one payment, including in the request hash. The configured merchant name and time to live are still required and apply to every payment that leaves `merchant_name` or `time_to_live_seconds` unset.
 
 ```python
 data = WaveMoneyPaymentData(
@@ -162,7 +166,7 @@ What Wave Money puts in each field. See [Results](/python-myanmar-payments/refer
 |---|---|
 | `flow` | `PaymentFlow.REDIRECT` |
 | `order_id` | Your `data.order_id` |
-| `url` | `{base_url}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
+| `url` | `{base_redirect_url}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
 | `gateway_reference` | Wave `transaction_id`. Always set |
 | `raw` | Wave's `/payment` response: `message` (`success`), `transaction_id` |
 

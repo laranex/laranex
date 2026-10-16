@@ -56,6 +56,7 @@ cs = CyberSource(
         profile_id="...",
         access_key="...",
         secret_key="...",
+        base_url=CyberSourceConfig.PRODUCTION_URL,
     )
 )
 

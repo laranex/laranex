@@ -50,6 +50,7 @@ cs, err := cybersource.New(cybersource.Config{
 	ProfileID: "...",
 	AccessKey: "...",
 	SecretKey: "...",
+	BaseURL:   cybersource.ProductionURL,
 })
 if err != nil {
 	return err

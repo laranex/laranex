@@ -114,7 +114,7 @@ export class YomaMmqrCallbackController {
 }
 ```
 
-A bad signature answers `400` before the handler runs. The callback URL is registered with Yoma, not sent per order. When `YOMA_MMQR_WEBHOOK_SECRET` is set, callbacks must carry it in the `X-Webhook-Secret` header. The hash is checked with HMAC-SHA256 keyed with your order number plus `YOMA_MMQR_WEBHOOK_HASHKEY`.
+A bad signature answers `400` before the handler runs. The callback URL is registered with Yoma, not sent per order. Every callback must carry the required `YOMA_MMQR_WEBHOOK_SECRET` in the `X-Webhook-Secret` header, compared in constant time; a missing or wrong header fails verification. The hash is checked with HMAC-SHA256 keyed with your order number plus `YOMA_MMQR_WEBHOOK_HASHKEY`.
 
 ::: warning Callbacks carry no amount
 Yoma signs only `orderNumber` and `status`, and the callback has no amount (`callback.amount` is `undefined`). Before fulfilling, confirm the payment with `this.payments.yomaMmqr().status(reference)`, using the `reference` of the QR you created for the order's stored amount, rather than trusting the callback alone.
@@ -217,6 +217,6 @@ The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clie
 | `initiate()` | `ApiError` | The token request fails, Yoma answers with an HTTP error or an `errorCode` (e.g. `PAYMENT ALREADY EXISTS`), `checkOutStatus` isn't `true`, or there is no `qrString` or `refLabel` |
 | `renewQr()` | `ApiError` | As `initiate()`, without the checkout |
 | `status()` | `ApiError` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
-| `handleCallback()` | `SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong (when a webhook secret is set), `orderNumber` is missing, `orderNumber` or `status` holds an object or array, or `hashValue` doesn't match |
+| `handleCallback()` | `SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong, `orderNumber` is missing, `orderNumber` or `status` holds an object or array, or `hashValue` doesn't match |
 
 Yoma reports business errors with HTTP 200 and an `errorCode`; `ApiError` carries it in `gatewayCode` and Yoma's `errorDescription` in `gatewayMessage`. When Yoma can't be reached, the calls throw `ApiError` with `httpStatus` `0`.

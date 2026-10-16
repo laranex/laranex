@@ -44,6 +44,9 @@ function kbzConfig(): KbzPayConfig
         appId: 'kp1',
         appKey: 'kbz-secret',
         merchantCode: '1',
+        apiUrl: 'http://api-uat.kbzpay.com/payment/gateway/uat',
+        pwaUrl: 'https://static.kbzpay.com/pgw/uat/pwa/#/',
+        timeToLiveMinutes: 15,
     );
 }
 
@@ -94,6 +97,9 @@ const TEST_ENV = [
     'KBZ_PAY_APP_ID' => 'kp1',
     'KBZ_PAY_APP_KEY' => 'kbz-secret',
     'KBZ_PAY_MERCHANT_CODE' => '1',
+    'KBZ_PAY_BASE_URL' => 'http://api-uat.kbzpay.com/payment/gateway/uat',
+    'KBZ_PAY_PWA_BASE_REDIRECT_URL' => 'https://static.kbzpay.com/pgw/uat/pwa/#/',
+    'KBZ_PAY_TIME_TO_LIVE_IN_MINUTES' => '15',
 ];
 
 function makePayments(Closure $handler): MyanmarPayments

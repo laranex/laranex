@@ -40,6 +40,7 @@ CyberSource posts the result twice, to your backoffice URL and through the brows
 ```ts
 import {
   CyberSource,
+  CyberSourceConfig,
   CyberSourceTransactionType,
   type CyberSourcePaymentData,
 } from '@laranex/myanmar-payments/cyber-source';
@@ -48,6 +49,7 @@ const cs = new CyberSource({
   profileId: '...',
   accessKey: '...',
   secretKey: '...',
+  baseUrl: CyberSourceConfig.PRODUCTION_URL,
 });
 
 const data: CyberSourcePaymentData = {

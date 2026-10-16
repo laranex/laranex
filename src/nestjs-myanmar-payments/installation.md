@@ -113,6 +113,9 @@ const kbzPay = new KbzPay({
   appId: '...',
   appKey: '...',
   merchantCode: '...',
+  apiUrl: 'https://api.kbzpay.com/payment/gateway',
+  pwaUrl: 'https://wap.kbzpay.com/pgw/pwa/#/',
+  timeToLiveMinutes: 15,
 });
 
 const payment = await kbzPay.pwa({

@@ -53,6 +53,8 @@ yoma, err := yomammqr.New(
 		ClientSecret:   "...",
 		WebhookHashKey: "...",
 		APIVersion:     "v1rc",
+		WebhookSecret:  "...",
+		BaseURL:        yomammqr.ProductionURL,
 		TimeoutSeconds: 30,
 	},
 	nil, // default HTTP client
@@ -119,7 +121,7 @@ if callback.IsSuccessful() {
 callback.Acknowledgement.Write(w)
 ```
 
-The callback URL is registered with Yoma, not sent per order. When `WebhookSecret` is configured, callbacks must carry it in the `X-Webhook-Secret` header. The hash is checked with HMAC-SHA256 keyed with your order number plus `WebhookHashKey`.
+The callback URL is registered with Yoma, not sent per order. Every callback must carry the configured `WebhookSecret` in the `X-Webhook-Secret` header, compared in constant time; a missing or wrong header fails verification. The hash is checked with HMAC-SHA256 keyed with your order number plus `WebhookHashKey`.
 
 ::: warning Callbacks carry no amount
 Yoma signs only `orderNumber` and `status`, and the callback has no amount (`callback.Amount` is `""`). Before fulfilling, confirm the payment with `yoma.Status(ctx, reference)`, using the `Reference` of the QR you created for the order's stored amount, rather than trusting the callback alone.
@@ -228,6 +230,6 @@ The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseURL|clie
 | `Initiate()` | `*APIError` | The token request fails, Yoma answers with an HTTP error or an `errorCode` (e.g. `PAYMENT ALREADY EXISTS`), `checkOutStatus` isn't `true`, or there is no `qrString` or `refLabel` |
 | `RenewQR()` | `*APIError` | As `Initiate()`, without the checkout |
 | `Status()` | `*APIError` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
-| `HandleCallback()` | `*SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong (when `WebhookSecret` is set), `orderNumber` is missing, `status` holds an object or array, or `hashValue` doesn't match |
+| `HandleCallback()` | `*SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong, `orderNumber` is missing, `status` holds an object or array, or `hashValue` doesn't match |
 
 The error types live in the root `myanmarpayments` package. Yoma reports business errors with HTTP 200 and an `errorCode`; `*APIError` carries it in `GatewayCode` and Yoma's `errorDescription` in `GatewayMessage`. When Yoma can't be reached or `ctx` is canceled, the calls return `*APIError`, which unwraps to the cause (`errors.Is(err, context.DeadlineExceeded)`).

@@ -1,11 +1,11 @@
 ---
 title: Configuration
-description: Configure PHP Myanmar Payments with one config class per gateway or from environment variables. Every setting is required except the HTTP timeout (30 seconds by default) and the time-to-live defaults and the endpoints, which default to production. Pass your own PSR-18 client and PSR-16 cache.
+description: Configure PHP Myanmar Payments with one config class per gateway or from environment variables. Every setting is required except the HTTP timeout (30 seconds by default), URLs and time to live included. Pass your own PSR-18 client and PSR-16 cache.
 ---
 
 # Configuration
 
-Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes named arguments. Gateways take the config object or an array of its snake_case keys. Every setting is required except the HTTP timeout, the URL overrides, Yoma's webhook secret and the time-to-live defaults (KBZ Pay's `timeToLiveMinutes` and Wave Money's `timeToLiveSeconds`). The HTTP timeout (`timeoutSeconds`) defaults to 30 seconds (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); any other missing or blank setting throws a `ConfigurationException` naming it:
+Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes named arguments. Gateways take the config object or an array of its snake_case keys. Every setting of a gateway you use is required and has no default, except the HTTP timeout: that includes the URLs, the time to live (KBZ Pay's `timeToLiveMinutes` and Wave Money's `timeToLiveSeconds`) and Yoma's webhook secret. The HTTP timeout (`timeoutSeconds`) defaults to 30 seconds (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); any other missing or blank setting throws a `ConfigurationException` naming it:
 
 ```php
 use Laranex\PhpMyanmarPayments\Exceptions\ConfigurationException;
@@ -17,6 +17,9 @@ try {
         appId: '...',
         appKey: '',
         merchantCode: '...',
+        apiUrl: KbzPayConfig::PRODUCTION_API_URL,
+        pwaUrl: KbzPayConfig::PRODUCTION_PWA_URL,
+        timeToLiveMinutes: 15,
     );
 } catch (ConfigurationException $e) {
     // e.g. kbz_pay "app_key"
@@ -29,11 +32,11 @@ $kbz = new KbzPay($config);
 
 `$e->getMessage()` reads `The kbz_pay configuration is missing [app_key].`
 
-The time settings (`timeoutSeconds`, and Wave Money's `timeToLiveSeconds`) must be whole numbers greater than 0. A missing or blank `timeout_in_seconds` means 30 seconds; any other value, such as `0`, `-30`, `2.5` or `'thirty'`, throws the same exception with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+The time settings (`timeoutSeconds`, and Wave Money's `timeToLiveSeconds`) must be whole numbers greater than 0, and KBZ Pay's `timeToLiveMinutes` a whole number from 1 to 120. A missing or blank `timeout_in_seconds` means 30 seconds; any other value, such as `0`, `-30`, `2.5` or `'thirty'`, throws the same exception with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
 ## Endpoints
 
-Every gateway uses its production endpoints. There is no switch between test and production: to test against a gateway's UAT environment, or to go through a proxy, set the URL overrides (see [Testing Against UAT](#testing-against-uat)). A blank override means unset. Each config object exposes the URL actually used as a read-only property (`$config->apiUrl`, `$config->baseUrl`, …).
+Every gateway URL is a required setting with no default. There is no switch between test and production: set production's URLs (see [Production Endpoints](#production-endpoints)) or the gateway's UAT ones (see [Testing Against UAT](#testing-against-uat)), or a proxy's. Each config object exposes the URL as a read-only property (`$config->apiUrl`, `$config->baseUrl`, …), without a trailing `/`.
 
 ## Config Options
 
@@ -44,10 +47,10 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `appId` | `string` | Yes | `appid` issued by KBZ |
 | `appKey` | `string` | Yes | Secret key used to sign requests |
 | `merchantCode` | `string` | Yes | `merch_code` issued by KBZ |
+| `apiUrl` | `string` | Yes | The API base URL, e.g. `KbzPayConfig::PRODUCTION_API_URL` |
+| `pwaUrl` | `string` | Yes | The PWA checkout URL, e.g. `KbzPayConfig::PRODUCTION_PWA_URL`. Normalized to end with `/`, e.g. `…/pwa/#/` |
+| `timeToLiveMinutes` | `int` | Yes | Minutes the customer has to pay each order, 1 to 120. A payment's own `timeToLiveMinutes` overrides it. Anything else throws `The kbz_pay configuration [time_to_live_in_minutes] must be a whole number from 1 to 120.` |
 | `timeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); an invalid one is reported as `timeout_in_seconds` |
-| `apiUrl` | `?string` | No | Override the API base URL |
-| `pwaUrl` | `?string` | No | Override the PWA checkout URL. Normalized to end with `/`, e.g. `…/pwa/#/` |
-| `timeToLiveMinutes` | `?int` | No | Minutes the customer has to pay each order, 1 to 120. A payment's own `timeToLiveMinutes` overrides it; when it is unset, every payment must set its own. Anything else throws `The kbz_pay configuration [time_to_live_in_minutes] must be a whole number from 1 to 120.` |
 
 ### WaveMoneyConfig
 
@@ -56,9 +59,10 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `merchantId` | `string` | Yes | Merchant ID issued by Wave |
 | `secretKey` | `string` | Yes | Hash secret key issued by Wave |
 | `merchantName` | `string` | Yes | Shown on Wave's payment page. A payment can override it with `WaveMoneyPaymentData`'s `merchantName` |
-| `timeToLiveSeconds` | `?int` | No | Seconds the customer has to pay, greater than 0. A payment can override it with `WaveMoneyPaymentData`'s `timeToLiveSeconds`; when it is unset, every payment must set its own |
+| `baseUrl` | `string` | Yes | The API base URL, e.g. `WaveMoneyConfig::PRODUCTION_URL`. Payments are requested at its `/payment` |
+| `baseRedirectUrl` | `string` | Yes | The host the customer is sent to, e.g. `WaveMoneyConfig::PRODUCTION_URL`. The customer approves the payment at its `/authenticate` |
+| `timeToLiveSeconds` | `int` | Yes | Seconds the customer has to pay, greater than 0. A payment can override it with `WaveMoneyPaymentData`'s `timeToLiveSeconds` |
 | `timeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); an invalid one is reported as `timeout_in_seconds` |
-| `baseUrl` | `?string` | No | Override the API base URL |
 
 ### AyaPayConfig
 
@@ -66,8 +70,8 @@ Every gateway uses its production endpoints. There is no switch between test and
 |---|---|---|---|
 | `appKey` | `string` | Yes | Public application key |
 | `appSecret` | `string` | Yes | Secret used for checksums |
+| `baseUrl` | `string` | Yes | The gateway base URL, e.g. `AyaPayConfig::PRODUCTION_URL` |
 | `timeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); an invalid one is reported as `timeout_in_seconds` |
-| `baseUrl` | `?string` | No | Override the gateway base URL |
 
 ### YomaMmqrConfig
 
@@ -78,9 +82,9 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `clientSecret` | `string` | Yes | OAuth client secret |
 | `webhookHashKey` | `string` | Yes | Hash key issued by Yoma for verifying callbacks. A missing one is reported as `webhook_hashkey` |
 | `apiVersion` | `string` | Yes | The `{version}` segment of Yoma's API paths, e.g. `v1rc` |
+| `webhookSecret` | `string` | Yes | Every callback must carry it in the `X-Webhook-Secret` header, compared in constant time |
+| `baseUrl` | `string` | Yes | The API base URL, e.g. `YomaMmqrConfig::PRODUCTION_URL` |
 | `timeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); an invalid one is reported as `timeout_in_seconds` |
-| `webhookSecret` | `?string` | No | When set, callbacks must carry it in `X-Webhook-Secret` |
-| `baseUrl` | `?string` | No | Override the API base URL |
 
 ### CyberSourceConfig
 
@@ -89,7 +93,7 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `profileId` | `string` | Yes | Secure Acceptance profile ID |
 | `accessKey` | `string` | Yes | Profile access key |
 | `secretKey` | `string` | Yes | Profile secret key used to sign fields |
-| `baseUrl` | `?string` | No | Override the Secure Acceptance base URL |
+| `baseUrl` | `string` | Yes | The Secure Acceptance base URL, e.g. `CyberSourceConfig::PRODUCTION_URL` |
 
 ## Production Endpoints
 
@@ -98,26 +102,28 @@ Every gateway uses its production endpoints. There is no switch between test and
 | KBZ Pay API | `https://api.kbzpay.com/payment/gateway` |
 | KBZ Pay PWA | `https://wap.kbzpay.com/pgw/pwa/#/` |
 | Wave Money API | `https://payments.wavemoney.io` |
+| Wave Money redirect | `https://payments.wavemoney.io` |
 | AYA Payment Gateway | `https://pgw.ayainnovation.com` |
 | Yoma MMQR | `https://paymenthubapi.yomabank.com` |
 | CyberSource | `https://secureacceptance.cybersource.com` |
 
-The URLs are class constants on the config classes: `KbzPayConfig::PRODUCTION_API_URL`, `KbzPayConfig::PRODUCTION_PWA_URL`, `WaveMoneyConfig::PRODUCTION_URL`, and `PRODUCTION_URL` on `AyaPayConfig`, `YomaMmqrConfig` and `CyberSourceConfig`.
+The URLs are named by class constants on the config classes, not used as defaults: `KbzPayConfig::PRODUCTION_API_URL`, `KbzPayConfig::PRODUCTION_PWA_URL`, `WaveMoneyConfig::PRODUCTION_URL` (both Wave URLs), and `PRODUCTION_URL` on `AyaPayConfig`, `YomaMmqrConfig` and `CyberSourceConfig`.
 
 ## Testing Against UAT
 
-Each gateway issues separate UAT credentials. To use them, set the URL overrides to the gateway's UAT endpoints together with the UAT credentials:
+Each gateway issues separate UAT credentials. To use them, set the URLs to the gateway's UAT endpoints instead of production's, together with the UAT credentials:
 
 | Gateway | Variable | Config argument | UAT value |
 |---|---|---|---|
 | KBZ Pay | `KBZ_PAY_BASE_URL` | `apiUrl` | `http://api-uat.kbzpay.com/payment/gateway/uat` |
 | KBZ Pay | `KBZ_PAY_PWA_BASE_REDIRECT_URL` | `pwaUrl` | `https://static.kbzpay.com/pgw/uat/pwa/#/` |
 | Wave Money | `WAVE_MONEY_BASE_URL` | `baseUrl` | `https://preprodpayments.wavemoney.io:8107` |
+| Wave Money | `WAVE_MONEY_BASE_REDIRECT_URL` | `baseRedirectUrl` | `https://preprodpayments.wavemoney.io` |
 | AYA Payment Gateway | `AYA_PAY_BASE_URL` | `baseUrl` | `https://uat-pgw.ayainnovation.com` |
 | Yoma MMQR | `YOMA_MMQR_BASE_URL` | `baseUrl` | `https://devapi.yomabank.net` |
 | CyberSource | `CYBER_SOURCE_BASE_URL` | `baseUrl` | `https://testsecureacceptance.cybersource.com` |
 
-Wave Money's base URL is used as it is, port included: payments are requested at its `/payment` and the customer is sent to its `/authenticate`. Remove the overrides, and switch to the production credentials, when you go live.
+Wave Money's URLs are used as they are, port included: payments are requested at the base URL's `/payment` and the customer is sent to the base redirect URL's `/authenticate`. Switch to production's URLs and credentials when you go live.
 
 ## From Environment Variables
 
@@ -133,7 +139,7 @@ $config = KbzPayConfig::fromEnv();
 $kbz = new KbzPay($config);
 ```
 
-Every variable is required unless it is marked optional. The values after `=` are examples:
+Every variable is required unless it is marked optional. Set the URLs to [production's](#production-endpoints) or the gateway's [UAT ones](#testing-against-uat). The values after `=` are examples:
 
 ```env
 # Every gateway that calls an API
@@ -143,21 +149,22 @@ Every variable is required unless it is marked optional. The values after `=` ar
 KBZ_PAY_APP_ID=
 KBZ_PAY_APP_KEY=
 KBZ_PAY_MERCHANT_CODE=
-KBZ_PAY_BASE_URL=                     # optional override
-KBZ_PAY_PWA_BASE_REDIRECT_URL=        # optional override
-KBZ_PAY_TIME_TO_LIVE_IN_MINUTES=      # optional, 1 to 120
+KBZ_PAY_BASE_URL=
+KBZ_PAY_PWA_BASE_REDIRECT_URL=
+KBZ_PAY_TIME_TO_LIVE_IN_MINUTES=15    # 1 to 120
 
 # Wave Money
 WAVE_MONEY_MERCHANT_ID=
 WAVE_MONEY_SECRET_KEY=
 WAVE_MONEY_MERCHANT_NAME=
-WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS=   # optional, greater than 0
-WAVE_MONEY_BASE_URL=                  # optional override
+WAVE_MONEY_BASE_URL=                  # payments are requested at its /payment
+WAVE_MONEY_BASE_REDIRECT_URL=         # the customer is sent to its /authenticate
+WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS=900   # greater than 0
 
 # AYA Payment Gateway (AYA_PGW_* names are read too)
 AYA_PAY_APP_KEY=
 AYA_PAY_APP_SECRET=
-AYA_PAY_BASE_URL=                     # optional override
+AYA_PAY_BASE_URL=
 
 # Yoma MMQR
 YOMA_MMQR_MERCHANT_ID=
@@ -165,17 +172,17 @@ YOMA_MMQR_CLIENT_ID=
 YOMA_MMQR_CLIENT_SECRET=
 YOMA_MMQR_WEBHOOK_HASHKEY=
 YOMA_MMQR_API_VERSION=v1rc
-YOMA_MMQR_WEBHOOK_SECRET=             # optional
-YOMA_MMQR_BASE_URL=                   # optional override
+YOMA_MMQR_WEBHOOK_SECRET=             # every callback carries it in X-Webhook-Secret
+YOMA_MMQR_BASE_URL=
 
 # CyberSource
 CYBER_SOURCE_PROFILE_ID=
 CYBER_SOURCE_ACCESS_KEY=
 CYBER_SOURCE_SECRET_KEY=
-CYBER_SOURCE_BASE_URL=                # optional override
+CYBER_SOURCE_BASE_URL=
 ```
 
-`WAVE_MONEY_MERCHANT_NAME` stays required; a payment can override it with `WaveMoneyPaymentData`'s `merchantName`. `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` are optional defaults that a payment's `timeToLiveMinutes` or `timeToLiveSeconds` overrides; a payment with neither throws `InvalidPaymentDataException` before any request.
+`WAVE_MONEY_MERCHANT_NAME` stays required; a payment can override it with `WaveMoneyPaymentData`'s `merchantName`. `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` are required too; a payment's own `timeToLiveMinutes` or `timeToLiveSeconds` overrides them.
 
 `MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR; unset or blank, it is 30 seconds. The package never reads files itself: load the `.env` file with your framework or with [`vlucas/phpdotenv`](https://github.com/vlucas/phpdotenv) before calling `fromEnv()`.
 
@@ -183,13 +190,13 @@ Credentials from a config file go through `fromArray()`, which reads the same se
 
 | Config class | Keys |
 |---|---|
-| `KbzPayConfig` | `app_id`, `app_key`, `merchant_code`, `timeout_in_seconds`, `api_url`, `pwa_url`, `time_to_live_in_minutes` |
-| `WaveMoneyConfig` | `merchant_id`, `secret_key`, `merchant_name`, `time_to_live_in_seconds`, `timeout_in_seconds`, `base_url` |
-| `AyaPayConfig` | `app_key`, `app_secret`, `timeout_in_seconds`, `base_url` |
-| `YomaMmqrConfig` | `merchant_id`, `client_id`, `client_secret`, `webhook_hashkey`, `api_version`, `timeout_in_seconds`, `webhook_secret`, `base_url` |
+| `KbzPayConfig` | `app_id`, `app_key`, `merchant_code`, `api_url`, `pwa_url`, `time_to_live_in_minutes`, `timeout_in_seconds` |
+| `WaveMoneyConfig` | `merchant_id`, `secret_key`, `merchant_name`, `base_url`, `base_redirect_url`, `time_to_live_in_seconds`, `timeout_in_seconds` |
+| `AyaPayConfig` | `app_key`, `app_secret`, `base_url`, `timeout_in_seconds` |
+| `YomaMmqrConfig` | `merchant_id`, `client_id`, `client_secret`, `webhook_hashkey`, `api_version`, `webhook_secret`, `base_url`, `timeout_in_seconds` |
 | `CyberSourceConfig` | `profile_id`, `access_key`, `secret_key`, `base_url` |
 
-`time_to_live_in_seconds` and `timeout_in_seconds` take an `int` or integer text such as `'30'`. Without `timeout_in_seconds`, or with a blank one, the timeout is 30 seconds.
+`time_to_live_in_minutes`, `time_to_live_in_seconds` and `timeout_in_seconds` take an `int` or integer text such as `'30'`. Without `timeout_in_seconds`, or with a blank one, the timeout is 30 seconds.
 
 ## One Object for Every Gateway
 
@@ -204,6 +211,9 @@ $payments = new MyanmarPayments([
         appId: '...',
         appKey: '...',
         merchantCode: '...',
+        apiUrl: KbzPayConfig::PRODUCTION_API_URL,
+        pwaUrl: KbzPayConfig::PRODUCTION_PWA_URL,
+        timeToLiveMinutes: 15,
     ),
     'yoma_mmqr' => [
         'merchant_id' => '...',
@@ -211,6 +221,8 @@ $payments = new MyanmarPayments([
         'client_secret' => '...',
         'webhook_hashkey' => '...',
         'api_version' => 'v1rc',
+        'webhook_secret' => '...',
+        'base_url' => 'https://paymenthubapi.yomabank.com',
     ],
 ]);
 

@@ -31,7 +31,7 @@ if err != nil {
 | `*InvalidPaymentDataError` | Payment data breaks the gateway's documented rules, or `ParseAmount` gets bad input. Returned before any request is sent |
 | `*APIError` | The gateway rejected the request, answered with an error (including errors sent with HTTP 200), or could not be reached |
 | `*SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification, including one whose signed values are malformed (an AYA Pay value holding `:`, a CyberSource `signed_field_names` that doesn't sign itself or an unknown `decision`, a Wave Money amount or ID out of format) |
-| `*ConfigurationError` | A gateway setting is missing or blank, or a time setting is not a whole number greater than 0 |
+| `*ConfigurationError` | A gateway setting (URLs, time to live and Yoma's webhook secret included) is missing or blank, or a time setting is out of range |
 
 To match any of the four, use the interface:
 
@@ -82,6 +82,6 @@ When the gateway sends an error code without a message, `Message` ends with the 
 |---|---|---|
 | `Gateway` | `string` | e.g. `kbz_pay` |
 | `Key` | `string` | The setting, e.g. `app_key` |
-| `Invalid` | `bool` | `true` when the setting is set but is not a whole number greater than 0 |
+| `Invalid` | `bool` | `true` when the setting is set but out of range: a time setting that is not a whole number greater than 0, or a KBZ Pay time to live outside 1 to 120 |
 
 `err.Error()` is e.g. `myanmarpayments: The kbz_pay configuration is missing [app_key].`, or `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting. Returned by each gateway's `New`, and by the [`payments.Gateways`](/go-myanmar-payments/configuration#one-object-for-every-gateway) methods when a gateway is used without configuration.

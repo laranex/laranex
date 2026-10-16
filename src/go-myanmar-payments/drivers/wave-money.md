@@ -50,6 +50,8 @@ wave, err := wavemoney.New(wavemoney.Config{
 	MerchantID:        "...",
 	SecretKey:         "...",
 	MerchantName:      "My Shop",
+	BaseURL:           wavemoney.ProductionURL,
+	BaseRedirectURL:   wavemoney.ProductionURL,
 	TimeToLiveSeconds: 300,
 	TimeoutSeconds:    30,
 }, nil)
@@ -78,6 +80,8 @@ if err != nil {
 http.Redirect(w, r, payment.URL, http.StatusFound)
 ```
 
+Wave Money takes two URLs, both required: `BaseURL` (`WAVE_MONEY_BASE_URL`), where `Initiate` posts the payment request to `{BaseURL}/payment`, and `BaseRedirectURL` (`WAVE_MONEY_BASE_REDIRECT_URL`), where the customer is sent to `{BaseRedirectURL}/authenticate?transaction_id=…`. In production both are `wavemoney.ProductionURL`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [Testing Against UAT](/go-myanmar-payments/configuration#testing-against-uat)).
+
 ### wavemoney.PaymentData
 
 | Field | Type | Required | Rules |
@@ -96,7 +100,7 @@ http.Redirect(w, r, payment.URL, http.StatusFound)
 
 ### Per-Payment Merchant Name and Time to Live
 
-`MerchantName` and `TimeToLiveSeconds` override the `wavemoney.Config` values for one payment, including in the request hash. The configured `MerchantName` is still required and applies to every payment that leaves it empty; the configured `TimeToLiveSeconds` is optional. With neither the configured time to live nor `TimeToLiveSeconds` set, `Initiate` returns `*myanmarpayments.InvalidPaymentDataError` with `The timeToLiveSeconds field is required when the wave_money configuration has no [time_to_live_in_seconds].` before any request.
+`MerchantName` and `TimeToLiveSeconds` override the `wavemoney.Config` values for one payment, including in the request hash. The configured `MerchantName` and `TimeToLiveSeconds` are still required and apply to every payment that leaves `MerchantName` empty or `TimeToLiveSeconds` `nil`.
 
 ```go
 seconds := 600
@@ -161,7 +165,7 @@ What Wave Money puts in each field. See [Results](/go-myanmar-payments/reference
 |---|---|
 | `Flow()` | `FlowRedirect` |
 | `OrderID` | Your `data.OrderID` |
-| `URL` | `{BaseURL}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
+| `URL` | `{BaseRedirectURL}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
 | `GatewayReference` | Wave `transaction_id`. Always set |
 | `Raw` | Wave's `/payment` response: `message` (`success`), `transaction_id` |
 

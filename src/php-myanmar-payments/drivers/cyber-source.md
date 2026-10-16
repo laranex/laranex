@@ -47,6 +47,7 @@ $cyberSource = new CyberSource(new CyberSourceConfig(
     profileId: '...',
     accessKey: '...',
     secretKey: '...',
+    baseUrl: CyberSourceConfig::PRODUCTION_URL,
 ));
 
 $data = new CyberSourcePaymentData(

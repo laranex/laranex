@@ -78,6 +78,8 @@ export class WaveMoneyCheckoutController {
 }
 ```
 
+Wave Money takes two URLs, both required: `WAVE_MONEY_BASE_URL` (`waveMoney.baseUrl`), where `initiate()` posts the payment request to `{baseUrl}/payment`, and `WAVE_MONEY_BASE_REDIRECT_URL` (`waveMoney.baseRedirectUrl`), where the customer is sent to `{baseRedirectUrl}/authenticate?transaction_id=…`. In production both are `https://payments.wavemoney.io`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [Testing Against UAT](/nestjs-myanmar-payments/configuration#testing-against-uat)).
+
 ### WaveMoneyPaymentData
 
 | Parameter | Type | Required | Rules |
@@ -96,7 +98,7 @@ export class WaveMoneyCheckoutController {
 
 ### Per-Payment Merchant Name and Time to Live
 
-`merchantName` and `timeToLiveSeconds` override the configured `WAVE_MONEY_MERCHANT_NAME` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` (`waveMoney.merchantName` and `waveMoney.timeToLiveSeconds`) for one payment, including in the request hash. The configured merchant name is still required and applies to every payment that leaves it unset; the configured time to live is optional. With neither the configured time to live nor `timeToLiveSeconds` set, `initiate()` throws `InvalidPaymentDataError` with `The timeToLiveSeconds field is required when the wave_money configuration has no [time_to_live_in_seconds].` before any request.
+`merchantName` and `timeToLiveSeconds` override the configured `WAVE_MONEY_MERCHANT_NAME` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` (`waveMoney.merchantName` and `waveMoney.timeToLiveSeconds`) for one payment, including in the request hash. The configured merchant name and time to live are still required and apply to every payment that leaves `merchantName` or `timeToLiveSeconds` unset.
 
 ```ts
 const data: WaveMoneyPaymentData = {
@@ -157,7 +159,7 @@ What Wave Money puts in each property. See [Results](/nestjs-myanmar-payments/re
 | Property | Wave Money value |
 |---|---|
 | `orderId` | Your `orderId` |
-| `url` | `{baseUrl}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
+| `url` | `{baseRedirectUrl}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
 | `gatewayReference` | Wave `transaction_id`. Always set |
 | `raw` | Wave's `/payment` response: `message` (`success`), `transaction_id` |
 
