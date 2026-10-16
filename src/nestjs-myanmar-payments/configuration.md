@@ -7,9 +7,7 @@ description: Configure NestJS Myanmar Payments with environment variables or mod
 
 ## Environment Variables
 
-Add the keys of the gateways you use. Every setting of those gateways is required and has no default, except the HTTP timeout (`MYANMAR_PAYMENTS_HTTP_TIMEOUT`, 30 seconds when unset or blank). That includes the URLs, the time to live (`KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS`) and Yoma's webhook secret. A gateway is configured the first time you call it, and a missing or blank setting throws a `ConfigurationError` naming it, e.g. `The kbz_pay configuration is missing [app_key].` The time settings must be whole numbers greater than 0 (KBZ Pay's time to live from 1 to 120); any other value throws the same error with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
-
-The variable names are the ones the [Node SDK](/node-myanmar-payments/configuration) reads and the same as the Laravel and Goravel packages, so one `.env` works for all of them. The module reads them from `process.env` unless you pass `env` (a record or `ConfigService`). Set the URLs to [production's](#production-endpoints) or the gateway's [UAT ones](#testing-against-uat). The values after `=` are examples:
+Add the keys of the gateways you use. Every setting of those gateways is required and has no default, except the HTTP timeout (`MYANMAR_PAYMENTS_HTTP_TIMEOUT`, 30 seconds when unset or blank). That includes the URLs, the time to live (`KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS`) and Yoma's webhook secret. A gateway is configured the first time you call it, and a missing or blank setting throws a `ConfigurationError` naming it, e.g. `The kbz_pay configuration is missing [app_key].`
 
 ```env
 # Every gateway that calls an API (all but CyberSource)

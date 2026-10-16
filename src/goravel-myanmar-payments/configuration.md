@@ -7,9 +7,7 @@ description: Configure Goravel Myanmar Payments with environment variables or co
 
 ## Environment Variables
 
-Add the keys of the gateways you use. Every setting of those gateways is required and has no default, except the HTTP timeout (`MYANMAR_PAYMENTS_HTTP_TIMEOUT`, 30 seconds by default): that includes the URLs, the time to live (`KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS`) and Yoma's webhook secret. A gateway is configured the first time you request it, and a missing or blank setting returns a `*myanmarpayments.ConfigurationError` naming it, e.g. `myanmarpayments: The kbz_pay configuration is missing [app_key].` The time settings must be whole numbers greater than 0 (KBZ Pay's time to live from 1 to 120); any other value returns the same error with `Invalid` set and the message `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
-
-The variable names are the ones the [Go SDK](/go-myanmar-payments/configuration) reads and the same as [Laravel Myanmar Payments](/laravel-myanmar-payments/configuration), so one `.env` works for both. Set the URLs to [production's](#production-endpoints) or the gateway's [UAT ones](#testing-against-uat). The values after `=` are examples:
+Add the keys of the gateways you use. Every setting of those gateways is required and has no default, except the HTTP timeout (`MYANMAR_PAYMENTS_HTTP_TIMEOUT`, 30 seconds by default): that includes the URLs, the time to live (`KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS`) and Yoma's webhook secret. A gateway is configured the first time you request it, and a missing or blank setting returns a `*myanmarpayments.ConfigurationError` naming it, e.g. `myanmarpayments: The kbz_pay configuration is missing [app_key].`
 
 ```env
 # optional, every gateway that calls an API (all but CyberSource), default 30
