@@ -60,7 +60,7 @@ $order->update(['wave_reference' => $data->merchantReferenceId]);
 return redirect()->away($payment->url);
 ```
 
-Wave Money takes two URLs, both required: `WAVE_MONEY_BASE_URL` (`wave_money.base_url`), where `initiate()` posts the payment request to `{base_url}/payment`, and `WAVE_MONEY_BASE_REDIRECT_URL` (`wave_money.base_redirect_url`), where the customer is sent to `{base_redirect_url}/authenticate?transaction_id=…`. In production both are `https://payments.wavemoney.io`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [Testing Against UAT](/laravel-myanmar-payments/configuration#testing-against-uat)).
+Wave Money takes two URLs, both required: `WAVE_MONEY_BASE_URL` (`wave_money.base_url`), where `initiate()` posts the payment request to `{base_url}/payment`, and `WAVE_MONEY_BASE_REDIRECT_URL` (`wave_money.base_redirect_url`), where the customer is sent to `{base_redirect_url}/authenticate?transaction_id=…`. In production both are `https://payments.wavemoney.io`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [UAT Endpoints](/laravel-myanmar-payments/configuration#uat-endpoints)).
 
 ### WaveMoneyPaymentData
 

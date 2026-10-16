@@ -43,7 +43,7 @@ The time settings (`TimeoutSeconds`, and Wave Money's `TimeToLiveSeconds`) must 
 
 ## Endpoints
 
-Every gateway URL is a required setting with no default. There is no switch between test and production: set production's URLs (see [Production Endpoints](#production-endpoints)) or the gateway's UAT ones (see [Testing Against UAT](#testing-against-uat)), or a proxy's. Each config has `Resolved…()` methods that return the URL as used, without its trailing slash: `ResolvedAPIURL()` and `ResolvedPWAURL()` (KBZ Pay; the PWA URL always ends in `/`), `ResolvedBaseURL()` and `ResolvedBaseRedirectURL()` (Wave Money), and `ResolvedBaseURL()` (AYA, Yoma, CyberSource). A gateway's `Config()` method returns the config it was created with.
+Every gateway URL is a required setting with no default. There is no switch between test and production: set production's URLs (see [Production Endpoints](#production-endpoints)) or the gateway's UAT ones (see [UAT Endpoints](#uat-endpoints)), or a proxy's. Each config has `Resolved…()` methods that return the URL as used, without its trailing slash: `ResolvedAPIURL()` and `ResolvedPWAURL()` (KBZ Pay; the PWA URL always ends in `/`), `ResolvedBaseURL()` and `ResolvedBaseRedirectURL()` (Wave Money), and `ResolvedBaseURL()` (AYA, Yoma, CyberSource). A gateway's `Config()` method returns the config it was created with.
 
 ## Config Options
 
@@ -116,9 +116,7 @@ CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
 
 The URLs are named by exported constants in the gateway packages, not used as defaults: `kbzpay.ProductionAPIURL`, `kbzpay.ProductionPWAURL`, `wavemoney.ProductionURL` (both Wave URLs), and `ProductionURL` in `ayapay`, `yomammqr` and `cybersource`.
 
-## Testing Against UAT
-
-Each gateway issues separate UAT credentials. To use them, set the URLs to the gateway's UAT endpoints instead of production's, together with the UAT credentials:
+## UAT Endpoints
 
 ```env
 KBZ_PAY_BASE_URL=http://api-uat.kbzpay.com/payment/gateway/uat
@@ -138,7 +136,7 @@ Every gateway package has `ConfigFromEnv(getenv)`, which takes a lookup function
 kbz, err := kbzpay.New(kbzpay.ConfigFromEnv(os.Getenv), nil)
 ```
 
-Every variable is required unless it is marked optional. Set the URLs to [production's](#production-endpoints) or the gateway's [UAT ones](#testing-against-uat). The values after `=` are examples:
+Every variable is required unless it is marked optional. Set the URLs to [production's](#production-endpoints) or the gateway's [UAT ones](#uat-endpoints). The values after `=` are examples:
 
 ```env
 # Every gateway that calls an API

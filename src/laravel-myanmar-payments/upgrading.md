@@ -112,7 +112,7 @@ The config file is now `config/myanmar-payments.php` (publish tag `myanmar-payme
 php artisan vendor:publish --tag="myanmar-payments-config"
 ```
 
-- Every gateway URL is required, as AYA's and CyberSource's were in v2: `KBZ_PAY_BASE_URL`, `KBZ_PAY_PWA_BASE_REDIRECT_URL`, `WAVE_MONEY_BASE_URL`, `WAVE_MONEY_BASE_REDIRECT_URL` (new), `AYA_PAY_BASE_URL`, `YOMA_MMQR_BASE_URL` and `CYBER_SOURCE_BASE_URL`. Set them to [production's](/laravel-myanmar-payments/configuration#production-endpoints) or the gateway's UAT URLs listed in [Testing Against UAT](/laravel-myanmar-payments/configuration#testing-against-uat).
+- Every gateway URL is required, as AYA's and CyberSource's were in v2: `KBZ_PAY_BASE_URL`, `KBZ_PAY_PWA_BASE_REDIRECT_URL`, `WAVE_MONEY_BASE_URL`, `WAVE_MONEY_BASE_REDIRECT_URL` (new), `AYA_PAY_BASE_URL`, `YOMA_MMQR_BASE_URL` and `CYBER_SOURCE_BASE_URL`. Set them to [production's](/laravel-myanmar-payments/configuration#production-endpoints) or the gateway's UAT URLs listed in [UAT Endpoints](/laravel-myanmar-payments/configuration#uat-endpoints).
 - Wave Money requests payments at `WAVE_MONEY_BASE_URL`'s `/payment` and sends the customer to the new `WAVE_MONEY_BASE_REDIRECT_URL`'s `/authenticate`.
 - The AYA block is renamed `aya_pgw` → `aya_pay`, read from `AYA_PAY_*` with the `AYA_PGW_*` names as fallbacks.
 - KBZ Pay's `base_url` and `pwa.base_redirect_url` keys are now `api_url` and `pwa_url`; the `KBZ_PAY_BASE_URL` and `KBZ_PAY_PWA_BASE_REDIRECT_URL` env names are unchanged. `KBZ_PAY_MERCHANT_NAME` is no longer used.

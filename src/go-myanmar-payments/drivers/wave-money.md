@@ -80,7 +80,7 @@ if err != nil {
 http.Redirect(w, r, payment.URL, http.StatusFound)
 ```
 
-Wave Money takes two URLs, both required: `BaseURL` (`WAVE_MONEY_BASE_URL`), where `Initiate` posts the payment request to `{BaseURL}/payment`, and `BaseRedirectURL` (`WAVE_MONEY_BASE_REDIRECT_URL`), where the customer is sent to `{BaseRedirectURL}/authenticate?transaction_id=…`. In production both are `wavemoney.ProductionURL`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [Testing Against UAT](/go-myanmar-payments/configuration#testing-against-uat)).
+Wave Money takes two URLs, both required: `BaseURL` (`WAVE_MONEY_BASE_URL`), where `Initiate` posts the payment request to `{BaseURL}/payment`, and `BaseRedirectURL` (`WAVE_MONEY_BASE_REDIRECT_URL`), where the customer is sent to `{BaseRedirectURL}/authenticate?transaction_id=…`. In production both are `wavemoney.ProductionURL`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [UAT Endpoints](/go-myanmar-payments/configuration#uat-endpoints)).
 
 ### wavemoney.PaymentData
 

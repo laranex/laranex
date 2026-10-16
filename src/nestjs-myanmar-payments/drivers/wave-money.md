@@ -78,7 +78,7 @@ export class WaveMoneyCheckoutController {
 }
 ```
 
-Wave Money takes two URLs, both required: `WAVE_MONEY_BASE_URL` (`waveMoney.baseUrl`), where `initiate()` posts the payment request to `{baseUrl}/payment`, and `WAVE_MONEY_BASE_REDIRECT_URL` (`waveMoney.baseRedirectUrl`), where the customer is sent to `{baseRedirectUrl}/authenticate?transaction_id=…`. In production both are `https://payments.wavemoney.io`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [Testing Against UAT](/nestjs-myanmar-payments/configuration#testing-against-uat)).
+Wave Money takes two URLs, both required: `WAVE_MONEY_BASE_URL` (`waveMoney.baseUrl`), where `initiate()` posts the payment request to `{baseUrl}/payment`, and `WAVE_MONEY_BASE_REDIRECT_URL` (`waveMoney.baseRedirectUrl`), where the customer is sent to `{baseRedirectUrl}/authenticate?transaction_id=…`. In production both are `https://payments.wavemoney.io`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [UAT Endpoints](/nestjs-myanmar-payments/configuration#uat-endpoints)).
 
 ### WaveMoneyPaymentData
 

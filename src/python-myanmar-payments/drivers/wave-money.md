@@ -82,7 +82,7 @@ def wave_checkout(request, order_id: int):
     return redirect(payment.url)
 ```
 
-Wave Money takes two URLs, both required: `base_url` (`WAVE_MONEY_BASE_URL`), where `initiate()` posts the payment request to `{base_url}/payment`, and `base_redirect_url` (`WAVE_MONEY_BASE_REDIRECT_URL`), where the customer is sent to `{base_redirect_url}/authenticate?transaction_id=…`. In production both are `WaveMoneyConfig.PRODUCTION_URL`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [Testing Against UAT](/python-myanmar-payments/configuration#testing-against-uat)).
+Wave Money takes two URLs, both required: `base_url` (`WAVE_MONEY_BASE_URL`), where `initiate()` posts the payment request to `{base_url}/payment`, and `base_redirect_url` (`WAVE_MONEY_BASE_REDIRECT_URL`), where the customer is sent to `{base_redirect_url}/authenticate?transaction_id=…`. In production both are `WaveMoneyConfig.PRODUCTION_URL`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [UAT Endpoints](/python-myanmar-payments/configuration#uat-endpoints)).
 
 ### WaveMoneyPaymentData
 

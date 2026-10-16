@@ -95,7 +95,7 @@ Only the gateways you call need their settings: an app that only uses KBZ Pay ne
 
 ## Endpoints
 
-Every gateway URL is a required setting with no default. There is no switch between test and production: set production's URLs (see [Production Endpoints](#production-endpoints)) or the gateway's UAT ones (see [Testing Against UAT](#testing-against-uat)), or a proxy's.
+Every gateway URL is a required setting with no default. There is no switch between test and production: set production's URLs (see [Production Endpoints](#production-endpoints)) or the gateway's UAT ones (see [UAT Endpoints](#uat-endpoints)), or a proxy's.
 
 ## Production Endpoints
 
@@ -111,9 +111,7 @@ CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
 
 The Go SDK names them with constants, not used as defaults: `kbzpay.ProductionAPIURL`, `kbzpay.ProductionPWAURL`, `wavemoney.ProductionURL` (both Wave URLs), and `ProductionURL` in `ayapay`, `yomammqr` and `cybersource`.
 
-## Testing Against UAT
-
-Each gateway issues separate UAT credentials. To use them, set the URLs to the gateway's UAT endpoints instead of production's, together with the UAT credentials:
+## UAT Endpoints
 
 ```env
 KBZ_PAY_BASE_URL=http://api-uat.kbzpay.com/payment/gateway/uat

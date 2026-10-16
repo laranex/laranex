@@ -36,7 +36,7 @@ The time settings (`timeoutSeconds`, and Wave Money's `timeToLiveSeconds`) must 
 
 ## Endpoints
 
-Every gateway URL is a required setting with no default. There is no switch between test and production: set production's URLs (see [Production Endpoints](#production-endpoints)) or the gateway's UAT ones (see [Testing Against UAT](#testing-against-uat)), or a proxy's. Each config object exposes the URL as a read-only property (`$config->apiUrl`, `$config->baseUrl`, …), without a trailing `/`.
+Every gateway URL is a required setting with no default. There is no switch between test and production: set production's URLs (see [Production Endpoints](#production-endpoints)) or the gateway's UAT ones (see [UAT Endpoints](#uat-endpoints)), or a proxy's. Each config object exposes the URL as a read-only property (`$config->apiUrl`, `$config->baseUrl`, …), without a trailing `/`.
 
 ## Config Options
 
@@ -109,9 +109,7 @@ CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
 
 The URLs are named by class constants on the config classes, not used as defaults: `KbzPayConfig::PRODUCTION_API_URL`, `KbzPayConfig::PRODUCTION_PWA_URL`, `WaveMoneyConfig::PRODUCTION_URL` (both Wave URLs), and `PRODUCTION_URL` on `AyaPayConfig`, `YomaMmqrConfig` and `CyberSourceConfig`.
 
-## Testing Against UAT
-
-Each gateway issues separate UAT credentials. To use them, set the URLs to the gateway's UAT endpoints instead of production's, together with the UAT credentials:
+## UAT Endpoints
 
 ```env
 KBZ_PAY_BASE_URL=http://api-uat.kbzpay.com/payment/gateway/uat
@@ -137,7 +135,7 @@ $config = KbzPayConfig::fromEnv();
 $kbz = new KbzPay($config);
 ```
 
-Every variable is required unless it is marked optional. Set the URLs to [production's](#production-endpoints) or the gateway's [UAT ones](#testing-against-uat). The values after `=` are examples:
+Every variable is required unless it is marked optional. Set the URLs to [production's](#production-endpoints) or the gateway's [UAT ones](#uat-endpoints). The values after `=` are examples:
 
 ```env
 # Every gateway that calls an API

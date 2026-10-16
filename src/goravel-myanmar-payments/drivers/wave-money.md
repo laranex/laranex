@@ -77,7 +77,7 @@ func (r *CheckoutController) Wave(ctx http.Context) http.Response {
 }
 ```
 
-Wave Money takes two URLs, both required: `WAVE_MONEY_BASE_URL` (`wave_money.base_url`), where `Initiate` posts the payment request to `{base_url}/payment`, and `WAVE_MONEY_BASE_REDIRECT_URL` (`wave_money.base_redirect_url`), where the customer is sent to `{base_redirect_url}/authenticate?transaction_id=…`. In production both are `https://payments.wavemoney.io` (`wavemoney.ProductionURL`); Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [Testing Against UAT](/goravel-myanmar-payments/configuration#testing-against-uat)).
+Wave Money takes two URLs, both required: `WAVE_MONEY_BASE_URL` (`wave_money.base_url`), where `Initiate` posts the payment request to `{base_url}/payment`, and `WAVE_MONEY_BASE_REDIRECT_URL` (`wave_money.base_redirect_url`), where the customer is sent to `{base_redirect_url}/authenticate?transaction_id=…`. In production both are `https://payments.wavemoney.io` (`wavemoney.ProductionURL`); Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [UAT Endpoints](/goravel-myanmar-payments/configuration#uat-endpoints)).
 
 ### wavemoney.PaymentData
 

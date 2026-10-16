@@ -71,7 +71,7 @@ header('Location: '.$payment->url);
 exit;
 ```
 
-Wave Money takes two URLs, both required: `baseUrl` (`WAVE_MONEY_BASE_URL`), where `initiate()` posts the payment request to `{baseUrl}/payment`, and `baseRedirectUrl` (`WAVE_MONEY_BASE_REDIRECT_URL`), where the customer is sent to `{baseRedirectUrl}/authenticate?transaction_id=…`. In production both are `WaveMoneyConfig::PRODUCTION_URL`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [Testing Against UAT](/php-myanmar-payments/configuration#testing-against-uat)).
+Wave Money takes two URLs, both required: `baseUrl` (`WAVE_MONEY_BASE_URL`), where `initiate()` posts the payment request to `{baseUrl}/payment`, and `baseRedirectUrl` (`WAVE_MONEY_BASE_REDIRECT_URL`), where the customer is sent to `{baseRedirectUrl}/authenticate?transaction_id=…`. In production both are `WaveMoneyConfig::PRODUCTION_URL`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [UAT Endpoints](/php-myanmar-payments/configuration#uat-endpoints)).
 
 ### WaveMoneyPaymentData
 
