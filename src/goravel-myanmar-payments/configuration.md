@@ -31,8 +31,8 @@ KBZ_PAY_TIME_TO_LIVE_IN_MINUTES=15    # 1 to 120
 WAVE_MONEY_MERCHANT_ID=
 WAVE_MONEY_SECRET_KEY=
 WAVE_MONEY_MERCHANT_NAME=
-WAVE_MONEY_BASE_URL=                  # payments are requested at its /payment
-WAVE_MONEY_BASE_REDIRECT_URL=         # the customer is sent to its /authenticate
+WAVE_MONEY_BASE_URL=
+WAVE_MONEY_BASE_REDIRECT_URL=
 WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS=900   # greater than 0
 
 # AYA Payment Gateway (AYA_PGW_* names are read too)
@@ -99,20 +99,7 @@ Every gateway URL is a required setting with no default. There is no switch betw
 
 ## Production Endpoints
 
-| Gateway | URL |
-|---|---|
-| KBZ Pay API | `https://api.kbzpay.com/payment/gateway` |
-| KBZ Pay PWA | `https://wap.kbzpay.com/pgw/pwa/#/` |
-| Wave Money API | `https://payments.wavemoney.io` |
-| Wave Money redirect | `https://payments.wavemoney.io` |
-| AYA Payment Gateway | `https://pgw.ayainnovation.com` |
-| Yoma MMQR | `https://paymenthubapi.yomabank.com` |
-| CyberSource | `https://secureacceptance.cybersource.com` |
-
-The Go SDK names them with constants, not used as defaults: `kbzpay.ProductionAPIURL`, `kbzpay.ProductionPWAURL`, `wavemoney.ProductionURL` (both Wave URLs), and `ProductionURL` in `ayapay`, `yomammqr` and `cybersource`.
-
 ```env
-# Production
 KBZ_PAY_BASE_URL=https://api.kbzpay.com/payment/gateway
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://wap.kbzpay.com/pgw/pwa/#/"
 WAVE_MONEY_BASE_URL=https://payments.wavemoney.io
@@ -122,22 +109,13 @@ YOMA_MMQR_BASE_URL=https://paymenthubapi.yomabank.com
 CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
 ```
 
+The Go SDK names them with constants, not used as defaults: `kbzpay.ProductionAPIURL`, `kbzpay.ProductionPWAURL`, `wavemoney.ProductionURL` (both Wave URLs), and `ProductionURL` in `ayapay`, `yomammqr` and `cybersource`.
+
 ## Testing Against UAT
 
 Each gateway issues separate UAT credentials. To use them, set the URLs to the gateway's UAT endpoints instead of production's, together with the UAT credentials:
 
-| Gateway | Variable | Config key | UAT value |
-|---|---|---|---|
-| KBZ Pay | `KBZ_PAY_BASE_URL` | `kbz_pay.api_url` | `http://api-uat.kbzpay.com/payment/gateway/uat` |
-| KBZ Pay | `KBZ_PAY_PWA_BASE_REDIRECT_URL` | `kbz_pay.pwa_url` | `https://static.kbzpay.com/pgw/uat/pwa/#/` |
-| Wave Money | `WAVE_MONEY_BASE_URL` | `wave_money.base_url` | `https://preprodpayments.wavemoney.io:8107` |
-| Wave Money | `WAVE_MONEY_BASE_REDIRECT_URL` | `wave_money.base_redirect_url` | `https://preprodpayments.wavemoney.io` |
-| AYA Payment Gateway | `AYA_PAY_BASE_URL` | `aya_pay.base_url` | `https://uat-pgw.ayainnovation.com` |
-| Yoma MMQR | `YOMA_MMQR_BASE_URL` | `yoma_mmqr.base_url` | `https://devapi.yomabank.net` |
-| CyberSource | `CYBER_SOURCE_BASE_URL` | `cyber_source.base_url` | `https://testsecureacceptance.cybersource.com` |
-
 ```env
-# UAT
 KBZ_PAY_BASE_URL=http://api-uat.kbzpay.com/payment/gateway/uat
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://static.kbzpay.com/pgw/uat/pwa/#/"
 WAVE_MONEY_BASE_URL=https://preprodpayments.wavemoney.io:8107
