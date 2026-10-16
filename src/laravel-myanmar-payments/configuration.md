@@ -33,7 +33,7 @@ WAVE_MONEY_BASE_URL=
 WAVE_MONEY_BASE_REDIRECT_URL=
 WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS=900   # greater than 0
 
-# AYA Payment Gateway (AYA_PGW_* names are read too)
+# AYA Payment Gateway
 AYA_PAY_APP_KEY=
 AYA_PAY_APP_SECRET=
 AYA_PAY_BASE_URL=
@@ -151,9 +151,9 @@ return [
     ],
 
     'aya_pay' => [
-        'app_key'    => env('AYA_PAY_APP_KEY', env('AYA_PGW_APP_KEY')),
-        'app_secret' => env('AYA_PAY_APP_SECRET', env('AYA_PGW_APP_SECRET')),
-        'base_url'   => env('AYA_PAY_BASE_URL', env('AYA_PGW_BASE_URL')),
+        'app_key'    => env('AYA_PAY_APP_KEY'),
+        'app_secret' => env('AYA_PAY_APP_SECRET'),
+        'base_url'   => env('AYA_PAY_BASE_URL'),
     ],
 
     'yoma_mmqr' => [
