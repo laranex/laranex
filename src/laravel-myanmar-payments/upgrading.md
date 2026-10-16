@@ -106,7 +106,7 @@ See [Callbacks & Status](/laravel-myanmar-payments/callbacks).
 
 ### Configuration
 
-The config file is now `config/myanmar-payments.php`. Back up your existing `config/laravel-myanmar-payments.php`, delete it, and publish the one from the package:
+v4.0.0 includes many breaking changes to the configuration, so don't edit the old file. Back up your existing `config/laravel-myanmar-payments.php`, delete it, and publish the new `config/myanmar-payments.php` from the package:
 
 ```bash
 php artisan vendor:publish --tag="myanmar-payments-config"
