@@ -63,7 +63,7 @@ Returned by `kbz.status()`, `aya.status()` and `yoma.status()`. A class with rea
 | `headers` | `Record<string, string>` | Headers with lowercase names; repeated headers joined with `, ` |
 | `query` | `Record<string, string>` | Query string values (the first of each) |
 | `header(name)` | `string \| undefined` | One header, case-insensitively |
-| `parsedBody()` | `Record<string, unknown>` | The body decoded as JSON or a form; JSON numbers are their exact text as `string`s |
+| `parsedBody()` | `Record<string, unknown>` | The body decoded as JSON (when it is a JSON object) or a urlencoded form; JSON numbers are their exact text as `string`s. Only ASCII whitespace around the body is trimmed. A form splits on `&` and the first `=`, `+` is a space, an invalid `%` escape is kept as is, `;` is no separator, names stay as sent and the first value of a repeated name wins |
 | `input()` | `Record<string, unknown>` | The body merged over the query string |
 | `queryInput()` | `Record<string, unknown>` | The query string merged over the body |
 

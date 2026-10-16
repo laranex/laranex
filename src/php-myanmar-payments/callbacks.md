@@ -58,7 +58,7 @@ Signatures are checked against what the gateway actually sent, so build the requ
 
 | Constructor | Use when |
 |---|---|
-| `CallbackRequest::fromGlobals()` | A plain PHP endpoint: reads `php://input`, the request headers and `$_GET` |
+| `CallbackRequest::fromGlobals()` | A plain PHP endpoint: reads `php://input`, the request headers and the raw query string (`QUERY_STRING`) |
 | `CallbackRequest::fromPsr7($serverRequest)` | You have a PSR-7 `ServerRequestInterface` (Slim, Mezzio, any PSR-15 framework) |
 | `new CallbackRequest(body: ..., headers: ..., query: ...)` | Any other framework: pass the raw body, the headers as name => value and the query parameters. All three are optional |
 | `CallbackRequest::fromArray($payload, $headers = [])` | Replaying a payload you stored as decoded JSON, e.g. from a queue or a failed-callback table |
@@ -73,7 +73,7 @@ See [CallbackRequest](/php-myanmar-payments/references/payment-callback#callback
 
 - **Verify, then trust.** A callback that fails verification throws `SignatureVerificationException`, and so does one whose signed or hashed field holds an object or array instead of a single value, since no gateway signs nested values. Never act on its payload; `raw` carries the unverified data for logging only.
 - **Check the amount.** Compare `$callback->amount` (the exact text the gateway sent) with your order before fulfilling, e.g. with `Amount::equals()`. Yoma MMQR callbacks carry no amount: match `orderId` to your stored order and trust its stored amount.
-- **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Pay), the package also rejects values that could be re-split into other fields. See each driver's Handling Callbacks section.
+- **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Pay), the package also rejects values that could be re-split into other fields: a correctly signed callback that fails these checks reports `... is malformed.` instead of `... verification failed.`. See each driver's Handling Callbacks section.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 
 ## Acknowledging

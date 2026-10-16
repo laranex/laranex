@@ -84,7 +84,7 @@ exit;
 | `timeToLiveSeconds` | `?int` | No | Seconds the customer has to pay this payment, greater than 0. `null` uses `WavePayConfig`'s `timeToLiveSeconds` |
 | `additionalField3`, `additionalField4`, `additionalField5` | `?string` | No | Extra information, at most 50 characters each, sent as `additional_field_3`–`5` and echoed in the callback's `additionalField3`–`5`. `null` or empty is not sent |
 
-Length limits count UTF-8 bytes. `WavePayItem` has a `name` and an `amount` (`Amount|int`) in whole kyat, greater than 0. `$data->amount` holds the total that will be charged.
+Length limits count UTF-8 bytes. `WavePayItem` has a `name` and an `amount` (`Amount|int`) in whole kyat, greater than 0. The items are summed exactly, never as floats; `$data->amount` holds the total that will be charged. Item names and amounts and the total are checked after the other fields; without items or `amount`, `amount` reports `The amount field is required.`, a negative amount reports `The amount field must not be negative.` (`items.0.amount` for an item), and an item amount that is invalid or has decimals skips the total check.
 
 ### Merchant Reference ID
 
@@ -116,7 +116,7 @@ $callback->acknowledgement->send();
 
 `$callback->orderId` falls back to `merchantReferenceId` when Wave's `orderId` is missing, null or empty.
 
-Wave hashes the values joined with no separator, so a matching `hashValue` alone doesn't pin down where one value ends and the next begins. After the hash matches, at least one of `orderId` / `merchantReferenceId` must be present, `amount` must be a decimal (e.g. `10000` or `10000.00`) and `orderId` and `merchantReferenceId`, when sent, may only hold letters, digits, `_` and `-`; otherwise `handleCallback()` throws `SignatureVerificationException`.
+Wave hashes the values joined with no separator, so a matching `hashValue` alone doesn't pin down where one value ends and the next begins. After the hash matches, `amount` must be a decimal (e.g. `10000` or `10000.00`), at least one of `orderId` and `merchantReferenceId` must be present, and each one sent may only hold letters, digits, `_` and `-`; otherwise `handleCallback()` throws `SignatureVerificationException` with `Wave Pay callback is malformed.`. New payments are held to the same ID rules, so every callback for a payment made with this package passes them.
 
 ## Responses
 
@@ -162,9 +162,8 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 
 | Call | Throws | When |
 |---|---|---|
-| `new WavePayItem(...)` | `InvalidPaymentDataException` | Its `amount` is a negative `int` |
-| `new WavePayPaymentData(...)` | `InvalidPaymentDataException` | A value breaks the rules above. Nothing is sent. Item errors use `items.0.name` and `items.0.amount` keys |
-| `initiate()` | `ApiException` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
-| `handleCallback()` | `SignatureVerificationException` | `hashValue` doesn't match, a hashed field holds an object or array, `amount` isn't a decimal, neither `orderId` nor `merchantReferenceId` is sent, or `orderId` or `merchantReferenceId` holds anything but letters, digits, `_` and `-` |
+| `new WavePayPaymentData(...)` | `InvalidPaymentDataException` | A value breaks the rules above (`validate()` checks again). Nothing is sent. Item errors use `items.0.name` and `items.0.amount` keys |
+| `initiate()` | `ApiException` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id`. `gatewayMessage` is Wave's `errors` object as `field: messages` pairs sorted by field (each entry a list or a single message), else its `message`; `gatewayCode` is `VALIDATION_ERROR` whenever `errors` is present |
+| `handleCallback()` | `SignatureVerificationException` | `Wave Pay callback hash verification failed.`: `hashValue` is missing, not a string or doesn't match, or a hashed field holds an object or array. `Wave Pay callback is malformed.`: the hash matches but `amount` isn't a decimal, both `orderId` and `merchantReferenceId` are empty, or either holds anything but letters, digits, `_` and `-` |
 
 `httpStatus` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`gatewayCode` is `VALIDATION_ERROR`). When Wave can't be reached, `initiate()` throws `ApiException` with `httpStatus` `0` and the original error as `getPrevious()`.

@@ -66,7 +66,7 @@ Gateways post from their own servers, so keep callback routes free of authentica
 
 | API | What it does |
 |---|---|
-| `@VerifiedCallback(gateway)` | Reads the request, verifies it with the named gateway (`'kbz-pay'`, `'wave-pay'`, `'aya-pay'`, `'yoma-mmqr'`, `'cyber-source'`) and injects the `PaymentCallback`. A bad signature answers `400 Bad Request` before your handler runs, a body over 64 KiB answers `413 Payload Too Large`, and a missing credential answers `500` |
+| `@VerifiedCallback(gateway)` | Reads the request, verifies it with the named gateway (`'kbz-pay'`, `'wave-pay'`, `'aya-pay'`, `'yoma-mmqr'`, `'cyber-source'`) and injects the `PaymentCallback`. A bad signature answers `400 Bad Request` before your handler runs, a body over 64 KiB answers `413 Payload Too Large` with `The callback request body is larger than 65536 bytes.`, a JSON body without `rawBody: true` answers `400`, and a missing credential answers `500` |
 | `@AcknowledgeCallback()` | When the handler returns the `PaymentCallback`, answers with its `acknowledgement` (status, headers and body): KBZ Pay's plain `success`, an empty `text/plain` 200 for the others. Any other return value passes through with status 200 |
 | `@RawCallback()` | Injects the unverified `CallbackRequest` (body, headers, query), e.g. to store it before verifying it yourself |
 | `this.payments.handleCallback(gateway, request)` | Verifies a `CallbackRequest` or a Nest request with the named gateway; throws `SignatureVerificationError` |

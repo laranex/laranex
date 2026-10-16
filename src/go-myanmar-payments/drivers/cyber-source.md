@@ -86,7 +86,7 @@ io.WriteString(w, payment.HTML())
 | `CallbackURL` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters |
 | `Currency` | `string` | Yes | Any three-letter uppercase ISO 4217 code, e.g. `MMK` |
 | `TransactionType` | `cybersource.TransactionType` | Yes | `cybersource.Sale` (`"sale"`), `.Authorization` (`"authorization"`), `.SaleAndCreateToken` (`"sale,create_payment_token"`) or `.AuthorizationAndCreateToken` (`"authorization,create_payment_token"`) |
-| `Locale` | `string` | Yes | Hosted page language as a CyberSource locale code, e.g. `en-us` |
+| `Locale` | `string` | Yes | Hosted page language, lowercase `xx-xx`, e.g. `en-us` |
 | `ReturnURL` | `string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `CancelURL` | `string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
 
@@ -122,8 +122,6 @@ callback.Acknowledgement.Write(w)
 ```
 
 Only signed fields are trusted: `decision` and `req_reference_number` must be listed in `signed_field_names`, `transaction_id` and the amount are read only when they are signed, and `Raw` keeps only the signed fields plus `signature`. An unsigned extra field, such as `decision=ACCEPT` added to a re-posted checkout form, can't change the result.
-
-The signed text is `name=value` pairs joined with `,`, and a signed value (a billing name, say) may contain both, so `signed_field_names` itself is checked too: it must list `signed_field_names`, and no name may be empty, repeated or contain `=`. `decision` must be `ACCEPT`, `DECLINE`, `REVIEW`, `ERROR` or `CANCEL` (any case); an unknown decision fails verification instead of returning `StatusUnknown`.
 
 ## Responses
 
@@ -168,7 +166,7 @@ What CyberSource puts in each field. See [Results](/go-myanmar-payments/referenc
 | `Status` | `decision` mapped, see [Statuses](#statuses) |
 | `GatewayStatus` | CyberSource `decision`, trimmed and uppercased, e.g. `ACCEPT` |
 | `GatewayReference` | CyberSource `transaction_id`. `""` when it is not signed |
-| `Amount` | CyberSource `auth_amount`, falling back to `req_amount` when it is missing or empty, e.g. `10000`. Signed values only |
+| `Amount` | CyberSource `auth_amount`, falling back to `req_amount` when it is missing or empty, e.g. `10000`; `""` when both are. Signed values only |
 | `Raw` | The signed fields of the verified post plus `signature`, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `auth_amount`, `auth_code`, `req_reference_number`, `req_amount`, `req_currency`, `req_transaction_uuid`, `signed_field_names`, `signed_date_time`. Unsigned fields are left out |
 | `Acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
@@ -181,7 +179,7 @@ What CyberSource puts in each field. See [Results](/go-myanmar-payments/referenc
 | `DECLINE`, `ERROR` | `StatusFailed` |
 | `CANCEL` | `StatusCanceled` |
 
-Any other `decision` returns `*SignatureVerificationError` (`CyberSource callback is malformed.`), so a verified callback never has `StatusUnknown`.
+Any other `decision` returns `*SignatureVerificationError` (`CyberSource callback is malformed.`), so a verified callback never has the `StatusUnknown` status.
 
 ## Errors
 

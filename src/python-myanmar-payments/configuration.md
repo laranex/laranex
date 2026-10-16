@@ -31,7 +31,7 @@ kbz = KbzPay(config)
 
 The time settings take an `int` or integer text such as `"45"`: `timeout_seconds` and Wave Pay's `time_to_live_seconds` from 1 to 2147483647, KBZ Pay's `time_to_live_minutes` from 1 to 120. An invalid value such as `"2.5"` or `"2147483648"` raises e.g. `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
-Settings are checked in the same order in every Laranex SDK, so the first error is the same: the credentials, URLs and other text settings, then the time to live, then the HTTP timeout. Only ASCII whitespace is trimmed; a no-break space or a byte order mark counts as text.
+Settings are checked in the same order in every Laranex SDK, so the first error is the same: the text settings in the order listed below, then the time to live, then the HTTP timeout. Only ASCII whitespace is trimmed; a no-break space or a byte order mark counts as text.
 
 ## Config Options
 
@@ -218,7 +218,7 @@ The keyword arguments `kbz_pay`, `wave_pay`, `aya_pay`, `yoma_mmqr` and `cyber_s
 
 ## HTTP Client
 
-Gateways that call an API take `http_client=` (`httpx.Client`, or `httpx.AsyncClient` on the async classes), also on `from_env()`, for proxies, tracing, retries or test transports. A client you pass keeps its own timeout; without one, the gateway creates an `httpx` client and `timeout_seconds` is one overall deadline per request (connecting, sending and reading the whole response). A request past it raises `ApiError("Could not reach <url>: timed out")`.
+Gateways that call an API take `http_client=` (`httpx.Client`, or `httpx.AsyncClient` on the async classes), also on `from_env()`, for proxies, tracing, retries or test transports. A client you pass keeps its own timeout; without one, the gateway creates an `httpx` client and `timeout_seconds` is one overall deadline per request (connecting, sending and reading the whole response). A request past it raises `ApiError("Could not reach <url>: timed out")`. The default client never follows redirects: a 3xx answer is a failed request like any other non-2xx one.
 
 ```python
 import httpx

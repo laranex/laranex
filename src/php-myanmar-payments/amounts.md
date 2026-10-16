@@ -21,7 +21,7 @@ A `float` such as `10.5` is never accepted: write decimals as `Amount::parse('10
 
 `Amount::parse` accepts only digits with an optional fractional part: `1000`, `1000.50`, `0.5`. It rejects signs, exponents, spaces and thousands separators (`-1`, `1e5`, ` 10`, `1,000`, `10.`, `.5`). Leading zeros of the whole part are removed (`007` becomes `7`); fractional digits are kept exactly as given (`10.50` stays `10.50`).
 
-`Amount::kyat` takes an `int`. Negative values throw.
+`Amount::kyat` takes an `int`. Negative values throw. A negative `int` passed as payment data is reported with the other invalid fields as `The amount field must not be negative.` (`items.0.amount` for a Wave Pay item).
 
 They throw an `InvalidPaymentDataException` with an `amount` entry, so bad user input surfaces like any other invalid field:
 

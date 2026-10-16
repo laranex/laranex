@@ -99,7 +99,7 @@ def wave_checkout(request, order_id: int):
 | `time_to_live_seconds` | `int` | No | Seconds the customer has to pay this payment, an `int` greater than 0. Unset uses `WavePayConfig`'s `time_to_live_seconds` (also in the request hash) |
 | `additional_field_3`, `additional_field_4`, `additional_field_5` | `str` | No | Extra information, at most 50 characters each, sent as `additional_field_3`–`5` and echoed in the callback's `additionalField3`–`5`. Unset, `None` or empty is not sent |
 
-Length limits count UTF-8 bytes. `WavePayItem(name, amount)` has a `name` and an `amount` in whole kyat, greater than 0. The items are summed with exact `int` arithmetic, never floats; `WavePay.resolved_amount(data)` returns the total that will be charged as an `Amount` (`None` when an item amount is invalid).
+Length limits count UTF-8 bytes. `WavePayItem(name, amount)` has a `name` and an `amount` in whole kyat, greater than 0. The items are summed with exact `int` arithmetic, never floats; `WavePay.resolved_amount(data)` returns the total that will be charged as an `Amount` (`None` when an item amount is invalid). Item names and amounts and the total are checked after the other fields; without items or `amount`, `amount` reports `The amount field is required.`, a negative amount reports `The amount field must not be negative.` (`items.0.amount` for an item), and an item amount that is invalid or has decimals skips the total check.
 
 ### Merchant Reference ID
 
@@ -186,7 +186,7 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 | Call | Raises | When |
 |---|---|---|
 | `initiate()` | `InvalidPaymentDataError` | `WavePay.validate(data)` fails. Nothing is sent and `data` is left untouched. Item errors use `items.0.amount` keys |
-| `initiate()` | `ApiError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
-| `handle_callback()` | `SignatureVerificationError` | `hashValue` doesn't match, a hashed field holds an object or a list, `amount` isn't a decimal, both `orderId` and `merchantReferenceId` are empty, or one of them holds anything but letters, digits, `_` and `-` |
+| `initiate()` | `ApiError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id`. `gateway_message` is Wave's `errors` object as `field: messages` pairs sorted by field (each entry a list or a single message), else its `message`; `gateway_code` is `VALIDATION_ERROR` whenever `errors` is present |
+| `handle_callback()` | `SignatureVerificationError` | `Wave Pay callback hash verification failed.`: `hashValue` is missing, not a string or doesn't match, or a hashed field holds an object or a list. `Wave Pay callback is malformed.`: the hash matches but `amount` isn't a decimal, both `orderId` and `merchantReferenceId` are empty, or either holds anything but letters, digits, `_` and `-` |
 
 `AsyncWavePay` raises the same errors. `http_status` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`gateway_code` is `VALIDATION_ERROR`).

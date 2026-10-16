@@ -209,16 +209,16 @@ The same values as [`initiate()`](#initiate-response) for the `order_id` you pas
 
 Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in the [token cache](/python-myanmar-payments/configuration#token-cache) (passed as `token_cache=`), shares one token request between concurrent calls (a thread lock on `YomaMmqr`, an `asyncio.Lock` on `AsyncYomaMmqr`), and fetches a new token, retrying once, when Yoma answers `401`. `yoma.forget_token()` (awaited on `AsyncYomaMmqr`) drops the cached token, e.g. after rotating the client secret.
 
-The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(base_url|client_id)>`, the same key every Laranex SDK uses, so services in different languages can share one cache, for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits, so `28800.0` is 28800 seconds; a missing or non-positive value means 3600.
+The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(base_url|client_id)>`, the same key every Laranex SDK uses, so services in different languages can share one cache, for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits after any whitespace, so `28800.0` and ` 28800` are 28800 seconds; a missing or non-positive value means 3600.
 
 ## Errors
 
 | Call | Raises | When |
 |---|---|---|
 | `initiate()` | `InvalidPaymentDataError` | `YomaMmqr.validate(data)` fails. Nothing is sent |
-| `initiate()` | `ApiError` | The token request fails, Yoma answers with an HTTP error or an `errorCode` (e.g. `PAYMENT ALREADY EXISTS`), `checkOutStatus` isn't `true`, or there is no `qrString` or `refLabel` |
+| `initiate()` | `ApiError` | The token request fails, Yoma answers with an HTTP error or an `errorCode` (e.g. `PAYMENT ALREADY EXISTS`), `checkOutStatus` isn't `true`, or `qrString` or `refLabel` is missing or empty |
 | `renew_qr()` | `ApiError` | As `initiate()`, without the checkout |
 | `status()` | `ApiError` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
 | `handle_callback()` | `SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong, `orderNumber` is missing, `status` holds an object or a list, or `hashValue` doesn't match |
 
-`AsyncYomaMmqr` raises the same errors. Yoma reports business errors with HTTP 200 and an `errorCode`; `ApiError` carries it in `gateway_code` and Yoma's `errorDescription` in `gateway_message`.
+`AsyncYomaMmqr` raises the same errors. Yoma reports business errors with HTTP 200 and an `errorCode`; `ApiError` carries it in `gateway_code` (an empty `errorCode` counts as none) and Yoma's `errorDescription` (or `error_description`) in `gateway_message`.

@@ -226,8 +226,9 @@ func NewPaymentWebhookController() *PaymentWebhookController {
 func (r *PaymentWebhookController) Store(ctx http.Context) http.Response {
 	gateway := ctx.Request().Route("gateway")
 	request, err := payments.CallbackRequestFromContext(ctx)
-	if err != nil {
-		return ctx.Response().String(http.StatusBadRequest, "bad request")
+	if err != nil { // payments.ErrCallbackBodyTooLarge
+		return ctx.Response().
+			String(http.StatusRequestEntityTooLarge, "too large")
 	}
 
 	webhook := models.NewPaymentWebhook(gateway, ctx.Request().Ip(), request)

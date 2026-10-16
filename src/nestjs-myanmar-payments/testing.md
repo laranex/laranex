@@ -136,7 +136,7 @@ Code that takes the callback as an argument can be called with it directly, e.g.
 
 ```ts
 const payment = payments.ayaPay().initiate(data);
-const url = new URL(payments.autoSubmitUrl(payment), 'http://localhost');
+const url = new URL(payments.autoSubmitUrl(payment)); // absolute
 
 const response = await request(app.getHttpServer())
   .get(url.pathname + url.search)

@@ -75,8 +75,8 @@ Gateways post from their own servers, so keep callback routes free of CSRF and a
 |---|---|
 | `manager.HandleCallbackFromContext(gateway, ctx)` | Verifies the callback in the current request by gateway name. It resolves the gateway first (`payments.ErrUnknownGateway` or a `*myanmarpayments.ConfigurationError`), then reads the body (`payments.ErrCallbackBodyTooLarge`), then checks the signature (`*myanmarpayments.SignatureVerificationError`) |
 | `kbz.HandleCallback(request)` | Verifies the callback. Takes the SDK's `*myanmarpayments.CallbackRequest` |
-| `payments.CallbackRequestFromContext(ctx)` | Builds that request from the current Goravel request: the raw body, the headers and the query string. A body over `payments.MaxCallbackBodyBytes` (64 KiB) returns `payments.ErrCallbackBodyTooLarge` |
-| `manager.HandleCallback(gateway, request)` | The same, by gateway name, for one route that serves every gateway; see [Handling Webhooks](/goravel-myanmar-payments/webhooks#route-and-controller) |
+| `manager.HandleCallback(gateway, request)` | The same, by gateway name, for one route that serves every gateway, e.g. to store the request first; see [Handling Webhooks](/goravel-myanmar-payments/webhooks#route-and-controller) |
+| `payments.CallbackRequestFromContext(ctx)` | Builds the `*myanmarpayments.CallbackRequest` from the current Goravel request: the raw body, the headers and the query string. A body over `payments.MaxCallbackBodyBytes` (64 KiB) returns `payments.ErrCallbackBodyTooLarge` |
 | `manager.Gateway(name)` | The gateway for `kbz-pay`, `wave-pay`, `aya-pay`, `yoma-mmqr` or `cyber-source` (`payments.GatewayNames()` lists them), as a `payments.CallbackHandler`. An unknown name returns an error wrapping `payments.ErrUnknownGateway` |
 | `payments.Acknowledge(ctx, callback)` | The response the gateway expects, written as the Goravel response. With a nil callback, an empty 200 |
 | `aya.VerifyRedirect(request)` | Verifies AYA's browser return; see [AYA Pay](/goravel-myanmar-payments/drivers/aya-pay) |

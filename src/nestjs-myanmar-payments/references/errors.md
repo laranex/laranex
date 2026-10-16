@@ -14,6 +14,8 @@ Every error extends `PaymentError` from `@laranex/myanmar-payments`, so one `cat
 | `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification |
 | `ConfigurationError` | A gateway is used without a setting it needs (URLs, time to live and Yoma's webhook secret included), a time setting is out of range, or the form link secret is shorter than 32 bytes |
 
+Outside this hierarchy: a callback body over 64 KiB throws `PayloadTooLargeException` (`413`), a JSON callback without `rawBody: true` throws `BadRequestException` (`400`), and an unknown name passed to `gateway()` or `handleCallback()`, or `autoSubmitUrl()` with the form route disabled, throws a plain `Error`.
+
 ## InvalidPaymentDataError
 
 ```ts

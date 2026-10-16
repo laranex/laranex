@@ -30,7 +30,7 @@ if err != nil {
 |---|---|
 | `*InvalidPaymentDataError` | Payment data breaks the gateway's documented rules, or `ParseAmount` gets bad input. Returned before any request is sent |
 | `*APIError` | The gateway rejected the request, answered with an error (including errors sent with HTTP 200), or could not be reached |
-| `*SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification (`… signature`, `hash` or `checksum verification failed.`), or its signature matches but its signed values are malformed (`Wave Pay callback is malformed.`, `AYA Pay callback payload is malformed.`, `CyberSource callback is malformed.`) |
+| `*SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification (`… signature`, `hash` or `checksum verification failed.`), or its signature matches but its signed values are malformed (`Wave Pay callback is malformed.`, `AYA Pay {callback|redirect|enquiry response} payload is malformed.`, `CyberSource callback is malformed.`) |
 | `*ConfigurationError` | A gateway setting (URLs, time to live and Yoma's webhook secret included) is missing or blank, or a time setting is out of range |
 
 To match any of the four, use the interface:

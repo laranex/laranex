@@ -30,7 +30,7 @@ Returned by `aya.initiate()` and `cs.initiate()`.
 | `action` | `string` | The gateway URL the form posts to |
 | `fields` | `readonly FormField[]` | The signed hidden fields (`{ name, value }`) in order. Post them unchanged |
 | `enctype` | `string` | The encoding the gateway expects; `application/x-www-form-urlencoded` unless the gateway needs another (AYA: `multipart/form-data`) |
-| `toHtml(nonce?)` | `string` | A complete, escaped page that submits the form on load. Pass your Content Security Policy nonce to add it to the inline `<script>` |
+| `toHtml(nonce?)` | `string` | A complete, escaped page that submits the form on load. Pass your Content Security Policy nonce to add it to the inline `<script>`; an empty nonce adds none |
 | `field(name)` | `string \| undefined` | One field's value |
 | `values()` | `Record<string, string>` | The fields as an object |
 

@@ -54,14 +54,14 @@ Returned by `$kbz->status()`, `$aya->status()` and `$yoma->status()`. A final cl
 | Member | Type | Description |
 |---|---|---|
 | `new CallbackRequest(body: '', headers: [], query: [])` | `CallbackRequest` | From the raw parts: the body as a `string`, the headers as name => value, the query parameters as an array |
-| `CallbackRequest::fromGlobals()` | `CallbackRequest` | From `php://input`, the request headers in `$_SERVER` and `$_GET` |
-| `CallbackRequest::fromPsr7($request)` | `CallbackRequest` | From a PSR-7 `ServerRequestInterface`; repeated headers joined with `, ` |
+| `CallbackRequest::fromGlobals()` | `CallbackRequest` | From `php://input`, the request headers in `$_SERVER` and the raw `QUERY_STRING`, decoded like a form body (see `parsedBody()`) |
+| `CallbackRequest::fromPsr7($request)` | `CallbackRequest` | From a PSR-7 `ServerRequestInterface`: the URI's query string decoded like a form body; repeated headers joined with `, ` |
 | `CallbackRequest::fromArray($payload, $headers = [])` | `CallbackRequest` | From a decoded payload, encoded as a JSON body with `Content-Type: application/json` |
 | `body` | `string` | The raw body, exactly as received |
 | `headers()` | `array<string, string>` | Headers as given |
 | `query` | `array` | Query string parameters |
 | `header($name)` | `?string` | One header, case-insensitively |
-| `parsedBody()` | `array` | The body decoded as JSON (when it is a JSON object) or a form (the first value of a repeated key); JSON numbers keep their exact text as strings |
+| `parsedBody()` | `array` | The body decoded as JSON (when it is a JSON object) or a urlencoded form; JSON numbers keep their exact text as strings. Only ASCII whitespace around the body is trimmed. A form splits on `&` and the first `=`, `+` is a space, an invalid `%` escape is kept as is, `;` is no separator, names stay as sent and the first value of a repeated name wins |
 | `input()` | `array` | The body merged over the query string |
 | `queryInput()` | `array` | The query string merged over the body |
 

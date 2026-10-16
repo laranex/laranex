@@ -178,11 +178,11 @@ The time settings take an `int` or integer text such as `'30'`. Without the env 
 
 ## HTTP Client
 
-`timeout` is in seconds, applies to gateway calls only and defaults to 30: the package passes it to KBZ Pay, Wave Pay, AYA and Yoma MMQR, and a null or blank one also means 30 seconds. It covers the whole call, connecting included, and there is no per-gateway timeout. Redirects are returned as they are, never followed.
+`timeout` is in seconds, applies to gateway calls only and defaults to 30: the package passes it to KBZ Pay, Wave Pay, AYA and Yoma MMQR, and a null or blank one also means 30 seconds. It covers the whole call, connecting included, and there is no per-gateway timeout. Redirects are never followed: a 3xx answer is handled like any other non-2xx one.
 
 ## Auto-submit Form Route
 
-AYA Pay and CyberSource need the customer's browser to POST a signed form. The package registers a `GET myanmar-payments/form` route (named `myanmar-payments.form`) that renders that form and submits it, and sets `FormPayment::$autoSubmitUrl` to an encrypted link to it. Links expire after `ttl_minutes`; an invalid or expired link answers `410 Gone`. The page is sent with `Cache-Control: no-store` and `Referrer-Policy: strict-origin`, so the gateway sees only your origin, never the encrypted link. It needs no session or cookies, so the route runs without middleware by default. When your app sets a Content-Security-Policy nonce with `Vite::useCspNonce()`, the page's inline script carries it. Links are encrypted with `APP_KEY`, which is read only when a link is built or opened: gateways without forms work without it.
+AYA Pay and CyberSource need the customer's browser to POST a signed form. The package registers a `GET myanmar-payments/form` route (named `myanmar-payments.form`) that renders that form and submits it, and sets `FormPayment::$autoSubmitUrl` to an encrypted link to it. Links expire after `ttl_minutes`; an invalid or expired link answers `410 Gone`. The page is sent with `Cache-Control: no-store` and `Referrer-Policy: strict-origin`, so the gateway sees only your origin, never the encrypted link. It needs no session or cookies, so the route runs without middleware by default. When your app sets a Content-Security-Policy nonce with `Vite::useCspNonce()`, the page's inline script carries it. Links are encrypted with `APP_KEY`, which is read only when a link is built or opened: gateways without forms work without it, while without it AYA Pay's and CyberSource's `initiate()` throws Laravel's `MissingAppKeyException` and the route answers `410 Gone`.
 
 | Key | Meaning |
 |---|---|

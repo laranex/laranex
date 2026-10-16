@@ -31,7 +31,7 @@ try {
 |---|---|
 | `InvalidPaymentDataError` | Payment data breaks the gateway's documented rules, or `Amount.kyat` / `Amount.parse` / `Amount.from` get bad input. Thrown before any request is sent |
 | `ApiError` | The gateway rejected the request, answered with an error (including errors sent with HTTP 200), or could not be reached |
-| `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification (`... verification failed.`), or its signature matched but its values are malformed (`Wave Pay callback is malformed.`, `AYA Pay callback payload is malformed.`, `CyberSource callback is malformed.`: an AYA Pay value holding `:`, an unsigned CyberSource `decision` or an unknown one, a Wave Pay amount or ID out of format) |
+| `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification (`... verification failed.`), or its signature matched but its values are malformed (`Wave Pay callback is malformed.`, `AYA Pay {callback|redirect|enquiry response} payload is malformed.`, `CyberSource callback is malformed.`: an AYA Pay value holding `:`, an unsigned CyberSource `decision` or an unknown one, a Wave Pay amount or ID out of format) |
 | `ConfigurationError` | A gateway setting (URLs, time to live and Yoma's webhook secret included) is missing or blank, or a time setting is out of range |
 
 Each error's `name` is its class name, e.g. `ApiError`.
@@ -46,6 +46,8 @@ Each error's `name` is its class name, e.g. `ApiError`.
 
 `error.message` is `Invalid payment data: ` followed by the messages, in field-name order.
 
+A URL field (callback, return and cancel URLs) is valid when it is printable ASCII with no whitespace, starts with `http://` or `https://` (any case) and names a host: a bracketed IP address or dot-separated labels of letters, digits and inner `-` (at most 63 characters each, 253 in all, one trailing dot allowed), with an optional port from 0 to 65535. Otherwise the message is `The callbackUrl field must be a valid http or https URL.` (for that field). A negative amount gives `The amount field must not be negative.`
+
 ## ApiError
 
 | Field | Type | Description |
@@ -57,7 +59,7 @@ Each error's `name` is its class name, e.g. `ApiError`.
 | `raw` | `Record<string, unknown>` | The decoded response body (`{}` when there was none); JSON numbers are their exact text as `string`s |
 | `cause` | `unknown` | The underlying network error, if any |
 
-When the gateway sends an error code without a message, `error.message` ends with the bracketed code, e.g. `KBZ Pay precreate failed: [ORDER_ID_USED]`. For a call that could not reach the gateway, `error.message` is `Could not reach <url>: …` and `cause` is the `fetch` error, e.g. a `TypeError` for a refused connection or a `DOMException` named `TimeoutError` or `AbortError` for a timed-out or aborted call.
+When the gateway sends an error code without a message, `error.message` ends with the bracketed code, e.g. `KBZ Pay precreate failed: [ORDER_ID_USED]`. The default client never follows redirects (`redirect: 'manual'`): a `3xx` answer is an `ApiError` like any other non-`2xx` one. For a call that could not reach the gateway, `error.message` is `Could not reach <url>: …` and `cause` is the `fetch` error, e.g. a `TypeError` for a refused connection or a `DOMException` named `TimeoutError` or `AbortError` for a timed-out or aborted call.
 
 ## SignatureVerificationError
 

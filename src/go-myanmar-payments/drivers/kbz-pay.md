@@ -98,7 +98,9 @@ json.NewEncoder(w).Encode(app)
 | `CallbackURL` | `string` | Yes | Public URL KBZ posts the result to. Absolute http or https URL, at most 512 characters, no query string |
 | `Title` | `string` | No | Product name shown to the customer |
 | `TimeToLiveMinutes` | `*int` | No | Minutes the customer has to pay, 1 to 120, sent as `timeout_express` (`30` is sent as `30m`). E.g. `ttl := 30` then `TimeToLiveMinutes: &ttl`. `nil` uses `kbzpay.Config`'s required `TimeToLiveMinutes` (`KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`); `0` is rejected |
-| `CallbackInfo` | `string` | No | Free text echoed back in the callback, at most 512 characters once URL-encoded |
+| `CallbackInfo` | `string` | No | Free text echoed back in the callback, sent URL-encoded (`~` stays as it is), at most 512 characters once encoded |
+
+Fields are checked in this order: `orderId`, `amount`, `callbackUrl`, `timeToLiveMinutes`, `callbackInfo`. A negative amount reports `The amount field must not be negative.`; a query string reports `The callbackUrl field must not contain a query string.`.
 
 ### PWA Notes
 
@@ -240,6 +242,6 @@ KBZ signs requests, the in-app `orderInfo` and notifications the same way: every
 | `PWA()`, `QR()`, `App()` | `*APIError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, or without a `prepay_id` |
 | `QR()` | `*APIError` | KBZ returns no `qrCode` |
 | `Status()` | `*APIError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, e.g. for an unknown order |
-| `HandleCallback()` | `*SignatureVerificationError` | `sign` doesn't match, or a field holds an object or array |
+| `HandleCallback()` | `*SignatureVerificationError` | `KBZ Pay callback signature verification failed.`: `sign` is missing or doesn't match, or a field holds an object or array |
 
 `*APIError` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `GatewayCode` and its `msg` in `GatewayMessage`.

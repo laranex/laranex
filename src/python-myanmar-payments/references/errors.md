@@ -33,7 +33,9 @@ except ApiError as error:
 |---|---|---|
 | `errors` | `Mapping[str, str]` | A read-only mapping of field name to message, keyed by the payment data's snake_case field names, e.g. `{"amount": "Wave Pay does not accept decimal amounts; …"}`. Wave item errors use `items.0.amount` keys |
 
-`str(error)` is `Invalid payment data: ` followed by the messages, in field-name order. A negative whole-number amount is reported with the other errors as `The amount field must not be negative.`, and a URL must be a printable ASCII `http://` or `https://` URL with a valid host name or bracketed IP (`The callback_url field must be a valid http or https URL.`).
+`str(error)` is `Invalid payment data: ` followed by the messages, in field-name order.
+
+A URL field (callback, return and cancel URLs) is valid when it is printable ASCII with no whitespace, starts with `http://` or `https://` (any case) and names a host: a bracketed IP address or dot-separated labels of letters, digits and inner `-` (at most 63 characters each, 253 in all, one trailing dot allowed), with an optional port from 0 to 65535. Otherwise the message is `The callback_url field must be a valid http or https URL.` (for that field). A negative amount gives `The amount field must not be negative.`
 
 ## ApiError
 
@@ -46,7 +48,7 @@ except ApiError as error:
 | `raw` | `Mapping[str, Any]` | The decoded response body, JSON numbers as their exact text (`{}` when there was none) |
 | `__cause__` | `BaseException \| None` | The underlying network error, if any |
 
-When the gateway sends an error code without a message, `str(error)` ends with the bracketed code, e.g. `KBZ Pay precreate failed: [ORDER_ID_USED]`. For a call that could not reach the gateway, `str(error)` is `Could not reach <url>: …` and `__cause__` is the `httpx` error, e.g. an `httpx.ConnectError` or `httpx.TimeoutException`.
+When the gateway sends an error code without a message, `str(error)` ends with the bracketed code, e.g. `KBZ Pay precreate failed: [ORDER_ID_USED]`. Redirects are never followed: a `3xx` answer is an `ApiError` like any other non-`2xx` one. With the client the gateway creates, `timeout_seconds` is one overall deadline per request (connecting, sending and reading). For a call that could not reach the gateway, `str(error)` is `Could not reach <url>: …` and `__cause__` is the `httpx` error, e.g. an `httpx.ConnectError` or `httpx.TimeoutException`.
 
 ## SignatureVerificationError
 

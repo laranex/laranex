@@ -187,14 +187,16 @@ The same values as [`initiate()`](#initiate-response) for the `orderId` you pass
 
 Tokens are kept in the [token cache](/php-myanmar-payments/configuration#token-cache) and refetched once when Yoma answers `401`; `$yomaMmqr->forgetToken()` drops the cached token.
 
+The token is cached for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits after any whitespace, so `28800.0` and ` 28800` are 28800 seconds; a missing or non-positive value means 3600.
+
 ## Errors
 
 | Call | Throws | When |
 |---|---|---|
 | `new YomaMmqrPaymentData(...)` | `InvalidPaymentDataException` | A value breaks the rules above. Nothing is sent |
-| `initiate()` | `ApiException` | The token request fails, Yoma answers with an HTTP error or an `errorCode` (e.g. `PAYMENT ALREADY EXISTS`), `checkOutStatus` isn't `true`, or there is no `qrString` or `refLabel` |
+| `initiate()` | `ApiException` | The token request fails, Yoma answers with an HTTP error or an `errorCode` (e.g. `PAYMENT ALREADY EXISTS`), `checkOutStatus` isn't `true`, or `qrString` or `refLabel` is missing or empty |
 | `renewQr()` | `ApiException` | As `initiate()`, without the checkout |
 | `status()` | `ApiException` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
 | `handleCallback()` | `SignatureVerificationException` | `X-Webhook-Secret` is missing or wrong, `orderNumber` is missing, `status` holds an object or array, or `hashValue` doesn't match |
 
-Yoma reports business errors with HTTP 200 and an `errorCode`; `ApiException` carries it in `gatewayCode` and Yoma's `errorDescription` in `gatewayMessage`. When Yoma can't be reached, the calls throw `ApiException` with `httpStatus` `0` and the original error as `getPrevious()`.
+Yoma reports business errors with HTTP 200 and an `errorCode`; `ApiException` carries it in `gatewayCode` (an empty `errorCode` counts as none) and Yoma's `errorDescription` (or `error_description`) in `gatewayMessage`. When Yoma can't be reached, the calls throw `ApiException` with `httpStatus` `0` and the original error as `getPrevious()`.

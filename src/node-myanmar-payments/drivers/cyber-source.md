@@ -77,7 +77,7 @@ res.end(payment.toHtml());
 | `callbackUrl` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters |
 | `currency` | `string` | Yes | Any three-letter uppercase ISO 4217 code, e.g. `MMK` |
 | `transactionType` | `CyberSourceTransactionType` | Yes | `CyberSourceTransactionType.Sale` (`'sale'`), `.Authorization` (`'authorization'`), `.SaleAndCreateToken` (`'sale,create_payment_token'`) or `.AuthorizationAndCreateToken` (`'authorization,create_payment_token'`) |
-| `locale` | `string` | Yes | Hosted page language as a CyberSource locale code, e.g. `en-us` |
+| `locale` | `string` | Yes | Hosted page language, lowercase `xx-xx`, e.g. `en-us` |
 | `returnUrl` | `string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `cancelUrl` | `string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
 
@@ -104,7 +104,7 @@ try {
 }
 ```
 
-Only signed fields are trusted, and `raw` holds only the signed fields plus `signature`.
+Only signed fields are trusted: `decision` and `req_reference_number` must be listed in `signed_field_names`, `transaction_id` and the amount are read only when they are signed, and `raw` keeps only the signed fields plus `signature`. An unsigned extra field, such as `decision=ACCEPT` added to a re-posted checkout form, can't change the result.
 
 ## Responses
 
@@ -146,7 +146,7 @@ See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & 
 | `status` | `decision` mapped, see [Statuses](#statuses) |
 | `gatewayStatus` | CyberSource `decision`, trimmed and uppercased, e.g. `ACCEPT` |
 | `gatewayReference` | CyberSource `transaction_id`. `undefined` when it is not signed |
-| `amount` | CyberSource `auth_amount`, falling back to `req_amount` when it is missing or empty, e.g. `10000`; `undefined` when both are empty. Signed values only |
+| `amount` | CyberSource `auth_amount`, falling back to `req_amount` when it is missing or empty, e.g. `10000`; `undefined` when both are. Signed values only |
 | `raw` | The signed fields of the verified post plus `signature`, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `auth_amount`, `auth_code`, `req_reference_number`, `req_amount`, `req_currency`, `req_transaction_uuid`, `signed_field_names`, `signed_date_time`. Unsigned fields are left out |
 | `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
@@ -159,9 +159,11 @@ See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & 
 | `DECLINE`, `ERROR` | `failed` |
 | `CANCEL` | `canceled` |
 
+Any other `decision` throws `SignatureVerificationError` (`CyberSource callback is malformed.`), so a verified callback never has the `unknown` status.
+
 ## Errors
 
 | Call | Throws | When |
 |---|---|---|
 | `initiate()` | `InvalidPaymentDataError` | `CyberSource.validate(data)` fails. Nothing is signed |
-| `handleCallback()` | `SignatureVerificationError` | `CyberSource callback signature verification failed.`: `signature` doesn't match, a field listed in `signed_field_names` is missing or holds an object or array, or `signed_field_names` doesn't list itself or has an empty, repeated or `=`-containing name. `CyberSource callback is malformed.`: the signature matched but `decision` or `req_reference_number` isn't signed, or `decision` isn't one of the five above |
+| `handleCallback()` | `SignatureVerificationError` | `CyberSource callback signature verification failed.`: `signature` is missing, not a string or doesn't match, a field listed in `signed_field_names` is missing or holds an object or array, or `signed_field_names` doesn't list itself or has an empty, repeated or `=`-containing name. `CyberSource callback is malformed.`: the signature matches but `decision` or `req_reference_number` isn't signed, or `decision` isn't one of the five above |

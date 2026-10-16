@@ -179,7 +179,7 @@ CYBER_SOURCE_SECRET_KEY=
 CYBER_SOURCE_BASE_URL=
 ```
 
-`ConfigFromEnv` never fails: `New` returns the error. A missing variable gives the `is missing` error, and a time variable that is out of range gives the `must be …` error (`a whole number from 1 to 120` for KBZ Pay's time to live, `a whole number greater than 0` otherwise). The package never reads files itself: load the `.env` file with your framework or with a package such as [`godotenv`](https://github.com/joho/godotenv) before calling `ConfigFromEnv`.
+`ConfigFromEnv` never fails: `New` returns the error. A missing variable gives the `is missing` error, and a time variable that is not a whole number in range (`0`, `thirty`, `2147483648`) gives the `must be …` error (`a whole number from 1 to 120` for KBZ Pay's time to live, `a whole number greater than 0` otherwise). The package never reads files itself: load the `.env` file with your framework or with a package such as [`godotenv`](https://github.com/joho/godotenv) before calling `ConfigFromEnv`.
 
 ## One Object for Every Gateway
 
@@ -249,7 +249,7 @@ type HTTPDoer interface {
 
 | Argument | Description |
 |---|---|
-| `nil` | Uses an `*http.Client` with the config's `TimeoutSeconds` (30 by default) that never follows redirects |
+| `nil` | Uses an `*http.Client` with the config's `TimeoutSeconds` (30 by default) that never follows redirects: a 3xx answer is a failed request like any other non-2xx one |
 | your `HTTPDoer` | Sends every request. Use it for proxies, tracing, retries or test doubles |
 
 ```go

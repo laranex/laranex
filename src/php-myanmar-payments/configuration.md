@@ -32,7 +32,9 @@ $kbz = new KbzPay($config);
 
 `$e->getMessage()` reads `The kbz_pay configuration is missing [app_key].`
 
-`timeoutSeconds` and Wave Pay's `timeToLiveSeconds` must be whole numbers greater than 0, and KBZ Pay's `timeToLiveMinutes` from 1 to 120; anything else, such as `0` or `'thirty'`, throws, e.g. `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+`timeoutSeconds` and Wave Pay's `timeToLiveSeconds` must be whole numbers from 1 to 2147483647, and KBZ Pay's `timeToLiveMinutes` from 1 to 120; anything else, such as `0`, `'thirty'` or `2147483648`, throws, e.g. `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+
+In `fromArray()`, text settings also take an integer (`'merchant_code' => 200123` is `'200123'`); floats and booleans count as missing. Only ASCII whitespace counts as blank, so a no-break space or a byte order mark is a value. When several settings are wrong, the first error is the same in every Laranex SDK: the text settings in the order listed below, then the time to live, then the timeout.
 
 ## Config Options
 
@@ -248,7 +250,7 @@ $kbz = new KbzPay(KbzPayConfig::fromEnv(), $client);
 
 `fromEnv()` takes the same client: `KbzPay::fromEnv(null, $client)`.
 
-Without a client, the gateway uses Guzzle with `timeoutSeconds` when Guzzle is installed, and otherwise a discovered PSR-18 client with its own timeout; a client you pass keeps its own timeout. Request and stream objects are created with discovered PSR-17 factories, so a PSR-7 implementation such as `guzzlehttp/psr7` or `nyholm/psr7` must be installed. Guzzle ships one.
+Without a client, the gateway uses Guzzle with `timeoutSeconds` when Guzzle is installed, and otherwise a discovered PSR-18 client with its own timeout; a client you pass keeps its own timeout. Guzzle's PSR-18 `sendRequest()` never follows redirects: a 3xx answer is a failed request like any other non-2xx one. Request and stream objects are created with discovered PSR-17 factories, so a PSR-7 implementation such as `guzzlehttp/psr7` or `nyholm/psr7` must be installed. Guzzle ships one.
 
 A failed request (connection error, timeout) throws an `ApiException` whose `getPrevious()` is the client's original exception.
 

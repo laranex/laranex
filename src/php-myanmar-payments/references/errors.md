@@ -36,7 +36,7 @@ try {
 |---|---|
 | `InvalidPaymentDataException` | Payment data breaks the gateway's documented rules, or `Amount::kyat` / `Amount::parse` / `Amount::from` get bad input. Thrown when the payment data is created, before any request is sent |
 | `ApiException` | The gateway rejected the request, answered with an error (including errors sent with HTTP 200), or could not be reached |
-| `SignatureVerificationException` | A callback, return redirect or gateway response fails signature verification or is malformed (see each gateway's Errors table) |
+| `SignatureVerificationException` | A callback, return redirect or gateway response fails signature verification (`... signature`, `hash` or `checksum verification failed.`), or its signature matches but its signed values are malformed (`Wave Pay callback is malformed.`, `AYA Pay {callback\|redirect\|enquiry response} payload is malformed.`, `CyberSource callback is malformed.`) |
 | `ConfigurationException` | A gateway setting (URLs, time to live and Yoma's webhook secret included) is missing or blank, or a time setting is out of range |
 
 ## InvalidPaymentDataException
@@ -46,6 +46,8 @@ try {
 | `errors()` | `array<string, string>` | Field name to message, keyed by the payment data's camelCase parameter names, e.g. `['amount' => 'Wave Pay does not accept decimal amounts; …']`. Wave item errors use `items.0.amount` keys |
 
 `getMessage()` is `Invalid payment data: ` followed by the messages, in field-name order. A bad amount reads e.g. `The amount field must be a number such as 1000 or 1000.50, got "1,000".`
+
+A URL field (callback, return and cancel URLs) is valid when it is printable ASCII with no whitespace, starts with `http://` or `https://` (any case) and names a host: a bracketed IP address or dot-separated labels of letters, digits and inner `-` (at most 63 characters each, 253 in all, one trailing dot allowed), with an optional port from 0 to 65535. Otherwise the message is `The callbackUrl field must be a valid http or https URL.` (for that field). A negative amount gives `The amount field must not be negative.`
 
 ## ApiException
 
@@ -58,7 +60,7 @@ try {
 | `raw` | `array` | The decoded response body (`[]` when there was none) |
 | `getPrevious()` | `?Throwable` | The underlying network error, if any |
 
-When the gateway sends an error code without a message, `getMessage()` ends with the bracketed code, e.g. `KBZ Pay precreate failed: [ORDER_ID_USED]`. For a call that could not reach the gateway, `getMessage()` is `Could not reach <url>: …` and `getPrevious()` is the PSR-18 client's `ClientExceptionInterface`, e.g. Guzzle's `ConnectException`.
+When the gateway sends an error code without a message, `getMessage()` ends with the bracketed code, e.g. `KBZ Pay precreate failed: [ORDER_ID_USED]`. Redirects are never followed: a `3xx` answer is an `ApiException` like any other non-`2xx` one (the default Guzzle client, and PSR-18 `sendRequest()` in general, does not follow them). For a call that could not reach the gateway, `getMessage()` is `Could not reach <url>: …` and `getPrevious()` is the PSR-18 client's `ClientExceptionInterface`, e.g. Guzzle's `ConnectException`.
 
 ## SignatureVerificationException
 
@@ -74,4 +76,4 @@ When the gateway sends an error code without a message, `getMessage()` ends with
 | `gateway` | `string` | e.g. `kbz_pay` |
 | `key` | `string` | The setting, e.g. `app_key` |
 
-`getMessage()` is e.g. `The kbz_pay configuration is missing [app_key].`, or `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting (a missing or blank HTTP timeout is not an error: it defaults to 30 seconds). Thrown by each config class (and so by each gateway's constructor and `fromEnv()`), and by `MyanmarPayments` when a gateway is used without configuration.
+`getMessage()` is e.g. `The kbz_pay configuration is missing [app_key].`, or `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting (at most 2147483647; a missing or blank HTTP timeout is not an error: it defaults to 30 seconds). Thrown by each config class (and so by each gateway's constructor and `fromEnv()`), and by `MyanmarPayments` when a gateway is used without configuration.

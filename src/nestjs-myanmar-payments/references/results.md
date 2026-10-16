@@ -30,7 +30,7 @@ Returned by `ayaPay().initiate()` and `cyberSource().initiate()`.
 | `enctype` | `string` | The form encoding the gateway expects |
 | `field(name)` | `string \| undefined` | The value of one field |
 | `values()` | `Record<string, string>` | The fields as an object, e.g. for your own template |
-| `toHtml(nonce?)` | `string` | A full HTML page that posts the form on load. Pass your Content Security Policy nonce to add it to the inline `<script>` |
+| `toHtml(nonce?)` | `string` | A full HTML page that posts the form on load. Pass your Content-Security-Policy nonce to add it to the inline `<script>` |
 
 `this.payments.autoSubmitUrl(payment)` returns the link to the module's auto-submitting page. It throws when the form route is disabled (`The form route is disabled (formRoute.enabled is false).`) or `formLink.ttlMinutes` is missing; the `FormPayment` itself is still returned by `initiate()`.
 

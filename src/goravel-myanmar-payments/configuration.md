@@ -233,7 +233,7 @@ AYA Pay and CyberSource need the customer's browser to POST a signed form. The p
 | `path` | The route path |
 | `middleware` | Middleware for the route, e.g. rate limiting. Don't add authentication: the customer may arrive from a gateway or another device |
 | `ttl_minutes` | Minutes a link stays valid. Required to create a link: without it `AutoSubmitURL` returns a `*myanmarpayments.ConfigurationError` with `form_route` and `ttl_minutes` (`The form_route configuration is missing [ttl_minutes].`), with `Invalid` set for a value that is not a whole number greater than 0 |
-| `base_url` | The scheme and host links start with. Falls back to `http.url`, then `APP_URL` |
+| `base_url` | The scheme and host links start with. Falls back to `http.url`, `app.url`, `APP_URL`, then `http://localhost`, so links are always absolute |
 | `nonce` | A `func(contractshttp.Context) string` returning the Content-Security-Policy nonce of the current request; the page's inline script gets `nonce="…"` (`form.HTMLWithNonce`). `nil` (default) adds none |
 
 Links are encrypted with Goravel's crypt facade (`APP_KEY`); without it, `AutoSubmitURL` returns `payments.ErrCryptNotAvailable`. `AyaPay().Initiate()` and `CyberSource().Initiate()` never need the form route: with the route disabled or `ttl_minutes` missing they still return the `*FormPayment`, and only `AutoSubmitURL` fails. It checks in this order: route enabled, `ttl_minutes`, crypt.

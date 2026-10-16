@@ -87,10 +87,10 @@ def cybersource_checkout(request, order_id: int):
 |---|---|---|---|
 | `order_id` | `str` | Yes | At most 50 characters, sent as `reference_number` |
 | `amount` | `Amount \| int \| str \| Decimal` | Yes | Order total in `currency`, 0 or more, any number of decimals, at most 15 characters, e.g. `10000` or `Amount.parse("10.50")` |
-| `callback_url` | `str` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters; CyberSource may require HTTPS in production |
+| `callback_url` | `str` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters |
 | `currency` | `str` | Yes | Any three-letter uppercase ISO 4217 code, e.g. `MMK` |
 | `transaction_type` | `CyberSourceTransactionType \| str` | Yes | `CyberSourceTransactionType.SALE` (`"sale"`), `.AUTHORIZATION` (`"authorization"`), `.SALE_AND_CREATE_TOKEN` (`"sale,create_payment_token"`) or `.AUTHORIZATION_AND_CREATE_TOKEN` (`"authorization,create_payment_token"`), or its string value |
-| `locale` | `str` | Yes | Hosted page language as a CyberSource locale code, e.g. `en-us` |
+| `locale` | `str` | Yes | Hosted page language, lowercase `xx-xx`, e.g. `en-us` |
 | `return_url` | `str` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `cancel_url` | `str` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
 
@@ -127,8 +127,6 @@ def cybersource_callback(request):
 ```
 
 Only signed fields are trusted: `decision` and `req_reference_number` must be listed in `signed_field_names`, `transaction_id` and the amount are read only when they are signed, and `raw` keeps only the signed fields plus `signature`. An unsigned extra field, such as `decision=ACCEPT` added to a re-posted checkout form, can't change the result.
-
-The signed text is `name=value` pairs joined with `,`, and a signed value (a billing name, say) may contain both, so `signed_field_names` itself is checked too: it must list `signed_field_names`, and no name may be empty, repeated or contain `=`. `decision` must be `ACCEPT`, `DECLINE`, `REVIEW`, `ERROR` or `CANCEL` (any case); an unknown decision fails verification instead of returning an `UNKNOWN` status.
 
 ## Responses
 
@@ -172,7 +170,7 @@ What CyberSource puts in each field. See [Results](/python-myanmar-payments/refe
 | `status` | `decision` mapped, see [Statuses](#statuses) |
 | `gateway_status` | CyberSource `decision`, trimmed and uppercased, e.g. `ACCEPT` |
 | `gateway_reference` | CyberSource `transaction_id`. `None` when it is not signed |
-| `amount` | CyberSource `auth_amount`, falling back to `req_amount` when it is missing or empty, e.g. `10000`. Signed values only |
+| `amount` | CyberSource `auth_amount`, falling back to `req_amount` when it is missing or empty, e.g. `10000`; `None` when both are. Signed values only |
 | `raw` | The signed fields of the verified post plus `signature`, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `auth_amount`, `auth_code`, `req_reference_number`, `req_amount`, `req_currency`, `req_transaction_uuid`, `signed_field_names`, `signed_date_time`. Unsigned fields are left out |
 | `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
@@ -185,13 +183,13 @@ What CyberSource puts in each field. See [Results](/python-myanmar-payments/refe
 | `DECLINE`, `ERROR` | `FAILED` |
 | `CANCEL` | `CANCELED` |
 
-Any other `decision` raises `SignatureVerificationError`, so a verified callback never has the `UNKNOWN` status. A bad field list or signature fails with `CyberSource callback signature verification failed.`; a signed post without a signed `decision` and `req_reference_number`, or with an unknown decision, fails with `CyberSource callback is malformed.`. With empty `auth_amount` and `req_amount`, `amount` is `None`.
+Any other `decision` raises `SignatureVerificationError` (`CyberSource callback is malformed.`), so a verified callback never has the `UNKNOWN` status.
 
 ## Errors
 
 | Call | Raises | When |
 |---|---|---|
 | `initiate()` | `InvalidPaymentDataError` | `CyberSource.validate(data)` fails. Nothing is signed |
-| `handle_callback()` | `SignatureVerificationError` | `signature` doesn't match, a field listed in `signed_field_names` is missing or holds an object or a list, `decision` or `req_reference_number` isn't signed, `signed_field_names` doesn't list itself or has an empty, repeated or `=`-containing name, or `decision` isn't one of the five above |
+| `handle_callback()` | `SignatureVerificationError` | `CyberSource callback signature verification failed.`: `signature` is missing, not a string or doesn't match, a field listed in `signed_field_names` is missing or holds an object or a list, or `signed_field_names` doesn't list itself or has an empty, repeated or `=`-containing name. `CyberSource callback is malformed.`: the signature matches but `decision` or `req_reference_number` isn't signed, or `decision` isn't one of the five above |
 
 CyberSource makes no HTTP calls, so nothing raises `ApiError`.

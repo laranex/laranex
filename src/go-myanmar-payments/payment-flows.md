@@ -14,7 +14,7 @@ Starting a payment always follows the same pattern: build the gateway's payment 
 | `*QrPayment` | Show the QR to the customer | `kbz.QR`, `yoma.Initiate`, `yoma.RenewQR` |
 | `*AppPayment` | Return the signed payload to your mobile app | `kbz.App` |
 
-Every method validates the payment data first and returns `*myanmarpayments.InvalidPaymentDataError` before any request is sent. Call `data.Validate()` yourself to check a request earlier, e.g. while handling a form. The customer finishing on the gateway's side is never proof of payment: fulfill orders from the verified [callback](/go-myanmar-payments/callbacks) or a status check.
+Every method validates the payment data first and returns `*myanmarpayments.InvalidPaymentDataError` before any request is sent. Call `data.Validate()` yourself to check a request earlier, e.g. while handling a form. Callback, return and cancel URLs must be absolute http or https URLs by PHP's `FILTER_VALIDATE_URL` rules, the same in every Laranex SDK: printable ASCII only, an ASCII host name (labels of letters, digits and inner `-`, at most 63 characters each) or a bracketed IPv6 address, and an optional port from 0 to 65535; anything else fails with `The callbackUrl field must be a valid http or https URL.` The customer finishing on the gateway's side is never proof of payment: fulfill orders from the verified [callback](/go-myanmar-payments/callbacks) or a status check.
 
 The samples on this page and the gateway pages are `net/http` handlers; [Framework Integration](/go-myanmar-payments/framework-integration) shows chi, Gin and Echo.
 

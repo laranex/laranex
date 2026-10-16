@@ -59,7 +59,7 @@ Returned by `kbz.status()`, `aya.status()` and `yoma.status()`. A frozen datacla
 | `headers` | `Mapping[str, str]` | Headers with lowercase names; repeated headers joined with `, ` |
 | `query` | `Mapping[str, str]` | Query string values (the first of each) |
 | `header(name)` | `str \| None` | One header, case-insensitively |
-| `parsed_body()` | `dict[str, Any]` | The body decoded as JSON or a form; JSON numbers keep their exact text as `str` |
+| `parsed_body()` | `dict[str, Any]` | The body decoded as JSON (when it is a JSON object) or a urlencoded form; JSON numbers keep their exact text as `str`. Only ASCII whitespace around the body is trimmed. A form splits on `&` and the first `=`, `+` is a space, an invalid `%` escape is kept as is, `;` is no separator, names stay as sent and the first value of a repeated name wins |
 | `input()` | `dict[str, Any]` | The body merged over the query string |
 | `query_input()` | `dict[str, Any]` | The query string merged over the body |
 

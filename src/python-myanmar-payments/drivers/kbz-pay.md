@@ -101,7 +101,9 @@ def kbz_app(request, order_id: int):
 | `callback_url` | `str` | Yes | Public URL KBZ posts the result to. Absolute http or https URL, at most 512 characters, no query string |
 | `title` | `str` | No | Product name shown to the customer |
 | `time_to_live_minutes` | `int` | No | Minutes the customer has to pay, 1 to 120, sent as `timeout_express` (`30` is sent as `30m`). Unset uses `KbzPayConfig`'s required `time_to_live_minutes` (`KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`) |
-| `callback_info` | `str` | No | Free text echoed back in the callback, at most 512 characters once URL-encoded |
+| `callback_info` | `str` | No | Free text echoed back in the callback, sent URL-encoded (`~` stays as it is), at most 512 characters once encoded |
+
+Fields are checked in this order: `order_id`, `amount`, `callback_url`, `time_to_live_minutes`, `callback_info`. A negative amount reports `The amount field must not be negative.`; a query string reports `The callback_url field must not contain a query string.`.
 
 ### PWA Notes
 
@@ -240,6 +242,6 @@ KBZ signs requests, the in-app `order_info` and notifications the same way: ever
 | `pwa()`, `qr()`, `app()` | `ApiError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, or without a `prepay_id` |
 | `qr()` | `ApiError` | KBZ returns no `qrCode` |
 | `status()` | `ApiError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, e.g. for an unknown order |
-| `handle_callback()` | `SignatureVerificationError` | `sign` doesn't match, or a field holds an object or a list |
+| `handle_callback()` | `SignatureVerificationError` | `KBZ Pay callback signature verification failed.`: `sign` is missing or doesn't match, or a field holds an object or a list |
 
 `AsyncKbzPay` raises the same errors. `ApiError` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `gateway_code` and its `msg` in `gateway_message`.

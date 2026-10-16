@@ -14,7 +14,7 @@ Starting a payment always follows the same pattern: build the gateway's payment 
 | `QrPayment` | Show the QR to the customer | `$kbz->qr()`, `$yoma->initiate()`, `$yoma->renewQr()` |
 | `AppPayment` | Return the signed payload to your mobile app | `$kbz->app()` |
 
-Every payment data class validates its values when you create it and throws `InvalidPaymentDataException` before any request is sent. `$data->validate()` runs the same checks again. The customer finishing on the gateway's side is never proof of payment: fulfill orders from the verified [callback](/php-myanmar-payments/callbacks) or a status check.
+Every payment data class validates its values when you create it and throws `InvalidPaymentDataException` before any request is sent. `$data->validate()` runs the same checks again. Callback, return and cancel URLs must be absolute http or https URLs by PHP's `FILTER_VALIDATE_URL` rules, the same in every Laranex SDK: printable ASCII only, an ASCII host name (labels of letters, digits and inner `-`, at most 63 characters each) or a bracketed IPv6 address, and an optional port from 0 to 65535; anything else fails with `The callbackUrl field must be a valid http or https URL.` The customer finishing on the gateway's side is never proof of payment: fulfill orders from the verified [callback](/php-myanmar-payments/callbacks) or a status check.
 
 The samples on this page and the gateway pages are plain PHP scripts; [Framework Integration](/php-myanmar-payments/framework-integration) shows Symfony and PSR-15 handlers.
 

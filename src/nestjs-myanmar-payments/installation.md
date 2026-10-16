@@ -78,7 +78,7 @@ Without it the package reads the unread request stream when no body parser consu
 | `MyanmarPaymentsGateway` | `KbzPay \| WavePay \| AyaPay \| YomaMmqr \| CyberSource`, what `gateway(name)` returns (type) |
 | `MYANMAR_PAYMENTS_OPTIONS`, `KBZ_PAY`, `WAVE_PAY`, `AYA_PAY`, `YOMA_MMQR`, `CYBER_SOURCE` | Injection tokens of the options and of each gateway |
 | `DEFAULT_FORM_PATH` | `'myanmar-payments/form'` |
-| `MyanmarPaymentsModuleOptions`, `MyanmarPaymentsModuleExtras`, `MyanmarPaymentsModuleRootOptions`, `MyanmarPaymentsModuleAsyncOptions`, `MyanmarPaymentsOptionsFactory`, `FormLinkOptions`, `FormRouteOptions`, `ConfigReader` | Option types; see [Configuration](/nestjs-myanmar-payments/configuration) |
+| `MyanmarPaymentsModuleOptions`, `MyanmarPaymentsModuleExtras`, `MyanmarPaymentsModuleRootOptions`, `MyanmarPaymentsModuleAsyncOptions`, `MyanmarPaymentsOptionsFactory`, `FormLinkOptions`, `FormRouteOptions`, `FormNonceResolver`, `GatewaySettings`, `ConfigReader` | Option types; see [Configuration](/nestjs-myanmar-payments/configuration) |
 
 Everything about payments themselves (`Amount`, payment data, results, `PaymentCallback`, `PaymentStatus`, errors) is imported from `@laranex/myanmar-payments`.
 

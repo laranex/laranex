@@ -25,7 +25,7 @@ Payment data accepts the same inputs directly (`amount=1000`, `amount="1000.50"`
 
 `Amount.parse` accepts only digits with an optional fractional part: `1000`, `1000.50`, `0.5`. It rejects signs, exponents, spaces and thousands separators (`-1`, `1e5`, ` 10`, `1,000`, `10.`, `.5`). Leading zeros of the whole part are removed (`007` becomes `7`); fractional digits are kept exactly as given (`10.50` stays `10.50`).
 
-`Amount.kyat` takes an `int` of any size; negatives, `bool`s and non-`int`s raise. `Amount.of` also takes a finite, non-negative `Decimal` and keeps its exact digits (`Decimal("1000.50")` is `1000.50`).
+`Amount.kyat` takes an `int` of any size; negatives, `bool`s and non-`int`s raise. A negative `int` passed as payment data is reported with the other invalid fields as `The amount field must not be negative.` (`items.0.amount` for a Wave Pay item). `Amount.of` also takes a finite, non-negative `Decimal` and keeps its exact digits (`Decimal("1000.50")` is `1000.50`).
 
 They raise an `InvalidPaymentDataError` with an `amount` entry, e.g. `The amount field must be a number such as 1000 or 1000.50, got "1,000".`, so bad user input surfaces like any other invalid field:
 

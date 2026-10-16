@@ -96,7 +96,7 @@ Payments post as JSON, in MMK, to `{BaseURL}/payment`; the customer goes to `{Ba
 | `TimeToLiveSeconds` | `*int` | No | Seconds the customer has to pay this payment, greater than 0, e.g. `seconds := 600` then `TimeToLiveSeconds: &seconds`. `nil` uses `Config.TimeToLiveSeconds`; `0` is rejected |
 | `AdditionalField3`, `AdditionalField4`, `AdditionalField5` | `string` | No | Extra information, at most 50 characters each, sent as `additional_field_3`–`5` and echoed in the callback's `additionalField3`–`5`. Empty is not sent |
 
-Length limits count UTF-8 bytes. `wavepay.Item` has a `Name` and an `Amount` in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats; `data.ResolvedAmount()` returns the total that will be charged.
+Length limits count UTF-8 bytes. `wavepay.Item` has a `Name` and an `Amount` in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats; `data.ResolvedAmount()` returns the total that will be charged. Item names and amounts and the total are checked after the other fields; without items or `Amount`, `amount` reports `The amount field is required.`, a negative amount reports `The amount field must not be negative.` (`items.0.amount` for an item), and an item amount that is invalid or has decimals skips the total check.
 
 ### Per-Payment Merchant Name and Time to Live
 

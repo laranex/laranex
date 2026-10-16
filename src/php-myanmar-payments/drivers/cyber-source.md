@@ -149,7 +149,7 @@ What CyberSource puts in each property. See [Results](/php-myanmar-payments/refe
 | `status` | `decision` mapped, see [Statuses](#statuses) |
 | `gatewayStatus` | CyberSource `decision`, trimmed and uppercased, e.g. `ACCEPT` |
 | `gatewayReference` | CyberSource `transaction_id`. `null` when it is not signed |
-| `amount` | CyberSource `auth_amount`, falling back to `req_amount` when it is missing or empty, e.g. `10000`. Signed values only |
+| `amount` | CyberSource `auth_amount`, falling back to `req_amount` when it is missing or empty, e.g. `10000`; `null` when both are. Signed values only |
 | `raw` | The signed fields of the verified post plus `signature`, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `auth_amount`, `auth_code`, `req_reference_number`, `req_amount`, `req_currency`, `req_transaction_uuid`, `signed_field_names`, `signed_date_time`. Unsigned fields are left out |
 | `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
@@ -162,13 +162,13 @@ What CyberSource puts in each property. See [Results](/php-myanmar-payments/refe
 | `DECLINE`, `ERROR` | `Failed` |
 | `CANCEL` | `Canceled` |
 
-Any other `decision` throws `SignatureVerificationException`, so a verified callback never has the `Unknown` status.
+Any other `decision` throws `SignatureVerificationException` (`CyberSource callback is malformed.`), so a verified callback never has the `Unknown` status.
 
 ## Errors
 
 | Call | Throws | When |
 |---|---|---|
 | `new CyberSourcePaymentData(...)` | `InvalidPaymentDataException` | A value breaks the rules above. Nothing is signed |
-| `handleCallback()` | `SignatureVerificationException` | `signature` doesn't match, a field listed in `signed_field_names` is missing or holds an object or array, `decision` or `req_reference_number` isn't signed, `signed_field_names` doesn't list itself or has an empty, repeated or `=`-containing name, or `decision` isn't one of the five above |
+| `handleCallback()` | `SignatureVerificationException` | `CyberSource callback signature verification failed.`: `signature` is missing, not a string or doesn't match, a field listed in `signed_field_names` is missing or holds an object or array, or `signed_field_names` doesn't list itself or has an empty, repeated or `=`-containing name. `CyberSource callback is malformed.`: the signature matches but `decision` or `req_reference_number` isn't signed, or `decision` isn't one of the five above |
 
 CyberSource makes no HTTP calls, so nothing throws `ApiException`.

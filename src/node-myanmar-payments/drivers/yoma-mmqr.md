@@ -96,7 +96,7 @@ try {
 }
 ```
 
-The callback URL is registered with Yoma. Every callback must carry `webhookSecret` in `X-Webhook-Secret`.
+The callback URL is registered with Yoma, not sent per order. Every callback must carry the configured `webhookSecret` in the `X-Webhook-Secret` header; a missing or wrong header fails verification. The hash is checked with HMAC-SHA256 keyed with your order number plus `webhookHashKey`.
 
 ::: warning Callbacks carry no amount
 Yoma signs only `orderNumber` and `status`, and the callback has no amount (`callback.amount` is `undefined`). Before fulfilling, confirm the payment with `await yoma.status(reference)`, using the `reference` of the QR you created for the order's stored amount, rather than trusting the callback alone.
@@ -185,14 +185,16 @@ The same values as [`initiate()`](#initiate-response) for the `orderId` you pass
 
 Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in the [token cache](/node-myanmar-payments/configuration#token-cache), shares one token request between concurrent calls, and fetches a new token, retrying once, when Yoma answers `401`. The shared token request is bounded by the HTTP client timeout rather than one call's `signal`, so aborting one call never fails the others. `await yoma.forgetToken()` drops the cached token, e.g. after rotating the client secret.
 
+The token is cached for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits after any whitespace, so `28800.0` and ` 28800` are 28800 seconds; a missing or non-positive value means 3600.
+
 ## Errors
 
 | Call | Throws | When |
 |---|---|---|
 | `initiate()` | `InvalidPaymentDataError` | `YomaMmqr.validate(data)` fails. Nothing is sent |
-| `initiate()` | `ApiError` | The token request fails, Yoma answers with an HTTP error or an `errorCode` (e.g. `PAYMENT ALREADY EXISTS`), `checkOutStatus` isn't `true`, or there is no `qrString` or `refLabel` |
+| `initiate()` | `ApiError` | The token request fails, Yoma answers with an HTTP error or an `errorCode` (e.g. `PAYMENT ALREADY EXISTS`), `checkOutStatus` isn't `true`, or `qrString` or `refLabel` is missing or empty |
 | `renewQr()` | `ApiError` | As `initiate()`, without the checkout |
 | `status()` | `ApiError` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
 | `handleCallback()` | `SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong, `orderNumber` is missing, `status` holds an object or array, or `hashValue` doesn't match |
 
-Yoma reports business errors with HTTP 200 and an `errorCode`; `ApiError` carries it in `gatewayCode` and Yoma's `errorDescription` in `gatewayMessage`.
+Yoma reports business errors with HTTP 200 and an `errorCode`; `ApiError` carries it in `gatewayCode` (an empty `errorCode` counts as none) and Yoma's `errorDescription` (or `error_description`) in `gatewayMessage`.

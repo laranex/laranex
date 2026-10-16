@@ -82,7 +82,9 @@ echo json_encode($payment->toArray());
 | `callbackUrl` | `string` | Yes | Public URL KBZ posts the result to. Absolute http or https URL, at most 512 characters, no query string |
 | `title` | `?string` | No | Product name shown to the customer |
 | `timeToLiveMinutes` | `?int` | No | Minutes the customer has to pay, 1 to 120, sent as `timeout_express` (`30` is sent as `30m`). `null` uses `KbzPayConfig`'s required `timeToLiveMinutes` (`KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`) |
-| `callbackInfo` | `?string` | No | Free text echoed back in the callback, at most 512 characters once URL-encoded |
+| `callbackInfo` | `?string` | No | Free text echoed back in the callback, sent URL-encoded (`~` stays as it is), at most 512 characters once encoded |
+
+Fields are checked in this order: `orderId`, `amount`, `callbackUrl`, `timeToLiveMinutes`, `callbackInfo`. A negative amount reports `The amount field must not be negative.`; a query string reports `The callbackUrl field must not contain a query string.`.
 
 ### PWA Notes
 
@@ -214,6 +216,6 @@ KBZ signs requests, the in-app `orderInfo` and notifications the same way: every
 | `pwa()`, `qr()`, `app()` | `ApiException` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, or without a `prepay_id` |
 | `qr()` | `ApiException` | KBZ returns no `qrCode` |
 | `status()` | `ApiException` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, e.g. for an unknown order |
-| `handleCallback()` | `SignatureVerificationException` | `sign` doesn't match, or a field holds an object or array |
+| `handleCallback()` | `SignatureVerificationException` | `KBZ Pay callback signature verification failed.`: `sign` is missing or doesn't match, or a field holds an object or array |
 
 `ApiException` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `gatewayCode` and its `msg` in `gatewayMessage`. When KBZ can't be reached, the calls throw `ApiException` with `httpStatus` `0` and the original error as `getPrevious()`.
