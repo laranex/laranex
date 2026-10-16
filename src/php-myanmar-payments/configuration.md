@@ -5,7 +5,7 @@ description: Configure PHP Myanmar Payments with one config class per gateway or
 
 # Configuration
 
-Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes named arguments. Gateways take the config object or an array of its snake_case keys. Every setting of a gateway you use is required and has no default, except the HTTP timeout: that includes the URLs, the time to live (KBZ Pay's `timeToLiveMinutes` and Wave Money's `timeToLiveSeconds`) and Yoma's webhook secret. The HTTP timeout (`timeoutSeconds`) defaults to 30 seconds (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); any other missing or blank setting throws a `ConfigurationException` naming it:
+Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes named arguments; gateways take the object or an array of its snake_case keys. Every setting is required except the HTTP timeout (`timeoutSeconds`, 30 seconds, `MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); a missing or blank one throws a `ConfigurationException` naming it:
 
 ```php
 use Laranex\PhpMyanmarPayments\Exceptions\ConfigurationException;
@@ -32,11 +32,7 @@ $kbz = new KbzPay($config);
 
 `$e->getMessage()` reads `The kbz_pay configuration is missing [app_key].`
 
-The time settings (`timeoutSeconds`, and Wave Money's `timeToLiveSeconds`) must be whole numbers greater than 0, and KBZ Pay's `timeToLiveMinutes` a whole number from 1 to 120. A missing or blank `timeout_in_seconds` means 30 seconds; any other value, such as `0`, `-30`, `2.5` or `'thirty'`, throws the same exception with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
-
-## Endpoints
-
-Every gateway URL is a required setting with no default. There is no switch between test and production: set production's URLs (see [Production Endpoints](#production-endpoints)) or the gateway's UAT ones (see [UAT Endpoints](#uat-endpoints)), or a proxy's. Each config object exposes the URL as a read-only property (`$config->apiUrl`, `$config->baseUrl`, …), without a trailing `/`.
+`timeoutSeconds` and Wave Money's `timeToLiveSeconds` must be whole numbers greater than 0, and KBZ Pay's `timeToLiveMinutes` from 1 to 120; anything else, such as `0` or `'thirty'`, throws, e.g. `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
 ## Config Options
 
@@ -107,8 +103,6 @@ YOMA_MMQR_BASE_URL=https://paymenthubapi.yomabank.com
 CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
 ```
 
-The URLs are named by class constants on the config classes, not used as defaults: `KbzPayConfig::PRODUCTION_API_URL`, `KbzPayConfig::PRODUCTION_PWA_URL`, `WaveMoneyConfig::PRODUCTION_URL` (both Wave URLs), and `PRODUCTION_URL` on `AyaPayConfig`, `YomaMmqrConfig` and `CyberSourceConfig`.
-
 ## UAT Endpoints
 
 ```env
@@ -135,7 +129,7 @@ $config = KbzPayConfig::fromEnv();
 $kbz = new KbzPay($config);
 ```
 
-Every variable is required unless it is marked optional. Set the URLs to [production's](#production-endpoints) or the gateway's [UAT ones](#uat-endpoints). The values after `=` are examples:
+Set the URLs to [production's](#production-endpoints) or the gateway's [UAT ones](#uat-endpoints). The values after `=` are examples:
 
 ```env
 # Every gateway that calls an API
@@ -178,9 +172,7 @@ CYBER_SOURCE_SECRET_KEY=
 CYBER_SOURCE_BASE_URL=
 ```
 
-`WAVE_MONEY_MERCHANT_NAME` stays required; a payment can override it with `WaveMoneyPaymentData`'s `merchantName`. `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` are required too; a payment's own `timeToLiveMinutes` or `timeToLiveSeconds` overrides them.
-
-`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR; unset or blank, it is 30 seconds. The package never reads files itself: load the `.env` file with your framework or with [`vlucas/phpdotenv`](https://github.com/vlucas/phpdotenv) before calling `fromEnv()`.
+`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR. The package never reads files itself: load the `.env` file with your framework or with [`vlucas/phpdotenv`](https://github.com/vlucas/phpdotenv) before calling `fromEnv()`.
 
 Credentials from a config file go through `fromArray()`, which reads the same settings as snake_case keys:
 
@@ -192,7 +184,7 @@ Credentials from a config file go through `fromArray()`, which reads the same se
 | `YomaMmqrConfig` | `merchant_id`, `client_id`, `client_secret`, `webhook_hashkey`, `api_version`, `webhook_secret`, `base_url`, `timeout_in_seconds` |
 | `CyberSourceConfig` | `profile_id`, `access_key`, `secret_key`, `base_url` |
 
-`time_to_live_in_minutes`, `time_to_live_in_seconds` and `timeout_in_seconds` take an `int` or integer text such as `'30'`. Without `timeout_in_seconds`, or with a blank one, the timeout is 30 seconds.
+`time_to_live_in_minutes`, `time_to_live_in_seconds` and `timeout_in_seconds` take an `int` or integer text such as `'30'`.
 
 ## One Object for Every Gateway
 
@@ -231,7 +223,7 @@ $payments->waveMoney();
 $fromEnv = MyanmarPayments::fromEnv();
 ```
 
-The keys `kbz_pay`, `wave_money`, `aya_pay`, `yoma_mmqr` and `cyber_source` take a config object or the array `fromArray()` reads, and the facade also takes the `httpClient` and `cache` arguments below, shared by every gateway it builds. `$payments->cyberSource()` returns the one `CyberSource` class.
+The keys `kbz_pay`, `wave_money`, `aya_pay`, `yoma_mmqr` and `cyber_source` take a config object or the array `fromArray()` reads, and the facade also takes the `httpClient` and `cache` arguments below, shared by every gateway it builds.
 
 ## HTTP Client
 
@@ -239,7 +231,7 @@ Gateways that call an API take any PSR-18 client as their second argument:
 
 | Argument | Type | Description |
 |---|---|---|
-| `httpClient` | `?Psr\Http\Client\ClientInterface` | Sends every request. Use it for proxies, tracing, retries or test doubles. Without one, the gateway uses Guzzle with the config's `timeoutSeconds` (30 by default) when Guzzle is installed, and otherwise discovers an installed PSR-18 client |
+| `httpClient` | `?Psr\Http\Client\ClientInterface` | Sends every request. Use it for proxies, tracing, retries or test doubles |
 
 ```php
 use GuzzleHttp\Client;
@@ -256,7 +248,7 @@ $kbz = new KbzPay(KbzPayConfig::fromEnv(), $client);
 
 `fromEnv()` takes the same client: `KbzPay::fromEnv(null, $client)`.
 
-A client you pass keeps its own timeout, and `timeoutSeconds` only applies to the default client. A discovered client keeps its own timeout too. Request and stream objects are created with discovered PSR-17 factories, so a PSR-7 implementation such as `guzzlehttp/psr7` or `nyholm/psr7` must be installed. Guzzle ships one.
+Without a client, the gateway uses Guzzle with `timeoutSeconds` when Guzzle is installed, and otherwise a discovered PSR-18 client with its own timeout; a client you pass keeps its own timeout. Request and stream objects are created with discovered PSR-17 factories, so a PSR-7 implementation such as `guzzlehttp/psr7` or `nyholm/psr7` must be installed. Guzzle ships one.
 
 A failed request (connection error, timeout) throws an `ApiException` whose `getPrevious()` is the client's original exception.
 
@@ -283,4 +275,4 @@ $yoma = new YomaMmqr(YomaMmqrConfig::fromEnv(), null, $cache);
 The default is an in-memory `ArrayCache` that only lives for the current PHP process, so with PHP-FPM or CGI every request fetches a new token: slower, and it may hit Yoma's token rate limits. Pass a shared cache (Redis, APCu, filesystem, your framework's cache) in production, with `new YomaMmqr($config, $client, $cache)` or `MyanmarPayments::fromEnv(cache: $cache)`. Long-running workers keep the token for their own lifetime, but several workers or servers should still share one cache.
 :::
 
- Pass `cache` to `MyanmarPayments` to share one cache with the Yoma gateway it builds. The token is stored under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>`, the same key in every Laranex SDK, so services in different languages can share one cache. `$yoma->forgetToken()` drops a cached token, e.g. after rotating the client secret.
+The token is stored under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>`, the same key in every Laranex SDK, so services in different languages can share one cache. `$yoma->forgetToken()` drops a cached token, e.g. after rotating the client secret.

@@ -66,8 +66,6 @@ To exercise your real callback route, post a payload signed with the secret from
 use Laranex\PhpMyanmarPayments\KbzPay\KbzPaySigner;
 
 it('marks the order paid from a KBZ Pay callback', function () {
-    config()->set('myanmar-payments.kbz_pay.app_key', 'test-app-key');
-
     $fields = [
         'merch_order_id' => 'ORDER_1',
         'mm_order_id' => 'MM1',

@@ -169,7 +169,7 @@ if err == nil && result.IsSuccessful() {
 
 ## Responses
 
-What Yoma MMQR puts in each field. See [Results](/goravel-myanmar-payments/references/results) and [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for the full types. `Raw` holds plain Go values (JSON numbers become `json.Number`s).
+What Yoma MMQR puts in each field. See [Results](/goravel-myanmar-payments/references/results) and [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for the full types.
 
 ### `Initiate()` → `*QrPayment` {#initiate-response}
 
@@ -212,8 +212,6 @@ The same values as [`Initiate()`](#initiate-response) for the `orderID` you pass
 | `Raw` | The verified body: `orderNumber`, `status`, `hashValue` |
 | `Acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
-`payments.Acknowledge(ctx, callback)` writes `Acknowledgement` as the Goravel response. `HandleCallback()` takes the `*myanmarpayments.CallbackRequest` that `payments.CallbackRequestFromContext(ctx)` builds.
-
 ## Statuses
 
 | Yoma value | `PaymentStatus` |
@@ -226,9 +224,9 @@ The same values as [`Initiate()`](#initiate-response) for the `orderID` you pass
 
 ## Access Tokens
 
-Yoma authenticates with an OAuth token that lasts hours. The package caches it in your cache store (see [Configuration](/goravel-myanmar-payments/configuration#cache)), shares one token request between concurrent calls, and fetches a new one, retrying once, when Yoma answers `401`. The shared token request is bounded by the configured timeout (`MYANMAR_PAYMENTS_HTTP_TIMEOUT`) rather than one call's `ctx`, so a stuck request can't block later calls, so canceling one call never fails the others; that call stops waiting and returns an `*APIError`. `yoma.ForgetToken()` drops the cached token, e.g. after rotating the client secret; a token request already in flight is not cached when it completes.
+Yoma authenticates with an OAuth token that lasts hours. The package caches it in your cache store (see [Configuration](/goravel-myanmar-payments/configuration#cache)), shares one token request between concurrent calls, and fetches a new one, retrying once, when Yoma answers `401`. The shared token request is bounded by the configured timeout (`MYANMAR_PAYMENTS_HTTP_TIMEOUT`), not one call's `ctx`: canceling one call never fails the others; that call stops waiting and returns an `*APIError`. `yoma.ForgetToken()` drops the cached token, e.g. after rotating the client secret; a token request already in flight is not cached when it completes.
 
-The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseURL|clientID)>`, the same key every Laranex SDK uses, so services in different languages can share one cache (the cache store's own prefix still applies), for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits, so `28800.0` is 28800 seconds; a missing or non-positive value means 3600.
+The token is cached for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits, so `28800.0` is 28800 seconds; a missing or non-positive value means 3600.
 
 ## Errors
 
@@ -240,4 +238,4 @@ The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseURL|clie
 | `Status()` | `*APIError` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
 | `HandleCallback()` | `*SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong, `orderNumber` is missing, `orderNumber` or `status` holds an object or array, or `hashValue` doesn't match |
 
-Yoma reports business errors with HTTP 200 and an `errorCode`; `*APIError` carries it in `GatewayCode` and Yoma's `errorDescription` in `GatewayMessage`. When Yoma can't be reached, the calls return an `*APIError` with `HTTPStatus` `0`.
+Yoma reports business errors with HTTP 200 and an `errorCode`; `*APIError` carries it in `GatewayCode` and Yoma's `errorDescription` in `GatewayMessage`.

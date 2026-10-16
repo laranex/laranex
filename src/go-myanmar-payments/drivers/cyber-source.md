@@ -83,20 +83,12 @@ io.WriteString(w, payment.HTML())
 |---|---|---|---|
 | `OrderID` | `string` | Yes | At most 50 characters, sent as `reference_number` |
 | `Amount` | `myanmarpayments.Amount` | Yes | Order total in `Currency`, 0 or more, any number of decimals, at most 15 characters, e.g. `Kyat(10000)` or `MustParseAmount("10.50")` |
-| `CallbackURL` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters; CyberSource may require HTTPS in production |
+| `CallbackURL` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters |
 | `Currency` | `string` | Yes | Any three-letter uppercase ISO 4217 code, e.g. `MMK` |
 | `TransactionType` | `cybersource.TransactionType` | Yes | `cybersource.Sale` (`"sale"`), `.Authorization` (`"authorization"`), `.SaleAndCreateToken` (`"sale,create_payment_token"`) or `.AuthorizationAndCreateToken` (`"authorization,create_payment_token"`) |
 | `Locale` | `string` | Yes | Hosted page language as a CyberSource locale code, e.g. `en-us` |
 | `ReturnURL` | `string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `CancelURL` | `string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
-
-### Amounts and Currencies
-
-CyberSource is multi-currency and accepts decimals. For another currency, pass an [`Amount`](/go-myanmar-payments/amounts) with the currency: `Amount: myanmarpayments.MustParseAmount("10.50"), Currency: "USD"`.
-
-### Form Encoding
-
-CyberSource expects the form as `application/x-www-form-urlencoded`. `payment.Enctype` carries it; use it if you [render the form yourself](/go-myanmar-payments/payment-flows#form-payments).
 
 ## Handling Callbacks
 
@@ -135,7 +127,7 @@ The signed text is `name=value` pairs joined with `,`, and a signed value (a bil
 
 ## Responses
 
-What CyberSource puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`. A field the gateway didn't send is `""`. CyberSource posts form fields, so every `Raw` value is a `string`, exactly as sent.
+What CyberSource puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. CyberSource posts form fields, so every `Raw` value is a `string`, exactly as sent.
 
 ### `Initiate()` → `*myanmarpayments.FormPayment` {#initiate-response}
 
@@ -166,7 +158,7 @@ What CyberSource puts in each field. See [Results](/go-myanmar-payments/referenc
 | `override_custom_cancel_page` | `data.CancelURL`, `""` when unset |
 | `signature` | Base64 HMAC-SHA256 of the signed fields |
 
-`Initiate` makes no HTTP call, so it takes no context and `cybersource.New` takes no HTTP client. `FormPayment` has no `Raw`: nothing is sent to CyberSource until the customer's browser posts the form.
+`FormPayment` has no `Raw`: nothing is sent to CyberSource until the customer's browser posts the form.
 
 ### `HandleCallback()` → `*myanmarpayments.PaymentCallback` {#handlecallback-response}
 
@@ -198,4 +190,4 @@ Any other `decision` returns `*SignatureVerificationError`, so a verified callba
 | `Initiate()` | `*InvalidPaymentDataError` | `data.Validate()` fails. Nothing is signed |
 | `HandleCallback()` | `*SignatureVerificationError` | `signature` doesn't match, a field listed in `signed_field_names` is missing or holds an object or array, `decision` or `req_reference_number` isn't signed, `signed_field_names` doesn't list itself or has an empty, repeated or `=`-containing name, or `decision` isn't one of the five above |
 
-The error types live in the root `myanmarpayments` package. CyberSource makes no HTTP calls, so nothing returns `*APIError`.
+CyberSource makes no HTTP calls, so nothing returns `*APIError`.

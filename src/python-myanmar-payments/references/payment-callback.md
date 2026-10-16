@@ -32,7 +32,7 @@ A frozen dataclass.
 | `body` | `str` | Response body, e.g. KBZ Pay's `success`; empty by default |
 | `headers` | `Mapping[str, str]` | Response headers, `{"Content-Type": "text/plain"}` by default |
 
-`Acknowledgement.default()` is an empty `200` with `Content-Type: text/plain`. Write it with your framework's response class, see [Acknowledging](/python-myanmar-payments/callbacks#acknowledging).
+`Acknowledgement.default()` is an empty `200` with `Content-Type: text/plain`. Write it with your framework's response class, see [Framework Integration](/python-myanmar-payments/framework-integration).
 
 ## PaymentStatusResult
 
@@ -67,13 +67,13 @@ Returned by `kbz.status()`, `aya.status()` and `yoma.status()`. A frozen datacla
 
 `class PaymentStatus(str, Enum)`: members are strings, so they compare equal to their values and `str(status)` is the value.
 
-| Member | Value |
-|---|---|
-| `PaymentStatus.SUCCESSFUL` | `successful` |
-| `PaymentStatus.PENDING` | `pending` |
-| `PaymentStatus.FAILED` | `failed` |
-| `PaymentStatus.CANCELED` | `canceled` |
-| `PaymentStatus.EXPIRED` | `expired` |
-| `PaymentStatus.UNKNOWN` | `unknown` |
+| Member | Value | Meaning |
+|---|---|---|
+| `PaymentStatus.SUCCESSFUL` | `successful` | The customer paid. The only status that means money was collected |
+| `PaymentStatus.PENDING` | `pending` | Still in progress or waiting on the customer |
+| `PaymentStatus.FAILED` | `failed` | Attempted and failed or rejected |
+| `PaymentStatus.CANCELED` | `canceled` | Canceled or closed before completing |
+| `PaymentStatus.EXPIRED` | `expired` | The payment window ran out |
+| `PaymentStatus.UNKNOWN` | `unknown` | A status this package does not recognize yet. Inspect `gateway_status` |
 
 `list(PaymentStatus)` lists every status. `status.is_final()` is `False` for `PENDING` and `UNKNOWN`. `resolve_status(statuses, gateway_status)` maps a trimmed gateway value through a `dict` and returns `PaymentStatus.UNKNOWN` when it is not listed.

@@ -21,8 +21,6 @@ if errors.As(err, &paymentErr) {
 }
 ```
 
-Every message starts with `myanmarpayments: `, the Go convention; the rest matches the other Laranex packages.
-
 The package adds its own sentinel errors; match them with `errors.Is`:
 
 | Error | Returned when |
@@ -63,17 +61,19 @@ Validation runs inside the gateway call, before any request is sent. `err.Error(
 
 | Field | Type | Description |
 |---|---|---|
+| `Message` | `string` | What failed |
 | `GatewayCode` | `string` | The gateway's error code, e.g. `ORDER_ID_USED`, `09`, `PAYMENT ALREADY EXISTS` |
 | `GatewayMessage` | `string` | The gateway's error message |
 | `HTTPStatus` | `int` | HTTP status of the response, `0` when no response was received |
 | `Raw` | `map[string]any` | The decoded response body |
+| `Err` | `error` | The transport error, returned by `Unwrap()` |
 
 `Message` describes what failed, e.g. `KBZ Pay precreate failed: [ORDER_ID_USED] Duplicate order`; when the gateway sends a code without a message, it ends with the bracketed code. For a call that could not reach the gateway, `Message` is `Could not reach <url>: …` and `Unwrap()` returns the underlying transport error.
 
 ## SignatureVerificationError
 
-`Raw` holds the unverified payload. Log it, never act on it.
+`Message` says what failed; `Raw` holds the unverified payload. Log it, never act on it.
 
 ## ConfigurationError
 
-The message names the gateway and the key, e.g. `myanmarpayments: The wave_money configuration is missing [merchant_id].`, or `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting, with `Invalid` set. `Gateway` and `Key` hold both. `AutoSubmitURL` returns it with `form_route` and `ttl_minutes` when the form link lifetime is missing or invalid.
+The message names the gateway and the key, e.g. `myanmarpayments: The wave_money configuration is missing [merchant_id].`, or `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting, with `Invalid` set. `Gateway`, `Key`, `Invalid` and `Requirement` hold the details; KBZ Pay's time to live reads `The kbz_pay configuration [time_to_live_in_minutes] must be a whole number from 1 to 120.` `AutoSubmitURL` returns it with `form_route` and `ttl_minutes` when the form link lifetime is missing or invalid.

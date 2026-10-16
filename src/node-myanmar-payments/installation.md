@@ -25,7 +25,7 @@ yarn add @laranex/myanmar-payments
 
 :::
 
-The package is fully typed and ships ES modules and CommonJS, each with its own TypeScript declarations, so `import` and `require` both work and TypeScript resolves the types under `node16`, `nodenext` and `bundler` module resolution. Import everything from `@laranex/myanmar-payments`:
+Fully typed; ships ES modules and CommonJS. Import from `@laranex/myanmar-payments`:
 
 ```ts
 // ES modules / TypeScript
@@ -41,18 +41,16 @@ const {
 } = require('@laranex/myanmar-payments');
 ```
 
-The root entry exports every public name. Each gateway also has its own subpath, which exports only that gateway's classes:
+The root entry exports every public name. Each gateway also has its own subpath, which exports only that gateway's classes and types:
 
 | Import path | Contents |
 |---|---|
 | `@laranex/myanmar-payments` | Everything below, plus `Amount`, results, `PaymentCallback`, `PaymentStatus`, `CallbackRequest`, `Acknowledgement`, errors, `HttpClient`, `FetchHttpClient`, `TokenCache`, `MemoryTokenCache` and the `MyanmarPayments` facade |
-| `@laranex/myanmar-payments/kbz-pay` | `KbzPay`, `KbzPayConfig`, `KbzPaySigner` |
-| `@laranex/myanmar-payments/wave-money` | `WaveMoney`, `WaveMoneyConfig` |
-| `@laranex/myanmar-payments/aya-pay` | `AyaPay`, `AyaPayConfig`, `AyaPayMethod`, `AyaPayService` |
-| `@laranex/myanmar-payments/yoma-mmqr` | `YomaMmqr`, `YomaMmqrConfig` |
-| `@laranex/myanmar-payments/cyber-source` | `CyberSource`, `CyberSourceConfig`, `CyberSourceTransactionType` |
-
-Both paths name the same classes, so `KbzPay` from the subpath and from the root are the same class.
+| `@laranex/myanmar-payments/kbz-pay` | `KbzPay`, `KbzPayConfig`, `KbzPaySigner`, `KbzPayConfigOptions`, `KbzPayPaymentData` |
+| `@laranex/myanmar-payments/wave-money` | `WaveMoney`, `WaveMoneyConfig`, `WaveMoneyConfigOptions`, `WaveMoneyItem`, `WaveMoneyPaymentData` |
+| `@laranex/myanmar-payments/aya-pay` | `AyaPay`, `AyaPayConfig`, `AyaPayMethod`, `AyaPayService`, `AyaPayConfigOptions`, `AyaPayPaymentData` |
+| `@laranex/myanmar-payments/yoma-mmqr` | `YomaMmqr`, `YomaMmqrConfig`, `YomaMmqrConfigOptions`, `YomaMmqrOptions`, `YomaMmqrPaymentData` |
+| `@laranex/myanmar-payments/cyber-source` | `CyberSource`, `CyberSourceConfig`, `CyberSourceTransactionType`, `CyberSourceConfigOptions`, `CyberSourcePaymentData` |
 
 ## Quick Start
 

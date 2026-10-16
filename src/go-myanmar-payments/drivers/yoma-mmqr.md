@@ -55,7 +55,6 @@ yoma, err := yomammqr.New(
 		APIVersion:     "v1rc",
 		WebhookSecret:  "...",
 		BaseURL:        yomammqr.ProductionURL,
-		TimeoutSeconds: 30,
 	},
 	nil, // default HTTP client
 	nil, // in-memory token cache; share this gateway across requests
@@ -142,8 +141,6 @@ if err != nil {
 // Store the new payment.Reference: the previous one stops working.
 ```
 
-Each renewal retires the previous `Reference`; only the newest one answers status checks.
-
 ## Status Checks
 
 ```go
@@ -162,7 +159,7 @@ if result.IsSuccessful() {
 
 ## Responses
 
-What Yoma MMQR puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`. A field the gateway didn't send is `""`. `Raw` holds plain Go values (JSON numbers become `json.Number`s).
+What Yoma MMQR puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs.
 
 ### `Initiate()` → `*myanmarpayments.QrPayment` {#initiate-response}
 
@@ -218,9 +215,9 @@ The same values as [`Initiate()`](#initiate-response) for the `orderID` you pass
 
 ## Access Tokens
 
-Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in the [token cache](/go-myanmar-payments/configuration#token-cache), shares one token request between concurrent calls, and fetches a new token, retrying once, when Yoma answers `401`. The shared token request runs without any one call's cancellation and is bounded by the configured `TimeoutSeconds` (30 by default), so a stuck request can't block later calls and canceling one call's `ctx` never fails the others; that call stops waiting and returns an `*APIError`. `yoma.ForgetToken()` drops the cached token, e.g. after rotating the client secret; a token request already in flight is not cached when it completes, and later calls request a new one.
+Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in the [token cache](/go-myanmar-payments/configuration#token-cache), shares one token request between concurrent calls, and fetches a new token, retrying once, when Yoma answers `401`. The shared token request runs without any one call's cancellation and is bounded by the configured `TimeoutSeconds` (30 by default), so a stuck request can't block later calls and canceling one call's `ctx` never fails the others; that call stops waiting and returns an `*APIError`.
 
-The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseURL|clientID)>`, the same key every Laranex SDK uses, so services in different languages can share one cache, for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits, so `28800.0` is 28800 seconds; a missing or non-positive value means 3600.
+The token is cached for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits, so `28800.0` is 28800 seconds; a missing or non-positive value means 3600.
 
 ## Errors
 
@@ -232,4 +229,4 @@ The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseURL|clie
 | `Status()` | `*APIError` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
 | `HandleCallback()` | `*SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong, `orderNumber` is missing, `status` holds an object or array, or `hashValue` doesn't match |
 
-The error types live in the root `myanmarpayments` package. Yoma reports business errors with HTTP 200 and an `errorCode`; `*APIError` carries it in `GatewayCode` and Yoma's `errorDescription` in `GatewayMessage`. When Yoma can't be reached or `ctx` is canceled, the calls return `*APIError`, which unwraps to the cause (`errors.Is(err, context.DeadlineExceeded)`).
+Yoma reports business errors with HTTP 200 and an `errorCode`; `*APIError` carries it in `GatewayCode` and Yoma's `errorDescription` in `GatewayMessage`.

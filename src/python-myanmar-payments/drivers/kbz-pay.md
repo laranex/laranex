@@ -157,7 +157,7 @@ if result.is_successful():
 
 ## Responses
 
-What KBZ Pay puts in each field. See [Results](/python-myanmar-payments/references/results) and [PaymentCallback & Status](/python-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `None`. `raw` holds plain Python values; every JSON number is kept as its exact text in a `str` (`1000.50` stays `"1000.50"`), never a `float`.
+What KBZ Pay puts in each field. See [Results](/python-myanmar-payments/references/results) and [PaymentCallback & Status](/python-myanmar-payments/references/payment-callback) for the full classes.
 
 ### `pwa()` → `RedirectPayment` {#pwa-response}
 
@@ -177,7 +177,7 @@ What KBZ Pay puts in each field. See [Results](/python-myanmar-payments/referenc
 | `order_id` | Your `data.order_id` |
 | `qr_string` | KBZ `qrCode`, a payload to encode into a QR image. Always set |
 | `qr_image` | Always `None` |
-| `expires_at` | Now + the time to live: `time_to_live_minutes`, else `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`, in UTC. Always set, because the configured time to live is required |
+| `expires_at` | Now + the time to live: `time_to_live_minutes`, else `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`, in UTC. Always set |
 | `reference` | KBZ `prepay_id`. Always set |
 | `raw` | The `precreate` response, as for `pwa()` plus `qrCode` |
 | `qr_image_data_uri()` | Always `None`, as `qr_image` is |
@@ -242,4 +242,4 @@ KBZ signs requests, the in-app `order_info` and notifications the same way: ever
 | `status()` | `ApiError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, e.g. for an unknown order |
 | `handle_callback()` | `SignatureVerificationError` | `sign` doesn't match, or a field holds an object or a list |
 
-`AsyncKbzPay` raises the same errors. `ApiError` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `gateway_code` and its `msg` in `gateway_message`. When KBZ can't be reached or the request times out, the calls raise `ApiError` with the original `httpx` error as `__cause__`.
+`AsyncKbzPay` raises the same errors. `ApiError` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `gateway_code` and its `msg` in `gateway_message`.

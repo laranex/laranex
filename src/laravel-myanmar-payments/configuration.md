@@ -88,12 +88,6 @@ CYBER_SOURCE_BASE_URL=
 | `CYBER_SOURCE_SECRET_KEY` | `cyber_source.secret_key` | Yes | Profile secret key used to sign fields |
 | `CYBER_SOURCE_BASE_URL` | `cyber_source.base_url` | Yes | The Secure Acceptance base URL |
 
-Only the gateways you call need their settings: an app that only uses KBZ Pay never reads the Wave Money keys.
-
-## Endpoints
-
-Every gateway URL is a required setting with no default. There is no switch between test and production: set production's URLs (see [Production Endpoints](#production-endpoints)) or the gateway's UAT ones (see [UAT Endpoints](#uat-endpoints)), or a proxy's.
-
 ## Production Endpoints
 
 ```env
@@ -120,57 +114,49 @@ CYBER_SOURCE_BASE_URL=https://testsecureacceptance.cybersource.com
 
 ## Config Structure
 
-Publish `config/myanmar-payments.php` only to change it:
-
-```bash
-php artisan vendor:publish --tag="myanmar-payments-config"
-```
+Publish it only to change it (see [Installation](/laravel-myanmar-payments/installation#publish-the-config)):
 
 ```php
 return [
     'kbz_pay' => [
-        'app_id'        => env('KBZ_PAY_APP_ID'),
-        'app_key'       => env('KBZ_PAY_APP_KEY'),
+        'app_id' => env('KBZ_PAY_APP_ID'),
+        'app_key' => env('KBZ_PAY_APP_KEY'),
         'merchant_code' => env('KBZ_PAY_MERCHANT_CODE'),
-        'api_url'       => env('KBZ_PAY_BASE_URL'),
-        'pwa_url'       => env('KBZ_PAY_PWA_BASE_REDIRECT_URL'),
-        'time_to_live_in_minutes' => env(
-            'KBZ_PAY_TIME_TO_LIVE_IN_MINUTES',
-        ),
+        'api_url' => env('KBZ_PAY_BASE_URL'),
+        'pwa_url' => env('KBZ_PAY_PWA_BASE_REDIRECT_URL'),
+        'time_to_live_in_minutes' => env('KBZ_PAY_TIME_TO_LIVE_IN_MINUTES'),
     ],
 
     'wave_money' => [
-        'merchant_id'             => env('WAVE_MONEY_MERCHANT_ID'),
-        'secret_key'              => env('WAVE_MONEY_SECRET_KEY'),
-        'merchant_name'           => env('WAVE_MONEY_MERCHANT_NAME'),
-        'time_to_live_in_seconds' => env(
-            'WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS',
-        ),
-        'base_url'                => env('WAVE_MONEY_BASE_URL'),
-        'base_redirect_url'       => env('WAVE_MONEY_BASE_REDIRECT_URL'),
+        'merchant_id' => env('WAVE_MONEY_MERCHANT_ID'),
+        'secret_key' => env('WAVE_MONEY_SECRET_KEY'),
+        'merchant_name' => env('WAVE_MONEY_MERCHANT_NAME'),
+        'time_to_live_in_seconds' => env('WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS'),
+        'base_url' => env('WAVE_MONEY_BASE_URL'),
+        'base_redirect_url' => env('WAVE_MONEY_BASE_REDIRECT_URL'),
     ],
 
     'aya_pay' => [
-        'app_key'    => env('AYA_PAY_APP_KEY'),
+        'app_key' => env('AYA_PAY_APP_KEY'),
         'app_secret' => env('AYA_PAY_APP_SECRET'),
-        'base_url'   => env('AYA_PAY_BASE_URL'),
+        'base_url' => env('AYA_PAY_BASE_URL'),
     ],
 
     'yoma_mmqr' => [
-        'merchant_id'     => env('YOMA_MMQR_MERCHANT_ID'),
-        'client_id'       => env('YOMA_MMQR_CLIENT_ID'),
-        'client_secret'   => env('YOMA_MMQR_CLIENT_SECRET'),
+        'merchant_id' => env('YOMA_MMQR_MERCHANT_ID'),
+        'client_id' => env('YOMA_MMQR_CLIENT_ID'),
+        'client_secret' => env('YOMA_MMQR_CLIENT_SECRET'),
         'webhook_hashkey' => env('YOMA_MMQR_WEBHOOK_HASHKEY'),
-        'webhook_secret'  => env('YOMA_MMQR_WEBHOOK_SECRET'),
-        'base_url'        => env('YOMA_MMQR_BASE_URL'),
-        'api_version'     => env('YOMA_MMQR_API_VERSION'),
+        'webhook_secret' => env('YOMA_MMQR_WEBHOOK_SECRET'),
+        'base_url' => env('YOMA_MMQR_BASE_URL'),
+        'api_version' => env('YOMA_MMQR_API_VERSION'),
     ],
 
     'cyber_source' => [
         'profile_id' => env('CYBER_SOURCE_PROFILE_ID'),
         'access_key' => env('CYBER_SOURCE_ACCESS_KEY'),
         'secret_key' => env('CYBER_SOURCE_SECRET_KEY'),
-        'base_url'   => env('CYBER_SOURCE_BASE_URL'),
+        'base_url' => env('CYBER_SOURCE_BASE_URL'),
     ],
 
     'http' => [
@@ -180,9 +166,9 @@ return [
     'cache_store' => env('MYANMAR_PAYMENTS_CACHE_STORE'),
 
     'form_route' => [
-        'enabled'     => true,
-        'path'        => 'myanmar-payments/form',
-        'middleware'  => [],
+        'enabled' => true,
+        'path' => 'myanmar-payments/form',
+        'middleware' => [],
         'ttl_minutes' => env('MYANMAR_PAYMENTS_FORM_TTL_MINUTES'),
     ],
 ];
@@ -192,24 +178,9 @@ The time settings take an `int` or integer text such as `'30'`. Without the env 
 
 ## HTTP Client
 
-```php
-'http' => [
-    'timeout' => env('MYANMAR_PAYMENTS_HTTP_TIMEOUT', 30),
-],
-```
-
-Gateway calls go through Laravel's `Http` client, so `Http::fake()` intercepts them in tests and request events fire for them; see [Testing](/laravel-myanmar-payments/testing). `timeout` is in seconds, applies to gateway calls only and defaults to 30: the package passes it to KBZ Pay, Wave Money, AYA and Yoma MMQR as their `timeout_in_seconds`, and a null or blank one also means 30 seconds. To give one gateway its own timeout, set `timeout_in_seconds` in its array, e.g. `'kbz_pay' => [..., 'timeout_in_seconds' => 10]`. Redirects are returned as they are, never followed. When a gateway can't be reached, the call throws `ApiException` with `httpStatus` `0`.
+`timeout` is in seconds, applies to gateway calls only and defaults to 30: the package passes it to KBZ Pay, Wave Money, AYA and Yoma MMQR as their `timeout_in_seconds`, and a null or blank one also means 30 seconds. To give one gateway its own timeout, set `timeout_in_seconds` in its array, e.g. `'kbz_pay' => [..., 'timeout_in_seconds' => 10]`. Redirects are returned as they are, never followed.
 
 ## Auto-submit Form Route
-
-```php
-'form_route' => [
-    'enabled'     => true,
-    'path'        => 'myanmar-payments/form',
-    'middleware'  => [],
-    'ttl_minutes' => env('MYANMAR_PAYMENTS_FORM_TTL_MINUTES'),
-],
-```
 
 AYA Pay and CyberSource need the customer's browser to POST a signed form. The package registers a `GET myanmar-payments/form` route (named `myanmar-payments.form`) that renders that form and submits it, and sets `FormPayment::$autoSubmitUrl` to an encrypted link to it. Links expire after `ttl_minutes`; an invalid or expired link answers `410 Gone`. The page is sent with `Cache-Control: no-store` and `Referrer-Policy: strict-origin`, so the gateway sees only your origin, never the encrypted link. It needs no session or cookies, so the route runs without middleware by default. When your app sets a Content-Security-Policy nonce with `Vite::useCspNonce()`, the page's inline script carries it.
 
@@ -218,10 +189,8 @@ AYA Pay and CyberSource need the customer's browser to POST a signed form. The p
 | `enabled` | Register the route. When `false`, `autoSubmitUrl` is `null`; build the form yourself, see [Form Payments](/laravel-myanmar-payments/payment-flows#form-payments) |
 | `path` | The route path |
 | `middleware` | Middleware for the route, `[]` by default, e.g. `['throttle:60,1']` or the middleware that calls `Vite::useCspNonce()`. Don't add authentication: the customer may arrive from a gateway or another device |
-| `ttl_minutes` | Minutes a link stays valid. Required while the route is enabled: AYA Pay and CyberSource throw `The form_route configuration is missing [ttl_minutes].` without it, and the invalid-value message for a value that is not a whole number greater than 0 |
-
-Links are encrypted with `APP_KEY` and start with your app's URL (`APP_URL`, or the current request's host).
+| `ttl_minutes` | Minutes a link stays valid. Required while the route is enabled: AYA Pay and CyberSource throw `The form_route configuration is missing [ttl_minutes].` without it, or `The form_route configuration [ttl_minutes] must be a whole number greater than 0.` for an invalid value |
 
 ## Cache
 
-Yoma MMQR access tokens last several hours and are reused until they expire. They are kept in your default cache store, or in `cache_store` when set. Use a shared store (Redis, database) when you run more than one server. The token is stored under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>`, the same key in every Laranex SDK, so services written in different languages can share one store.
+Yoma MMQR access tokens last several hours and are reused until they expire. They are kept in your default cache store, or in `cache_store` when set. Use a shared store (Redis, database) when you run more than one server.

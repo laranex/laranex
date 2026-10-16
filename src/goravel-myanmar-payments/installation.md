@@ -16,10 +16,6 @@ go get github.com/laranex/goravel-myanmar-payments/v4
 
 `package:install` registers `&payments.ServiceProvider{}` in `bootstrap/providers.go`, writes `config/myanmar_payments.go` and appends the gateway variables (`KBZ_PAY_*`, `WAVE_MONEY_*`, `AYA_PAY_*`, `YOMA_MMQR_*`, `CYBER_SOURCE_*`) to `.env.example`. `./artisan package:uninstall github.com/laranex/goravel-myanmar-payments/v4` removes the provider and the config file.
 
-The facade (`paymentsfacades.MyanmarPayments()`) returns the `*payments.Manager` singleton the provider binds, which you can also resolve with `payments.Resolve(app)`.
-
-The package is a thin Goravel layer over [`github.com/laranex/go-myanmar-payments/v4`](https://github.com/laranex/go-myanmar-payments), which `go get` installs alongside it. The SDK talks to gateways through any `HTTPDoer`; in Goravel every call goes through Goravel's HTTP client, so `Fake()` works in your tests and no extra client is needed.
-
 ## Publish the Config
 
 `package:install` already wrote the config. To install by hand, add the provider to `bootstrap/providers.go`:
@@ -74,42 +70,13 @@ The provider uses whatever is registered and degrades gracefully:
 | `payments.NewManager(payments.Options{...})` | Builds a manager outside the container. `Options` holds `Config` (required), `HTTPClient` (nil uses the SDK's default client), `TokenCache` (nil uses the SDK's in-memory cache), `Crypt` (nil disables `AutoSubmitURL`) and `Now` (nil uses `time.Now`) |
 | `payments.NewHTTPClient(factory, name, timeout)` | The `myanmarpayments.HTTPDoer` the provider uses: each request goes through the Goravel HTTP client `name` (empty means the default) with `timeout`. A nil factory sends requests with a plain `*http.Client` |
 | `payments.NewTokenCache(store)` | The `myanmarpayments.TokenCache` the provider uses for Yoma MMQR tokens, backed by a Goravel cache store |
-| `payments.ErrUnknownGateway`, `ErrFormRouteDisabled`, `ErrCryptNotAvailable`, `ErrInvalidFormLink` | The package's own errors; see [Errors](/goravel-myanmar-payments/references/errors) |
+| `payments.ErrUnknownGateway`, `ErrFormRouteDisabled`, `ErrCryptNotAvailable`, `ErrInvalidFormLink`, `ErrCallbackBodyTooLarge` | The package's own errors; see [Errors](/goravel-myanmar-payments/references/errors) |
 | `payments.Binding`, `PackageName`, `ConfigKey`, `FormRouteName` | `laranex.myanmar_payments`, `github.com/laranex/goravel-myanmar-payments/v4`, `myanmar_payments` and `myanmar-payments.form` |
 | `payments.DefaultFormRoutePath` | The form route path without a published config: `myanmar-payments/form` |
+| `payments.MaxCallbackBodyBytes`, `payments.DefaultHTTPTimeoutSeconds` | 64 KiB, the largest callback body `CallbackRequestFromContext` reads; 30, the HTTP timeout when `MYANMAR_PAYMENTS_HTTP_TIMEOUT` is blank |
 
 Payment data, results, `PaymentCallback`, `PaymentStatus`, `Amount` and errors are the SDK's own types, imported from `github.com/laranex/go-myanmar-payments/v4` (as `myanmarpayments`) and its gateway packages `kbzpay`, `wavemoney`, `ayapay`, `yomammqr` and `cybersource`.
 
 ## Without Goravel
 
-Plain Go projects can install the SDK directly and use the same gateways, payment data and results. See the [Go Myanmar Payments docs](/go-myanmar-payments/introduction) for the full guide.
-
-```bash
-go get github.com/laranex/go-myanmar-payments/v4
-```
-
-```go
-import (
-	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
-	"github.com/laranex/go-myanmar-payments/v4/kbzpay"
-)
-
-kbz, err := kbzpay.New(kbzpay.Config{
-	AppID:        "...",
-	AppKey:       "...",
-	MerchantCode: "...",
-}, nil)
-
-payment, err := kbz.PWA(r.Context(), kbzpay.PaymentData{
-	OrderID:     "ORDER_1",
-	Amount:      myanmarpayments.Kyat(10000),
-	CallbackURL: "https://shop.test/payments/kbz/callback",
-})
-
-// In the callback handler
-request, err := myanmarpayments.NewCallbackRequestFromHTTP(r)
-callback, err := kbz.HandleCallback(request)
-err = callback.Acknowledgement.Write(w)
-```
-
-To build every gateway from one object, as this package's facade does, use the SDK's `payments` package (`payments.New`, `payments.FromEnv`); see [One Object for Every Gateway](/go-myanmar-payments/configuration#one-object-for-every-gateway).
+Plain Go projects use [Go Myanmar Payments](/go-myanmar-payments/introduction) directly.

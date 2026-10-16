@@ -107,7 +107,7 @@ link, err := payments.AutoSubmitURL(form)
 return ctx.Response().Redirect(http.StatusFound, link)
 ```
 
-The link is an encrypted, expiring link to the package's `myanmar-payments.form` route. See [Configuration](/goravel-myanmar-payments/configuration#auto-submit-form-route). The Go SDK has no auto-submit URL of its own, so the link is returned by `AutoSubmitURL` instead of being a field of the form.
+The link is an encrypted, expiring link to the package's `myanmar-payments.form` route. See [Configuration](/goravel-myanmar-payments/configuration#auto-submit-form-route).
 
 To render the form yourself, for example with your own loading state, return `form.HTML()` or use `Action`, `Fields` and `Enctype`:
 
@@ -120,16 +120,6 @@ return ctx.Response().Data(http.StatusOK, "text/html; charset=utf-8", html)
 ```
 
 Under a Content-Security-Policy that allows scripts by nonce (`script-src 'nonce-…'`), use `form.HTMLWithNonce(nonce)`, which renders `<script nonce="…">`. The package's own form route doesn't add a nonce, so render the page yourself when your policy needs one.
-
-```html
-<form id="payment-form" method="POST" action="{{ .Action }}"
-      enctype="{{ .Enctype }}">
-    {{ range .Fields }}
-        <input type="hidden" name="{{ .Name }}" value="{{ .Value }}">
-    {{ end }}
-</form>
-<script>document.getElementById('payment-form').submit();</script>
-```
 
 Post the fields unchanged: they are signed. `Fields` is a slice in signing order; `form.Values()` returns them as a map and `form.Field(name)` reads one.
 
@@ -220,6 +210,6 @@ payment, err := kbz.App(ctx, data)
 return ctx.Response().Json(http.StatusOK, payment)
 ```
 
-The SDK's own result only means the payment screen closed; rely on the callback or `kbz.Status()`.
+`KBZPay.startPay()`'s result only means the payment screen closed; rely on the callback or `kbz.Status()`.
 
 See [Results](/goravel-myanmar-payments/references/results) for every field.

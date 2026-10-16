@@ -5,7 +5,7 @@ description: Configure Go Myanmar Payments with one Config struct per gateway or
 
 # Configuration
 
-Each gateway package has a config struct (`kbzpay.Config`, `wavemoney.Config`, `ayapay.Config`, `yomammqr.Config`, `cybersource.Config`) and a `New` constructor that takes it. Every setting of a gateway you use is required and has no default, except the HTTP timeout (`TimeoutSeconds`, 30 seconds by default): that includes the URLs, the time to live (KBZ Pay's `TimeToLiveMinutes` and Wave Money's `TimeToLiveSeconds`) and Yoma's webhook secret, and a missing or blank setting returns a `*myanmarpayments.ConfigurationError` naming it:
+Each gateway package has a config struct and a `New` constructor. Every setting is required and has no default except `TimeoutSeconds` (30 seconds); a missing or blank one returns a `*myanmarpayments.ConfigurationError` naming it:
 
 ```go
 package main
@@ -39,7 +39,7 @@ func main() {
 
 `err.Error()` reads `myanmarpayments: The kbz_pay configuration is missing [app_key].`
 
-The time settings (`TimeoutSeconds`, and Wave Money's `TimeToLiveSeconds`) must be whole numbers greater than 0, and KBZ Pay's `TimeToLiveMinutes` a whole number from 1 to 120. `0` is the zero value, so it means unset: `TimeoutSeconds` then uses `myanmarpayments.DefaultTimeoutSeconds` (30), and a gateway's `Config()` reports 30, while a `TimeToLiveMinutes` or `TimeToLiveSeconds` of 0 is missing and returns the `ConfigurationError` naming it. A negative value returns the same error with `Invalid` set and the message `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+`0` is unset: `TimeoutSeconds` then uses 30 (`myanmarpayments.DefaultTimeoutSeconds`), while a time to live of 0 is missing.
 
 ## Endpoints
 
@@ -56,7 +56,7 @@ Every gateway URL is a required setting with no default. There is no switch betw
 | `MerchantCode` | `string` | Yes | `merch_code` issued by KBZ |
 | `APIURL` | `string` | Yes | The API base URL, e.g. `kbzpay.ProductionAPIURL` |
 | `PWAURL` | `string` | Yes | The PWA checkout URL, e.g. `kbzpay.ProductionPWAURL`. Normalized to end with `/`, e.g. `…/pwa/#/` |
-| `TimeToLiveMinutes` | `int` | Yes | Minutes the customer has to pay each order, 1 to 120. A payment's own `TimeToLiveMinutes` overrides it. Anything else returns `The kbz_pay configuration [time_to_live_in_minutes] must be a whole number from 1 to 120.` |
+| `TimeToLiveMinutes` | `int` | Yes | Minutes the customer has to pay each order, 1 to 120. A payment's own `TimeToLiveMinutes` overrides it. Outside 1 to 120 returns `The kbz_pay configuration [time_to_live_in_minutes] must be a whole number from 1 to 120.` |
 | `TimeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. `0` (unset) means 30 (`myanmarpayments.DefaultTimeoutSeconds`); a negative one is reported as `timeout_in_seconds` |
 
 ### wavemoney.Config
@@ -87,7 +87,7 @@ Every gateway URL is a required setting with no default. There is no switch betw
 | `MerchantID` | `string` | Yes | Merchant ID issued by Yoma |
 | `ClientID` | `string` | Yes | OAuth client ID |
 | `ClientSecret` | `string` | Yes | OAuth client secret |
-| `WebhookHashKey` | `string` | Yes | Hash key issued by Yoma for verifying callbacks. A missing one is reported as `webhook_hashkey` |
+| `WebhookHashKey` | `string` | Yes | Hash key issued by Yoma for verifying callbacks |
 | `APIVersion` | `string` | Yes | The `{version}` segment of Yoma's API paths, e.g. `v1rc` |
 | `WebhookSecret` | `string` | Yes | Every callback must carry it in the `X-Webhook-Secret` header, compared in constant time |
 | `BaseURL` | `string` | Yes | The API base URL, e.g. `yomammqr.ProductionURL` |
@@ -114,7 +114,7 @@ YOMA_MMQR_BASE_URL=https://paymenthubapi.yomabank.com
 CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
 ```
 
-The URLs are named by exported constants in the gateway packages, not used as defaults: `kbzpay.ProductionAPIURL`, `kbzpay.ProductionPWAURL`, `wavemoney.ProductionURL` (both Wave URLs), and `ProductionURL` in `ayapay`, `yomammqr` and `cybersource`.
+The `Production*` constants in each gateway package name these values; they are not defaults.
 
 ## UAT Endpoints
 
@@ -179,7 +179,7 @@ CYBER_SOURCE_SECRET_KEY=
 CYBER_SOURCE_BASE_URL=
 ```
 
-`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `TimeoutSeconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR; unset or blank, it is 30 (`myanmarpayments.DefaultTimeoutSeconds`). `ConfigFromEnv` never fails: `New` returns the error, and a missing variable gives the `is missing` error, and a time variable that is set but not a whole number greater than 0 gives the `must be a whole number greater than 0` error. The package never reads files itself: load the `.env` file with your framework or with a package such as [`godotenv`](https://github.com/joho/godotenv) before calling `ConfigFromEnv`.
+`ConfigFromEnv` never fails: `New` returns the error. A missing variable gives the `is missing` error, and a time variable that is out of range gives the `must be …` error (`a whole number from 1 to 120` for KBZ Pay's time to live, `a whole number greater than 0` otherwise). The package never reads files itself: load the `.env` file with your framework or with a package such as [`godotenv`](https://github.com/joho/godotenv) before calling `ConfigFromEnv`.
 
 ## One Object for Every Gateway
 
@@ -206,7 +206,6 @@ func main() {
 			APIURL:            kbzpay.ProductionAPIURL,
 			PWAURL:            kbzpay.ProductionPWAURL,
 			TimeToLiveMinutes: 15,
-			TimeoutSeconds:    30,
 		},
 		YomaMMQR: &yomammqr.Config{
 			MerchantID:     "...",
@@ -216,7 +215,6 @@ func main() {
 			APIVersion:     "v1rc",
 			WebhookSecret:  "...",
 			BaseURL:        yomammqr.ProductionURL,
-			TimeoutSeconds: 30,
 		},
 	}, payments.Options{})
 
@@ -237,7 +235,7 @@ func main() {
 }
 ```
 
-The fields `KBZPay`, `WaveMoney`, `AYAPay`, `YomaMMQR` and `CyberSource` take a pointer to each config (`nil` leaves that gateway unconfigured), and `payments.Options` takes the `HTTPClient` and `TokenCache` described below, shared by every gateway it builds. Each method returns the gateway and an error; a failed build is not cached, so a later call tries again. A `*payments.Gateways` is safe for concurrent use: create one at startup and share it.
+The fields `KBZPay`, `WaveMoney`, `AYAPay`, `YomaMMQR` and `CyberSource` take a pointer to each config (`nil` leaves that gateway unconfigured), and `payments.Options` takes the `HTTPClient` and `TokenCache` described below, shared by every gateway it builds. Each method returns the gateway and an error; a failed build is not cached, so a later call tries again.
 
 ## HTTP Client
 
@@ -274,7 +272,7 @@ defer cancel()
 result, err := kbz.Status(ctx, "ORDER_1")
 ```
 
-Create gateways once at startup and share them: a `*Gateway` is safe for concurrent use. A failed request (connection error, timeout, canceled context) returns an `*myanmarpayments.APIError` whose `Err` is the original error, so `errors.Is(err, context.DeadlineExceeded)` works.
+A failed request (connection error, timeout, canceled context) returns an `*myanmarpayments.APIError` whose `Err` is the original error, so `errors.Is(err, context.DeadlineExceeded)` works.
 
 `cybersource.New` takes no client: CyberSource only signs fields and makes no HTTP calls.
 
@@ -291,7 +289,7 @@ type TokenCache interface {
 }
 ```
 
-Pass `nil` to use `myanmarpayments.NewMemoryTokenCache()`, which is safe for concurrent use and lives as long as the process: create one `*yomammqr.Gateway` at startup and share it across requests. When you run several processes, implement the interface on top of Redis:
+Pass `nil` to use `myanmarpayments.NewMemoryTokenCache()`, which is safe for concurrent use and lives as long as the process. When you run several processes, implement the interface on top of Redis:
 
 ```go
 package shop

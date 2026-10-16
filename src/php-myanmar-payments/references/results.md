@@ -5,7 +5,7 @@ description: Property reference for RedirectPayment, FormPayment, QrPayment and 
 
 # Results
 
-Starting a payment returns one of four final classes in `Laranex\PhpMyanmarPayments\Results`, with read-only properties. Each implements `PaymentResult`, whose `flow()` returns a `PaymentFlow`, so a `match` or `instanceof` check tells them apart. Properties a gateway did not provide are `null`.
+Starting a payment returns one of four final classes in `Laranex\PhpMyanmarPayments\Results`, with read-only properties, each implementing `PaymentResult`. Properties a gateway did not provide are `null`.
 
 ## RedirectPayment
 
@@ -47,13 +47,13 @@ Returned by `$kbz->qr()`, `$yoma->initiate()` and `$yoma->renewQr()`.
 | `qrString` | `?string` | A QR payload to encode yourself (KBZ Pay) |
 | `qrImage` | `?string` | A base64 image to display as is (Yoma MMQR) |
 | `expiresAt` | `?DateTimeImmutable` | When the QR stops being payable; `null` when the gateway sets no limit |
-| `reference` | `?string` | The gateway's ID for this QR, used for status checks (Yoma `refLabel`, KBZ `prepay_id`) |
+| `reference` | `?string` | The gateway's ID for this QR (Yoma `refLabel`, passed to `status()`; KBZ `prepay_id`) |
 | `raw` | `array` | The gateway's response, for logging |
 | `qrImageDataUri($mimeType = 'image/png')` | `?string` | `qrImage` as a data URI. `null` when there is no image |
 
 ## AppPayment
 
-Returned by `$kbz->app()`. `$payment->toArray()` returns `orderId`, `orderInfo`, `sign` and `signType`, the names the KBZ Pay SDK uses.
+Returned by `$kbz->app()`.
 
 | Property / Method | Type | Description |
 |---|---|---|

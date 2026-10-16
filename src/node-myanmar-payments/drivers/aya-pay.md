@@ -15,8 +15,6 @@ The AYA Payment Gateway is one hosted checkout for AYA Pay, other wallets (KBZ P
 | `aya.handleCallback(request)` | Verify the backend callback | [`PaymentCallback`](#handlecallback-response) |
 | `aya.verifyRedirect(request)` | Verify the customer's return | [`PaymentCallback`](#verifyredirect-response) |
 
-[Responses](#responses) shows what AYA Pay puts in each result.
-
 ## How it works
 
 AYA posts the result to your callback URL and also signs the query string it adds when sending the customer back.
@@ -109,12 +107,6 @@ res.end(payment.toHtml());
 | `description` | `string` | No | Shown to the customer, no `:` |
 | `userRefs` | `string[]` | No | Up to 5 of your own values, echoed back in the callback, none containing `:` |
 
-AYA joins the signed values with `:`, so `orderId`, `description` and `userRefs` can't contain one (`The orderId field must not contain a colon (:).`).
-
-### Form Encoding
-
-AYA expects the form as `multipart/form-data`. `payment.enctype` carries it; use it if you [render the form yourself](/node-myanmar-payments/payment-flows#form-payments).
-
 ## Handling Callbacks
 
 AYA posts to the callback URL registered with them.
@@ -172,7 +164,7 @@ try {
 }
 ```
 
-A `+` in the base64 `payload` that reached you as a space (an unencoded query string) is read back as `+` before decoding; the checksum is still verified. The `payload` may be correctly padded or carry no padding at all; partial padding, the URL-safe alphabet, line breaks and text that isn't UTF-8 are rejected. Still fulfill orders from the backend callback.
+Still fulfill orders from the backend callback.
 
 ## Status Checks
 
@@ -188,11 +180,9 @@ if (result.isSuccessful()) {
 
 ## Responses
 
-What AYA Pay puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `undefined`. `raw` holds plain JavaScript values, with JSON numbers kept as their exact text in a `string` (`1000.50` stays `"1000.50"`).
+See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes.
 
 ### `services()` → `AyaPayService[]` {#services-response}
-
-`AyaPayService` is AYA-only, so it is listed in full here.
 
 | Field / Method | AYA Pay value |
 |---|---|
@@ -229,8 +219,6 @@ Entries AYA sends without a `key` are skipped.
 | `method` | `data.method`, e.g. `QR` |
 | `overrideFrontendRedirectUrl` | `data.returnUrl`, `""` when unset |
 | `checkSum` | HMAC-SHA256 of the values above joined with `:` |
-
-`initiate()` makes no HTTP call, so it is synchronous and takes no `signal`. `FormPayment` has no `raw`: nothing is sent to AYA until the customer's browser posts the form.
 
 ### `status()` → `PaymentStatusResult` {#status-response}
 
@@ -279,6 +267,6 @@ The same values as [`handleCallback()`](#handlecallback-response), read from the
 | `services()` | `ApiError` | AYA answers with an HTTP error or a `status` other than `00` |
 | `status()` | `ApiError` | AYA answers with an HTTP error or a `status` other than `00`, e.g. `20` Transaction not found |
 | `status()` | `SignatureVerificationError` | The enquiry payload's `checkSum` doesn't match, or the payload is malformed (see [Handling Callbacks](#handling-callbacks)) |
-| `handleCallback()`, `verifyRedirect()` | `SignatureVerificationError` | `payload` is missing or not base64 JSON, a signed field holds an object or array, `checkSum` doesn't match, or a signed value breaks the rules in [Handling Callbacks](#handling-callbacks) (a `:` outside `dateTime`, a missing `merchOrderId` or `tranId`, a non-decimal `amount`, a currency other than `104`, a `statusCode` that isn't two digits) |
+| `handleCallback()`, `verifyRedirect()` | `SignatureVerificationError` | `payload` is missing or not base64 JSON, a signed field is nested, `checkSum` doesn't match, or a rule in [Handling Callbacks](#handling-callbacks) fails |
 
-The async calls reject with these errors. `ApiError` carries AYA's `status` (e.g. `20` Transaction not found, `09` Duplicate order ID) in `gatewayCode` and its `message` in `gatewayMessage`. When AYA can't be reached, the request times out or the `signal` aborts, the calls throw `ApiError` with the original error as `cause`.
+`ApiError` carries AYA's `status` (e.g. `20` Transaction not found, `09` Duplicate order ID) in `gatewayCode` and its `message` in `gatewayMessage`.

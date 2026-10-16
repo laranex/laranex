@@ -53,7 +53,6 @@ wave, err := wavemoney.New(wavemoney.Config{
 	BaseURL:           wavemoney.ProductionURL,
 	BaseRedirectURL:   wavemoney.ProductionURL,
 	TimeToLiveSeconds: 300,
-	TimeoutSeconds:    30,
 }, nil)
 if err != nil {
 	return err
@@ -80,14 +79,14 @@ if err != nil {
 http.Redirect(w, r, payment.URL, http.StatusFound)
 ```
 
-Wave Money takes two URLs, both required: `BaseURL` (`WAVE_MONEY_BASE_URL`), where `Initiate` posts the payment request to `{BaseURL}/payment`, and `BaseRedirectURL` (`WAVE_MONEY_BASE_REDIRECT_URL`), where the customer is sent to `{BaseRedirectURL}/authenticate?transaction_id=…`. In production both are `wavemoney.ProductionURL`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [UAT Endpoints](/go-myanmar-payments/configuration#uat-endpoints)).
+Payments post to `{BaseURL}/payment`; the customer goes to `{BaseRedirectURL}/authenticate?transaction_id=…`.
 
 ### wavemoney.PaymentData
 
 | Field | Type | Required | Rules |
 |---|---|---|---|
 | `OrderID` | `string` | Yes | Your order ID: letters, digits, `_` and `-` only. One order can have several payment attempts |
-| `CallbackURL` | `string` | Yes | Absolute http or https URL that Wave posts the result to. Wave may require HTTPS with a CA-issued certificate in production |
+| `CallbackURL` | `string` | Yes | Absolute http or https URL that Wave posts the result to |
 | `ReturnURL` | `string` | Yes | Absolute http or https URL Wave sends the customer back to. Not proof of payment |
 | `Description` | `string` | Yes | Shown to the customer |
 | `Items` | `[]wavemoney.Item` | Yes | At least one item |
@@ -96,11 +95,11 @@ Wave Money takes two URLs, both required: `BaseURL` (`WAVE_MONEY_BASE_URL`), whe
 | `MerchantName` | `string` | No | Business name shown on Wave's page for this payment. Empty uses `Config.MerchantName`; a name made only of whitespace is rejected |
 | `TimeToLiveSeconds` | `*int` | No | Seconds the customer has to pay this payment, greater than 0, e.g. `seconds := 600` then `TimeToLiveSeconds: &seconds`. `nil` uses `Config.TimeToLiveSeconds`; `0` is rejected |
 
-`wavemoney.Item` has a `Name` and an `Amount` in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats; `data.ResolvedAmount()` returns the total that will be charged. Item names are sent as written: `<`, `>` and `&` are not escaped in the `items` JSON.
+`wavemoney.Item` has a `Name` and an `Amount` in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats; `data.ResolvedAmount()` returns the total that will be charged.
 
 ### Per-Payment Merchant Name and Time to Live
 
-`MerchantName` and `TimeToLiveSeconds` override the `wavemoney.Config` values for one payment, including in the request hash. The configured `MerchantName` and `TimeToLiveSeconds` are still required and apply to every payment that leaves `MerchantName` empty or `TimeToLiveSeconds` `nil`.
+`MerchantName` and `TimeToLiveSeconds` override the `wavemoney.Config` values for one payment, including in the request hash.
 
 ```go
 seconds := 600
@@ -114,8 +113,6 @@ data := wavemoney.PaymentData{
 	TimeToLiveSeconds: &seconds,
 }
 ```
-
-A `MerchantName` made only of whitespace returns `*InvalidPaymentDataError` with `The merchantName field is required.`, and a `TimeToLiveSeconds` below 1 with `The timeToLiveSeconds field must be greater than 0.` Nothing is sent.
 
 ### Merchant Reference ID
 
@@ -157,7 +154,7 @@ Wave hashes the values joined with no separator, so a matching `hashValue` alone
 
 ## Responses
 
-What Wave Money puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`. A field the gateway didn't send is `""`. `Raw` holds plain Go values (JSON numbers become `json.Number`s), while the typed fields such as `Amount` keep the exact text Wave sent.
+What Wave Money puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs.
 
 ### `Initiate()` → `*myanmarpayments.RedirectPayment` {#initiate-response}
 
@@ -206,4 +203,4 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 | `Initiate()` | `*APIError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
 | `HandleCallback()` | `*SignatureVerificationError` | `hashValue` doesn't match, a hashed field holds an object or array, `amount` isn't a decimal, both `orderId` and `merchantReferenceId` are empty, or either holds anything but letters, digits, `_` and `-` |
 
-The error types live in the root `myanmarpayments` package. `HTTPStatus` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`GatewayCode` is `VALIDATION_ERROR`). When Wave can't be reached or `ctx` is canceled, `Initiate` returns `*APIError`, which unwraps to the cause (`errors.Is(err, context.DeadlineExceeded)`).
+`HTTPStatus` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`GatewayCode` is `VALIDATION_ERROR`).

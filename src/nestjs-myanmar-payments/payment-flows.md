@@ -123,7 +123,7 @@ Under a Content Security Policy that allows scripts by nonce (`script-src 'nonce
 <script>document.getElementById('payment-form').submit();</script>
 ```
 
-Post the fields unchanged: they are signed. `fields` is a list in signing order; `payment.values()` returns them as an object and `payment.field(name)` reads one.
+Post the fields unchanged: they are signed.
 
 ## QR Payments
 

@@ -14,8 +14,6 @@ Yoma MMQR is Yoma Bank's MMQR gateway: it issues ready-made QR images that custo
 | `$yomaMmqr->status($reference)` | Check a QR's payment status | [`PaymentStatusResult`](#status-response) |
 | `$yomaMmqr->handleCallback($request)` | Verify the callback | [`PaymentCallback`](#handlecallback-response) |
 
-[Responses](#responses) shows what Yoma MMQR puts in each result.
-
 ## How it works
 
 Yoma checks each order out once, then issues QR codes that each stay payable for 120 seconds.
@@ -78,10 +76,6 @@ echo '<img src="'.$src.'" alt="Scan with any MMQR wallet">';
 | `amount` | `Amount\|int` | Yes | Whole kyat, greater than 0, e.g. `10000` or `Amount::kyat(10000)`. Yoma documents no decimals or currency |
 | `description` | `string` | Yes | At most 50 characters |
 
-### QR Image
-
-`qrImage` is an already rendered base64 PNG of the payment slip: display it as is, no QR library needed.
-
 ## Handling Callbacks
 
 ```php
@@ -104,10 +98,10 @@ if ($callback->isSuccessful()) {
 $callback->acknowledgement->send();
 ```
 
-The callback URL is registered with Yoma, not sent per order. Every callback must carry the configured `webhookSecret` in the `X-Webhook-Secret` header, compared in constant time; a missing or wrong header fails verification. The hash is checked with HMAC-SHA256 keyed with your order number plus `webhookHashKey`; booleans are hashed as `true` / `false`.
+The callback URL is registered with Yoma, not sent per order. Every callback must carry the configured `webhookSecret` in the `X-Webhook-Secret` header; a missing or wrong header fails verification. The hash is checked with HMAC-SHA256 keyed with your order number plus `webhookHashKey`.
 
 ::: warning Callbacks carry no amount
-Yoma signs only `orderNumber` and `status`, and the callback has no amount (`$callback->amount` is `null`). Before fulfilling, confirm the payment with `$yomaMmqr->status($reference)`, using the `reference` of the QR you created for the order's stored amount, rather than trusting the callback alone.
+Yoma signs only `orderNumber` and `status`, and the callback has no amount (`$callback->amount` is `null`). Match `orderNumber` to your stored order, whose QR was generated for the stored amount, and trust that amount; optionally confirm with `$yomaMmqr->status($reference)`.
 :::
 
 ## QR Lifetime and Renewal
@@ -119,8 +113,6 @@ $payment = $yomaMmqr->renewQr('ORDER_'.$order->id);
 
 // Store the new $payment->reference: the previous one stops working.
 ```
-
-Each renewal retires the previous `reference`; only the newest one answers status checks.
 
 ## Status Checks
 
@@ -137,7 +129,7 @@ if ($result->isSuccessful()) {
 
 ## Responses
 
-What Yoma MMQR puts in each property. See [Results](/php-myanmar-payments/references/results) and [PaymentCallback & Status](/php-myanmar-payments/references/payment-callback) for the full classes. A property the gateway didn't send is `null`. `raw` holds plain PHP values (JSON numbers stay `string`s with their exact text).
+What Yoma MMQR puts in each property. See [Results](/php-myanmar-payments/references/results) and [PaymentCallback & Status](/php-myanmar-payments/references/payment-callback) for the full classes. A property the gateway didn't send is `null`. JSON numbers keep their exact text as strings.
 
 ### `initiate()` → `QrPayment` {#initiate-response}
 
@@ -177,7 +169,7 @@ The same values as [`initiate()`](#initiate-response) for the `orderId` you pass
 | `status` | `status` mapped case-insensitively, see [Statuses](#statuses) |
 | `gatewayStatus` | Yoma `status`, trimmed, as sent, e.g. `success` |
 | `gatewayReference` | Always `null`: Yoma's callback has no reference |
-| `amount` | Always `null`: Yoma signs only `orderNumber` and `status` and sends no amount. Confirm with [`status()`](#status-checks) before fulfilling |
+| `amount` | Always `null`: Yoma signs only `orderNumber` and `status` and sends no amount. Trust your stored amount |
 | `raw` | The verified body: `orderNumber`, `status`, `hashValue` |
 | `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
@@ -193,9 +185,7 @@ The same values as [`initiate()`](#initiate-response) for the `orderId` you pass
 
 ## Access Tokens
 
-Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in the [token cache](/php-myanmar-payments/configuration#token-cache) and fetches a new token, retrying once, when Yoma answers `401`. Without a cache it keeps the token in memory, so every PHP request fetches a new one: pass a shared PSR-16 cache in production. `$yomaMmqr->forgetToken()` drops the cached token, e.g. after rotating the client secret.
-
-The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>` (the prefix is `YomaMmqr::TOKEN_CACHE_PREFIX`), the same key every Laranex SDK uses, so services in different languages can share one cache, for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits, so `28800.0` is 28800 seconds; a missing or non-positive value means 3600.
+Tokens are kept in the [token cache](/php-myanmar-payments/configuration#token-cache) and refetched once when Yoma answers `401`; `$yomaMmqr->forgetToken()` drops the cached token.
 
 ## Errors
 

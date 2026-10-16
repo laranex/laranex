@@ -7,7 +7,7 @@ description: Property reference for PaymentCallback, PaymentStatusResult and the
 
 ## PaymentCallback
 
-Returned by every gateway's `handleCallback()` and by `ayaPay()->verifyRedirect()`, after the signature has been verified.
+Returned by every gateway's `handleCallback()`, by `MyanmarPayments::handleCallback($gateway, $request)` and by `ayaPay()->verifyRedirect()`, after the signature has been verified.
 
 | Property / Method | Type | Description |
 |---|---|---|
@@ -22,8 +22,6 @@ Returned by every gateway's `handleCallback()` and by `ayaPay()->verifyRedirect(
 
 In Laravel, return `MyanmarPayments::acknowledge($callback)` to send the acknowledgement.
 
-Returned by `MyanmarPayments::handleCallback($gateway, $request)` too, for a gateway chosen by name.
-
 ## PaymentStatusResult
 
 Returned by `kbzPay()->status()`, `ayaPay()->status()` and `yomaMmqr()->status()`.
@@ -35,7 +33,7 @@ Returned by `kbzPay()->status()`, `ayaPay()->status()` and `yomaMmqr()->status()
 | `gatewayStatus` | `string` | The gateway's own status value |
 | `gatewayReference` | `?string` | The gateway's id for the payment |
 | `amount` | `?string` | The amount as the gateway reported it |
-| `raw` | `array` | The gateway's response |
+| `raw` | `array` | The gateway's response; JSON numbers are their exact text as `string`s |
 | `isSuccessful()` | `bool` | `status === PaymentStatus::Successful` |
 
 ## PaymentStatus
@@ -48,5 +46,3 @@ Returned by `kbzPay()->status()`, `ayaPay()->status()` and `yomaMmqr()->status()
 | `PaymentStatus::Canceled` | `canceled` | `true` |
 | `PaymentStatus::Expired` | `expired` | `true` |
 | `PaymentStatus::Unknown` | `unknown` | `false` |
-
-`PaymentStatus::cases()` lists every status.

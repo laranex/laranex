@@ -7,14 +7,6 @@ description: Use PHP Myanmar Payments with Symfony, Slim and any PSR-7 / PSR-15 
 
 The package needs only two things from your framework: the raw incoming request for callbacks and a way to write the acknowledgement. Create each gateway once (or one `MyanmarPayments`), e.g. as a service in your container, and share it across requests. Pass a shared [PSR-16 cache](/php-myanmar-payments/configuration#token-cache) so Yoma's token survives between requests.
 
-| Framework | Build the request | Acknowledge |
-|---|---|---|
-| Plain PHP | `CallbackRequest::fromGlobals()` | `$ack->send()` |
-| Symfony | `new CallbackRequest(body: $request->getContent(), headers: ..., query: $request->query->all())` | `new Response($ack->body, $ack->status, $ack->headers)` |
-| Slim, Mezzio, any PSR-15 | `CallbackRequest::fromPsr7($request)` | `$responseFactory->createResponse($ack->status)`, then the body and headers |
-
-Gateway callbacks are server-to-server posts: exclude these routes from any CSRF protection your framework applies.
-
 ## Laravel
 
 Use [`laranex/laravel-myanmar-payments`](/laravel-myanmar-payments/introduction). It configures every gateway from `.env`, accepts the Laravel `Request` in callbacks, routes HTTP through Laravel's `Http` client (so `Http::fake()` works) and keeps Yoma tokens in your cache store.
@@ -33,10 +25,14 @@ services:
                     app_id: '%env(KBZ_PAY_APP_ID)%'
                     app_key: '%env(KBZ_PAY_APP_KEY)%'
                     merchant_code: '%env(KBZ_PAY_MERCHANT_CODE)%'
+                    api_url: '%env(KBZ_PAY_BASE_URL)%'
+                    pwa_url: '%env(KBZ_PAY_PWA_BASE_REDIRECT_URL)%'
+                    time_to_live_in_minutes: '%env(KBZ_PAY_TIME_TO_LIVE_IN_MINUTES)%'
                     timeout_in_seconds: '%env(default::MYANMAR_PAYMENTS_HTTP_TIMEOUT)%'
                 aya_pay:
                     app_key: '%env(AYA_PAY_APP_KEY)%'
                     app_secret: '%env(AYA_PAY_APP_SECRET)%'
+                    base_url: '%env(AYA_PAY_BASE_URL)%'
                     timeout_in_seconds: '%env(default::MYANMAR_PAYMENTS_HTTP_TIMEOUT)%'
             $httpClient: '@Symfony\Component\HttpClient\Psr18Client'
             $cache: '@app.payments_cache'
@@ -211,11 +207,3 @@ $app->run();
 ```
 
 `fromPsr7()` reads the raw body stream, so Slim's `BodyParsingMiddleware` can stay; never build the request from `getParsedBody()`.
-
-## Other Frameworks
-
-For any other framework, build the request from its parts with `new CallbackRequest(body: ..., headers: ..., query: ...)` (the raw body as a `string`, the headers as name => value, the query parameters as an array), then write `$ack->status`, `$ack->headers` and `$ack->body` with your framework's response API.
-
-## Testing Your App
-
-See [Testing](/php-myanmar-payments/testing) to replace the gateways' HTTP calls with a fake PSR-18 client or Guzzle's `MockHandler`, replay signed callbacks and build `PaymentCallback` objects for your own code.

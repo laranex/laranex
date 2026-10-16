@@ -5,7 +5,7 @@ description: Configure Python Myanmar Payments with one config class per gateway
 
 # Configuration
 
-Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes keyword arguments. Gateways take the config object or a mapping of its keyword arguments (`KbzPay({"app_id": "...", ...})`). Every setting of a gateway you use is required and has no default, except the HTTP timeout: that includes the URLs, the time to live (KBZ Pay's `time_to_live_minutes` and Wave Money's `time_to_live_seconds`) and Yoma's webhook secret. The HTTP timeout (`timeout_seconds`) defaults to 30 seconds (`DEFAULT_TIMEOUT_SECONDS`); any other missing or blank setting raises a `ConfigurationError` naming it:
+Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes keyword arguments. Gateways take the config object or a mapping of its keyword arguments (`KbzPay({"app_id": "...", ...})`). Every setting of a gateway you use is required and has no default, except the HTTP timeout (`timeout_seconds`, default 30, `DEFAULT_TIMEOUT_SECONDS`). A missing or blank setting raises a `ConfigurationError` naming it:
 
 ```python
 from python_myanmar_payments import ConfigurationError, KbzPay, KbzPayConfig
@@ -29,11 +29,7 @@ kbz = KbzPay(config)
 
 `str(error)` reads `The kbz_pay configuration is missing [app_key].`
 
-The time settings (`timeout_seconds`, and Wave Money's `time_to_live_seconds`) must be whole numbers greater than 0, and KBZ Pay's `time_to_live_minutes` a whole number from 1 to 120, given as an `int` or integer text such as `"45"`. An unset or blank `timeout_seconds` means 30 seconds; any other value, such as `0`, `"-30"`, `"2.5"` or `"thirty"`, raises the same error with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
-
-## Endpoints
-
-Every gateway URL is a required setting with no default. There is no switch between test and production: set production's URLs (see [Production Endpoints](#production-endpoints)) or the gateway's UAT ones (see [UAT Endpoints](#uat-endpoints)), or a proxy's. Each config object exposes the URL as an attribute (`config.api_url`, `config.base_url`, …), without a trailing `/`.
+The time settings take an `int` or integer text such as `"45"`: `timeout_seconds` and Wave Money's `time_to_live_seconds` greater than 0, KBZ Pay's `time_to_live_minutes` from 1 to 120. An invalid value such as `"2.5"` raises e.g. `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
 ## Config Options
 
@@ -46,8 +42,8 @@ Every gateway URL is a required setting with no default. There is no switch betw
 | `merchant_code` | `str` | Yes | `merch_code` issued by KBZ |
 | `api_url` | `str` | Yes | The API base URL, e.g. `KbzPayConfig.PRODUCTION_API_URL` |
 | `pwa_url` | `str` | Yes | The PWA checkout URL, e.g. `KbzPayConfig.PRODUCTION_PWA_URL`. Normalized to end with `/`, e.g. `…/pwa/#/` |
-| `time_to_live_minutes` | `int \| str` | Yes | Minutes the customer has to pay each order, 1 to 120. A payment's own `time_to_live_minutes` overrides it. Anything else raises `The kbz_pay configuration [time_to_live_in_minutes] must be a whole number from 1 to 120.` Reported as `time_to_live_in_minutes` |
-| `timeout_seconds` | `int \| str` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`DEFAULT_TIMEOUT_SECONDS`) when unset or blank; an invalid value is reported as `timeout_in_seconds` |
+| `time_to_live_minutes` | `int \| str` | Yes | Minutes the customer has to pay each order, 1 to 120. A payment's own `time_to_live_minutes` overrides it. A value outside 1 to 120 or not a whole number raises `The kbz_pay configuration [time_to_live_in_minutes] must be a whole number from 1 to 120.` |
+| `timeout_seconds` | `int \| str` | No | Seconds before the default HTTP client gives up. Default 30 |
 
 ### WaveMoneyConfig
 
@@ -59,7 +55,7 @@ Every gateway URL is a required setting with no default. There is no switch betw
 | `base_url` | `str` | Yes | The API base URL, e.g. `WaveMoneyConfig.PRODUCTION_URL`. Payments are requested at its `/payment` |
 | `base_redirect_url` | `str` | Yes | The host the customer is sent to, e.g. `WaveMoneyConfig.PRODUCTION_URL`. The customer approves the payment at its `/authenticate` |
 | `time_to_live_seconds` | `int \| str` | Yes | Seconds the customer has to pay, greater than 0. A payment can override it with `WaveMoneyPaymentData`'s `time_to_live_seconds`. An invalid one is reported as `time_to_live_in_seconds` |
-| `timeout_seconds` | `int \| str` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`DEFAULT_TIMEOUT_SECONDS`) when unset or blank; an invalid value is reported as `timeout_in_seconds` |
+| `timeout_seconds` | `int \| str` | No | Seconds before the default HTTP client gives up. Default 30 |
 
 ### AyaPayConfig
 
@@ -68,7 +64,7 @@ Every gateway URL is a required setting with no default. There is no switch betw
 | `app_key` | `str` | Yes | Public application key |
 | `app_secret` | `str` | Yes | Secret used for checksums |
 | `base_url` | `str` | Yes | The gateway base URL, e.g. `AyaPayConfig.PRODUCTION_URL` |
-| `timeout_seconds` | `int \| str` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`DEFAULT_TIMEOUT_SECONDS`) when unset or blank; an invalid value is reported as `timeout_in_seconds` |
+| `timeout_seconds` | `int \| str` | No | Seconds before the default HTTP client gives up. Default 30 |
 
 ### YomaMmqrConfig
 
@@ -81,7 +77,7 @@ Every gateway URL is a required setting with no default. There is no switch betw
 | `api_version` | `str` | Yes | The `{version}` segment of Yoma's API paths, e.g. `v1rc` |
 | `webhook_secret` | `str` | Yes | Every callback must carry it in the `X-Webhook-Secret` header, compared in constant time |
 | `base_url` | `str` | Yes | The API base URL, e.g. `YomaMmqrConfig.PRODUCTION_URL` |
-| `timeout_seconds` | `int \| str` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`DEFAULT_TIMEOUT_SECONDS`) when unset or blank; an invalid value is reported as `timeout_in_seconds` |
+| `timeout_seconds` | `int \| str` | No | Seconds before the default HTTP client gives up. Default 30 |
 
 ### CyberSourceConfig
 
@@ -103,8 +99,6 @@ AYA_PAY_BASE_URL=https://pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://paymenthubapi.yomabank.com
 CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
 ```
-
-The URLs are named by class constants on the config classes, not used as defaults: `KbzPayConfig.PRODUCTION_API_URL`, `KbzPayConfig.PRODUCTION_PWA_URL`, `WaveMoneyConfig.PRODUCTION_URL` (both Wave URLs), and `PRODUCTION_URL` on `AyaPayConfig`, `YomaMmqrConfig` and `CyberSourceConfig`.
 
 ## UAT Endpoints
 
@@ -174,9 +168,7 @@ CYBER_SOURCE_SECRET_KEY=
 CYBER_SOURCE_BASE_URL=
 ```
 
-`KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` are required too; a payment's own `time_to_live_minutes` or `time_to_live_seconds` overrides them.
-
-`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR; unset or blank, it is 30 seconds. The package never reads files itself: load the `.env` file with your framework or with [`python-dotenv`](https://pypi.org/project/python-dotenv/) (`load_dotenv()` before `from_env()`, or pass `dotenv_values(".env")` as `env`).
+The package never reads files itself: load the `.env` file with your framework or with [`python-dotenv`](https://pypi.org/project/python-dotenv/) (`load_dotenv()` before `from_env()`, or pass `dotenv_values(".env")` as `env`).
 
 ## One Object for Every Gateway
 
@@ -218,17 +210,13 @@ payments.wave_money()
 from_env = MyanmarPayments.from_env()
 ```
 
-The keyword arguments `kbz_pay`, `wave_money`, `aya_pay`, `yoma_mmqr` and `cyber_source` take the config objects or mappings of their keyword arguments, and the facade also takes the `http_client` and `token_cache` options below, shared by every gateway it builds. `payments.cyber_source()` returns the one `CyberSource` class.
+The keyword arguments `kbz_pay`, `wave_money`, `aya_pay`, `yoma_mmqr` and `cyber_source` take the config objects or mappings of their keyword arguments, and the facade also takes the `http_client` and `token_cache` options below, shared by every gateway it builds. `payments.cyber_source()` returns a `CyberSource` (one class for sync and async).
 
 `AsyncMyanmarPayments` is the async twin: same arguments, but `kbz_pay()` returns an `AsyncKbzPay`, `wave_money()` an `AsyncWaveMoney` and so on, and `http_client` takes an `httpx.AsyncClient`.
 
 ## HTTP Client
 
-Gateways that call an API take keyword options after the config:
-
-| Option | Type | Description |
-|---|---|---|
-| `http_client` | `httpx.Client` (async classes: `httpx.AsyncClient`) | Sends every request. Use it for proxies, tracing, retries or test transports. Without one, the gateway creates an `httpx` client with the config's `timeout_seconds` |
+Gateways that call an API take `http_client=` (`httpx.Client`, or `httpx.AsyncClient` on the async classes), also on `from_env()`, for proxies, tracing, retries or test transports. A client you pass keeps its own timeout; without one, the gateway creates an `httpx` client with the config's `timeout_seconds`.
 
 ```python
 import httpx
@@ -237,10 +225,6 @@ from python_myanmar_payments import KbzPay, KbzPayConfig
 client = httpx.Client(timeout=10, proxy="http://proxy.internal:3128")
 kbz = KbzPay(KbzPayConfig.from_env(), http_client=client)
 ```
-
-`from_env()` takes the same option: `KbzPay.from_env(http_client=client)`.
-
-A client you pass keeps its own timeout, and `timeout_seconds` applies only to the client a gateway creates.
 
 Without `http_client`, a gateway creates its client on first use and keeps it for later calls, so create gateways once at startup and share them. Close the client it created with `close()` (async: `await aclose()`) or a `with` (async: `async with`) block; a client you passed stays open, since you own it:
 
@@ -257,9 +241,7 @@ async def check() -> None:
         print(result.status)
 ```
 
-A failed request (connection error, timeout, invalid URL) raises an `ApiError` whose `__cause__` is the original `httpx` error. An `httpx.AsyncClient` belongs to the event loop it first ran on, so create async gateways inside the running loop, e.g. in a FastAPI lifespan, rather than at import time in code that starts several loops.
-
-`CyberSource` takes no options: it only signs fields and makes no HTTP calls.
+An `httpx.AsyncClient` belongs to the event loop it first ran on, so create async gateways inside the running loop, e.g. in a FastAPI lifespan, rather than at import time in code that starts several loops.
 
 ## Token Cache
 
@@ -277,7 +259,7 @@ class TokenCache(Protocol):
     def delete(self, key: str) -> None: ...
 ```
 
-The default is a thread-safe `MemoryTokenCache`, which lives as long as the process: create one `YomaMmqr` (or one `MyanmarPayments`) at startup and share it across requests. When you run several processes, implement the protocol on top of Redis:
+The default is a thread-safe `MemoryTokenCache` (`clear()` empties it), which lives as long as the process: create one `YomaMmqr` (or one `MyanmarPayments`) at startup and share it across requests. When you run several processes, implement the protocol on top of Redis:
 
 ```python
 import redis

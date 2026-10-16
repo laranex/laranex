@@ -91,8 +91,6 @@ CYBER_SOURCE_BASE_URL=
 | `CYBER_SOURCE_SECRET_KEY` | `cyberSource.secretKey` | Yes | Profile secret key used to sign fields |
 | `CYBER_SOURCE_BASE_URL` | `cyberSource.baseUrl` | Yes | The Secure Acceptance base URL, e.g. `CyberSourceConfig.PRODUCTION_URL` |
 
-Only the gateways you call need their settings: an app that only uses KBZ Pay never reads the Wave Money keys. A gateway option object passed to the module wins over the environment for that gateway and needs every required setting.
-
 ## Endpoints
 
 Every gateway URL is a required setting with no default. There is no switch between test and production: set production's URLs (see [Production Endpoints](#production-endpoints)) or the gateway's UAT ones (see [UAT Endpoints](#uat-endpoints)), or a proxy's.
@@ -108,8 +106,6 @@ AYA_PAY_BASE_URL=https://pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://paymenthubapi.yomabank.com
 CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
 ```
-
-The SDK's config classes name these URLs with constants, not used as defaults: `KbzPayConfig.PRODUCTION_API_URL`, `KbzPayConfig.PRODUCTION_PWA_URL`, `WaveMoneyConfig.PRODUCTION_URL` (both Wave URLs), and `PRODUCTION_URL` on `AyaPayConfig`, `YomaMmqrConfig` and `CyberSourceConfig`. Quote the KBZ PWA URL in `.env`, because of its `#`:
 
 ## UAT Endpoints
 
@@ -214,7 +210,7 @@ The options object is available under the `MYANMAR_PAYMENTS_OPTIONS` token.
 
 ## HTTP Client
 
-Gateway calls go through the SDK's `fetch` client with each gateway's `timeoutSeconds`, read from `MYANMAR_PAYMENTS_HTTP_TIMEOUT` (optional; unset or blank means 30 seconds, and an invalid value throws `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` when you first call KBZ Pay). Pass `fetch` to replace the function it calls, for example a fake one in tests, or `httpClient` to send requests yourself (proxies, tracing, retries); see [Testing](/nestjs-myanmar-payments/testing#faking-gateway-calls). When a gateway can't be reached, the call throws `ApiError` with `httpStatus` `0`.
+Gateway calls go through the SDK's `fetch` client with each gateway's `timeoutSeconds`, read from `MYANMAR_PAYMENTS_HTTP_TIMEOUT`. Pass `fetch` to replace the function it calls, for example a fake one in tests, or `httpClient` to send requests yourself (proxies, tracing, retries); see [Testing](/nestjs-myanmar-payments/testing#faking-gateway-calls). When a gateway can't be reached, the call throws `ApiError` with `httpStatus` `0`. Every network method takes an optional last argument `{ signal }` to abort the call, e.g. `kbzPay().status(orderId, { signal: AbortSignal.timeout(5000) })`.
 
 ## Auto-submit Form Route
 
@@ -230,11 +226,11 @@ AYA Pay and CyberSource need the customer's browser to POST a signed form. The m
 | `formLink.ttlMinutes` | Minutes a link stays valid. Defaults to `MYANMAR_PAYMENTS_FORM_TTL_MINUTES`; required, no default. Without it `autoSubmitUrl()` throws `The form_route configuration is missing [ttl_minutes].`, and the invalid-value message for a value that is not a whole number greater than 0 |
 | `formLink.baseUrl` | The scheme and host links start with. Defaults to `APP_URL`; without it links are relative |
 
-Links are encrypted with the form link secret and start with `formLink.baseUrl` or `APP_URL`. Set `formRoute.enabled` to `false` to drop the route and build the form yourself, see [Form Payments](/nestjs-myanmar-payments/payment-flows#form-payments).
+Set `formRoute.enabled` to `false` to drop the route and build the form yourself, see [Form Payments](/nestjs-myanmar-payments/payment-flows#form-payments).
 
 ## Cache
 
-Yoma MMQR access tokens last several hours and are reused until they expire. When `@nestjs/cache-manager`'s `CacheModule` is registered globally, or passed in `forRootAsync`'s `imports`, they are kept in that cache (`CacheManagerTokenCache`); otherwise each process keeps its own token in memory. Use a shared store (Redis, for example) when you run more than one server. The token is stored under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>`, the same key in every Laranex SDK, so services written in different languages can share one store.
+Yoma MMQR access tokens last several hours and are reused until they expire. When `@nestjs/cache-manager`'s `CacheModule` is registered globally, or passed in `forRootAsync`'s `imports`, they are kept in that cache (`CacheManagerTokenCache`); otherwise each process keeps its own token in memory. Use a shared store (Redis, for example) when you run more than one server.
 
 ```ts
 import { MyanmarPaymentsModule } from '@laranex/nestjs-myanmar-payments';

@@ -237,7 +237,7 @@ if err == nil && result.IsSuccessful() {
 
 ## Responses
 
-What AYA Pay puts in each field. See [Results](/goravel-myanmar-payments/references/results) and [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for the full types. `Raw` holds plain Go values (JSON numbers become `json.Number`s), while the typed fields such as `Amount` keep the exact text AYA sent.
+What AYA Pay puts in each field. See [Results](/goravel-myanmar-payments/references/results) and [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for the full types.
 
 ### `Services()` → `[]ayapay.Service` {#services-response}
 
@@ -264,8 +264,6 @@ Entries AYA sends without a `key` are skipped.
 | `Enctype` | `multipart/form-data` |
 | `HTML()` | A full HTML page that posts `Fields` to `Action` on load |
 | `HTMLWithNonce(nonce)` | The same page with `nonce` on its inline script, for a Content-Security-Policy |
-
-`payments.AutoSubmitURL(form)` returns the encrypted link to the `myanmar-payments.form` route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. It expires after `form_route.ttl_minutes`. With `form_route.enabled` set to `false` it returns `payments.ErrFormRouteDisabled`.
 
 `Fields`, in the order AYA signs them:
 
@@ -310,13 +308,9 @@ AYA leaves out the fields that don't apply (wallet payments have no card fields)
 | `Raw` | The verified, decoded payload, with the same keys as `Status()` |
 | `Acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
-`payments.Acknowledge(ctx, callback)` writes `Acknowledgement` as the Goravel response.
-
 ### `VerifyRedirect()` → `*PaymentCallback` {#verifyredirect-response}
 
 The same values as [`HandleCallback()`](#handlecallback-response), read from the signed `payload` and `checkSum` AYA adds to your return URL (query string first, then the body). There is nothing to acknowledge: return your own page.
-
-`HandleCallback()` and `VerifyRedirect()` take the `*myanmarpayments.CallbackRequest` that `payments.CallbackRequestFromContext(ctx)` builds.
 
 ## Statuses
 
@@ -338,4 +332,4 @@ The same values as [`HandleCallback()`](#handlecallback-response), read from the
 | `Status()` | `*SignatureVerificationError` | The enquiry payload's `checkSum` doesn't match, or the payload is malformed (see [Handling Callbacks](#handling-callbacks)) |
 | `HandleCallback()`, `VerifyRedirect()` | `*SignatureVerificationError` | `payload` is missing or not base64 JSON, a signed field holds an object or array, `checkSum` doesn't match, or a signed value breaks the rules in [Handling Callbacks](#handling-callbacks) (a `:` outside `dateTime`, a missing `merchOrderId` or `tranId`, a non-decimal `amount`, a currency other than `104`, a `statusCode` that isn't two digits) |
 
-`*APIError` carries AYA's `status` (e.g. `20` Transaction not found, `09` Duplicate order ID) in `GatewayCode` and its `message` in `GatewayMessage`. When AYA can't be reached, the calls return an `*APIError` with `HTTPStatus` `0`.
+`*APIError` carries AYA's `status` (e.g. `20` Transaction not found, `09` Duplicate order ID) in `GatewayCode` and its `message` in `GatewayMessage`.

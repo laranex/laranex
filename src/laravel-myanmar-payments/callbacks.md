@@ -8,7 +8,7 @@ description: Verify gateway callbacks with handleCallback(), read a gateway-inde
 Every gateway notifies your server of the payment result. `handleCallback()` verifies the gateway's signature and returns a `PaymentCallback`. Pass it the Laravel request as is: signatures are checked against the exact body the gateway sent.
 
 ::: tip Production setup
-For production, follow [Handling Webhooks (recommended)](/laravel-myanmar-payments/webhooks): verify, store the call, acknowledge immediately, then process it once in the background with retries. The example below handles everything inline to show the API.
+For production, follow [Handling Webhooks](/laravel-myanmar-payments/webhooks); this example handles everything inline.
 :::
 
 Every callback goes through the same steps; KBZ Pay is shown here.
@@ -31,9 +31,14 @@ Every callback goes through the same steps; KBZ Pay is shown here.
 use Illuminate\Http\Request;
 use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
 use Laranex\PhpMyanmarPayments\Amount;
+use Laranex\PhpMyanmarPayments\Exceptions\SignatureVerificationException;
 
 Route::post('/payments/kbz/callback', function (Request $request) {
-    $callback = MyanmarPayments::kbzPay()->handleCallback($request);
+    try {
+        $callback = MyanmarPayments::kbzPay()->handleCallback($request);
+    } catch (SignatureVerificationException) {
+        abort(400);
+    }
 
     $order = Order::where('reference', $callback->orderId)->firstOrFail();
 
@@ -103,7 +108,7 @@ When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Money and Cyber
   ]"
 />
 
-When a callback is late or missing, ask the gateway directly. Status checks return a `PaymentStatusResult` with the same `status`, `gatewayStatus`, `gatewayReference` and `amount` fields.
+Status checks return a `PaymentStatusResult` with the same `status`, `gatewayStatus`, `gatewayReference` and `amount` fields.
 
 | Gateway | Call |
 |---|---|

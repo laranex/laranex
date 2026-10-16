@@ -25,7 +25,7 @@ Payment data accepts the same inputs directly (`amount=1000`, `amount="1000.50"`
 
 `Amount.parse` accepts only digits with an optional fractional part: `1000`, `1000.50`, `0.5`. It rejects signs, exponents, spaces and thousands separators (`-1`, `1e5`, ` 10`, `1,000`, `10.`, `.5`). Leading zeros of the whole part are removed (`007` becomes `7`); fractional digits are kept exactly as given (`10.50` stays `10.50`).
 
-`Amount.kyat` takes an `int` of any size. Negative values, `bool`s and anything that isn't an `int` raise. `Amount.of` also takes a finite, non-negative `Decimal` and keeps its exact digits (`Decimal("1000.50")` is `1000.50`).
+`Amount.kyat` takes an `int` of any size; negatives, `bool`s and non-`int`s raise. `Amount.of` also takes a finite, non-negative `Decimal` and keeps its exact digits (`Decimal("1000.50")` is `1000.50`).
 
 They raise an `InvalidPaymentDataError` with an `amount` entry, e.g. `The amount field must be a number such as 1000 or 1000.50, got "1,000".`, so bad user input surfaces like any other invalid field:
 
@@ -42,10 +42,6 @@ except InvalidPaymentDataError as error:
 
 | Method | Returns |
 |---|---|
-| `Amount.kyat(n)` | A whole amount from an `int` |
-| `Amount.parse(text)` | A decimal amount from plain digits |
-| `Amount.of(value)` | `value` itself when it is an `Amount`, else the amount for an `int`, `str` or `Decimal` |
-| `Amount(value)` | The same as `Amount.of(value)` |
 | `str(amount)` | The amount as sent to the gateway, e.g. `1000.50` |
 | `amount.to_decimal()` | The amount as an exact `Decimal`, e.g. for a `DecimalField` |
 | `amount.decimal_places()` | Number of fractional digits |

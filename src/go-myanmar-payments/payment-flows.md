@@ -150,7 +150,7 @@ func yomaCheckout(w http.ResponseWriter, r *http.Request) {
 <p>Payable until {{.ExpiresAt.Format "15:04:05"}}</p>
 ```
 
-`ExpiresAt` is a `time.Time` when the gateway limits how long the QR is payable (the zero time otherwise), and `Reference` holds the ID used for status checks (Yoma `refLabel`, KBZ `prepay_id`).
+`ExpiresAt` is when the QR stops being payable, and `Reference` holds the ID used for status checks (Yoma `refLabel`, KBZ `prepay_id`).
 
 ## App Payments
 

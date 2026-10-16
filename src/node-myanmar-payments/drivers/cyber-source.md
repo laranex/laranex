@@ -14,8 +14,6 @@ CyberSource Secure Acceptance is a hosted checkout for card payments, in MMK or 
 
 CyberSource has no status API in this package: the callback is the only payment result.
 
-[Responses](#responses) shows what CyberSource puts in each result.
-
 ## How it works
 
 CyberSource posts the result twice, to your backoffice URL and through the browser to your receipt page, and both are verified the same way.
@@ -76,20 +74,12 @@ res.end(payment.toHtml());
 |---|---|---|---|
 | `orderId` | `string` | Yes | At most 50 characters, sent as `reference_number` |
 | `amount` | `Amount \| number \| bigint` | Yes | Order total in `currency`, 0 or more, any number of decimals, at most 15 characters, e.g. `10000` or `Amount.parse('10.50')` |
-| `callbackUrl` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters; CyberSource may require HTTPS in production |
+| `callbackUrl` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters |
 | `currency` | `string` | Yes | Any three-letter uppercase ISO 4217 code, e.g. `MMK` |
 | `transactionType` | `CyberSourceTransactionType` | Yes | `CyberSourceTransactionType.Sale` (`'sale'`), `.Authorization` (`'authorization'`), `.SaleAndCreateToken` (`'sale,create_payment_token'`) or `.AuthorizationAndCreateToken` (`'authorization,create_payment_token'`) |
 | `locale` | `string` | Yes | Hosted page language as a CyberSource locale code, e.g. `en-us` |
 | `returnUrl` | `string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `cancelUrl` | `string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
-
-### Amounts and Currencies
-
-CyberSource is multi-currency and accepts decimals. For another currency, pass an [`Amount`](/node-myanmar-payments/amounts) with the currency: `amount: Amount.parse('10.50'), currency: 'USD'`.
-
-### Form Encoding
-
-CyberSource expects the form as `application/x-www-form-urlencoded`. `payment.enctype` carries it; use it if you [render the form yourself](/node-myanmar-payments/payment-flows#form-payments).
 
 ## Handling Callbacks
 
@@ -114,13 +104,11 @@ try {
 }
 ```
 
-Only signed fields are trusted: `decision` and `req_reference_number` must be listed in `signed_field_names`, `transaction_id` and the amount are read only when they are signed, and `raw` keeps only the signed fields plus `signature`. An unsigned extra field, such as `decision=ACCEPT` added to a re-posted checkout form, can't change the result.
-
-The signed text is `name=value` pairs joined with `,`, and a signed value (a billing name, say) may contain both, so `signed_field_names` itself is checked too: it must list `signed_field_names`, and no name may be empty, repeated or contain `=`. `decision` must be `ACCEPT`, `DECLINE`, `REVIEW`, `ERROR` or `CANCEL` (any case); an unknown decision fails verification instead of returning an `unknown` status.
+Only signed fields are trusted, and `raw` holds only the signed fields plus `signature`.
 
 ## Responses
 
-What CyberSource puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `undefined`. CyberSource posts form fields, so every `raw` value is a `string`, exactly as sent.
+See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. Every `raw` value is a `string`, exactly as posted.
 
 ### `initiate()` → `FormPayment` {#initiate-response}
 
@@ -150,8 +138,6 @@ What CyberSource puts in each field. See [Results](/node-myanmar-payments/refere
 | `override_custom_cancel_page` | `data.cancelUrl`, `""` when unset |
 | `signature` | Base64 HMAC-SHA256 of the signed fields |
 
-`initiate()` makes no HTTP call, so it is synchronous and takes no `signal`, and `CyberSource` takes no HTTP options. `FormPayment` has no `raw`: nothing is sent to CyberSource until the customer's browser posts the form.
-
 ### `handleCallback()` → `PaymentCallback` {#handlecallback-response}
 
 | Field | CyberSource value |
@@ -173,13 +159,9 @@ What CyberSource puts in each field. See [Results](/node-myanmar-payments/refere
 | `DECLINE`, `ERROR` | `failed` |
 | `CANCEL` | `canceled` |
 
-Any other `decision` throws `SignatureVerificationError`, so a verified callback never has the `unknown` status.
-
 ## Errors
 
 | Call | Throws | When |
 |---|---|---|
 | `initiate()` | `InvalidPaymentDataError` | `CyberSource.validate(data)` fails. Nothing is signed |
 | `handleCallback()` | `SignatureVerificationError` | `signature` doesn't match, a field listed in `signed_field_names` is missing or holds an object or array, `decision` or `req_reference_number` isn't signed, `signed_field_names` doesn't list itself or has an empty, repeated or `=`-containing name, or `decision` isn't one of the five above |
-
-CyberSource makes no HTTP calls, so nothing throws `ApiError`.

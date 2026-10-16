@@ -12,10 +12,6 @@ CyberSource Secure Acceptance is a hosted checkout for card payments, in MMK or 
 | `$cyberSource->initiate($data)` | Signed form posted to the hosted checkout | [`FormPayment`](#initiate-response) |
 | `$cyberSource->handleCallback($request)` | Verify the result post | [`PaymentCallback`](#handlecallback-response) |
 
-CyberSource has no status API in this package: the callback is the only payment result.
-
-[Responses](#responses) shows what CyberSource puts in each result.
-
 ## How it works
 
 CyberSource posts the result twice, to your backoffice URL and through the browser to your receipt page, and both are verified the same way.
@@ -73,20 +69,12 @@ echo $payment->toHtml();
 |---|---|---|---|
 | `orderId` | `string` | Yes | At most 50 characters, sent as `reference_number` |
 | `amount` | `Amount\|int` | Yes | Order total in `currency`, 0 or more, any number of decimals, at most 15 characters, e.g. `10000` or `Amount::parse('10.50')` |
-| `callbackUrl` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters; CyberSource may require HTTPS in production |
+| `callbackUrl` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters |
 | `currency` | `string` | Yes | Any three-letter uppercase ISO 4217 code, e.g. `MMK` |
 | `transactionType` | `CyberSourceTransactionType` | Yes | `CyberSourceTransactionType::Sale` (`'sale'`), `::Authorization` (`'authorization'`), `::SaleAndCreateToken` (`'sale,create_payment_token'`) or `::AuthorizationAndCreateToken` (`'authorization,create_payment_token'`) |
-| `locale` | `string` | Yes | Hosted page language as a CyberSource locale code, e.g. `en-us` |
+| `locale` | `string` | Yes | Hosted page language, lowercase `xx-xx`, e.g. `en-us` |
 | `returnUrl` | `?string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `cancelUrl` | `?string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
-
-### Amounts and Currencies
-
-CyberSource is multi-currency and accepts decimals. For another currency, pass an [`Amount`](/php-myanmar-payments/amounts) with the currency: `amount: Amount::parse('10.50'), currency: 'USD'`.
-
-### Form Encoding
-
-CyberSource expects the form as `application/x-www-form-urlencoded`. `$payment->enctype` carries it; use it if you [render the form yourself](/php-myanmar-payments/payment-flows#form-payments).
 
 ## Handling Callbacks
 
@@ -115,8 +103,6 @@ $callback->acknowledgement->send();
 
 Only signed fields are trusted: `decision` and `req_reference_number` must be listed in `signed_field_names`, `transaction_id` and the amount are read only when they are signed, and `raw` keeps only the signed fields plus `signature`. An unsigned extra field, such as `decision=ACCEPT` added to a re-posted checkout form, can't change the result.
 
-The signed text is `name=value` pairs joined with `,`, and a signed value (a billing name, say) may contain both, so `signed_field_names` itself is checked too: it must list `signed_field_names`, and no name may be empty, repeated or contain `=`. `decision` must be `ACCEPT`, `DECLINE`, `REVIEW`, `ERROR` or `CANCEL` (any case); an unknown decision fails verification instead of returning an `Unknown` status.
-
 ## Responses
 
 What CyberSource puts in each property. See [Results](/php-myanmar-payments/references/results) and [PaymentCallback & Status](/php-myanmar-payments/references/payment-callback) for the full classes. A property the gateway didn't send is `null`. CyberSource posts form fields, so every `raw` value is a `string`, exactly as sent.
@@ -133,6 +119,8 @@ What CyberSource puts in each property. See [Results](/php-myanmar-payments/refe
 | `autoSubmitUrl` | `null` in plain PHP until you call `withAutoSubmitUrl()` |
 | `withAutoSubmitUrl($url)` | Returns a copy with `autoSubmitUrl` set |
 | `toHtml(?string $nonce = null)` | A full HTML page that posts `fields` to `action` on load; `$nonce` is added to its inline script |
+| `field($name)` | One field's value, or `null` |
+| `values()` | `fields` as an array |
 
 | Form field | Value |
 |---|---|
@@ -151,7 +139,7 @@ What CyberSource puts in each property. See [Results](/php-myanmar-payments/refe
 | `override_custom_cancel_page` | `$data->cancelUrl`, `""` when unset |
 | `signature` | Base64 HMAC-SHA256 of the signed fields |
 
-`initiate()` makes no HTTP call, so `CyberSource` takes no HTTP client. `FormPayment` has no `raw`: nothing is sent to CyberSource until the customer's browser posts the form.
+`initiate()` makes no HTTP call. `FormPayment` has no `raw`: nothing is sent to CyberSource until the customer's browser posts the form.
 
 ### `handleCallback()` → `PaymentCallback` {#handlecallback-response}
 

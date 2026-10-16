@@ -15,7 +15,7 @@ npm install @laranex/nestjs-myanmar-payments@next
 
 Until v4.0.0 is released the package ships `4.0.0-dev.*` pre-releases, so install the `next` tag.
 
-The package is a thin NestJS layer over [`@laranex/myanmar-payments`](https://github.com/laranex/node-myanmar-payments), which npm installs alongside it. The SDK talks to gateways through `fetch`; the module passes your HTTP settings to every gateway, so a fake `fetch` works in your tests and no extra client is needed.
+The package is a thin NestJS layer over [`@laranex/myanmar-payments`](https://github.com/laranex/node-myanmar-payments), which npm installs alongside it.
 
 ## Register the Module
 
@@ -61,18 +61,6 @@ const app = await NestFactory.create<NestFastifyApplication>(
 
 Without it the package falls back to the unread request stream (Express) or encodes the parsed body again. That still verifies for every gateway's documented payloads, but re-encoded JSON can change how numbers are written, so `rawBody: true` is the safe setting.
 
-## Framework Services
-
-The module works with whatever is registered:
-
-| Service | Used for | Without it |
-|---|---|---|
-| `fetch` (global, or the `fetch` / `httpClient` option) | Gateway calls, so a fake `fetch` works in tests | Always available on Node.js 20+ |
-| `@nestjs/cache-manager` | Sharing Yoma MMQR access tokens (Redis and so on) | An in-memory cache per process |
-| `@nestjs/config` | `forRootAsync({ inject: [ConfigService], useFactory: (config) => ({ env: config }) })` | `process.env` or a plain record |
-| `formLink.secret`, `MYANMAR_PAYMENTS_FORM_KEY` or `APP_KEY` (at least 32 bytes) | Encrypting auto-submit form links | `autoSubmitUrl()` throws a `ConfigurationError` |
-| Nest's router | The auto-submit form route | Set `formRoute.enabled` to `false` and serve `toHtml()` yourself |
-
 ## What It Provides
 
 | Export | What it is |
@@ -81,7 +69,7 @@ The module works with whatever is registered:
 | `MyanmarPaymentsService` | `kbzPay()`, `waveMoney()`, `ayaPay()`, `yomaMmqr()`, `cyberSource()`, `gateway(name)`, `handleCallback()`, `autoSubmitUrl()`, `resolveFormPayment()`, `tokenCache` |
 | `@InjectKbzPay()`, `@InjectWaveMoney()`, `@InjectAyaPay()`, `@InjectYomaMmqr()`, `@InjectCyberSource()` | Inject one SDK gateway |
 | `@VerifiedCallback()`, `@AcknowledgeCallback()`, `@RawCallback()` | Callback decorators; see [Callbacks & Status](/nestjs-myanmar-payments/callbacks#callback-helpers) |
-| `VerifiedCallbackPipe`, `CallbackRequestPipe`, `AcknowledgementInterceptor` | The pipes and the interceptor behind those decorators, for use with `@UsePipes()` / `@UseInterceptors()` directly |
+| `VerifiedCallbackPipe`, `CallbackRequestPipe`, `AcknowledgementInterceptor` | The pipes and the interceptor behind those decorators; `AcknowledgementInterceptor` also works with `@UseInterceptors()` |
 | `callbackRequestFrom()`, `acknowledge()` | Callback helpers for handlers that use `@Req()` and `@Res()` |
 | `NestRequestLike`, `FastifyReplyLike` | The request and reply shapes those helpers accept (types) |
 | `FormPaymentController` | The auto-submit form route's controller; the module mounts it at `formRoute.path` |
@@ -100,34 +88,4 @@ The package ships ES modules and CommonJS with type declarations, like the SDK. 
 
 ## Without NestJS
 
-Plain Node.js projects can install the SDK directly and use the same gateways, payment data and results. See the [Node Myanmar Payments docs](/node-myanmar-payments/introduction) for the full guide.
-
-```bash
-npm install @laranex/myanmar-payments@next
-```
-
-```ts
-import { CallbackRequest, KbzPay } from '@laranex/myanmar-payments';
-
-const kbzPay = new KbzPay({
-  appId: '...',
-  appKey: '...',
-  merchantCode: '...',
-  apiUrl: 'https://api.kbzpay.com/payment/gateway',
-  pwaUrl: 'https://wap.kbzpay.com/pgw/pwa/#/',
-  timeToLiveMinutes: 15,
-});
-
-const payment = await kbzPay.pwa({
-  orderId: `ORDER_${order.id}`,
-  amount: 10000,
-  callbackUrl: 'https://shop.test/payments/kbz/callback',
-});
-
-// In the callback endpoint (req and res are Node's request and response)
-const request = await CallbackRequest.fromNodeRequest(req);
-const callback = kbzPay.handleCallback(request);
-callback.acknowledgement.send(res);
-```
-
-To build every gateway from one object, as this package's service does, use the SDK's `MyanmarPayments`; see [One Object for Every Gateway](/node-myanmar-payments/configuration#one-object-for-every-gateway).
+Use the SDK directly: see [Node Myanmar Payments](/node-myanmar-payments/introduction).

@@ -95,17 +95,9 @@ export function makePayments(fetch: FetchFunction): MyanmarPayments {
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MockAgent, setGlobalDispatcher } from 'undici';
-import { KbzPay, KbzPayConfig } from '@laranex/myanmar-payments';
+import { KbzPay } from '@laranex/myanmar-payments';
 
-const config = new KbzPayConfig({
-  appId: 'kp1',
-  appKey: 'kbz-secret',
-  merchantCode: '1',
-  apiUrl: KbzPayConfig.PRODUCTION_API_URL,
-  pwaUrl: KbzPayConfig.PRODUCTION_PWA_URL,
-  timeToLiveMinutes: 15,
-  timeoutSeconds: 5,
-});
+// config as in the first example
 
 test('reports a paid order', async () => {
   const agent = new MockAgent();
@@ -141,20 +133,11 @@ import { test } from 'node:test';
 import {
   CallbackRequest,
   KbzPay,
-  KbzPayConfig,
   KbzPaySigner,
   PaymentStatus,
 } from '@laranex/myanmar-payments';
 
-const config = new KbzPayConfig({
-  appId: 'kp1',
-  appKey: 'kbz-secret',
-  merchantCode: '1',
-  apiUrl: KbzPayConfig.PRODUCTION_API_URL,
-  pwaUrl: KbzPayConfig.PRODUCTION_PWA_URL,
-  timeToLiveMinutes: 15,
-  timeoutSeconds: 5,
-});
+// config as in the first example
 
 function signedKbzCallback(
   fields: Record<string, string>,

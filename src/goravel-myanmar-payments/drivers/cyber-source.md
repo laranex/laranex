@@ -12,9 +12,7 @@ CyberSource Secure Acceptance is a hosted checkout for card payments, in MMK or 
 | `cyberSource.Initiate(data)` | Signed form posted to the hosted checkout | [`*FormPayment`](#initiate-response) |
 | `cyberSource.HandleCallback(request)` | Verify the result post | [`*PaymentCallback`](#handlecallback-response) |
 
-`cyberSource` is the `*cybersource.Gateway` that `paymentsfacades.MyanmarPayments().CyberSource()` returns. CyberSource has no status API in this package: the callback is the only payment result.
-
-[Responses](#responses) shows what CyberSource puts in each result.
+`cyberSource` is the `*cybersource.Gateway` that `paymentsfacades.MyanmarPayments().CyberSource()` returns. CyberSource has no status API: the callback is the only payment result.
 
 ## How it works
 
@@ -157,8 +155,6 @@ What CyberSource puts in each field. See [Results](/goravel-myanmar-payments/ref
 | `HTML()` | A full HTML page that posts `Fields` to `Action` on load |
 | `HTMLWithNonce(nonce)` | The same page with `nonce` on its inline script, for a Content-Security-Policy |
 
-`payments.AutoSubmitURL(form)` returns the encrypted link to the `myanmar-payments.form` route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. It expires after `form_route.ttl_minutes`. With `form_route.enabled` set to `false` it returns `payments.ErrFormRouteDisabled`.
-
 `Fields`, all signed, in this order:
 
 | Form field | Value |
@@ -191,8 +187,6 @@ What CyberSource puts in each field. See [Results](/goravel-myanmar-payments/ref
 | `Amount` | CyberSource `auth_amount`, falling back to `req_amount` when it is missing or empty, e.g. `10000`. Signed values only |
 | `Raw` | The signed fields of the verified post plus `signature`, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `auth_amount`, `auth_code`, `req_reference_number`, `req_amount`, `req_currency`, `req_transaction_uuid`, `signed_field_names`, `signed_date_time`. Unsigned fields are left out |
 | `Acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
-
-`payments.Acknowledge(ctx, callback)` writes `Acknowledgement` as the Goravel response. `HandleCallback()` takes the `*myanmarpayments.CallbackRequest` that `payments.CallbackRequestFromContext(ctx)` builds.
 
 ## Statuses
 

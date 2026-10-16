@@ -53,7 +53,7 @@ it('starts a KBZ Pay QR payment', async () => {
   const app = await moduleRef.createNestApplication().init();
 
   await request(app.getHttpServer())
-    .post('/checkout/1/kbz-qr')
+    .post('/checkout/1/kbz-pay/qr')
     .expect(201)
     .expect(/kbz-qr/);
 
@@ -102,7 +102,7 @@ it('marks the order paid from a KBZ Pay callback', async () => {
 });
 ```
 
-The other gateways sign with HMAC-SHA256 as described on their gateway pages. A modified payload must be rejected: `@VerifiedCallback()` answers `400`, and `handleCallback()` throws `SignatureVerificationError`. On Fastify, pass `new FastifyAdapter()` to `createNestApplication()` and wait for `app.getHttpAdapter().getInstance().ready()` after `init()`.
+The other gateways sign with HMAC-SHA256 as described on their gateway pages. Yoma MMQR callbacks must also carry `YOMA_MMQR_WEBHOOK_SECRET` in `X-Webhook-Secret` (`.set('X-Webhook-Secret', secret)`). A modified payload must be rejected: `@VerifiedCallback()` answers `400`, and `handleCallback()` throws `SignatureVerificationError`. On Fastify, pass `new FastifyAdapter()` to `createNestApplication()` and wait for `app.getHttpAdapter().getInstance().ready()` after `init()`.
 
 ## Mocking the Gateways
 

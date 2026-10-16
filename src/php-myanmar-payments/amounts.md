@@ -15,7 +15,7 @@ Amount::parse('10000.50'); // decimal, from a string
 Amount::from(10000);       // an Amount as is, or an int through kyat()
 ```
 
-Payment data accepts a plain `int` directly (`amount: 10000`), which is the same as passing `Amount::kyat(10000)`. A `float` such as `10.5` is never accepted: write decimals as `Amount::parse('10.50')`.
+A `float` such as `10.5` is never accepted: write decimals as `Amount::parse('10.50')`.
 
 ## Parsing
 
@@ -53,8 +53,6 @@ try {
 | `$amount->equals($other)` | Same value, ignoring leading zeros and trailing fractional zeros (`1000` equals `1000.00`); takes an `Amount` or a `string`; `null` and text that is not plain digits are never equal |
 | `json_encode($amount)` | The amount as a JSON string, e.g. `"1000.50"` |
 
-The payment data classes always store an `Amount`, so `$data->amount` is an `Amount` even when you passed an `int`.
-
 ## Gateway Rules
 
 Each gateway checks the amount against its official documentation when you create the payment data, before any request is sent:
@@ -71,6 +69,6 @@ A violation throws `InvalidPaymentDataException`, e.g. `Wave Money does not acce
 
 ## Storing Amounts
 
-`$amount->toString()` is the exact text (`"1000.50"`), so store it in a text or `DECIMAL` column. `json_encode` writes an `Amount` as a string (`"1000.50"`), so no JSON consumer parses it as a float. Read it back with `Amount::parse`.
+`$amount->toString()` is the exact text (`"1000.50"`), so store it in a text or `DECIMAL` column. Read it back with `Amount::parse`.
 
 Amounts reported by gateways (`PaymentCallback::$amount`, `PaymentStatusResult::$amount`) are plain `string`s: the exact text the gateway sent, even when it sent a JSON number such as `1000.50`. Compare them with `$amount->equals($callback->amount)`.

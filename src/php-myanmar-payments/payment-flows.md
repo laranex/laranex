@@ -14,7 +14,7 @@ Starting a payment always follows the same pattern: build the gateway's payment 
 | `QrPayment` | Show the QR to the customer | `$kbz->qr()`, `$yoma->initiate()`, `$yoma->renewQr()` |
 | `AppPayment` | Return the signed payload to your mobile app | `$kbz->app()` |
 
-Every payment data class validates its values when you create it and throws `InvalidPaymentDataException` before any request is sent, so building the data object is how you check a request early, e.g. while handling a form. `$data->validate()` runs the same checks again. The customer finishing on the gateway's side is never proof of payment: fulfill orders from the verified [callback](/php-myanmar-payments/callbacks) or a status check.
+Every payment data class validates its values when you create it and throws `InvalidPaymentDataException` before any request is sent. `$data->validate()` runs the same checks again. The customer finishing on the gateway's side is never proof of payment: fulfill orders from the verified [callback](/php-myanmar-payments/callbacks) or a status check.
 
 The samples on this page and the gateway pages are plain PHP scripts; [Framework Integration](/php-myanmar-payments/framework-integration) shows Symfony and PSR-15 handlers.
 
@@ -83,7 +83,7 @@ header('Content-Type: text/html; charset=UTF-8');
 echo $payment->toHtml();
 ```
 
-Under a Content-Security-Policy that allows scripts by nonce (`script-src 'nonce-…'`), pass the nonce so the inline script runs: `$payment->toHtml($nonce)` renders `<script nonce="…">`. Send the page with `Referrer-Policy: strict-origin` if you serve it from a URL that holds anything secret, so the gateway only sees your origin.
+Under a Content-Security-Policy that allows scripts by nonce (`script-src 'nonce-…'`), pass the nonce so the inline script runs: `$payment->toHtml($nonce)` renders `<script nonce="…">`.
 
 To build the form yourself, use `action`, `fields` (an array of name => value, in order) and `enctype` with your template engine, and escape every value:
 
@@ -99,9 +99,7 @@ To build the form yourself, use `action`, `fields` (an array of name => value, i
 </form>
 ```
 
-Post the fields unchanged: they are signed. `$payment->fields['merchOrderId']` looks up one value. AYA expects `multipart/form-data`, which `enctype` carries.
-
-`autoSubmitUrl` is `null` outside Laravel. If you host your own page that renders the form, attach its URL with `$payment->withAutoSubmitUrl($url)`, which returns a new `FormPayment`.
+Post the fields unchanged: they are signed. `$payment->fields['merchOrderId']` looks up one value.
 
 ## QR Payments
 
@@ -138,7 +136,7 @@ $payment = $yoma->initiate($data);
 <p>Payable until <?= $payment->expiresAt?->format('H:i:s') ?></p>
 ```
 
-`expiresAt` is a `DateTimeImmutable` when the gateway limits how long the QR is payable (`null` otherwise), and `reference` holds the ID used for status checks (Yoma `refLabel`, KBZ `prepay_id`).
+`expiresAt` is a `DateTimeImmutable` when the gateway limits how long the QR is payable (`null` otherwise), and `reference` holds the gateway's ID for the QR (Yoma `refLabel`, which `status()` takes; KBZ `prepay_id`).
 
 ## App Payments
 

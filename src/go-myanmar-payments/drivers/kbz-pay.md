@@ -32,7 +32,7 @@ Every KBZ Pay flow starts with the same precreate call and ends with KBZ's signe
     { from: 'Customer', to: 'KBZ Pay', label: 'Pay in the KBZ Pay app' },
     { from: 'KBZ Pay', to: 'Your app', label: 'Notify callbackUrl', detail: 'signed JSON under Request' },
     { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: 'kbz.HandleCallback(request)' },
-    { from: 'Your app', to: 'KBZ Pay', label: 'Plain-text success', detail: 'within about 10 s, or KBZ retries', response: true },
+    { from: 'Your app', to: 'KBZ Pay', label: 'Plain-text success', response: true },
     { from: 'Your app', to: 'KBZ Pay', label: 'No notify? Query the order', detail: 'kbz.Status(ctx, orderID)' },
   ]"
 />
@@ -56,7 +56,6 @@ kbz, err := kbzpay.New(kbzpay.Config{
 	APIURL:            kbzpay.ProductionAPIURL,
 	PWAURL:            kbzpay.ProductionPWAURL,
 	TimeToLiveMinutes: 15,
-	TimeoutSeconds:    30,
 }, nil)
 if err != nil {
 	return err
@@ -159,7 +158,7 @@ if result.IsSuccessful() {
 
 ## Responses
 
-What KBZ Pay puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`. A field the gateway didn't send is `""`. `Raw` holds plain Go values (JSON numbers become `json.Number`s), while the typed fields such as `Amount` keep the exact text KBZ sent.
+What KBZ Pay puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs.
 
 ### `PWA()` → `*myanmarpayments.RedirectPayment` {#pwa-response}
 
@@ -179,7 +178,7 @@ What KBZ Pay puts in each field. See [Results](/go-myanmar-payments/references/r
 | `OrderID` | Your `data.OrderID` |
 | `QRString` | KBZ `qrCode`, a payload to encode into a QR image. Always set |
 | `QRImage` | Always `""` |
-| `ExpiresAt` | Now + the time to live: `TimeToLiveMinutes`, else `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`. Always set, because the configured time to live is required |
+| `ExpiresAt` | Now + the time to live: `data.TimeToLiveMinutes`, else `Config.TimeToLiveMinutes`. Always set |
 | `Reference` | KBZ `prepay_id`. Always set |
 | `Raw` | The `precreate` response, as for `PWA()` plus `qrCode` |
 | `QRImageDataURI("")` | Always `""`, as `QRImage` is |
@@ -243,4 +242,4 @@ KBZ signs requests, the in-app `orderInfo` and notifications the same way: every
 | `Status()` | `*APIError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, e.g. for an unknown order |
 | `HandleCallback()` | `*SignatureVerificationError` | `sign` doesn't match, or a field holds an object or array |
 
-The error types live in the root `myanmarpayments` package. `*APIError` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `GatewayCode` and its `msg` in `GatewayMessage`. When KBZ can't be reached or `ctx` is canceled, the calls return `*APIError`, which unwraps to the cause (`errors.Is(err, context.DeadlineExceeded)`).
+`*APIError` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `GatewayCode` and its `msg` in `GatewayMessage`.

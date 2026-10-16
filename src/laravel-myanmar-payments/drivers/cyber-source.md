@@ -14,8 +14,6 @@ CyberSource Secure Acceptance is a hosted checkout for card payments, in MMK or 
 
 CyberSource has no status API in this package: the callback is the only payment result.
 
-[Responses](#responses) shows what CyberSource puts in each result.
-
 ## How it works
 
 CyberSource posts the result twice, to your backoffice URL and through the browser to your receipt page, and both are verified the same way.
@@ -70,10 +68,6 @@ return redirect($payment->autoSubmitUrl);
 | `locale` | `string` | Yes | Hosted page language as a CyberSource locale code, e.g. `en-us` |
 | `returnUrl` | `?string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `cancelUrl` | `?string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
-
-### Amounts and Currencies
-
-CyberSource is multi-currency and accepts decimals. For another currency, pass an [`Amount`](/laravel-myanmar-payments/amounts) with the currency: `amount: Amount::parse('10.50'), currency: 'USD'`.
 
 ### Form Encoding
 
@@ -157,8 +151,6 @@ What CyberSource puts in each property. See [Results](/laravel-myanmar-payments/
 | `raw` | The signed fields of the verified post plus `signature`, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `auth_amount`, `auth_code`, `req_reference_number`, `req_amount`, `req_currency`, `req_transaction_uuid`, `signed_field_names`, `signed_date_time`. Unsigned fields are left out |
 | `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
-`MyanmarPayments::acknowledge($callback)` turns `acknowledgement` into a `CallbackResponse` (`Responsable`). `handleCallback()` accepts an `Illuminate\Http\Request` or a `CallbackRequest`.
-
 ## Statuses
 
 | CyberSource `decision` | `PaymentStatus` |
@@ -175,6 +167,6 @@ Any other `decision` throws `SignatureVerificationException`, so a verified call
 | Call | Throws | When |
 |---|---|---|
 | `new CyberSourcePaymentData(...)` | `InvalidPaymentDataException` | A value breaks the rules above. Nothing is signed |
-| `handleCallback()` | `SignatureVerificationException` | `signature` doesn't match, a field listed in `signed_field_names` is missing, `decision` or `req_reference_number` isn't signed, `signed_field_names` doesn't list itself or has an empty, repeated or `=`-containing name, or `decision` isn't one of the five above |
+| `handleCallback()` | `SignatureVerificationException` | `signature` doesn't match, a listed field is missing, `decision` or `req_reference_number` isn't signed, `signed_field_names` is malformed (see [Handling Callbacks](#handling-callbacks)), or `decision` is unknown |
 
 CyberSource makes no HTTP calls, so nothing throws `ApiException`.

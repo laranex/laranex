@@ -90,10 +90,6 @@ export class CyberSourceCheckoutController {
 | `returnUrl` | `string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `cancelUrl` | `string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
 
-### Amounts and Currencies
-
-CyberSource is multi-currency and accepts decimals. For another currency, pass an [`Amount`](/nestjs-myanmar-payments/amounts) with the currency: `amount: Amount.parse('10.50'), currency: 'USD'`.
-
 ### Form Encoding
 
 CyberSource expects the form as `application/x-www-form-urlencoded`. `payment.enctype` carries it; use it if you [render the form yourself](/nestjs-myanmar-payments/payment-flows#form-payments).
@@ -127,9 +123,7 @@ export class CyberSourceCallbackController {
 }
 ```
 
-A bad signature answers `400` before the handler runs. Only signed fields are trusted: `decision` and `req_reference_number` must be listed in `signed_field_names`, `transaction_id` and the amount are read only when they are signed, and `raw` keeps only the signed fields plus `signature`. An unsigned extra field, such as `decision=ACCEPT` added to a re-posted checkout form, can't change the result.
-
-The signed text is `name=value` pairs joined with `,`, and a signed value (a billing name, say) may contain both, so `signed_field_names` itself is checked too: it must list `signed_field_names`, and no name may be empty, repeated or contain `=`. `decision` must be `ACCEPT`, `DECLINE`, `REVIEW`, `ERROR` or `CANCEL` (any case); an unknown decision fails verification (a `400`) instead of returning an `Unknown` status.
+Only signed fields are trusted: `decision` and `req_reference_number` must be listed in `signed_field_names`, `transaction_id` and the amount are read only when they are signed, and `raw` keeps only the signed fields plus `signature`. An unsigned extra field, such as `decision=ACCEPT` added to a re-posted checkout form, can't change the result.
 
 ## Responses
 
@@ -139,10 +133,12 @@ What CyberSource puts in each property. See [Results](/nestjs-myanmar-payments/r
 
 | Property / Method | CyberSource value |
 |---|---|
+| `flow` | `form` |
 | `orderId` | Your `orderId` |
 | `action` | `{baseUrl}/pay`, e.g. `https://testsecureacceptance.cybersource.com/pay` |
 | `fields` | The signed fields below. Post them unchanged |
 | `enctype` | `application/x-www-form-urlencoded` |
+| `field(name)`, `values()` | One field's value; all fields as an object |
 | `toHtml(nonce?)` | A full HTML page that posts `fields` to `action` on load; `nonce` is added to its inline script |
 
 `this.payments.autoSubmitUrl(payment)` returns an encrypted link to the module's form route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. It expires after `formLink.ttlMinutes`; the call throws when `formRoute.enabled` is `false`.
@@ -179,8 +175,6 @@ What CyberSource puts in each property. See [Results](/nestjs-myanmar-payments/r
 | `amount` | CyberSource `auth_amount`, falling back to `req_amount` when it is missing or empty, e.g. `10000`. Signed values only |
 | `raw` | The signed fields of the verified post plus `signature`, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `auth_amount`, `auth_code`, `req_reference_number`, `req_amount`, `req_currency`, `req_transaction_uuid`, `signed_field_names`, `signed_date_time`. Unsigned fields are left out |
 | `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
-
-`@AcknowledgeCallback()` (or `acknowledge(res, callback)`) sends `acknowledgement`. The gateway's `handleCallback()` takes a `CallbackRequest`; `this.payments.handleCallback('cyber-source', request)` also accepts a Nest request.
 
 ## Statuses
 

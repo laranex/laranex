@@ -620,70 +620,12 @@ func (r *ReplayPaymentWebhooks) Handle(ctx console.Context) error {
 ./artisan payments:webhooks:replay --failed  # every failed webhook
 ```
 
-The schedule above deletes rows older than 90 days. Every delivery is a row, so the database answers most questions:
-
-```sql
--- What happened to an order?
-SELECT id, status, gateway_status, attempts, last_error, created_at
-FROM payment_webhooks
-WHERE gateway = 'kbz-pay' AND order_id = 'ORDER_1'
-ORDER BY id;
-
--- What is failing?
-SELECT gateway, last_error, COUNT(*)
-FROM payment_webhooks
-WHERE status = 'failed'
-GROUP BY gateway, last_error;
-
--- Who sent a bad signature?
-SELECT id, gateway, ip, signature_error, created_at
-FROM payment_webhooks
-WHERE status = 'rejected'
-ORDER BY id DESC
-LIMIT 20;
-```
+The schedule above deletes rows older than 90 days.
 
 To inspect a stored delivery in code, verify it again: `paymentsfacades.MyanmarPayments().HandleCallback(webhook.Gateway, webhook.CallbackRequest())` returns the same typed callback the controller saw.
 
 ## Testing
 
-With the `sync` queue the job runs inside the request, so a feature test can post a signed callback and assert on the row:
-
-```go
-import (
-	"bytes"
-	"encoding/json"
-
-	"github.com/laranex/go-myanmar-payments/v4/kbzpay"
-
-	"yourapp/app/facades"
-	"yourapp/app/models"
-)
-
-func (s *PaymentWebhooksTestSuite) TestKbzPayWebhook() {
-	fields := map[string]any{
-		"merch_order_id": "ORDER_1",
-		"mm_order_id":    "MM1",
-		"total_amount":   "10000",
-		"trade_status":   "PAY_SUCCESS",
-		"nonce_str":      "n",
-		"sign_type":      "SHA256",
-	}
-	// "test-app-key" is KBZ_PAY_APP_KEY in your test configuration
-	fields["sign"] = kbzpay.NewSigner("test-app-key").Sign(fields)
-	body, _ := json.Marshal(map[string]any{"Request": fields})
-
-	response, err := s.Http(s.T()).
-		WithHeader("Content-Type", "application/json").
-		Post("/webhooks/payments/kbz-pay", bytes.NewReader(body))
-	s.Require().NoError(err)
-	response.AssertOk()
-
-	var webhook models.PaymentWebhook
-	query := facades.Orm().Query().Where("order_id = ?", "ORDER_1")
-	s.Require().NoError(query.First(&webhook))
-	s.Equal(models.WebhookProcessed, webhook.Status)
-}
-```
+With the `sync` queue the job runs inside the request, so a feature test can post a signed callback as in [Testing](/goravel-myanmar-payments/testing#sending-signed-callbacks) to `/webhooks/payments/kbz-pay`, then assert the stored row's `Status` is `models.WebhookProcessed`.
 
 Post the same body twice to test duplicates, a modified body to test rejection, and call `(&jobs.ProcessPaymentWebhook{}).Handle(id)` directly to test retries. To sign other gateways' payloads, compute the signature in the test with the secret from your test configuration, as described on each gateway's page.

@@ -89,18 +89,10 @@ def cybersource_checkout(request, order_id: int):
 | `amount` | `Amount \| int \| str \| Decimal` | Yes | Order total in `currency`, 0 or more, any number of decimals, at most 15 characters, e.g. `10000` or `Amount.parse("10.50")` |
 | `callback_url` | `str` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters; CyberSource may require HTTPS in production |
 | `currency` | `str` | Yes | Any three-letter uppercase ISO 4217 code, e.g. `MMK` |
-| `transaction_type` | `CyberSourceTransactionType` | Yes | `CyberSourceTransactionType.SALE` (`"sale"`), `.AUTHORIZATION` (`"authorization"`), `.SALE_AND_CREATE_TOKEN` (`"sale,create_payment_token"`) or `.AUTHORIZATION_AND_CREATE_TOKEN` (`"authorization,create_payment_token"`) |
+| `transaction_type` | `CyberSourceTransactionType \| str` | Yes | `CyberSourceTransactionType.SALE` (`"sale"`), `.AUTHORIZATION` (`"authorization"`), `.SALE_AND_CREATE_TOKEN` (`"sale,create_payment_token"`) or `.AUTHORIZATION_AND_CREATE_TOKEN` (`"authorization,create_payment_token"`), or its string value |
 | `locale` | `str` | Yes | Hosted page language as a CyberSource locale code, e.g. `en-us` |
 | `return_url` | `str` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
 | `cancel_url` | `str` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
-
-### Amounts and Currencies
-
-CyberSource is multi-currency and accepts decimals. For another currency, pass an [`Amount`](/python-myanmar-payments/amounts) with the currency: `amount=Amount.parse("10.50"), currency="USD"`.
-
-### Form Encoding
-
-CyberSource expects the form as `application/x-www-form-urlencoded`. `payment.enctype` carries it; use it if you [render the form yourself](/python-myanmar-payments/payment-flows#form-payments).
 
 ## Handling Callbacks
 
@@ -140,7 +132,7 @@ The signed text is `name=value` pairs joined with `,`, and a signed value (a bil
 
 ## Responses
 
-What CyberSource puts in each field. See [Results](/python-myanmar-payments/references/results) and [PaymentCallback & Status](/python-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `None`. CyberSource posts form fields, so every `raw` value is a `str`, exactly as sent.
+What CyberSource puts in each field. See [Results](/python-myanmar-payments/references/results) and [PaymentCallback & Status](/python-myanmar-payments/references/payment-callback) for the full classes. CyberSource posts form fields, so every `raw` value is a `str`, exactly as sent.
 
 ### `initiate()` → `FormPayment` {#initiate-response}
 
@@ -170,7 +162,7 @@ What CyberSource puts in each field. See [Results](/python-myanmar-payments/refe
 | `override_custom_cancel_page` | `data.cancel_url`, `""` when unset |
 | `signature` | Base64 HMAC-SHA256 of the signed fields |
 
-`initiate()` makes no HTTP call, so it is never awaited, and `CyberSource` takes no HTTP options. `FormPayment` has no `raw`: nothing is sent to CyberSource until the customer's browser posts the form.
+`FormPayment` has no `raw`: nothing is sent to CyberSource until the customer's browser posts the form.
 
 ### `handle_callback()` → `PaymentCallback` {#handle-callback-response}
 

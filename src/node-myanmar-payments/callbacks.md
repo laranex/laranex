@@ -74,7 +74,7 @@ Signatures are checked against what the gateway actually sent, so build the requ
 |---|---|
 | `await CallbackRequest.fromNodeRequest(req)` | `node:http`, Express (`req`), Koa (`ctx.req`, without a body parser). Reads the raw body from the stream, or from `req.rawBody` / `req.body` when middleware captured it as text or bytes |
 | `await CallbackRequest.fromWebRequest(request)` | A Fetch API `Request`: Next.js route handlers, Hono, Bun, Deno, Cloudflare Workers. Reads a clone, so the request stays readable |
-| `CallbackRequest.from({ body, headers, query })` | Every other server: pass the raw body (`string`, `Buffer`, `Uint8Array` or `ArrayBuffer`), the headers (an object or `[name, value]` pairs) and the query string (`string`, `URLSearchParams` or an object). All three are optional |
+| `CallbackRequest.from({ body, headers, query })` | Every other server: pass the raw body (`string`, `Buffer`, `Uint8Array` or `ArrayBuffer`), the headers (a `Headers`, an object or `[name, value]` pairs) and the query string (`string`, `URLSearchParams` or an object). All three are optional |
 | `CallbackRequest.fromJson(payload, headers?)` | Replaying a payload you stored as decoded JSON, e.g. from a queue or a failed-callback table |
 
 | Framework | `body` | `headers` | `query` |
@@ -83,7 +83,7 @@ Signatures are checked against what the gateway actually sent, so build the requ
 | Fastify | `request.body` (kept as a string, see [Fastify](/node-myanmar-payments/framework-integration#fastify)) | `request.headers` | `request.query` |
 | Next.js, Hono, Bun, Deno | `fromWebRequest(request)` reads all three | | |
 
-When a body parser such as `express.json()` already consumed the stream, `fromNodeRequest` encodes the parsed `req.body` again as JSON or a form. That usually verifies, but a JSON number such as `1000.50` comes back as `1000.5`, so prefer [`express.raw()` on callback routes](/node-myanmar-payments/framework-integration#express).
+If a body parser already consumed the stream, `fromNodeRequest` re-encodes `req.body`; prefer [`express.raw()`](/node-myanmar-payments/framework-integration#express). See [CallbackRequest](/node-myanmar-payments/references/payment-callback#callbackrequest) for every member.
 
 ### Body Size Limit
 
@@ -97,17 +97,6 @@ const fromFetch = await CallbackRequest.fromWebRequest(webRequest, { maxBodyByte
 ```
 
 `maxBodyBytes` must be a whole number greater than 0 (otherwise a `RangeError`). `CallbackRequest.from()` takes a body you already read, so cap it in your server or body parser.
-
-| Member | Description |
-|---|---|
-| `rawBody` | The raw body as a `Uint8Array`, exactly as received |
-| `body` | The raw body, decoded as UTF-8 |
-| `headers` | Headers with lowercase names; repeated headers are joined with `, ` |
-| `query` | Query string values (the first of each) |
-| `header(name)` | One header, case-insensitively, or `undefined` |
-| `parsedBody()` | The body decoded as JSON or a urlencoded form; JSON numbers keep their exact text as `string`s (`1000.50` stays `"1000.50"`) |
-| `input()` | The parsed body merged over the query string |
-| `queryInput()` | The query string merged over the parsed body |
 
 ## Rules
 
@@ -133,20 +122,7 @@ Gateway callbacks are server-to-server posts: exclude these routes from any CSRF
 
 ## PaymentStatus
 
-Every gateway's own status values are mapped onto one string union. The original value stays in `callback.gatewayStatus`.
-
-| Constant | Value | Meaning |
-|---|---|---|
-| `PaymentStatus.Successful` | `successful` | The customer paid. The only status that means money was collected. |
-| `PaymentStatus.Pending` | `pending` | Still in progress or waiting on the customer. |
-| `PaymentStatus.Failed` | `failed` | Attempted and failed or rejected. |
-| `PaymentStatus.Canceled` | `canceled` | Canceled or closed before completing. |
-| `PaymentStatus.Expired` | `expired` | The payment window ran out. |
-| `PaymentStatus.Unknown` | `unknown` | A status this package does not recognize yet. Inspect `gatewayStatus`. |
-
-Statuses are plain strings, so `callback.status === 'successful'` works. `PaymentStatus.isFinal(status)` is `false` for `pending` and `unknown`. Unknown statuses never throw.
-
-Each gateway page lists its exact mapping.
+Every gateway's status maps onto `PaymentStatus`, and the original value stays in `callback.gatewayStatus`; see [PaymentStatus](/node-myanmar-payments/references/payment-callback#paymentstatus) and each gateway's Statuses table.
 
 ## Status Checks
 

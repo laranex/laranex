@@ -13,8 +13,6 @@ The package needs only two things from your framework: the raw incoming request 
 | Fastify | `CallbackRequest.from({ body, headers, query })` | `reply.code(ack.status).headers(ack.headers).send(ack.body)` |
 | Next.js, Hono, Bun, Deno | `await CallbackRequest.fromWebRequest(request)` | `return callback.acknowledgement.toResponse()` |
 
-Gateway callbacks are server-to-server posts: exclude these routes from any CSRF protection your framework applies.
-
 ## Express
 
 Create the facade once, e.g. in `payments.ts`, and register the callback routes with `express.raw()` (or before any global `express.json()`), so the package reads the exact body the gateway sent:
@@ -101,8 +99,6 @@ app.use((
 ```
 
 Express 5 passes errors thrown in `async` handlers to the error handler; on Express 4, wrap each handler in `try`/`catch` and call `next(error)`.
-
-`fromNodeRequest` reads the buffer `express.raw()` leaves in `req.body`. If a global `express.json()` or `express.urlencoded()` already parsed the body, it encodes `req.body` again as JSON or a form. That usually verifies, but a JSON number such as `1000.50` comes back as `1000.5` and breaks a signature over the exact text, so `express.raw()` on callback routes is the safer setup.
 
 ## Fastify
 
@@ -240,7 +236,7 @@ app.get('/payments/yoma/:orderId', async (c) => {
 
 ## Other Frameworks
 
-For any other framework, build the request from its parts with `CallbackRequest.from({ body, headers, query })` (the raw body as a `string`, `Buffer` or `Uint8Array`, the headers as an object or `[name, value]` pairs, the query string as a `string`, `URLSearchParams` or an object), then write `ack.status`, `ack.headers` and `ack.body` with your framework's response API.
+Use `CallbackRequest.from({ body, headers, query })` and write `ack.status`, `ack.headers` and `ack.body`; see [Building a CallbackRequest](/node-myanmar-payments/callbacks#building-a-callbackrequest).
 
 ## Testing Your App
 

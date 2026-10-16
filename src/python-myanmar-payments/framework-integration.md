@@ -15,7 +15,7 @@ The package needs only two things from your framework: the raw incoming request 
 
 Use the sync classes (`MyanmarPayments`, `KbzPay`, …) in sync views and the async classes (`AsyncMyanmarPayments`, `AsyncKbzPay`, …) in `async def` views, so a gateway call never blocks the event loop.
 
-Gateway callbacks are server-to-server posts: exclude these routes from any CSRF protection your framework applies.
+Gateway callbacks are server-to-server posts: exclude these routes from CSRF protection (Django's `@csrf_exempt`, Flask-WTF's `@csrf.exempt`).
 
 ## Django
 
@@ -197,7 +197,7 @@ def gateway_error(error: ApiError) -> tuple[Response, int]:
     return jsonify(body), 502
 ```
 
-Read `request.get_data()` before anything touches `request.form`: once Werkzeug parsed a form body, `get_data()` returns nothing. Reading `request.json` first is fine, since it caches the raw body. With Flask-WTF's `CSRFProtect`, decorate the callback views with `@csrf.exempt`.
+Read `request.get_data()` before anything touches `request.form`: once Werkzeug parsed a form body, `get_data()` returns nothing. Reading `request.json` first is fine, since it caches the raw body.
 
 ## FastAPI
 

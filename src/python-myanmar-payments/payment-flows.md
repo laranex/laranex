@@ -88,7 +88,7 @@ def aya_checkout(request):
     return HttpResponse(payment.to_html())
 ```
 
-Under a Content Security Policy that allows scripts by nonce (`script-src 'nonce-…'`), pass the nonce so the inline script runs: `payment.to_html(nonce)` (or `to_html(nonce=nonce)`) renders `<script nonce="…">`. Send the page with `Referrer-Policy: strict-origin` if you serve it from a URL that holds anything secret, so the gateway only sees your origin.
+Under a Content Security Policy that allows scripts by nonce (`script-src 'nonce-…'`), pass the nonce so the inline script runs: `payment.to_html(nonce)` (or `to_html(nonce=nonce)`) renders `<script nonce="…">`.
 
 To build the form yourself, use `action`, `fields` (a tuple of `FormField(name, value)`) and `enctype` with your template engine, which escapes every value:
 
@@ -101,7 +101,7 @@ To build the form yourself, use `action`, `fields` (a tuple of `FormField(name, 
 </form>
 ```
 
-Post the fields unchanged: they are signed. `payment.field(name)` looks up one value and `payment.values()` returns them as a `dict`. AYA expects `multipart/form-data`, which `enctype` carries.
+Post the fields unchanged: they are signed. `payment.field(name)` looks up one value and `payment.values()` returns them as a `dict`.
 
 ## QR Payments
 
@@ -143,8 +143,6 @@ def yoma_checkout(request):
 <img src="{{ payment.qr_image_data_uri }}" alt="Scan to pay">
 <p>Payable until {{ payment.expires_at|time:"H:i:s" }}</p>
 ```
-
-`expires_at` is an aware UTC `datetime` when the gateway limits how long the QR is payable (`None` otherwise), and `reference` holds the ID used for status checks (Yoma `refLabel`, KBZ `prepay_id`).
 
 ## App Payments
 

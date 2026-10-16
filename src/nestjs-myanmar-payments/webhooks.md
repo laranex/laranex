@@ -29,34 +29,9 @@ The package verifies a webhook and builds the acknowledgement; what you do with 
 
 None of this is part of the package: copy the code into your app and adapt the fulfillment to your own orders. The sample uses the built-in `node:sqlite` module (`DatabaseSync`, Node.js 22.13+) so it runs without extra dependencies; with TypeORM, Prisma, MikroORM or another database, keep the same columns and the same conditional `UPDATE`s. The worker runs in-process; for a queue, run `processNext()` from a BullMQ processor, and the claim logic stays the same.
 
-## Migration
-
-```sql
-CREATE TABLE IF NOT EXISTS payment_webhooks (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  gateway VARCHAR(32) NOT NULL,
-  order_id VARCHAR(64) NULL,
-  status VARCHAR(16) NULL,              -- PaymentStatus value
-  gateway_status VARCHAR(64) NULL,
-  gateway_reference VARCHAR(128) NULL,
-  amount VARCHAR(32) NULL,              -- as the gateway sent it, never a float
-  verified SMALLINT NOT NULL,
-  body TEXT NOT NULL,                   -- the raw request body
-  headers TEXT NOT NULL,                -- JSON
-  attempts INTEGER NOT NULL DEFAULT 0,
-  last_error TEXT NULL,
-  available_at INTEGER NOT NULL,        -- unix time of the next attempt
-  locked_until INTEGER NULL,
-  processed_at INTEGER NULL,
-  created_at INTEGER NOT NULL
-);
-CREATE INDEX IF NOT EXISTS payment_webhooks_order
-  ON payment_webhooks (gateway, order_id, status);
-```
+## Model
 
 The sample assumes an `orders` table with a unique `number`, the `amount` as a decimal string, and nullable `paid_at` and `gateway_reference`.
-
-## Model
 
 The sample keeps no entity classes: a small provider opens the database and creates both tables. With an ORM, this is where your entities and repositories go.
 
@@ -119,7 +94,7 @@ export function now(): number {
 
 ## Route and Controller
 
-One route serves every gateway. Gateways post from their own servers, so keep it free of authentication guards and CSRF checks. The app must be created with `rawBody: true` (see [Installation](/nestjs-myanmar-payments/installation#keep-the-raw-body)).
+One route serves every gateway. The app must be created with `rawBody: true` (see [Installation](/nestjs-myanmar-payments/installation#keep-the-raw-body)).
 
 ```ts
 // src/webhooks/webhooks.controller.ts
@@ -471,9 +446,6 @@ export class WebhooksService
 ```
 
 - The worker starts with the app (`onApplicationBootstrap`) and runs every `WEBHOOK_WORKER_INTERVAL_MS` (2000 by default; `0` turns it off, for example in tests that call `drain()` themselves).
-- The claim is an `UPDATE ... WHERE locked_until IS NULL OR locked_until < now`: when several instances run the worker, only one wins each row, and a crashed worker's claim expires after `LOCK_FOR` seconds.
-- `UPDATE orders ... WHERE paid_at IS NULL` keeps fulfillment idempotent even when two webhooks for one order are processed at once.
-- A row that fails `MAX_ATTEMPTS` times keeps `last_error` and stays unprocessed until you replay it.
 
 Register the controller, the worker and the database in your module, and call `app.enableShutdownHooks()` in `main.ts` so the worker stops cleanly:
 

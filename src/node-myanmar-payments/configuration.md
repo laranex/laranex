@@ -37,11 +37,7 @@ const kbz = new KbzPay(config);
 
 `error.message` reads `The kbz_pay configuration is missing [app_key].`
 
-`timeoutSeconds` is optional: when it is unset, `null` or blank, the default HTTP client gives up after 30 seconds (exported as `DEFAULT_TIMEOUT_SECONDS`). The time settings (`timeoutSeconds` when set, and Wave Money's `timeToLiveSeconds`) must be whole numbers greater than 0, and KBZ Pay's `timeToLiveMinutes` a whole number from 1 to 120. Any other value throws the same error with the message `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
-
-## Endpoints
-
-Every gateway URL is a required setting with no default. There is no switch between test and production: set production's URLs (see [Production Endpoints](#production-endpoints)) or the gateway's UAT ones (see [UAT Endpoints](#uat-endpoints)), or a proxy's. Each config object exposes the URL as a read-only property (`config.apiUrl`, `config.baseUrl`, …), without a trailing `/`.
+`timeoutSeconds` defaults to 30 seconds (`DEFAULT_TIMEOUT_SECONDS`) when unset, `null` or blank. Time settings take a whole number or its text. `timeoutSeconds` and Wave's `timeToLiveSeconds` must be greater than 0, and KBZ's `timeToLiveMinutes` must be 1 to 120. An invalid value throws `ConfigurationError`, e.g. `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
 ## Config Options
 
@@ -55,7 +51,7 @@ Every gateway URL is a required setting with no default. There is no switch betw
 | `apiUrl` | `string` | Yes | The API base URL, e.g. `KbzPayConfig.PRODUCTION_API_URL` |
 | `pwaUrl` | `string` | Yes | The PWA checkout URL, e.g. `KbzPayConfig.PRODUCTION_PWA_URL`. Normalized to end with `/`, e.g. `…/pwa/#/` |
 | `timeToLiveMinutes` | `number \| string` | Yes | Minutes the customer has to pay each order, 1 to 120. A payment's own `timeToLiveMinutes` overrides it. Anything else throws `The kbz_pay configuration [time_to_live_in_minutes] must be a whole number from 1 to 120.` |
-| `timeoutSeconds` | `number \| string` | No | Seconds before the default HTTP client gives up. Defaults to `30` when unset or blank; an invalid one is reported as `timeout_in_seconds` |
+| `timeoutSeconds` | `number \| string` | No | Seconds before the default HTTP client gives up. Default `30` |
 
 ### WaveMoneyConfig
 
@@ -67,7 +63,7 @@ Every gateway URL is a required setting with no default. There is no switch betw
 | `baseUrl` | `string` | Yes | The API base URL, e.g. `WaveMoneyConfig.PRODUCTION_URL`. Payments are requested at its `/payment` |
 | `baseRedirectUrl` | `string` | Yes | The host the customer is sent to, e.g. `WaveMoneyConfig.PRODUCTION_URL`. The customer approves the payment at its `/authenticate` |
 | `timeToLiveSeconds` | `number \| string` | Yes | Seconds the customer has to pay, greater than 0. A payment can override it with `WaveMoneyPaymentData`'s `timeToLiveSeconds` |
-| `timeoutSeconds` | `number \| string` | No | Seconds before the default HTTP client gives up. Defaults to `30` when unset or blank; an invalid one is reported as `timeout_in_seconds` |
+| `timeoutSeconds` | `number \| string` | No | Seconds before the default HTTP client gives up. Default `30` |
 
 ### AyaPayConfig
 
@@ -76,7 +72,7 @@ Every gateway URL is a required setting with no default. There is no switch betw
 | `appKey` | `string` | Yes | Public application key |
 | `appSecret` | `string` | Yes | Secret used for checksums |
 | `baseUrl` | `string` | Yes | The gateway base URL, e.g. `AyaPayConfig.PRODUCTION_URL` |
-| `timeoutSeconds` | `number \| string` | No | Seconds before the default HTTP client gives up. Defaults to `30` when unset or blank; an invalid one is reported as `timeout_in_seconds` |
+| `timeoutSeconds` | `number \| string` | No | Seconds before the default HTTP client gives up. Default `30` |
 
 ### YomaMmqrConfig
 
@@ -89,7 +85,7 @@ Every gateway URL is a required setting with no default. There is no switch betw
 | `apiVersion` | `string` | Yes | The `{version}` segment of Yoma's API paths, e.g. `v1rc` |
 | `webhookSecret` | `string` | Yes | Every callback must carry it in the `X-Webhook-Secret` header, compared in constant time |
 | `baseUrl` | `string` | Yes | The API base URL, e.g. `YomaMmqrConfig.PRODUCTION_URL` |
-| `timeoutSeconds` | `number \| string` | No | Seconds before the default HTTP client gives up. Defaults to `30` when unset or blank; an invalid one is reported as `timeout_in_seconds` |
+| `timeoutSeconds` | `number \| string` | No | Seconds before the default HTTP client gives up. Default `30` |
 
 ### CyberSourceConfig
 
@@ -102,6 +98,8 @@ Every gateway URL is a required setting with no default. There is no switch betw
 
 ## Production Endpoints
 
+URLs are required; set production's, the [UAT ones](#uat-endpoints) or a proxy's. `PRODUCTION_*` constants on the config classes name production's. Each config object exposes its URLs as read-only properties (`config.apiUrl`, `config.baseUrl`, …), trailing `/` removed (KBZ's `pwaUrl` always ends with `/`).
+
 ```env
 KBZ_PAY_BASE_URL=https://api.kbzpay.com/payment/gateway
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://wap.kbzpay.com/pgw/pwa/#/"
@@ -111,8 +109,6 @@ AYA_PAY_BASE_URL=https://pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://paymenthubapi.yomabank.com
 CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
 ```
-
-The URLs are named by static constants on the config classes, not used as defaults: `KbzPayConfig.PRODUCTION_API_URL`, `KbzPayConfig.PRODUCTION_PWA_URL`, `WaveMoneyConfig.PRODUCTION_URL` (both Wave URLs), and `PRODUCTION_URL` on `AyaPayConfig`, `YomaMmqrConfig` and `CyberSourceConfig`.
 
 ## UAT Endpoints
 
@@ -182,9 +178,7 @@ CYBER_SOURCE_SECRET_KEY=
 CYBER_SOURCE_BASE_URL=
 ```
 
-`KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` are required too; a payment's own `timeToLiveMinutes` or `timeToLiveSeconds` overrides them.
-
-`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR; unset or blank, it is 30 seconds. The package never reads files itself: load the `.env` file with your framework or with `node --env-file=.env` before `fromEnv()`.
+`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR. The package never reads files itself: load the `.env` file with your framework or with `node --env-file=.env` before `fromEnv()`.
 
 ## One Object for Every Gateway
 
@@ -226,7 +220,7 @@ payments.waveMoney();
 const fromEnv = MyanmarPayments.fromEnv(process.env);
 ```
 
-The keys `kbzPay`, `waveMoney`, `ayaPay`, `yomaMmqr` and `cyberSource` take the config objects or plain options, and the second argument takes the `fetch`, `httpClient` and `tokenCache` options below, shared by every gateway it builds. `payments.cyberSource()` returns the one `CyberSource` class.
+The keys `kbzPay`, `waveMoney`, `ayaPay`, `yomaMmqr` and `cyberSource` take the config objects or plain options, and the second argument takes the `fetch`, `httpClient` and `tokenCache` options below, shared by every gateway it builds. Each gateway exposes its config as `gateway.config`.
 
 ## HTTP Client
 
@@ -247,8 +241,6 @@ const kbz = KbzPay.fromEnv(process.env, {
   fetch: (input, init) => fetch(input, { ...init, dispatcher }),
 });
 ```
-
-A client you pass keeps its own timeout; the config's `timeoutSeconds` (30 seconds by default) only applies to the default client.
 
 `HttpClient` is a one-method interface. Throw on network failures; any status code is a normal response:
 
@@ -295,7 +287,7 @@ interface TokenCache {
 }
 ```
 
-Every method may be async. The default is a `MemoryTokenCache`, which lives as long as the process: create one `YomaMmqr` (or one `MyanmarPayments`) at startup and share it across requests. When you run several processes, implement the interface on top of Redis:
+Every method may be async. The default is a `MemoryTokenCache`, which lives as long as the process: create one `YomaMmqr` (or one `MyanmarPayments`) at startup and share it across requests; `clear()` empties it. When you run several processes, implement the interface on top of Redis:
 
 ```ts
 import { createClient } from 'redis';

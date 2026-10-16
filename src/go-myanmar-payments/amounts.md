@@ -17,8 +17,6 @@ myanmarpayments.MustParseAmount("1000.50")
 amount, err := myanmarpayments.ParseAmount(input)
 ```
 
-Payment data takes only an `Amount`, so a `float64` such as `10.5` is never accepted: write decimals as `MustParseAmount("10.50")` or parse them with `ParseAmount`.
-
 ## Parsing
 
 `ParseAmount` accepts only digits with an optional fractional part: `1000`, `1000.50`, `0.5`. It rejects signs, exponents, spaces and thousands separators (`-1`, `1e5`, ` 10`, `1,000`, `10.`, `.5`). Leading zeros of the whole part are removed (`007` becomes `7`); fractional digits are kept exactly as given (`10.50` stays `10.50`).

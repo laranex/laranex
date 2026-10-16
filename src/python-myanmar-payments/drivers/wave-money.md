@@ -82,41 +82,23 @@ def wave_checkout(request, order_id: int):
     return redirect(payment.url)
 ```
 
-Wave Money takes two URLs, both required: `base_url` (`WAVE_MONEY_BASE_URL`), where `initiate()` posts the payment request to `{base_url}/payment`, and `base_redirect_url` (`WAVE_MONEY_BASE_REDIRECT_URL`), where the customer is sent to `{base_redirect_url}/authenticate?transaction_id=…`. In production both are `WaveMoneyConfig.PRODUCTION_URL`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [UAT Endpoints](/python-myanmar-payments/configuration#uat-endpoints)).
+`initiate()` posts to `{base_url}/payment` and redirects to `{base_redirect_url}/authenticate?transaction_id=…`; see [Configuration](/python-myanmar-payments/configuration#production-endpoints) for both URLs.
 
 ### WaveMoneyPaymentData
 
 | Field | Type | Required | Rules |
 |---|---|---|---|
 | `order_id` | `str` | Yes | Your order ID: letters, digits, `_` and `-` only. One order can have several payment attempts |
-| `callback_url` | `str` | Yes | Absolute http or https URL that Wave posts the result to. Wave may require HTTPS with a CA-issued certificate in production |
+| `callback_url` | `str` | Yes | Absolute http or https URL that Wave posts the result to |
 | `return_url` | `str` | Yes | Absolute http or https URL Wave sends the customer back to. Not proof of payment |
 | `description` | `str` | Yes | Shown to the customer |
 | `items` | `Sequence[WaveMoneyItem]` | Yes | At least one item, as a `list` or `tuple` |
 | `amount` | `Amount \| int \| str \| Decimal` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). Unset charges the sum of the items. Wave only accepts MMK |
 | `merchant_reference_id` | `str` | No | Unique ID of this attempt: letters, digits, `_` and `-` only. Unset or empty means a random ID |
-| `merchant_name` | `str` | No | Business name shown on Wave's page for this payment. Unset uses `WaveMoneyConfig`'s `merchant_name`; a blank one is rejected |
-| `time_to_live_seconds` | `int` | No | Seconds the customer has to pay this payment, an `int` greater than 0 (not a `bool`, `float` or text). Unset uses `WaveMoneyConfig`'s `time_to_live_seconds` |
+| `merchant_name` | `str` | No | Business name shown on Wave's page for this payment. Unset uses `WaveMoneyConfig`'s `merchant_name` (also in the request hash); a blank one is rejected |
+| `time_to_live_seconds` | `int` | No | Seconds the customer has to pay this payment, an `int` greater than 0. Unset uses `WaveMoneyConfig`'s `time_to_live_seconds` (also in the request hash) |
 
 `WaveMoneyItem(name, amount)` has a `name` and an `amount` in whole kyat, greater than 0. The items are summed with exact `int` arithmetic, never floats; `WaveMoney.resolved_amount(data)` returns the total that will be charged as an `Amount` (`None` when an item amount is invalid).
-
-### Per-Payment Merchant Name and Time to Live
-
-`merchant_name` and `time_to_live_seconds` override the `WaveMoneyConfig` values for one payment, including in the request hash. The configured merchant name and time to live are still required and apply to every payment that leaves `merchant_name` or `time_to_live_seconds` unset.
-
-```python
-data = WaveMoneyPaymentData(
-    order_id=f"ORDER_{order.id}",
-    callback_url="https://shop.test/payments/wave/callback",
-    return_url=f"https://shop.test/orders/{order.id}",
-    description=f"Order #{order.id}",
-    items=[WaveMoneyItem(name="Concert ticket", amount=25000)],
-    merchant_name="My Shop Events",
-    time_to_live_seconds=600,
-)
-```
-
-A blank `merchant_name` raises `InvalidPaymentDataError` with `The merchant_name field is required.`, and a `time_to_live_seconds` below 1 with `The time_to_live_seconds field must be greater than 0.` Nothing is sent.
 
 ### Merchant Reference ID
 
@@ -158,7 +140,7 @@ Wave hashes the values joined with no separator, so a matching `hashValue` alone
 
 ## Responses
 
-What Wave Money puts in each field. See [Results](/python-myanmar-payments/references/results) and [PaymentCallback & Status](/python-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `None`. `raw` holds plain Python values; every JSON number is kept as its exact text in a `str` (`1000.50` stays `"1000.50"`), never a `float`.
+What Wave Money puts in each field. See [Results](/python-myanmar-payments/references/results) and [PaymentCallback & Status](/python-myanmar-payments/references/payment-callback) for the full classes.
 
 ### `initiate()` → `RedirectPayment` {#initiate-response}
 
@@ -207,4 +189,4 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 | `initiate()` | `ApiError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
 | `handle_callback()` | `SignatureVerificationError` | `hashValue` doesn't match, a hashed field holds an object or a list, `amount` isn't a decimal, both `orderId` and `merchantReferenceId` are empty, or one of them holds anything but letters, digits, `_` and `-` |
 
-`AsyncWaveMoney` raises the same errors. `http_status` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`gateway_code` is `VALIDATION_ERROR`). When Wave can't be reached or the request times out, `initiate()` raises `ApiError` with the original `httpx` error as `__cause__`.
+`AsyncWaveMoney` raises the same errors. `http_status` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`gateway_code` is `VALIDATION_ERROR`).

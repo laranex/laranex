@@ -157,7 +157,7 @@ if err == nil && result.IsSuccessful() {
 
 ## Responses
 
-What KBZ Pay puts in each field. See [Results](/goravel-myanmar-payments/references/results) and [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for the full types. `Raw` holds plain Go values (JSON numbers become `json.Number`s), while the typed fields such as `Amount` keep the exact text KBZ sent.
+What KBZ Pay puts in each field. See [Results](/goravel-myanmar-payments/references/results) and [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for the full types.
 
 ### `PWA()` → `*RedirectPayment` {#pwa-response}
 
@@ -215,8 +215,6 @@ Encoded as JSON, an `AppPayment` has `orderId`, `orderInfo`, `sign` and `signTyp
 | `Raw` | The verified `Request`: `appid`, `notify_time`, `merch_code`, `merch_order_id`, `mm_order_id`, `total_amount`, `trans_currency`, `trade_status`, `trans_end_time`, `callback_info`, `nonce_str`, `sign_type`, `sign` |
 | `Acknowledgement` | HTTP `200`, body `success`, `Content-Type: text/plain` |
 
-`payments.Acknowledge(ctx, callback)` writes `Acknowledgement` as the Goravel response. `HandleCallback()` takes the `*myanmarpayments.CallbackRequest` that `payments.CallbackRequestFromContext(ctx)` builds.
-
 ## Statuses
 
 | KBZ `trade_status` | `PaymentStatus` |
@@ -242,4 +240,4 @@ KBZ signs requests, the in-app `orderInfo` and notifications the same way: every
 | `Status()` | `*APIError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, e.g. for an unknown order |
 | `HandleCallback()` | `*SignatureVerificationError` | `sign` doesn't match, or a field holds an object or array |
 
-`*APIError` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `GatewayCode` and its `msg` in `GatewayMessage`. When KBZ can't be reached, the calls return an `*APIError` with `HTTPStatus` `0`.
+`*APIError` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `GatewayCode` and its `msg` in `GatewayMessage`.

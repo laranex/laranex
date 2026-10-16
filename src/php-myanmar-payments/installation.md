@@ -15,7 +15,7 @@ composer require laranex/php-myanmar-payments guzzlehttp/guzzle
 
 The package has no framework dependency. [`php-http/discovery`](https://github.com/php-http/discovery) finds the client you have installed: Guzzle, Symfony HttpClient or any other PSR-18 implementation. Guzzle is shown above; skip it if your project already has a client. You can also pass your own client, see [Configuration](/php-myanmar-payments/configuration#http-client).
 
-Every class is typed and checked with PHPStan at level 7. Import each class from its namespace:
+Import each class from its namespace:
 
 ```php
 use Laranex\PhpMyanmarPayments\Amount;
@@ -30,6 +30,8 @@ use Laranex\PhpMyanmarPayments\KbzPay\KbzPay;
 | `Laranex\PhpMyanmarPayments\Enums` | `PaymentStatus`, `PaymentFlow` |
 | `Laranex\PhpMyanmarPayments\Http` | `CallbackRequest`, `Acknowledgement` |
 | `Laranex\PhpMyanmarPayments\Exceptions` | Exceptions |
+| `Laranex\PhpMyanmarPayments\Contracts` | `PaymentGateway` |
+| `Laranex\PhpMyanmarPayments\Support` | `ArrayCache` |
 | `Laranex\PhpMyanmarPayments\KbzPay` | `KbzPay`, `KbzPayConfig`, `KbzPayPaymentData`, `KbzPaySigner` |
 | `Laranex\PhpMyanmarPayments\WaveMoney` | `WaveMoney`, `WaveMoneyConfig`, `WaveMoneyPaymentData`, `WaveMoneyItem` |
 | `Laranex\PhpMyanmarPayments\AyaPay` | `AyaPay`, `AyaPayConfig`, `AyaPayPaymentData`, `AyaPayMethod`, `AyaPayService` |

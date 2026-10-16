@@ -5,6 +5,8 @@ description: Field reference for PaymentCallback, PaymentStatusResult, Acknowled
 
 # PaymentCallback & Status
 
+On error the result is `nil`. A field the gateway didn't send is `""`.
+
 ## PaymentCallback
 
 Returned by every gateway's `HandleCallback()` (and AYA's `VerifyRedirect()`) once the signature is verified.
@@ -24,8 +26,6 @@ Build one yourself to test your own fulfillment code, as a struct literal: `&mya
 
 ## Acknowledgement
 
-A struct.
-
 | Field / Method | Type | Description |
 |---|---|---|
 | `Status` | `int` | HTTP status; `0` is written as `200` |
@@ -37,7 +37,7 @@ A struct.
 
 ## PaymentStatusResult
 
-Returned by `kbz.Status()`, `aya.Status()` and `yoma.Status()`. A struct.
+Returned by `kbz.Status()`, `aya.Status()` and `yoma.Status()`.
 
 | Field / Method | Type | Description |
 |---|---|---|
@@ -66,15 +66,4 @@ Returned by `kbz.Status()`, `aya.Status()` and `yoma.Status()`. A struct.
 
 ## PaymentStatus
 
-`type PaymentStatus string`: constants are strings, so they compare equal to their values and `string(status)` is the value.
-
-| Constant | Value |
-|---|---|
-| `StatusSuccessful` | `successful` |
-| `StatusPending` | `pending` |
-| `StatusFailed` | `failed` |
-| `StatusCanceled` | `canceled` |
-| `StatusExpired` | `expired` |
-| `StatusUnknown` | `unknown` |
-
-`myanmarpayments.PaymentStatuses()` lists every status. `status.IsFinal()` is `false` for `StatusPending` and `StatusUnknown`. `ResolveStatus(statuses, gatewayStatus)` maps a trimmed gateway value through a `map[string]PaymentStatus` and returns `StatusUnknown` when it is not listed.
+`type PaymentStatus string`; the values and their meanings are in [Callbacks & Status](/go-myanmar-payments/callbacks#paymentstatus). `myanmarpayments.PaymentStatuses()` lists every status, and `ResolveStatus(statuses, gatewayStatus)` maps a trimmed gateway value through a `map[string]PaymentStatus` and returns `StatusUnknown` when it is not listed.

@@ -13,6 +13,7 @@ Yoma MMQR is Yoma Bank's MMQR gateway: it issues ready-made QR images that custo
 | `yomaMmqr().renewQr(orderId)` | Generate a new QR for a checked-out order | [`QrPayment`](#renewqr-response) |
 | `yomaMmqr().status(reference)` | Check a QR's payment status | [`PaymentStatusResult`](#status-response) |
 | `yomaMmqr().handleCallback(request)` | Verify the callback | [`PaymentCallback`](#handlecallback-response) |
+| `yomaMmqr().forgetToken()` | Drop the cached access token | `Promise<void>` |
 
 [Responses](#responses) shows what Yoma MMQR puts in each result.
 
@@ -114,7 +115,7 @@ export class YomaMmqrCallbackController {
 }
 ```
 
-A bad signature answers `400` before the handler runs. The callback URL is registered with Yoma, not sent per order. Every callback must carry the required `YOMA_MMQR_WEBHOOK_SECRET` in the `X-Webhook-Secret` header, compared in constant time; a missing or wrong header fails verification. The hash is checked with HMAC-SHA256 keyed with your order number plus `YOMA_MMQR_WEBHOOK_HASHKEY`.
+The callback URL is registered with Yoma, not sent per order. Every callback must carry the required `YOMA_MMQR_WEBHOOK_SECRET` in the `X-Webhook-Secret` header, compared in constant time; a missing or wrong header fails verification. The hash is checked with HMAC-SHA256 keyed with your order number plus `YOMA_MMQR_WEBHOOK_HASHKEY`.
 
 ::: warning Callbacks carry no amount
 Yoma signs only `orderNumber` and `status`, and the callback has no amount (`callback.amount` is `undefined`). Before fulfilling, confirm the payment with `this.payments.yomaMmqr().status(reference)`, using the `reference` of the QR you created for the order's stored amount, rather than trusting the callback alone.
@@ -154,6 +155,7 @@ What Yoma MMQR puts in each property. See [Results](/nestjs-myanmar-payments/ref
 
 | Property / Method | Yoma MMQR value |
 |---|---|
+| `flow` | `qr` |
 | `orderId` | Your `orderId` (Yoma `orderNumber`) |
 | `qrString` | Always `undefined` |
 | `qrImage` | Yoma `qrString`, a base64 PNG of the payment slip. Always set |
@@ -166,7 +168,7 @@ What Yoma MMQR puts in each property. See [Results](/nestjs-myanmar-payments/ref
 
 ### `renewQr()` → `QrPayment` {#renewqr-response}
 
-The same values as [`initiate()`](#initiate-response) for the `orderId` you passed, with a new `qrImage`, `reference` and `expiresAt`. The previous `reference` stops answering status checks.
+The same values as [`initiate()`](#initiate-response) for the `orderId` you passed, with a new `qrImage`, `reference` and `expiresAt`.
 
 ### `status()` → `PaymentStatusResult` {#status-response}
 
@@ -191,8 +193,6 @@ The same values as [`initiate()`](#initiate-response) for the `orderId` you pass
 | `raw` | The verified body: `orderNumber`, `status`, `hashValue` |
 | `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
-`@AcknowledgeCallback()` (or `acknowledge(res, callback)`) sends `acknowledgement`. The gateway's `handleCallback()` takes a `CallbackRequest`; `this.payments.handleCallback('yoma-mmqr', request)` also accepts a Nest request.
-
 ## Statuses
 
 | Yoma value | `PaymentStatus` |
@@ -205,7 +205,7 @@ The same values as [`initiate()`](#initiate-response) for the `orderId` you pass
 
 ## Access Tokens
 
-Yoma authenticates with an OAuth token that lasts hours. The package caches it in the token cache (see [Configuration](/nestjs-myanmar-payments/configuration#cache)), shares one token request between concurrent calls, and fetches a new one, retrying once, when Yoma answers `401`. The shared token request is bounded by the HTTP client timeout rather than one call's `signal`, so aborting one call never fails the others. `await this.payments.yomaMmqr().forgetToken()` drops the cached token, e.g. after rotating the client secret.
+Yoma authenticates with an OAuth token that lasts hours. The package caches it in the token cache (see [Configuration](/nestjs-myanmar-payments/configuration#cache)), shares one token request between concurrent calls, and fetches a new one, retrying once, when Yoma answers `401`. The shared token request is bounded by the HTTP client timeout rather than one call's `signal`, so aborting one call never fails the others.
 
 The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>`, the same key every Laranex SDK uses, so services in different languages can share one cache (the cache store's own prefix still applies), for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits, so `28800.0` is 28800 seconds; a missing or non-positive value means 3600.
 

@@ -15,8 +15,6 @@ KBZ Pay is KBZ Bank's mobile wallet: customers pay in the KBZ Pay PWA, by scanni
 | `await kbz.status(orderId)` | Query an order | [`PaymentStatusResult`](#status-response) |
 | `kbz.handleCallback(request)` | Verify the notification | [`PaymentCallback`](#handlecallback-response) |
 
-[Responses](#responses) shows what KBZ Pay puts in each result.
-
 ## How it works
 
 Every KBZ Pay flow starts with the same precreate call and ends with KBZ's signed notification.
@@ -130,7 +128,7 @@ if (result.isSuccessful()) {
 
 ## Responses
 
-What KBZ Pay puts in each field. See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `undefined`. `raw` holds plain JavaScript values, with JSON numbers kept as their exact text in a `string` (`1000.50` stays `"1000.50"`).
+See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & Status](/node-myanmar-payments/references/payment-callback) for the full classes.
 
 ### `pwa()` → `RedirectPayment` {#pwa-response}
 
@@ -150,7 +148,7 @@ What KBZ Pay puts in each field. See [Results](/node-myanmar-payments/references
 | `orderId` | Your `data.orderId` |
 | `qrString` | KBZ `qrCode`, a payload to encode into a QR image. Always set |
 | `qrImage` | Always `undefined` |
-| `expiresAt` | Now + the time to live: `timeToLiveMinutes`, else `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`. Always set, because the configured time to live is required |
+| `expiresAt` | Now + the time to live: `timeToLiveMinutes`, else `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`. Always set |
 | `reference` | KBZ `prepay_id`. Always set |
 | `raw` | The `precreate` response, as for `pwa()` plus `qrCode` |
 | `qrImageDataUri()` | Always `undefined`, as `qrImage` is |
@@ -215,4 +213,4 @@ KBZ signs requests, the in-app `orderInfo` and notifications the same way: every
 | `status()` | `ApiError` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, e.g. for an unknown order |
 | `handleCallback()` | `SignatureVerificationError` | `sign` doesn't match, or a field holds an object or array |
 
-The async calls reject with these errors. `ApiError` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `gatewayCode` and its `msg` in `gatewayMessage`. When KBZ can't be reached, the request times out or the `signal` aborts, the calls throw `ApiError` with the original error as `cause`.
+`ApiError` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `gatewayCode` and its `msg` in `gatewayMessage`.

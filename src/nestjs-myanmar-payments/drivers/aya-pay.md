@@ -115,8 +115,6 @@ export class AyaPayCheckoutController {
 | `description` | `string` | No | Shown to the customer, no `:` |
 | `userRefs` | `readonly string[]` | No | Up to 5 of your own values, echoed back in the callback, none containing `:` |
 
-AYA joins the signed values with `:`, so `orderId`, `description` and `userRefs` can't contain one.
-
 ### Form Encoding
 
 AYA expects the form as `multipart/form-data`. `payment.enctype` carries it; use it if you [render the form yourself](/nestjs-myanmar-payments/payment-flows#form-payments).
@@ -150,17 +148,9 @@ export class AyaPayCallbackController {
 }
 ```
 
-A bad signature answers `400` before the handler runs. AYA signs only the fields present in its payload (wallet payments leave out the card fields); the package verifies them in the order the specification lists.
+AYA signs only the fields present in its payload (wallet payments leave out the card fields); the package verifies them in the order the specification lists.
 
-Because AYA joins the signed values with `:`, a matching `checkSum` alone could let a value be re-split into other fields. A payload is therefore only accepted when, besides the checksum:
-
-- no signed value contains `:`, except `dateTime`, which must have the form `YYYY-MM-DD HH:MM:SS`;
-- `merchOrderId` and `tranId` are present;
-- `amount` is a decimal, e.g. `10000` or `10000.00`;
-- the currency code is `104` (MMK);
-- `statusCode` is two digits.
-
-Anything else throws `SignatureVerificationError` (a `400` from `@VerifiedCallback()`). The same checks apply to the return page and to `status()`.
+Besides the checksum, a payload is rejected (`400`) unless no signed value except `dateTime` (`YYYY-MM-DD HH:MM:SS`) contains `:`, `merchOrderId` and `tranId` are present, `amount` is a decimal, the currency is `104` and `statusCode` is two digits. The same checks apply to `verifyRedirect()` and `status()`.
 
 ## The Return Page
 
@@ -204,7 +194,7 @@ export class AyaPayReturnController {
 }
 ```
 
-A `+` in the base64 `payload` that reached you as a space (an unencoded query string) is read back as `+` before decoding; the checksum is still verified. The `payload` may be correctly padded or carry no padding at all; partial padding, the URL-safe alphabet, line breaks and text that isn't UTF-8 are rejected. Still fulfill orders from the backend callback.
+Still fulfill orders from the backend callback.
 
 ## Status Checks
 
@@ -224,8 +214,6 @@ What AYA Pay puts in each property. See [Results](/nestjs-myanmar-payments/refer
 
 ### `services()` → `AyaPayService[]` {#services-response}
 
-`AyaPayService` is AYA-only, so it is listed in full here.
-
 | Property / Method | AYA Pay value |
 |---|---|
 | `name` | AYA `name`, e.g. `AYA Pay`. Falls back to `key` |
@@ -241,10 +229,12 @@ Entries AYA sends without a `key` are skipped.
 
 | Property / Method | AYA Pay value |
 |---|---|
+| `flow` | `form` |
 | `orderId` | Your `orderId` |
 | `action` | `{baseUrl}/v1/payment/request`, e.g. `https://pgw.ayainnovation.com/v1/payment/request` |
 | `fields` | The signed fields below. Post them unchanged |
 | `enctype` | `multipart/form-data` |
+| `field(name)`, `values()` | One field's value; all fields as an object |
 | `toHtml(nonce?)` | A full HTML page that posts `fields` to `action` on load; `nonce` is added to its inline script |
 
 `this.payments.autoSubmitUrl(payment)` returns an encrypted link to the module's form route, e.g. `https://shop.test/myanmar-payments/form?payload=…`. It expires after `formLink.ttlMinutes`; the call throws when `formRoute.enabled` is `false`.
@@ -292,13 +282,9 @@ AYA leaves out the fields that don't apply (wallet payments have no card fields)
 | `raw` | The verified, decoded payload, with the same keys as `status()` |
 | `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
-`@AcknowledgeCallback()` (or `acknowledge(res, callback)`) sends `acknowledgement`.
-
 ### `verifyRedirect()` → `PaymentCallback` {#verifyredirect-response}
 
 The same values as [`handleCallback()`](#handlecallback-response), read from the signed `payload` and `checkSum` AYA adds to your return URL (query string first, then the body). There is nothing to acknowledge: return your own page.
-
-`handleCallback()` and `verifyRedirect()` take a `CallbackRequest`; build one from a Nest request with `callbackRequestFrom(req)`, or call `this.payments.handleCallback('aya-pay', req)`.
 
 ## Statuses
 
@@ -318,6 +304,6 @@ The same values as [`handleCallback()`](#handlecallback-response), read from the
 | `services()` | `ApiError` | AYA answers with an HTTP error or a `status` other than `00` |
 | `status()` | `ApiError` | AYA answers with an HTTP error or a `status` other than `00`, e.g. `20` Transaction not found |
 | `status()` | `SignatureVerificationError` | The enquiry payload's `checkSum` doesn't match, or the payload is malformed (see [Handling Callbacks](#handling-callbacks)) |
-| `handleCallback()`, `verifyRedirect()` | `SignatureVerificationError` | `payload` is missing or not base64 JSON, a signed field holds an object or array, `checkSum` doesn't match, or a signed value breaks the rules in [Handling Callbacks](#handling-callbacks) (a `:` outside `dateTime`, a missing `merchOrderId` or `tranId`, a non-decimal `amount`, a currency other than `104`, a `statusCode` that isn't two digits) |
+| `handleCallback()`, `verifyRedirect()` | `SignatureVerificationError` | `payload` is missing or not base64 JSON, a signed field holds an object or array, `checkSum` doesn't match, or a signed value breaks the rules in [Handling Callbacks](#handling-callbacks) |
 
 `ApiError` carries AYA's `status` (e.g. `20` Transaction not found, `09` Duplicate order ID) in `gatewayCode` and its `message` in `gatewayMessage`. When AYA can't be reached, the calls throw `ApiError` with `httpStatus` `0`.

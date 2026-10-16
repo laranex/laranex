@@ -65,27 +65,16 @@ Signatures are checked against what the gateway actually sent, so build the requ
 
 | Framework | `body` | `headers` | `query` |
 |---|---|---|---|
-| Plain PHP | `CallbackRequest::fromGlobals()` reads all three | | |
-| PSR-7 | `CallbackRequest::fromPsr7($request)` reads all three | | |
 | Symfony | `$request->getContent()` | `$request->headers->all()`, each list joined with `, ` | `$request->query->all()` |
 
-| Member | Description |
-|---|---|
-| `body` | The raw body, exactly as received |
-| `headers()` | Headers as given |
-| `query` | Query string parameters |
-| `header($name)` | One header, case-insensitively, or `null` |
-| `parsedBody()` | The body decoded as JSON (when it is a JSON object) or a urlencoded form (the first value of a repeated key); JSON numbers keep their exact text as strings |
-| `input()` | The parsed body merged over the query string |
-| `queryInput()` | The query string merged over the parsed body |
+See [CallbackRequest](/php-myanmar-payments/references/payment-callback#callbackrequest) for every member.
 
 ## Rules
 
 - **Verify, then trust.** A callback that fails verification throws `SignatureVerificationException`, and so does one whose signed or hashed field holds an object or array instead of a single value, since no gateway signs nested values. Never act on its payload; `raw` carries the unverified data for logging only.
-- **Check the amount.** Compare `$callback->amount` (the exact text the gateway sent) with your order before fulfilling, e.g. with `Amount::equals()`. Yoma MMQR callbacks carry no amount: confirm those with [`status()`](/php-myanmar-payments/drivers/yoma-mmqr#status-checks).
+- **Check the amount.** Compare `$callback->amount` (the exact text the gateway sent) with your order before fulfilling, e.g. with `Amount::equals()`. Yoma MMQR callbacks carry no amount: match `orderId` to your stored order and trust its stored amount.
 - **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Money), the package also rejects values that could be re-split into other fields. See each driver's Handling Callbacks section.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
-- **Acknowledge.** `$callback->acknowledgement` holds the response the gateway expects (`status`, `body`, `headers`), e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
 
 ## Acknowledging
 
@@ -97,26 +86,11 @@ Signatures are checked against what the gateway actually sent, so build the requ
 | Symfony | `new Response($ack->body, $ack->status, $ack->headers)` |
 | PSR-7 | `$responseFactory->createResponse($ack->status)`, then write `$ack->body` and add each header |
 
-`Acknowledgement::default()` is the empty `200 text/plain` response most gateways expect.
-
 Gateway callbacks are server-to-server posts: exclude these routes from CSRF protection.
 
 ## PaymentStatus
 
-Every gateway's own status values are mapped onto one backed enum. The original value stays in `$callback->gatewayStatus`.
-
-| Case | Value | Meaning |
-|---|---|---|
-| `PaymentStatus::Successful` | `successful` | The customer paid. The only status that means money was collected. |
-| `PaymentStatus::Pending` | `pending` | Still in progress or waiting on the customer. |
-| `PaymentStatus::Failed` | `failed` | Attempted and failed or rejected. |
-| `PaymentStatus::Canceled` | `canceled` | Canceled or closed before completing. |
-| `PaymentStatus::Expired` | `expired` | The payment window ran out. |
-| `PaymentStatus::Unknown` | `unknown` | A status this package does not recognize yet. Inspect `gatewayStatus`. |
-
-Cases are backed by strings, so `$callback->status->value` is the value and `PaymentStatus::from('successful')` reads it back. `$status->isFinal()` is `false` for `Pending` and `Unknown`. Unknown statuses never throw.
-
-Each gateway page lists its exact mapping.
+Every gateway's own status values are mapped onto one `PaymentStatus` enum; the original value stays in `$callback->gatewayStatus`, and each gateway page lists its exact mapping. Only `Successful` means money was collected; `$status->isFinal()` is `false` for `Pending` and `Unknown`, and unknown statuses never throw. See [PaymentStatus](/php-myanmar-payments/references/payment-callback#paymentstatus) for every case.
 
 ## Status Checks
 

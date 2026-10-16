@@ -27,7 +27,7 @@ The package verifies a webhook and builds the acknowledgement; what you do with 
   ]"
 />
 
-None of this is part of the package: copy the code into your app and adapt the fulfillment to your own `Order` model. It needs a real queue (`QUEUE_CONNECTION=database`, `redis`, ...) and a cache store that supports [atomic locks](https://laravel.com/docs/cache#atomic-locks).
+It needs a real queue (`QUEUE_CONNECTION=database`, `redis`, ...) and a cache store that supports [atomic locks](https://laravel.com/docs/cache#atomic-locks).
 
 ## Migration
 
@@ -326,8 +326,6 @@ Schedule::command('model:prune', [
 
 On Laravel 10, schedule `model:prune` in `app/Console/Kernel.php` instead: `$schedule->command('model:prune', ['--model' => [PaymentWebhook::class]])->daily();`.
 
-Find failed rows with `PaymentWebhook::whereNull('processed_at')->where('verified', true)->get()`, and rejected ones with `where('verified', false)`.
-
 ## Testing
 
 Fake the queue to check that the webhook is stored and acknowledged, then run the job yourself:
@@ -350,5 +348,3 @@ it('stores, acknowledges and processes a webhook', function () {
     expect(PaymentWebhook::sole()->processed_at)->not->toBeNull();
 });
 ```
-
-To send a signed payload, compute the gateway's signature in the test with the secret from your test configuration, as described on each gateway's page.

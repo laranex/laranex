@@ -45,10 +45,9 @@ AYA posts the result to your callback URL and also signs the query string it add
 import "github.com/laranex/go-myanmar-payments/v4/ayapay"
 
 aya, err := ayapay.New(ayapay.Config{
-	AppKey:         "...",
-	AppSecret:      "...",
-	BaseURL:        ayapay.ProductionURL,
-	TimeoutSeconds: 30,
+	AppKey:    "...",
+	AppSecret: "...",
+	BaseURL:   ayapay.ProductionURL,
 }, nil)
 if err != nil {
 	return err
@@ -120,10 +119,6 @@ io.WriteString(w, payment.HTML())
 | `UserRefs` | `[]string` | No | Up to 5 of your own values, echoed back in the callback, none containing `:` |
 
 AYA joins the signed values with `:`, so `OrderID`, `Description` and `UserRefs` can't contain one. A `:` in a user ref is reported under its index, e.g. `userRefs.0`.
-
-### Form Encoding
-
-AYA expects the form as `multipart/form-data`. `payment.Enctype` carries it; use it if you [render the form yourself](/go-myanmar-payments/payment-flows#form-payments).
 
 ## Handling Callbacks
 
@@ -220,7 +215,7 @@ if result.IsSuccessful() {
 
 ## Responses
 
-What AYA Pay puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. On error the result is `nil`. A field the gateway didn't send is `""`. `Raw` holds plain Go values (JSON numbers become `json.Number`s), while the typed fields such as `Amount` keep the exact text AYA sent.
+What AYA Pay puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs.
 
 ### `Services()` → `[]ayapay.Service` {#services-response}
 
@@ -263,7 +258,7 @@ Entries AYA sends without a `key` are skipped.
 | `overrideFrontendRedirectUrl` | `data.ReturnURL`, `""` when unset |
 | `checkSum` | HMAC-SHA256 of the values above joined with `:` |
 
-`Initiate` makes no HTTP call, so it takes no context. `FormPayment` has no `Raw`: nothing is sent to AYA until the customer's browser posts the form.
+`FormPayment` has no `Raw`: nothing is sent to AYA until the customer's browser posts the form.
 
 ### `Status()` → `*myanmarpayments.PaymentStatusResult` {#status-response}
 
@@ -314,4 +309,4 @@ The same values as [`HandleCallback()`](#handlecallback-response), read from the
 | `Status()` | `*SignatureVerificationError` | The enquiry payload's `checkSum` doesn't match, or the payload is malformed (see [Handling Callbacks](#handling-callbacks)) |
 | `HandleCallback()`, `VerifyRedirect()` | `*SignatureVerificationError` | `payload` is missing or not base64 JSON, a signed field holds an object or array, `checkSum` doesn't match, or a signed value breaks the rules in [Handling Callbacks](#handling-callbacks) (a `:` outside `dateTime`, a missing `merchOrderId` or `tranId`, a non-decimal `amount`, a currency other than `104`, a `statusCode` that isn't two digits) |
 
-The error types live in the root `myanmarpayments` package. `*APIError` carries AYA's `status` (e.g. `20` Transaction not found, `09` Duplicate order ID) in `GatewayCode` and its `message` in `GatewayMessage`. When AYA can't be reached or `ctx` is canceled, the calls return `*APIError`, which unwraps to the cause (`errors.Is(err, context.DeadlineExceeded)`).
+`*APIError` carries AYA's `status` (e.g. `20` Transaction not found, `09` Duplicate order ID) in `GatewayCode` and its `message` in `GatewayMessage`.

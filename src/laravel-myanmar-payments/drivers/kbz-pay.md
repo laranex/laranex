@@ -15,8 +15,6 @@ KBZ Pay is KBZ Bank's mobile wallet: customers pay in the KBZ Pay PWA, by scanni
 | `kbzPay()->status($orderId)` | Query an order | [`PaymentStatusResult`](#status-response) |
 | `kbzPay()->handleCallback($request)` | Verify the notification | [`PaymentCallback`](#handlecallback-response) |
 
-[Responses](#responses) shows what KBZ Pay puts in each result.
-
 ## How it works
 
 Every KBZ Pay flow starts with the same precreate call and ends with KBZ's signed notification.
@@ -124,7 +122,7 @@ if ($result->isSuccessful()) {
 
 ## Responses
 
-What KBZ Pay puts in each property. See [Results](/laravel-myanmar-payments/references/results) and [PaymentCallback & Status](/laravel-myanmar-payments/references/payment-callback) for the full classes. `raw` holds plain PHP values (JSON numbers stay `string`s with their exact text), while the typed properties such as `amount` keep the exact text KBZ sent.
+What KBZ Pay puts in each property. See [Results](/laravel-myanmar-payments/references/results) and [PaymentCallback & Status](/laravel-myanmar-payments/references/payment-callback) for the full classes.
 
 ### `pwa()` → `RedirectPayment` {#pwa-response}
 
@@ -181,8 +179,6 @@ What KBZ Pay puts in each property. See [Results](/laravel-myanmar-payments/refe
 | `raw` | The verified `Request`: `appid`, `notify_time`, `merch_code`, `merch_order_id`, `mm_order_id`, `total_amount`, `trans_currency`, `trade_status`, `trans_end_time`, `callback_info`, `nonce_str`, `sign_type`, `sign` |
 | `acknowledgement` | HTTP `200`, body `success`, `Content-Type: text/plain` |
 
-`MyanmarPayments::acknowledge($callback)` turns `acknowledgement` into a `CallbackResponse` (`Responsable`). `handleCallback()` accepts an `Illuminate\Http\Request` or a `CallbackRequest`.
-
 ## Statuses
 
 | KBZ `trade_status` | `PaymentStatus` |
@@ -208,4 +204,4 @@ KBZ signs requests, the in-app `orderInfo` and notifications the same way: every
 | `status()` | `ApiException` | KBZ answers with an HTTP error, `result` other than `SUCCESS` or `code` other than `0`, e.g. for an unknown order |
 | `handleCallback()` | `SignatureVerificationException` | `sign` doesn't match, or a field holds an object or array |
 
-`ApiException` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `gatewayCode` and its `msg` in `gatewayMessage`. When KBZ can't be reached, the calls throw `ApiException` with `httpStatus` `0`.
+`ApiException` carries KBZ's `code` (e.g. `ORDER_ID_USED`, `AOP08508`) in `gatewayCode` and its `msg` in `gatewayMessage`.

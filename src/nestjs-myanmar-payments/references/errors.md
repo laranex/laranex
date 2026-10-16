@@ -45,7 +45,7 @@ try {
 
 ## SignatureVerificationError
 
-`raw` holds the unverified payload. Log it, never act on it. `@VerifiedCallback()` turns it into `400 Bad Request`. Besides a signature mismatch or a nested value in a signed field, it is thrown for signed values that are malformed: an AYA Pay value holding `:`, a CyberSource `signed_field_names` that doesn't sign itself or an unknown `decision`, a Wave Money amount or ID out of format.
+`raw` holds the unverified payload. Log it, never act on it. `@VerifiedCallback()` turns it into `400 Bad Request`.
 
 ## ConfigurationError
 

@@ -19,8 +19,6 @@ Or copy `skills/go-myanmar-payments` from the [repository](https://github.com/la
 
 Integrate Myanmar payment gateways (KBZ Pay, Wave Money, AYA Pay, Yoma MMQR, CyberSource) in a Go service with github.com/laranex/go-myanmar-payments/v4.
 
-It is written from the package source and kept in the repository next to the code, so agents follow the same API, configuration and conventions these docs describe.
-
 ## Keeping it current
 
-The skill lives in the package repository and is versioned with it, so it always describes the release you install. When you update Go Myanmar Payments, update the skill the same way you installed it.
+When you update Go Myanmar Payments, update the skill the same way you installed it.

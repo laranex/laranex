@@ -92,10 +92,6 @@ def yoma_checkout(request, order_id: int):
 | `amount` | `Amount \| int \| str \| Decimal` | Yes | Whole kyat, greater than 0, e.g. `10000` or `Amount.kyat(10000)`. Yoma documents no decimals or currency |
 | `description` | `str` | Yes | At most 50 characters |
 
-### QR Image
-
-`qr_image` is an already rendered base64 PNG of the payment slip: display it as is, no QR library needed.
-
 ## Handling Callbacks
 
 ```python
@@ -125,10 +121,10 @@ def yoma_callback(request):
     return HttpResponse(ack.body, status=ack.status, headers=ack.headers)
 ```
 
-The callback URL is registered with Yoma, not sent per order. Every callback must carry the configured `webhook_secret` in the `X-Webhook-Secret` header, compared in constant time; a missing or wrong header fails verification. The hash is checked with HMAC-SHA256 keyed with your order number plus `webhook_hash_key`.
+The callback URL is registered with Yoma, not sent per order. Every callback must carry the configured `webhook_secret` in the `X-Webhook-Secret` header; a missing or wrong header fails verification. The hash is checked with HMAC-SHA256 keyed with your order number plus `webhook_hash_key`.
 
 ::: warning Callbacks carry no amount
-Yoma signs only `orderNumber` and `status`, and the callback has no amount (`callback.amount` is `None`). Before fulfilling, confirm the payment with `yoma.status(reference)`, using the `reference` of the QR you created for the order's stored amount, rather than trusting the callback alone.
+Yoma signs only `orderNumber` and `status`, and the callback has no amount (`callback.amount` is `None`). Before fulfilling, confirm the payment with `yoma.status(reference)`, using the `reference` of the QR you created for the order's stored amount, rather than trusting the callback alone. The status result has no amount either, so trust your stored amount.
 :::
 
 ## QR Lifetime and Renewal
@@ -140,8 +136,6 @@ payment = yoma.renew_qr(f"ORDER_{order.id}")
 
 # Store the new payment.reference: the previous one stops working.
 ```
-
-Each renewal retires the previous `reference`; only the newest one answers status checks.
 
 ## Status Checks
 
@@ -157,7 +151,7 @@ if result.is_successful():
 
 ## Responses
 
-What Yoma MMQR puts in each field. See [Results](/python-myanmar-payments/references/results) and [PaymentCallback & Status](/python-myanmar-payments/references/payment-callback) for the full classes. A field the gateway didn't send is `None`. `raw` holds plain Python values; every JSON number is kept as its exact text in a `str` (`1000.50` stays `"1000.50"`), never a `float`.
+What Yoma MMQR puts in each field. See [Results](/python-myanmar-payments/references/results) and [PaymentCallback & Status](/python-myanmar-payments/references/payment-callback) for the full classes.
 
 ### `initiate()` → `QrPayment` {#initiate-response}
 
@@ -227,4 +221,4 @@ The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(base_url|cli
 | `status()` | `ApiError` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
 | `handle_callback()` | `SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong, `orderNumber` is missing, `status` holds an object or a list, or `hashValue` doesn't match |
 
-`AsyncYomaMmqr` raises the same errors. Yoma reports business errors with HTTP 200 and an `errorCode`; `ApiError` carries it in `gateway_code` and Yoma's `errorDescription` in `gateway_message`. When Yoma can't be reached or the request times out, the calls raise `ApiError` with the original `httpx` error as `__cause__`.
+`AsyncYomaMmqr` raises the same errors. Yoma reports business errors with HTTP 200 and an `errorCode`; `ApiError` carries it in `gateway_code` and Yoma's `errorDescription` in `gateway_message`.

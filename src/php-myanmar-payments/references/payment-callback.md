@@ -20,7 +20,7 @@ Returned by every gateway's `handleCallback()` (and AYA's `verifyRedirect()`) on
 | `acknowledgement` | `Acknowledgement` | The response the gateway expects |
 | `isSuccessful()` | `bool` | `status === PaymentStatus::Successful` |
 
-Build one yourself to test your own fulfillment code, with named arguments: `new PaymentCallback(orderId: ..., status: ..., gatewayStatus: ..., gatewayReference: null, amount: null, raw: [], acknowledgement: Acknowledgement::default())`. `status` takes a `PaymentStatus`, and `acknowledgement` defaults to `Acknowledgement::default()`.
+Build one yourself to test your own fulfillment code, with named arguments: `new PaymentCallback(orderId: ..., status: ..., gatewayStatus: ..., gatewayReference: null, amount: null, raw: [], acknowledgement: Acknowledgement::default())`.
 
 ## Acknowledgement
 
@@ -69,13 +69,13 @@ Returned by `$kbz->status()`, `$aya->status()` and `$yoma->status()`. A final cl
 
 `enum PaymentStatus: string` in `Laranex\PhpMyanmarPayments\Enums`: `$status->value` is the value and `PaymentStatus::from($value)` reads it back.
 
-| Case | Value |
-|---|---|
-| `PaymentStatus::Successful` | `successful` |
-| `PaymentStatus::Pending` | `pending` |
-| `PaymentStatus::Failed` | `failed` |
-| `PaymentStatus::Canceled` | `canceled` |
-| `PaymentStatus::Expired` | `expired` |
-| `PaymentStatus::Unknown` | `unknown` |
+| Case | Value | Meaning |
+|---|---|---|
+| `PaymentStatus::Successful` | `successful` | The customer paid. The only status that means money was collected |
+| `PaymentStatus::Pending` | `pending` | Still in progress or waiting on the customer |
+| `PaymentStatus::Failed` | `failed` | Attempted and failed or rejected |
+| `PaymentStatus::Canceled` | `canceled` | Canceled or closed before completing |
+| `PaymentStatus::Expired` | `expired` | The payment window ran out |
+| `PaymentStatus::Unknown` | `unknown` | A status this package does not recognize yet. Inspect `gatewayStatus` |
 
 `PaymentStatus::cases()` lists every status. `$status->isFinal()` is `false` for `Pending` and `Unknown`. `PaymentStatus::resolve($statuses, $gatewayStatus)` maps a trimmed gateway value through an array and returns `PaymentStatus::Unknown` when it is not listed.

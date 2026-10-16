@@ -178,7 +178,7 @@ it('verifies a KBZ Pay callback', function () {
 
 A modified payload must be rejected: change `total_amount` after signing and `handleCallback()` throws `SignatureVerificationException`. To exercise your real callback route, post the same JSON with your framework's test client, e.g. Symfony's `$client->request('POST', '/payments/kbz/callback', server: ['CONTENT_TYPE' => 'application/json'], content: $body)` or Slim's `$app->handle()` with a PSR-7 server request carrying the body.
 
-The other gateways sign with HMAC-SHA256 over documented fields, as described on their [gateway pages](/php-myanmar-payments/drivers/wave-money). To replay a call you stored, rebuild it from the stored raw body and headers: `new CallbackRequest($storedBody, $storedHeaders)`.
+The other gateways sign with HMAC-SHA256 over documented fields, as described on their [gateway pages](/php-myanmar-payments/drivers/wave-money). To replay a call you stored, rebuild it from the stored raw body and headers: `new CallbackRequest($storedBody, $storedHeaders)`. Yoma MMQR callbacks also need the configured secret header: `CallbackRequest::fromArray($payload, ['X-Webhook-Secret' => $secret])`.
 
 ## Testing Your Own Logic
 

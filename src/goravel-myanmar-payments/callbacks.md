@@ -74,7 +74,7 @@ facades.Route().Post("/payments/kbz/callback", func(
 })
 ```
 
-`yourapp/app/facades` is the `facades` package Goravel generates in your app; replace `yourapp` with your module name. Gateways post from their own servers, so keep callback routes free of CSRF and authentication middleware.
+Gateways post from their own servers, so keep callback routes free of CSRF and authentication middleware.
 
 ## Callback Helpers
 
@@ -96,11 +96,9 @@ Signatures are computed over the exact bytes the gateway sent, so always build t
 | JSON (KBZ Pay, Wave Money, Yoma MMQR) | The body byte for byte |
 | `application/x-www-form-urlencoded` or `multipart/form-data` (AYA Pay, CyberSource) | Goravel's gin driver parses form bodies before your handler runs, which consumes them. The body is rebuilt from the parsed form fields as urlencoded and `Content-Type` says so. These gateways sign field values, so the result verifies the same |
 
-A body is read as JSON only when it is a single JSON object; any other body is read as a urlencoded form, skipping a malformed pair.
-
 ### Body Size Limit
 
-Gateway callbacks are a few kilobytes at most. `CallbackRequestFromContext` reads at most `payments.MaxCallbackBodyBytes` (64 KiB) and returns `payments.ErrCallbackBodyTooLarge` for a larger body, or a larger form rebuilt from parsed fields; answer it with `413`:
+Answer `payments.ErrCallbackBodyTooLarge` with `413`:
 
 ```go
 request, err := payments.CallbackRequestFromContext(ctx)
@@ -109,7 +107,7 @@ if errors.Is(err, payments.ErrCallbackBodyTooLarge) {
 }
 ```
 
-Goravel parses form bodies before your handler runs, so this check can't stop a large form from being read. Keep a body size limit on your server or in middleware as well.
+Goravel parses form bodies before your handler runs, so keep a body size limit on your server or in middleware as well.
 
 ## Rules
 
@@ -152,7 +150,7 @@ When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Money and Cyber
   ]"
 />
 
-When a callback is late or missing, ask the gateway directly. Status checks return a `*PaymentStatusResult` with the same `Status`, `GatewayStatus`, `GatewayReference` and `Amount` fields.
+Status checks return a `*PaymentStatusResult` with the same `Status`, `GatewayStatus`, `GatewayReference` and `Amount` fields.
 
 | Gateway | Call |
 |---|---|

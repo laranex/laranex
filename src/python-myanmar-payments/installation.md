@@ -31,24 +31,13 @@ The package is fully typed (`py.typed`, checked with `mypy --strict`). Import ev
 from python_myanmar_payments import Amount, CallbackRequest, KbzPay
 ```
 
-The root package exports every public name. Each gateway also has its own module, which exports only that gateway's classes:
-
-| Module | Contents |
-|---|---|
-| `python_myanmar_payments` | Everything below, plus `Amount`, results, `PaymentCallback`, `PaymentStatus`, `CallbackRequest`, `Acknowledgement`, errors, `TokenCache`, `AsyncTokenCache`, `MemoryTokenCache` and the `MyanmarPayments` / `AsyncMyanmarPayments` facades |
-| `python_myanmar_payments.kbz_pay` | `KbzPay`, `AsyncKbzPay`, `KbzPayConfig`, `KbzPayPaymentData`, `KbzPaySigner` |
-| `python_myanmar_payments.wave_money` | `WaveMoney`, `AsyncWaveMoney`, `WaveMoneyConfig`, `WaveMoneyPaymentData`, `WaveMoneyItem` |
-| `python_myanmar_payments.aya_pay` | `AyaPay`, `AsyncAyaPay`, `AyaPayConfig`, `AyaPayPaymentData`, `AyaPayMethod`, `AyaPayService` |
-| `python_myanmar_payments.yoma_mmqr` | `YomaMmqr`, `AsyncYomaMmqr`, `YomaMmqrConfig`, `YomaMmqrPaymentData` |
-| `python_myanmar_payments.cyber_source` | `CyberSource`, `CyberSourceConfig`, `CyberSourcePaymentData`, `CyberSourceTransactionType` |
-
-Both paths name the same classes, so `KbzPay` from the module and from the root are the same class. Modules whose names start with `_` are internal.
+The root package exports every public name. Each gateway also has its own module (`python_myanmar_payments.kbz_pay`, …) exporting only its classes; `_`-prefixed modules are internal.
 
 ## Sync and Async
 
 Every gateway that calls an API has a sync class and an async twin with the same methods, awaited:
 
-| Sync | Async | Network calls |
+| Sync | Async | Awaited on the async class |
 |---|---|---|
 | `KbzPay` | `AsyncKbzPay` | `pwa()`, `qr()`, `app()`, `status()` |
 | `WaveMoney` | `AsyncWaveMoney` | `initiate()` |
@@ -57,7 +46,7 @@ Every gateway that calls an API has a sync class and an async twin with the same
 | `CyberSource` | `CyberSource` | None: one class for both |
 | `MyanmarPayments` | `AsyncMyanmarPayments` | Builds the classes above |
 
-Methods that make no network call are never awaited, on the async classes too: `handle_callback()`, AYA's `initiate()` and `verify_redirect()`, and everything on `CyberSource`. Use the sync classes in Django, Flask and other WSGI code, and the async classes inside an event loop (FastAPI, Starlette, async Django views).
+Other methods are never awaited, on the async classes too: `handle_callback()`, AYA's `initiate()` and `verify_redirect()`, and everything on `CyberSource`. Use the sync classes in Django, Flask and other WSGI code, and the async classes inside an event loop (FastAPI, Starlette, async Django views).
 
 ## Quick Start
 

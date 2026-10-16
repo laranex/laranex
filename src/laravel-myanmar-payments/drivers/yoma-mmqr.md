@@ -14,8 +14,6 @@ Yoma MMQR is Yoma Bank's MMQR gateway: it issues ready-made QR images that custo
 | `yomaMmqr()->status($reference)` | Check a QR's payment status | [`PaymentStatusResult`](#status-response) |
 | `yomaMmqr()->handleCallback($request)` | Verify the callback | [`PaymentCallback`](#handlecallback-response) |
 
-[Responses](#responses) shows what Yoma MMQR puts in each result.
-
 ## How it works
 
 Yoma checks each order out once, then issues QR codes that each stay payable for 120 seconds.
@@ -130,7 +128,7 @@ if ($result->isSuccessful()) {
 
 ## Responses
 
-What Yoma MMQR puts in each property. See [Results](/laravel-myanmar-payments/references/results) and [PaymentCallback & Status](/laravel-myanmar-payments/references/payment-callback) for the full classes. `raw` holds plain PHP values (JSON numbers stay `string`s with their exact text).
+What Yoma MMQR puts in each property. See [Results](/laravel-myanmar-payments/references/results) and [PaymentCallback & Status](/laravel-myanmar-payments/references/payment-callback) for the full classes.
 
 ### `initiate()` → `QrPayment` {#initiate-response}
 
@@ -173,8 +171,6 @@ The same values as [`initiate()`](#initiate-response) for the `orderId` you pass
 | `raw` | The verified body: `orderNumber`, `status`, `hashValue` |
 | `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
-`MyanmarPayments::acknowledge($callback)` turns `acknowledgement` into a `CallbackResponse` (`Responsable`). `handleCallback()` accepts an `Illuminate\Http\Request` or a `CallbackRequest`.
-
 ## Statuses
 
 | Yoma value | `PaymentStatus` |
@@ -189,7 +185,7 @@ The same values as [`initiate()`](#initiate-response) for the `orderId` you pass
 
 Yoma authenticates with an OAuth token that lasts hours. The package caches it in your cache store (see [Configuration](/laravel-myanmar-payments/configuration#cache)) and fetches a new one, retrying once, when Yoma answers `401`. `MyanmarPayments::yomaMmqr()->forgetToken()` drops the cached token, e.g. after rotating the client secret.
 
-The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>`, the same key every Laranex SDK uses, so services in different languages can share one cache (the cache store's own prefix still applies), for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits, so `28800.0` is 28800 seconds; a missing or non-positive value means 3600.
+The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>`, the same key every Laranex SDK uses, so services in different languages can share one cache (the cache store's own prefix still applies), for Yoma's `expires_in` minus 60 seconds (at least 60 seconds).
 
 ## Errors
 
@@ -201,4 +197,4 @@ The token is cached under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clie
 | `status()` | `ApiException` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
 | `handleCallback()` | `SignatureVerificationException` | `X-Webhook-Secret` is missing or wrong, `orderNumber` is missing, `orderNumber` or `status` holds an object or array, or `hashValue` doesn't match |
 
-Yoma reports business errors with HTTP 200 and an `errorCode`; `ApiException` carries it in `gatewayCode` and Yoma's `errorDescription` in `gatewayMessage`. When Yoma can't be reached, the calls throw `ApiException` with `httpStatus` `0`.
+Yoma reports business errors with HTTP 200 and an `errorCode`; `ApiException` carries it in `gatewayCode` and Yoma's `errorDescription` in `gatewayMessage`.

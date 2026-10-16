@@ -5,7 +5,7 @@ description: Field reference for RedirectPayment, FormPayment, QrPayment and App
 
 # Results
 
-Starting a payment returns a pointer to one of four structs from the root package `myanmarpayments`. Each implements `PaymentResult`, whose `Flow()` method returns a `PaymentFlow`, so a type switch or `Flow()` tells them apart. Fields a gateway did not provide are `""`.
+Starting a payment returns a pointer to one of four structs from the root package `myanmarpayments`. Each implements `PaymentResult`, whose `Flow()` method returns a `PaymentFlow`, so a type switch or `Flow()` tells them apart. On error the result is `nil`. Fields a gateway did not provide are `""`.
 
 ## RedirectPayment
 
@@ -30,7 +30,7 @@ Returned by `aya.Initiate()` and `cs.Initiate()`.
 | `Action` | `string` | The gateway URL the form posts to |
 | `Fields` | `[]FormField` | The signed hidden fields in order. Post them unchanged |
 | `Enctype` | `string` | The encoding the gateway expects: `multipart/form-data` (AYA) or `application/x-www-form-urlencoded` (CyberSource) |
-| `HTML()` | `string` | A complete page that submits the form on load. Every value is HTML-escaped (`"` as `&#34;`, `'` as `&#39;`), so the page is byte-for-byte the same in every Laranex SDK |
+| `HTML()` | `string` | A complete page that submits the form on load. Every value is HTML-escaped (`"` as `&#34;`, `'` as `&#39;`) |
 | `HTMLWithNonce(nonce)` | `string` | The `HTML()` page with your Content-Security-Policy `nonce` (escaped) on the inline `<script>`. An empty nonce gives the same page as `HTML()` |
 | `Field(name)` | `(string, bool)` | One field's value |
 | `Values()` | `map[string]string` | The fields as a map |
@@ -47,7 +47,7 @@ Returned by `kbz.QR()`, `yoma.Initiate()` and `yoma.RenewQR()`.
 | `OrderID` | `string` | Your order ID |
 | `QRString` | `string` | A QR payload to encode yourself (KBZ Pay) |
 | `QRImage` | `string` | A base64 image to display as is (Yoma MMQR) |
-| `ExpiresAt` | `time.Time` | When the QR stops being payable; the zero time when the gateway sets no limit |
+| `ExpiresAt` | `time.Time` | When the QR stops being payable: now + the time to live (KBZ Pay) or `QRLifetime`, 120 seconds (Yoma MMQR) |
 | `Reference` | `string` | The gateway's ID for this QR, used for status checks (Yoma `refLabel`, KBZ `prepay_id`) |
 | `Raw` | `map[string]any` | The gateway's response, for logging |
 | `QRImageDataURI(mimeType)` | `string` | `QRImage` as a data URI; `""` as `mimeType` means `image/png`. `""` when there is no image |

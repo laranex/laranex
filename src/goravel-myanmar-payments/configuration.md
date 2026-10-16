@@ -91,8 +91,6 @@ CYBER_SOURCE_BASE_URL=
 | `CYBER_SOURCE_SECRET_KEY` | `cyber_source.secret_key` | Yes | Profile secret key used to sign fields |
 | `CYBER_SOURCE_BASE_URL` | `cyber_source.base_url` | Yes | The Secure Acceptance base URL |
 
-Only the gateways you call need their settings: an app that only uses KBZ Pay never reads the Wave Money keys.
-
 ## Endpoints
 
 Every gateway URL is a required setting with no default. There is no switch between test and production: set production's URLs (see [Production Endpoints](#production-endpoints)) or the gateway's UAT ones (see [UAT Endpoints](#uat-endpoints)), or a proxy's.
@@ -108,8 +106,6 @@ AYA_PAY_BASE_URL=https://pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://paymenthubapi.yomabank.com
 CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
 ```
-
-The Go SDK names them with constants, not used as defaults: `kbzpay.ProductionAPIURL`, `kbzpay.ProductionPWAURL`, `wavemoney.ProductionURL` (both Wave URLs), and `ProductionURL` in `ayapay`, `yomammqr` and `cybersource`.
 
 ## UAT Endpoints
 
@@ -132,39 +128,34 @@ package config
 
 import (
 	contractshttp "github.com/goravel/framework/contracts/http"
-
 	"yourapp/app/facades"
 )
 
 func init() {
 	config := facades.Config()
 	config.Add("myanmar_payments", map[string]any{
+		// Gateways
+		//
+		// Only the gateways you call need settings, and every setting of a
+		// gateway you call is required, URLs included: set production's URLs,
+		// or the gateway's UAT URLs to test. The environment variable names
+		// are the ones the Go SDK reads.
 		"kbz_pay": map[string]any{
-			"app_id":        config.Env("KBZ_PAY_APP_ID", ""),
-			"app_key":       config.Env("KBZ_PAY_APP_KEY", ""),
-			"merchant_code": config.Env("KBZ_PAY_MERCHANT_CODE", ""),
-			"api_url":       config.Env("KBZ_PAY_BASE_URL", ""),
-			"pwa_url": config.Env(
-				"KBZ_PAY_PWA_BASE_REDIRECT_URL", "",
-			),
-			"time_to_live_in_minutes": config.Env(
-				"KBZ_PAY_TIME_TO_LIVE_IN_MINUTES", "",
-			),
+			"app_id":                  config.Env("KBZ_PAY_APP_ID", ""),
+			"app_key":                 config.Env("KBZ_PAY_APP_KEY", ""),
+			"merchant_code":           config.Env("KBZ_PAY_MERCHANT_CODE", ""),
+			"api_url":                 config.Env("KBZ_PAY_BASE_URL", ""),
+			"pwa_url":                 config.Env("KBZ_PAY_PWA_BASE_REDIRECT_URL", ""),
+			"time_to_live_in_minutes": config.Env("KBZ_PAY_TIME_TO_LIVE_IN_MINUTES", ""),
 		},
 
 		"wave_money": map[string]any{
-			"merchant_id": config.Env("WAVE_MONEY_MERCHANT_ID", ""),
-			"secret_key":  config.Env("WAVE_MONEY_SECRET_KEY", ""),
-			"merchant_name": config.Env(
-				"WAVE_MONEY_MERCHANT_NAME", "",
-			),
-			"time_to_live_in_seconds": config.Env(
-				"WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS", "",
-			),
-			"base_url": config.Env("WAVE_MONEY_BASE_URL", ""),
-			"base_redirect_url": config.Env(
-				"WAVE_MONEY_BASE_REDIRECT_URL", "",
-			),
+			"merchant_id":             config.Env("WAVE_MONEY_MERCHANT_ID", ""),
+			"secret_key":              config.Env("WAVE_MONEY_SECRET_KEY", ""),
+			"merchant_name":           config.Env("WAVE_MONEY_MERCHANT_NAME", ""),
+			"time_to_live_in_seconds": config.Env("WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS", ""),
+			"base_url":                config.Env("WAVE_MONEY_BASE_URL", ""),
+			"base_redirect_url":       config.Env("WAVE_MONEY_BASE_REDIRECT_URL", ""),
 		},
 
 		"aya_pay": map[string]any{
@@ -174,15 +165,13 @@ func init() {
 		},
 
 		"yoma_mmqr": map[string]any{
-			"merchant_id":   config.Env("YOMA_MMQR_MERCHANT_ID", ""),
-			"client_id":     config.Env("YOMA_MMQR_CLIENT_ID", ""),
-			"client_secret": config.Env("YOMA_MMQR_CLIENT_SECRET", ""),
-			"webhook_hashkey": config.Env(
-				"YOMA_MMQR_WEBHOOK_HASHKEY", "",
-			),
-			"webhook_secret": config.Env("YOMA_MMQR_WEBHOOK_SECRET", ""),
-			"base_url":       config.Env("YOMA_MMQR_BASE_URL", ""),
-			"api_version":    config.Env("YOMA_MMQR_API_VERSION", ""),
+			"merchant_id":     config.Env("YOMA_MMQR_MERCHANT_ID", ""),
+			"client_id":       config.Env("YOMA_MMQR_CLIENT_ID", ""),
+			"client_secret":   config.Env("YOMA_MMQR_CLIENT_SECRET", ""),
+			"webhook_hashkey": config.Env("YOMA_MMQR_WEBHOOK_HASHKEY", ""),
+			"webhook_secret":  config.Env("YOMA_MMQR_WEBHOOK_SECRET", ""),
+			"api_version":     config.Env("YOMA_MMQR_API_VERSION", ""),
+			"base_url":        config.Env("YOMA_MMQR_BASE_URL", ""),
 		},
 
 		"cyber_source": map[string]any{
@@ -192,52 +181,48 @@ func init() {
 			"base_url":   config.Env("CYBER_SOURCE_BASE_URL", ""),
 		},
 
+		// HTTP
+		//
+		// Gateway calls go through Goravel's HTTP client, so facades.Http().Fake()
+		// intercepts them in tests. "client" names an entry of http.clients
+		// (empty means the default client). "timeout" is the seconds KBZ Pay,
+		// Wave Money, AYA Pay and Yoma MMQR calls may take (30 when empty).
 		"http": map[string]any{
 			"client":  config.Env("MYANMAR_PAYMENTS_HTTP_CLIENT", ""),
 			"timeout": config.Env("MYANMAR_PAYMENTS_HTTP_TIMEOUT", 30),
 		},
 
+		// Cache
+		//
+		// The cache store that keeps Yoma MMQR access tokens between requests
+		// and processes. Empty uses your default store.
 		"cache_store": config.Env("MYANMAR_PAYMENTS_CACHE_STORE", ""),
 
+		// Auto-submit Form Route
+		//
+		// AYA Pay and CyberSource need the customer's browser to POST a signed
+		// form. This route renders that form and submits it, so a handler can
+		// redirect to payments.AutoSubmitURL(form). Links are encrypted with
+		// APP_KEY and expire after "ttl_minutes" (required to create a link).
+		// "base_url" starts the links.
 		"form_route": map[string]any{
 			"enabled":     true,
 			"path":        "myanmar-payments/form",
 			"middleware":  []contractshttp.Middleware{},
-			"ttl_minutes": config.Env(
-				"MYANMAR_PAYMENTS_FORM_TTL_MINUTES", "",
-			),
+			"ttl_minutes": config.Env("MYANMAR_PAYMENTS_FORM_TTL_MINUTES", ""),
 			"base_url":    config.Env("APP_URL", "http://localhost"),
 		},
 	})
 }
 ```
 
-`yourapp/app/facades` is the `facades` package Goravel generates in your app; `package:install` fills in the right import.
-
 ## HTTP Client
 
-```go
-"http": map[string]any{
-	"client":  config.Env("MYANMAR_PAYMENTS_HTTP_CLIENT", ""),
-	"timeout": config.Env("MYANMAR_PAYMENTS_HTTP_TIMEOUT", 30),
-},
-```
-
-Gateway calls go through Goravel's HTTP client, so `Fake()` intercepts them in tests; see [Testing](/goravel-myanmar-payments/testing). `client` names an entry of `http.clients` in `config/http.go` (empty means the default client), so its transport settings (connection pool, telemetry) apply. `timeout` is in seconds, applies to gateway calls only and defaults to 30 (`payments.DefaultHTTPTimeoutSeconds`) when it is missing or blank: the package passes it to KBZ Pay, Wave Money, AYA and Yoma MMQR as their `TimeoutSeconds`, so a value that is not a whole number greater than 0 returns `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` when you first request KBZ Pay. When a gateway can't be reached, the call returns an `*APIError` with `HTTPStatus` `0`.
+Gateway calls go through Goravel's HTTP client, so `Fake()` intercepts them in tests; see [Testing](/goravel-myanmar-payments/testing). `client` names an entry of `http.clients` in `config/http.go` (empty means the default client), so its transport settings (connection pool, telemetry) apply. `timeout` is in seconds, applies to gateway calls only and defaults to 30 (`payments.DefaultHTTPTimeoutSeconds`) when it is missing or blank; a value that is not a whole number greater than 0 returns `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` when you first request KBZ Pay.
 
 ## Auto-submit Form Route
 
-```go
-"form_route": map[string]any{
-	"enabled":     true,
-	"path":        "myanmar-payments/form",
-	"middleware":  []contractshttp.Middleware{},
-	"ttl_minutes": config.Env("MYANMAR_PAYMENTS_FORM_TTL_MINUTES", ""),
-	"base_url":    config.Env("APP_URL", "http://localhost"),
-},
-```
-
-AYA Pay and CyberSource need the customer's browser to POST a signed form. The package registers a `GET /myanmar-payments/form` route (named `myanmar-payments.form`) that renders that form and submits it, and `payments.AutoSubmitURL(form)` returns an encrypted link to it. Links expire after `ttl_minutes`; an invalid or expired link answers `410 Gone`. The page is sent with `Cache-Control: no-store` and `Referrer-Policy: strict-origin`, so the gateway sees only your origin, never the encrypted link. Its inline script carries no Content-Security-Policy nonce; under a nonce-based policy, render the form yourself with `form.HTMLWithNonce(nonce)` (see [Form Payments](/goravel-myanmar-payments/payment-flows#form-payments)).
+AYA Pay and CyberSource need the customer's browser to POST a signed form. The package registers a `GET /myanmar-payments/form` route (named `myanmar-payments.form`) that renders that form and submits it, and `payments.AutoSubmitURL(form)` returns an encrypted link to it. Links expire after `ttl_minutes`; an invalid or expired link answers `410 Gone`. The page is sent with `Cache-Control: no-store` and `Referrer-Policy: strict-origin`, so the gateway sees only your origin, never the encrypted link.
 
 | Key | Meaning |
 |---|---|

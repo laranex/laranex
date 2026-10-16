@@ -62,4 +62,4 @@ When the gateway sends an error code without a message, `str(error)` ends with t
 | `gateway` | `str` | e.g. `kbz_pay` |
 | `key` | `str` | The setting, e.g. `app_key` |
 
-`str(error)` is e.g. `The kbz_pay configuration is missing [app_key].`, or `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting that is not a whole number greater than 0. An unset or blank HTTP timeout is not an error: it defaults to 30 seconds. Raised by each config class (and so by each gateway's `from_env()`), and by `MyanmarPayments` and `AsyncMyanmarPayments` when a gateway is used without configuration.
+`str(error)` is e.g. `The kbz_pay configuration is missing [app_key].`, or `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting that is not a whole number greater than 0. Raised by each config class (and so by each gateway's `from_env()`), and by `MyanmarPayments` and `AsyncMyanmarPayments` when a gateway is used without configuration.

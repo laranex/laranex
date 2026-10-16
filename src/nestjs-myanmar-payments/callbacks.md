@@ -137,8 +137,6 @@ async waveCallback(
 }
 ```
 
-`callbackRequestFrom()`, which every helper uses, reads the body from, in order: the exact bytes Nest kept with `rawBody: true`; the request stream, when no body parser read it (Express, unknown content types); the parsed body, encoded again as JSON or as a form. The `CallbackRequest` keeps the exact bytes in `rawBody` and the same body as text in `body`. The query string comes from the full URL, global prefix included. AYA's browser return is verified with `ayaPay().verifyRedirect()`, see [AYA Pay](/nestjs-myanmar-payments/drivers/aya-pay#the-return-page). A body is read as JSON only when it is a single JSON object; any other body is read as a urlencoded form. A body over 64 KiB, far above any gateway callback, throws `PayloadTooLargeException` (`413`); a stream stops being read as soon as it passes the limit.
-
 ## Rules
 
 - **Verify, then trust.** A callback that fails verification throws `SignatureVerificationError`, and so does one whose signed or hashed field holds an object or array instead of a single value, since no gateway signs nested values. Never act on its payload; it carries the unverified data in `error.raw` for logging only.
@@ -149,20 +147,7 @@ async waveCallback(
 
 ## PaymentStatus
 
-Every gateway's own status values are mapped onto one set of statuses. The original value stays in `callback.gatewayStatus`.
-
-| Value | Meaning |
-|---|---|
-| `PaymentStatus.Successful` | The customer paid. The only status that means money was collected. |
-| `PaymentStatus.Pending` | Still in progress or waiting on the customer. |
-| `PaymentStatus.Failed` | Attempted and failed or rejected. |
-| `PaymentStatus.Canceled` | Canceled or closed before completing. |
-| `PaymentStatus.Expired` | The payment window ran out. |
-| `PaymentStatus.Unknown` | A status this package does not recognize yet. Inspect `gatewayStatus`. |
-
-`PaymentStatus.isFinal(status)` is `false` for `Pending` and `Unknown`. Unknown statuses never throw.
-
-Each gateway page lists its exact mapping.
+Every gateway's status is mapped onto one `PaymentStatus`; the original stays in `gatewayStatus`. See [PaymentCallback & Status](/nestjs-myanmar-payments/references/payment-callback#paymentstatus) and each gateway page's mapping.
 
 ## Status Checks
 
@@ -180,7 +165,7 @@ When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Money and Cyber
   ]"
 />
 
-When a callback is late or missing, ask the gateway directly. Status checks return a `PaymentStatusResult` with the same `status`, `gatewayStatus`, `gatewayReference` and `amount` fields.
+Status checks return a `PaymentStatusResult` with the same `status`, `gatewayStatus`, `gatewayReference` and `amount` fields.
 
 | Gateway | Call |
 |---|---|

@@ -112,8 +112,6 @@ The config file is now `config/myanmar-payments.php`. Back up your existing `con
 php artisan vendor:publish --tag="myanmar-payments-config"
 ```
 
-Then set the environment variables it reads, as listed in [Configuration](/laravel-myanmar-payments/configuration).
-
 ### Exceptions
 
 v2 threw plain `Exception`s. v4 throws `PaymentException` subclasses: `InvalidPaymentDataException`, `ApiException` (with the gateway's code and message), `SignatureVerificationException` and `ConfigurationException`. See [Errors](/laravel-myanmar-payments/references/errors).

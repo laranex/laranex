@@ -15,8 +15,6 @@ KBZ Pay is KBZ Bank's mobile wallet: customers pay in the KBZ Pay PWA, by scanni
 | `$kbzPay->status($orderId)` | Query an order | [`PaymentStatusResult`](#status-response) |
 | `$kbzPay->handleCallback($request)` | Verify the notification | [`PaymentCallback`](#handlecallback-response) |
 
-[Responses](#responses) shows what KBZ Pay puts in each result.
-
 ## How it works
 
 Every KBZ Pay flow starts with the same precreate call and ends with KBZ's signed notification.
@@ -133,7 +131,7 @@ if ($result->isSuccessful()) {
 
 ## Responses
 
-What KBZ Pay puts in each property. See [Results](/php-myanmar-payments/references/results) and [PaymentCallback & Status](/php-myanmar-payments/references/payment-callback) for the full classes. A property the gateway didn't send is `null`. `raw` holds plain PHP values (JSON numbers stay `string`s with their exact text), while the typed properties such as `amount` keep the exact text KBZ sent.
+What KBZ Pay puts in each property. See [Results](/php-myanmar-payments/references/results) and [PaymentCallback & Status](/php-myanmar-payments/references/payment-callback) for the full classes. A property the gateway didn't send is `null`. JSON numbers keep their exact text as strings.
 
 ### `pwa()` → `RedirectPayment` {#pwa-response}
 
@@ -153,7 +151,7 @@ What KBZ Pay puts in each property. See [Results](/php-myanmar-payments/referenc
 | `orderId` | Your `$data->orderId` |
 | `qrString` | KBZ `qrCode`, a payload to encode into a QR image. Always set |
 | `qrImage` | Always `null` |
-| `expiresAt` | Now + the time to live: `timeToLiveMinutes`, else `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`. Always set, because the configured time to live is required |
+| `expiresAt` | Now + the time to live: `timeToLiveMinutes`, else `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`. Always set |
 | `reference` | KBZ `prepay_id`. Always set |
 | `raw` | The `precreate` response, as for `pwa()` plus `qrCode` |
 | `qrImageDataUri()` | Always `null`, as `qrImage` is |
@@ -206,7 +204,7 @@ What KBZ Pay puts in each property. See [Results](/php-myanmar-payments/referenc
 
 ## Signing
 
-KBZ signs requests, the in-app `orderInfo` and notifications the same way: every non-empty field except `sign` and `sign_type`, sorted by key, joined as raw `key=value` pairs, with `&key=<app key>` appended, hashed with SHA-256 and uppercased. Numbers sign as the exact text sent and booleans as `true` / `false`; a notification with a nested object or array is rejected. The package signs every request and verifies every notification for you. For custom calls, the signer is public: `$kbzPay->signer` (a `KbzPaySigner`) has `sign($fields)` and `verify($fields)`.
+KBZ signs requests, the in-app `orderInfo` and notifications the same way: every non-empty field except `sign` and `sign_type`, sorted by key, joined as raw `key=value` pairs, with `&key=<app key>` appended, hashed with SHA-256 and uppercased. Numbers sign as the exact text sent and booleans as `true` / `false`; a notification with a nested object or array is rejected. The package signs every request and verifies every notification for you. For custom calls, the signer is public: `$kbzPay->signer` (a `KbzPaySigner`) has `sign($fields)`, `verify($fields)` and `signString($fields)` (the sorted string without the key).
 
 ## Errors
 

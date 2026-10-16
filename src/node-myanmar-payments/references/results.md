@@ -63,7 +63,7 @@ Returned by `kbz.app()`. `JSON.stringify(payment)` writes `orderId`, `orderInfo`
 | `sign` | `string` | The signature of `orderInfo` |
 | `signType` | `string` | The signature algorithm, `SHA256` |
 | `raw` | `Record<string, unknown>` | The gateway's response; left out of `toJSON()` |
-| `toJSON()` | `{ orderId, orderInfo, sign, signType }` | `{"orderId", "orderInfo", "sign", "signType"}`, the values your app needs |
+| `toJSON()` | `{ orderId, orderInfo, sign, signType }` | The values your app needs |
 
 ## PaymentFlow
 
@@ -79,5 +79,3 @@ A string union, so `payment.flow === 'redirect'` works too.
 `PaymentFlow` is also a type: `'redirect' | 'form' | 'qr' | 'app'`.
 
 `raw` values are plain JavaScript values, with JSON numbers kept as their exact text in a `string` (`1000.50` stays `"1000.50"`), never a rounded `number`. `JSON.stringify(payment.raw)` logs them.
-
-Every result class takes its fields as an object, so you can build one in your own tests, e.g. `new RedirectPayment({ orderId: 'ORDER_1', url: 'https://…' })`.

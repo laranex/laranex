@@ -22,8 +22,6 @@ import (
 )
 ```
 
-The root package holds the shared types. Each gateway has its own package, which exports only that gateway's types:
-
 | Import path | Contents |
 |---|---|
 | `github.com/laranex/go-myanmar-payments/v4` | `Amount`, results, `PaymentCallback`, `PaymentStatus`, `CallbackRequest`, `Acknowledgement`, errors and `PaymentError`, `HTTPDoer`, `TokenCache` and `MemoryTokenCache` |
@@ -34,7 +32,7 @@ The root package holds the shared types. Each gateway has its own package, which
 | `github.com/laranex/go-myanmar-payments/v4/cybersource` | `Gateway`, `Config`, `PaymentData`, `TransactionType` |
 | `github.com/laranex/go-myanmar-payments/v4/payments` | `Gateways`, the facade that builds every gateway, with `Config` and `Options` |
 
-The module path carries the major version, so every import ends in `/v4`. The root package is named `myanmarpayments`; the examples import it under that name.
+The module path carries the major version, so every import ends in `/v4`.
 
 ## Quick Start
 

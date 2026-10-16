@@ -78,7 +78,7 @@ export class WaveMoneyCheckoutController {
 }
 ```
 
-Wave Money takes two URLs, both required: `WAVE_MONEY_BASE_URL` (`waveMoney.baseUrl`), where `initiate()` posts the payment request to `{baseUrl}/payment`, and `WAVE_MONEY_BASE_REDIRECT_URL` (`waveMoney.baseRedirectUrl`), where the customer is sent to `{baseRedirectUrl}/authenticate?transaction_id=…`. In production both are `https://payments.wavemoney.io`; Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [UAT Endpoints](/nestjs-myanmar-payments/configuration#uat-endpoints)).
+`initiate()` posts to `{baseUrl}/payment` and sends the customer to `{baseRedirectUrl}/authenticate`; see [Endpoints](/nestjs-myanmar-payments/configuration#endpoints).
 
 ### WaveMoneyPaymentData
 
@@ -95,24 +95,6 @@ Wave Money takes two URLs, both required: `WAVE_MONEY_BASE_URL` (`waveMoney.base
 | `timeToLiveSeconds` | `number` | No | Seconds the customer has to pay this payment, a whole number greater than 0. Unset or `null` uses `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` (`waveMoney.timeToLiveSeconds`) |
 
 `WaveMoneyItem` takes a `name` and an `amount` (`AmountInput`) in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats.
-
-### Per-Payment Merchant Name and Time to Live
-
-`merchantName` and `timeToLiveSeconds` override the configured `WAVE_MONEY_MERCHANT_NAME` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` (`waveMoney.merchantName` and `waveMoney.timeToLiveSeconds`) for one payment, including in the request hash. The configured merchant name and time to live are still required and apply to every payment that leaves `merchantName` or `timeToLiveSeconds` unset.
-
-```ts
-const data: WaveMoneyPaymentData = {
-  orderId: `ORDER_${order.id}`,
-  callbackUrl: 'https://shop.test/payments/wave/callback',
-  returnUrl: `https://shop.test/orders/${order.id}`,
-  description: `Order #${order.id}`,
-  items: [{ name: 'Concert ticket', amount: 25000 }],
-  merchantName: 'My Shop Events',
-  timeToLiveSeconds: 600,
-};
-```
-
-A blank `merchantName` throws `InvalidPaymentDataError` with `The merchantName field is required.`, a `timeToLiveSeconds` that is not a whole number with `The timeToLiveSeconds field must be an integer.`, and one below 1 with `The timeToLiveSeconds field must be greater than 0.` Nothing is sent.
 
 ### Merchant Reference ID
 
@@ -146,9 +128,7 @@ export class WaveMoneyCallbackController {
 }
 ```
 
-A bad signature answers `400` before the handler runs. `callback.orderId` falls back to `merchantReferenceId` when Wave's `orderId` is missing, null or empty.
-
-Wave hashes the values joined with no separator, so a matching `hashValue` alone doesn't pin down where one value ends and the next begins. After the hash matches, `amount` must be a decimal (e.g. `10000` or `10000.00`), at least one of `orderId` and `merchantReferenceId` must be present, and each one sent may only hold letters, digits, `_` and `-`; otherwise verification fails (a `400`). New payments are held to the same ID rules, so every callback for a payment made with this package passes them.
+`callback.orderId` falls back to `merchantReferenceId` when Wave's `orderId` is missing, null or empty.
 
 ## Responses
 
@@ -158,12 +138,11 @@ What Wave Money puts in each property. See [Results](/nestjs-myanmar-payments/re
 
 | Property | Wave Money value |
 |---|---|
+| `flow` | `redirect` |
 | `orderId` | Your `orderId` |
 | `url` | `{baseRedirectUrl}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
 | `gatewayReference` | Wave `transaction_id`. Always set |
 | `raw` | Wave's `/payment` response: `message` (`success`), `transaction_id` |
-
-The attempt's `merchantReferenceId` is not on the result: read it from `data.merchantReferenceId`.
 
 ### `handleCallback()` → `PaymentCallback` {#handlecallback-response}
 
@@ -176,8 +155,6 @@ The attempt's `merchantReferenceId` is not on the result: read it from `data.mer
 | `amount` | Wave `amount`, e.g. `10000` |
 | `raw` | The verified body: `status`, `merchantId`, `orderId`, `merchantReferenceId`, `frontendResultUrl`, `backendResultUrl`, `initiatorMsisdn`, `amount`, `timeToLiveSeconds`, `paymentDescription`, `currency`, `additionalField1`–`5`, `transactionId`, `paymentRequestId`, `requestTime`, `hashValue` |
 | `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
-
-`@AcknowledgeCallback()` (or `acknowledge(res, callback)`) sends `acknowledgement`. The gateway's `handleCallback()` takes a `CallbackRequest`; `this.payments.handleCallback('wave-money', request)` also accepts a Nest request.
 
 ## Statuses
 

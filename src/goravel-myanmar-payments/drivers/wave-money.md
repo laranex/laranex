@@ -12,9 +12,7 @@ Wave Money's payment gateway sends the customer to a Wave payment page to pay wi
 | `wave.Initiate(ctx, data)` | Redirect to Wave's payment page | [`*RedirectPayment`](#initiate-response) |
 | `wave.HandleCallback(request)` | Verify the callback | [`*PaymentCallback`](#handlecallback-response) |
 
-`wave` is the `*wavemoney.Gateway` that `paymentsfacades.MyanmarPayments().WaveMoney()` returns. Wave Money has no status API in this package: the callback is the only payment result.
-
-[Responses](#responses) shows what Wave Money puts in each result.
+`wave` is the `*wavemoney.Gateway` that `paymentsfacades.MyanmarPayments().WaveMoney()` returns. Wave Money has no status API: the callback is the only payment result.
 
 ## How it works
 
@@ -77,8 +75,6 @@ func (r *CheckoutController) Wave(ctx http.Context) http.Response {
 }
 ```
 
-Wave Money takes two URLs, both required: `WAVE_MONEY_BASE_URL` (`wave_money.base_url`), where `Initiate` posts the payment request to `{base_url}/payment`, and `WAVE_MONEY_BASE_REDIRECT_URL` (`wave_money.base_redirect_url`), where the customer is sent to `{base_redirect_url}/authenticate?transaction_id=…`. In production both are `https://payments.wavemoney.io` (`wavemoney.ProductionURL`); Wave's UAT API is `https://preprodpayments.wavemoney.io:8107` and its UAT payment page is `https://preprodpayments.wavemoney.io` (see [UAT Endpoints](/goravel-myanmar-payments/configuration#uat-endpoints)).
-
 ### wavemoney.PaymentData
 
 | Field | Type | Required | Rules |
@@ -94,25 +90,6 @@ Wave Money takes two URLs, both required: `WAVE_MONEY_BASE_URL` (`wave_money.bas
 | `TimeToLiveSeconds` | `*int` | No | Seconds the customer has to pay this payment, greater than 0, e.g. `seconds := 600` then `TimeToLiveSeconds: &seconds`. `nil` uses the configured `time_to_live_in_seconds` (`WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS`); `0` is rejected |
 
 `wavemoney.Item` takes a `Name` and an `Amount` (`myanmarpayments.Amount`) in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats. `Initiate()` takes a pointer to the data, so it can fill in `MerchantReferenceID`.
-
-### Per-Payment Merchant Name and Time to Live
-
-`MerchantName` and `TimeToLiveSeconds` override the configured `merchant_name` and `time_to_live_in_seconds` for one payment, including in the request hash. `WAVE_MONEY_MERCHANT_NAME` and `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` are still required and apply to every payment that leaves `MerchantName` empty or `TimeToLiveSeconds` `nil`.
-
-```go
-seconds := 600
-data := &wavemoney.PaymentData{
-	OrderID:           fmt.Sprintf("ORDER_%d", order.ID),
-	CallbackURL:       "https://shop.test/payments/wave/callback",
-	ReturnURL:         fmt.Sprintf("https://shop.test/orders/%d", order.ID),
-	Description:       fmt.Sprintf("Order #%d", order.ID),
-	Items:             []wavemoney.Item{{Name: "Concert ticket", Amount: myanmarpayments.Kyat(25000)}},
-	MerchantName:      "My Shop Events",
-	TimeToLiveSeconds: &seconds,
-}
-```
-
-A `MerchantName` made only of whitespace returns `*myanmarpayments.InvalidPaymentDataError` with `The merchantName field is required.`, and a `TimeToLiveSeconds` below 1 with `The timeToLiveSeconds field must be greater than 0.` Nothing is sent.
 
 ### Merchant Reference ID
 
@@ -161,7 +138,7 @@ Wave hashes the values joined with no separator, so a matching `hashValue` alone
 
 ## Responses
 
-What Wave Money puts in each field. See [Results](/goravel-myanmar-payments/references/results) and [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for the full types. `Raw` holds plain Go values (JSON numbers become `json.Number`s), while the typed fields such as `Amount` keep the exact text Wave sent.
+What Wave Money puts in each field. See [Results](/goravel-myanmar-payments/references/results) and [PaymentCallback & Status](/goravel-myanmar-payments/references/payment-callback) for the full types.
 
 ### `Initiate()` → `*RedirectPayment` {#initiate-response}
 
@@ -186,8 +163,6 @@ The attempt's `MerchantReferenceID` is not on the result: read it from `data.Mer
 | `Raw` | The verified body: `status`, `merchantId`, `orderId`, `merchantReferenceId`, `frontendResultUrl`, `backendResultUrl`, `initiatorMsisdn`, `amount`, `timeToLiveSeconds`, `paymentDescription`, `currency`, `additionalField1`–`5`, `transactionId`, `paymentRequestId`, `requestTime`, `hashValue` |
 | `Acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
-`payments.Acknowledge(ctx, callback)` writes `Acknowledgement` as the Goravel response. `HandleCallback()` takes the `*myanmarpayments.CallbackRequest` that `payments.CallbackRequestFromContext(ctx)` builds.
-
 ## Statuses
 
 Only `PAYMENT_CONFIRMED` means the customer paid.
@@ -211,4 +186,4 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 | `Initiate()` | `*APIError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
 | `HandleCallback()` | `*SignatureVerificationError` | `hashValue` doesn't match, a hashed field holds an object or array, `amount` isn't a decimal, both `orderId` and `merchantReferenceId` are empty, or one of them holds anything but letters, digits, `_` and `-` |
 
-`HTTPStatus` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`GatewayCode` is `VALIDATION_ERROR`). When Wave can't be reached, `Initiate()` returns an `*APIError` with `HTTPStatus` `0`.
+`HTTPStatus` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`GatewayCode` is `VALIDATION_ERROR`).

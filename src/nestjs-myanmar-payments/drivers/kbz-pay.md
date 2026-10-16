@@ -141,7 +141,7 @@ export class KbzPayCallbackController {
 }
 ```
 
-A bad signature answers `400` before the handler runs. KBZ requires an HTTP 200 with the plain-text body `success`, answered within about 10 seconds. Otherwise it retries after 60 and 600 seconds; when no callback arrives, [query the order](#status-checks).
+KBZ requires an HTTP 200 with the plain-text body `success`, answered within about 10 seconds. Otherwise it retries after 60 and 600 seconds; when no callback arrives, [query the order](#status-checks).
 
 ## Status Checks
 
@@ -163,6 +163,7 @@ What KBZ Pay puts in each property. See [Results](/nestjs-myanmar-payments/refer
 
 | Property | KBZ Pay value |
 |---|---|
+| `flow` | `redirect` |
 | `orderId` | Your `orderId` |
 | `url` | `{pwaUrl}?appid=…&merch_code=…&nonce_str=…&prepay_id=…&timestamp=…&sign=…` |
 | `gatewayReference` | KBZ `prepay_id`. Always set |
@@ -172,10 +173,11 @@ What KBZ Pay puts in each property. See [Results](/nestjs-myanmar-payments/refer
 
 | Property / Method | KBZ Pay value |
 |---|---|
+| `flow` | `qr` |
 | `orderId` | Your `orderId` |
 | `qrString` | KBZ `qrCode`, a payload to encode into a QR image. Always set |
 | `qrImage` | Always `undefined` |
-| `expiresAt` | Now + the time to live: `timeToLiveMinutes`, else `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`. Always set, because the configured time to live is required |
+| `expiresAt` | Now + the time to live: `timeToLiveMinutes`, else `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES`. Always set |
 | `reference` | KBZ `prepay_id`. Always set |
 | `raw` | The `precreate` response, as for `pwa()` plus `qrCode` |
 | `qrImageDataUri()` | Always `undefined`, as `qrImage` is |
@@ -184,6 +186,7 @@ What KBZ Pay puts in each property. See [Results](/nestjs-myanmar-payments/refer
 
 | Property / Method | KBZ Pay value |
 |---|---|
+| `flow` | `app` |
 | `orderId` | Your `orderId` |
 | `orderInfo` | `appid=…&merch_code=…&nonce_str=…&prepay_id=…&timestamp=…` |
 | `sign` | SHA-256 signature of `orderInfo`, uppercase hex. See [Signing](#signing) |
@@ -213,8 +216,6 @@ What KBZ Pay puts in each property. See [Results](/nestjs-myanmar-payments/refer
 | `amount` | KBZ `total_amount`, e.g. `10000` |
 | `raw` | The verified `Request`: `appid`, `notify_time`, `merch_code`, `merch_order_id`, `mm_order_id`, `total_amount`, `trans_currency`, `trade_status`, `trans_end_time`, `callback_info`, `nonce_str`, `sign_type`, `sign` |
 | `acknowledgement` | HTTP `200`, body `success`, `Content-Type: text/plain` |
-
-`@AcknowledgeCallback()` (or `acknowledge(res, callback)`) sends `acknowledgement`. The gateway's `handleCallback()` takes a `CallbackRequest`; `this.payments.handleCallback('kbz-pay', request)` also accepts a Nest request.
 
 ## Statuses
 

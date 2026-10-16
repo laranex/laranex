@@ -99,17 +99,9 @@ def make_payments(handler) -> MyanmarPayments:
 ```python
 import httpx
 import respx
-from python_myanmar_payments import KbzPay, KbzPayConfig
+from python_myanmar_payments import KbzPay
 
-CONFIG = KbzPayConfig(
-    app_id="kp1",
-    app_key="kbz-secret",
-    merchant_code="1",
-    api_url="http://api-uat.kbzpay.com/payment/gateway/uat",
-    pwa_url="https://static.kbzpay.com/pgw/uat/pwa/#/",
-    time_to_live_minutes=15,
-    timeout_seconds=5,
-)
+from tests.conftest import CONFIG  # the KbzPayConfig above, kept in conftest.py
 
 
 @respx.mock
@@ -141,21 +133,9 @@ def test_reports_a_paid_order() -> None:
 ```python
 import httpx
 import pytest
-from python_myanmar_payments import (
-    AsyncKbzPay,
-    KbzPayConfig,
-    KbzPayPaymentData,
-)
+from python_myanmar_payments import AsyncKbzPay, KbzPayPaymentData
 
-CONFIG = KbzPayConfig(
-    app_id="kp1",
-    app_key="kbz-secret",
-    merchant_code="1",
-    api_url="http://api-uat.kbzpay.com/payment/gateway/uat",
-    pwa_url="https://static.kbzpay.com/pgw/uat/pwa/#/",
-    time_to_live_minutes=15,
-    timeout_seconds=5,
-)
+from tests.conftest import CONFIG  # the KbzPayConfig above, kept in conftest.py
 
 
 def precreate(request: httpx.Request) -> httpx.Response:
@@ -185,20 +165,11 @@ To run a callback through real verification, sign it with the secret from your t
 from python_myanmar_payments import (
     CallbackRequest,
     KbzPay,
-    KbzPayConfig,
     KbzPaySigner,
     PaymentStatus,
 )
 
-CONFIG = KbzPayConfig(
-    app_id="kp1",
-    app_key="kbz-secret",
-    merchant_code="1",
-    api_url="http://api-uat.kbzpay.com/payment/gateway/uat",
-    pwa_url="https://static.kbzpay.com/pgw/uat/pwa/#/",
-    time_to_live_minutes=15,
-    timeout_seconds=5,
-)
+from tests.conftest import CONFIG  # the KbzPayConfig above, kept in conftest.py
 
 
 def signed_kbz_callback(**fields: str) -> CallbackRequest:
@@ -223,7 +194,7 @@ def test_verifies_a_kbz_pay_callback() -> None:
 
 A modified payload must be rejected: change `total_amount` after signing and `handle_callback()` raises `SignatureVerificationError`. To exercise your real callback view, post the same JSON with your framework's test client, e.g. Django's `client.post("/payments/kbz/callback", body, content_type="application/json")`, Flask's `client.post(..., data=body, content_type="application/json")` or Starlette's `TestClient.post(..., content=body)`.
 
-The other gateways sign with HMAC-SHA256 over documented fields, as described on their [gateway pages](/python-myanmar-payments/drivers/wave-money). To replay a call you stored, rebuild it from the stored raw body and headers: `CallbackRequest(body=stored_body, headers=stored_headers)`.
+The other gateways sign with HMAC-SHA256 over documented fields, as described on their [gateway pages](/python-myanmar-payments/drivers/wave-money).
 
 ## Testing Your Own Logic
 

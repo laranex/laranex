@@ -31,8 +31,7 @@ Returned by `AyaPay()` → `Initiate()` and `CyberSource()` → `Initiate()`.
 | `Field(name)` | `(string, bool)` | The value of one field |
 | `Values()` | `map[string]string` | The fields as a map |
 | `HTML()` | `string` | A full HTML page that posts the form on load |
-
-`payments.AutoSubmitURL(form)` returns the link to the package's auto-submitting page; it returns `payments.ErrFormRouteDisabled` when the form route is disabled.
+| `HTMLWithNonce(nonce)` | `string` | `HTML()` with `nonce` on its inline script, for a Content-Security-Policy |
 
 ## QrPayment
 

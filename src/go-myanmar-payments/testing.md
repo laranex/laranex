@@ -175,7 +175,7 @@ func TestReportsAPaidOrder(t *testing.T) {
 }
 ```
 
-Every config has a required API URL to point at the server: `APIURL` (KBZ Pay) and `BaseURL` (Wave Money, AYA, Yoma, CyberSource).
+Point `APIURL` (KBZ Pay) or `BaseURL` (Wave Money, AYA, Yoma) at the server.
 
 ## Replaying Signed Callbacks
 
@@ -191,13 +191,7 @@ import (
 	"github.com/laranex/go-myanmar-payments/v4/kbzpay"
 )
 
-var config = kbzpay.Config{
-	AppID: "kp1", AppKey: "kbz-secret", MerchantCode: "1",
-	APIURL:            "http://api-uat.kbzpay.com/payment/gateway/uat",
-	PWAURL:            "https://static.kbzpay.com/pgw/uat/pwa/#/",
-	TimeToLiveMinutes: 15,
-	TimeoutSeconds:    5,
-}
+// config is the kbzpay.Config from the first example.
 
 func signedKBZCallback(
 	t *testing.T, fields map[string]any,

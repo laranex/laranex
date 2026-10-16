@@ -100,7 +100,7 @@ Under a Content-Security-Policy that allows scripts by nonce, pass it so the inl
 <script>document.getElementById('payment-form').submit();</script>
 ```
 
-Post the fields unchanged: they are signed. `fields` is an array keyed by name, in signing order; `$payment->values()` returns it and `$payment->field($name)` reads one.
+Post the fields unchanged: they are signed.
 
 ## QR Payments
 

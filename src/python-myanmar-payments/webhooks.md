@@ -285,7 +285,7 @@ class Webhooks:
         )
 ```
 
-The sample assumes an `orders` table with a unique `number`, the `amount` as decimal text, and nullable `paid_at` and `gateway_reference`. `Amount.equals` makes `1000`, `01000` and `1000.00` compare equal. With an async database driver, make `process_next` and `fulfill` coroutines and `await` each query; the logic stays the same.
+The sample assumes an `orders` table with a unique `number`, the `amount` as decimal text, and nullable `paid_at` and `gateway_reference`. With an async database driver, make `process_next` and `fulfill` coroutines and `await` each query; the logic stays the same.
 
 ## Wiring It Up
 

@@ -5,7 +5,7 @@ description: Verify gateway callbacks with handle_callback, read a gateway-indep
 
 # Callbacks & Status
 
-Every gateway notifies your server of the payment result. `handle_callback` takes a `CallbackRequest`, verifies the gateway's signature and returns a `PaymentCallback`. It is never awaited, on the async classes too: verifying needs no network call.
+Every gateway notifies your server of the payment result. `handle_callback` takes a `CallbackRequest`, verifies the gateway's signature and returns a `PaymentCallback`.
 
 ::: tip Production setup
 For production, follow [Handling Webhooks (recommended)](/python-myanmar-payments/webhooks): verify, store the call, acknowledge immediately, then process it once in the background with retries. The example below handles everything inline to show the API.
@@ -72,66 +72,22 @@ def kbz_callback(request):
 
 Signatures are checked against what the gateway actually sent, so build the request from the real incoming request: the raw body bytes, the headers and the query string. Never rebuild it from parsed input such as Django's `request.POST`, Flask's `request.json` or a FastAPI model: a JSON number such as `1000.50` would come back as `1000.5` and break a signature over the exact text.
 
-| Constructor | Use when |
-|---|---|
-| `CallbackRequest(body=..., headers=..., query=...)` | Every framework: pass the raw body (`bytes` or `str`), the headers (any mapping or `(name, value)` pairs) and the query string (`str`, `bytes`, a mapping, Django's `QueryDict`, Werkzeug's `MultiDict` or Starlette's `QueryParams`). All three are optional |
-| `CallbackRequest.from_json(payload, headers=None)` | Replaying a payload you stored as decoded JSON, e.g. from a queue or a failed-callback table. `Decimal` values are written as strings |
-
-| Framework | `body` | `headers` | `query` |
-|---|---|---|---|
-| Django | `request.body` | `request.headers` | `request.META.get("QUERY_STRING", "")` |
-| Flask | `request.get_data()` | `request.headers` | `request.query_string` |
-| FastAPI, Starlette | `await request.body()` | `request.headers` | `request.url.query` |
-
-| Member | Description |
-|---|---|
-| `raw_body` | The raw body as `bytes`, exactly as received |
-| `body` | The raw body, decoded as UTF-8 |
-| `headers` | Headers with lowercase names; repeated headers are joined with `, ` |
-| `query` | Query string values (the first of each) |
-| `header(name)` | One header, case-insensitively, or `None` |
-| `parsed_body()` | The body decoded as JSON or a urlencoded form; JSON numbers keep their exact text as `str` (`1000.50` stays `"1000.50"`) |
-| `input()` | The parsed body merged over the query string |
-| `query_input()` | The query string merged over the parsed body |
+See [Framework Integration](/python-myanmar-payments/framework-integration) for each framework and [CallbackRequest](/python-myanmar-payments/references/payment-callback#callbackrequest) for every member, including `CallbackRequest.from_json()` to replay a stored payload.
 
 ## Rules
 
 - **Verify, then trust.** A callback that fails verification raises `SignatureVerificationError`, and so does one whose signed or hashed field holds an object or a list instead of a single value, since no gateway signs nested values. Never act on its payload; `raw` carries the unverified data for logging only.
-- **Check the amount.** Compare `callback.amount` (the exact text the gateway sent) with your order before fulfilling, e.g. with `Amount.equals`. Yoma MMQR callbacks carry no amount: confirm those with [`status()`](/python-myanmar-payments/drivers/yoma-mmqr#status-checks).
+- **Check the amount.** Compare `callback.amount` (the exact text the gateway sent) with your order before fulfilling, e.g. with `Amount.equals`. Yoma MMQR callbacks carry no amount, and neither does its [`status()`](/python-myanmar-payments/drivers/yoma-mmqr#status-checks): match the order number to your stored order and trust its stored amount.
 - **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Money), the package also rejects values that could be re-split into other fields. See each driver's Handling Callbacks section.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
-- **Acknowledge.** `callback.acknowledgement` holds the response the gateway expects (`status`, `body`, `headers`), e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
 
 ## Acknowledging
 
-`callback.acknowledgement` is an `Acknowledgement` with `status`, `body` and `headers`. Write them with your framework's response class:
-
-| Framework | Response |
-|---|---|
-| Django | `HttpResponse(ack.body, status=ack.status, headers=ack.headers)` |
-| Flask | `Response(ack.body, status=ack.status, headers=dict(ack.headers))` |
-| FastAPI, Starlette | `Response(ack.body, status_code=ack.status, headers=dict(ack.headers))` |
-
-`Acknowledgement.default()` is the empty `200 text/plain` response most gateways expect.
-
-Gateway callbacks are server-to-server posts: exclude these routes from CSRF protection (Django's `@csrf_exempt`, Flask-WTF's `csrf.exempt`).
+`callback.acknowledgement` is an `Acknowledgement` with `status`, `body` and `headers`, e.g. KBZ Pay's plain `success`; without it, gateways keep retrying. Write it with your framework's response class (see [Framework Integration](/python-myanmar-payments/framework-integration)). `Acknowledgement.default()` is the empty `200 text/plain` response most gateways expect.
 
 ## PaymentStatus
 
-Every gateway's own status values are mapped onto one `str` enum. The original value stays in `callback.gateway_status`.
-
-| Member | Value | Meaning |
-|---|---|---|
-| `PaymentStatus.SUCCESSFUL` | `successful` | The customer paid. The only status that means money was collected. |
-| `PaymentStatus.PENDING` | `pending` | Still in progress or waiting on the customer. |
-| `PaymentStatus.FAILED` | `failed` | Attempted and failed or rejected. |
-| `PaymentStatus.CANCELED` | `canceled` | Canceled or closed before completing. |
-| `PaymentStatus.EXPIRED` | `expired` | The payment window ran out. |
-| `PaymentStatus.UNKNOWN` | `unknown` | A status this package does not recognize yet. Inspect `gateway_status`. |
-
-Members are strings, so `callback.status == "successful"` works and `str(callback.status)` is the value. `status.is_final()` is `False` for `PENDING` and `UNKNOWN`. Unknown statuses never raise.
-
-Each gateway page lists its exact mapping.
+Every gateway's status maps onto `PaymentStatus` (see the [reference](/python-myanmar-payments/references/payment-callback#paymentstatus)); the original value stays in `gateway_status`. Only `SUCCESSFUL` means money was collected, and unknown statuses map to `UNKNOWN` instead of raising. Each gateway page lists its exact mapping.
 
 ## Status Checks
 
@@ -158,8 +114,6 @@ Status checks return a `PaymentStatusResult` with the same `status`, `gateway_st
 | Yoma MMQR | `yoma.status(payment.reference)` |
 | Wave Money | No status API: rely on the callback |
 | CyberSource | No status API: rely on the callback |
-
-On the async classes, `await` the same calls.
 
 ```python
 import logging

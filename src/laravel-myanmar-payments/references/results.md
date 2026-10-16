@@ -5,7 +5,7 @@ description: Property reference for RedirectPayment, FormPayment, QrPayment and 
 
 # Results
 
-Starting a payment returns one of four classes in `Laranex\PhpMyanmarPayments\Results`. All implement `PaymentResult` and expose `flow(): PaymentFlow`.
+Starting a payment returns one of four classes in `Laranex\PhpMyanmarPayments\Results`. All implement `PaymentResult` and expose `flow(): PaymentFlow`. `raw` holds plain PHP values; JSON numbers stay `string`s with their exact text.
 
 ## RedirectPayment
 

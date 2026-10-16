@@ -83,5 +83,6 @@ When the gateway sends an error code without a message, `Message` ends with the 
 | `Gateway` | `string` | e.g. `kbz_pay` |
 | `Key` | `string` | The setting, e.g. `app_key` |
 | `Invalid` | `bool` | `true` when the setting is set but out of range: a time setting that is not a whole number greater than 0, or a KBZ Pay time to live outside 1 to 120 |
+| `Requirement` | `string` | What a valid value is, used in the message when `Invalid`; empty means `PositiveWholeNumber` (`a whole number greater than 0`); KBZ Pay's time to live uses `kbzpay.TimeToLiveRequirement` (`a whole number from 1 to 120`) |
 
 `err.Error()` is e.g. `myanmarpayments: The kbz_pay configuration is missing [app_key].`, or `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting. Returned by each gateway's `New`, and by the [`payments.Gateways`](/go-myanmar-payments/configuration#one-object-for-every-gateway) methods when a gateway is used without configuration.
