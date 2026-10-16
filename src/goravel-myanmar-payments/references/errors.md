@@ -36,6 +36,7 @@ The package adds its own sentinel errors; match them with `errors.Is`:
 ```go
 import (
 	"errors"
+	"fmt"
 
 	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
 	"github.com/laranex/go-myanmar-payments/v4/kbzpay"
@@ -49,9 +50,9 @@ _, err := kbz.PWA(ctx, kbzpay.PaymentData{
 
 var invalid *myanmarpayments.InvalidPaymentDataError
 if errors.As(err, &invalid) {
-	invalid.Errors
-	// map[orderId:The orderId field may only contain ...
-	//     amount:The amount field must be greater than 0.]
+	fmt.Println(invalid.Errors)
+	// map[amount:The amount field must be greater than 0.
+	//     orderId:The orderId field may only contain letters, numbers and underscores.]
 }
 ```
 

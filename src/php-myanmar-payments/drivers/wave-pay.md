@@ -88,7 +88,7 @@ Length limits count UTF-8 bytes. `WavePayItem` has a `name` and an `amount` (`Am
 
 ### Merchant Reference ID
 
-Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: Wave marks `orderId` as optional in callbacks, while `merchantReferenceId` is always present.
+Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: the callback's `merchantReferenceId` tells you which attempt was paid.
 
 ## Handling Callbacks
 

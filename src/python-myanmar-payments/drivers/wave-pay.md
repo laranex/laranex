@@ -95,7 +95,7 @@ def wave_checkout(request, order_id: int):
 | `items` | `Sequence[WavePayItem]` | Yes | At least one item, as a `list` or `tuple` |
 | `amount` | `Amount \| int \| str \| Decimal` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). Unset charges the sum of the items. Wave only accepts MMK |
 | `merchant_reference_id` | `str` | No | Unique ID of this attempt, at most 100 characters: letters, digits, `_` and `-` only. Unset or empty means a random ID |
-| `merchant_name` | `str` | No | Business name shown on Wave's page for this payment. Unset uses `WavePayConfig`'s `merchant_name` (also in the request hash); a blank one is rejected |
+| `merchant_name` | `str` | No | Business name shown on Wave's page for this payment. Unset uses `WavePayConfig`'s `merchant_name`; a blank one is rejected |
 | `time_to_live_seconds` | `int` | No | Seconds the customer has to pay this payment, an `int` greater than 0. Unset uses `WavePayConfig`'s `time_to_live_seconds` (also in the request hash) |
 | `additional_field_3`, `additional_field_4`, `additional_field_5` | `str` | No | Extra information, at most 50 characters each, sent as `additional_field_3`–`5` and echoed in the callback's `additionalField3`–`5`. Unset, `None` or empty is not sent |
 
@@ -103,7 +103,7 @@ Length limits count UTF-8 bytes. `WavePayItem(name, amount)` has a `name` and an
 
 ### Merchant Reference ID
 
-Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: Wave marks `orderId` as optional in callbacks, while `merchantReferenceId` is always present. `initiate()` writes the generated ID to `data.merchant_reference_id` once `data` passes validation, so keep a reference to the object you pass.
+Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: callbacks always carry `merchantReferenceId`, and earlier Wave documents marked `orderId` optional. `initiate()` writes the generated ID to `data.merchant_reference_id` once `data` passes validation, so keep a reference to the object you pass.
 
 ## Handling Callbacks
 

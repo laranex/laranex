@@ -12,7 +12,7 @@ Wave Pay (Pay with Wave API v1.3) sends the customer to Wave's payment page to p
 | `await wave.initiate(data)` | Redirect to Wave's payment page | [`RedirectPayment`](#initiate-response) |
 | `wave.handleCallback(request)` | Verify the callback | [`PaymentCallback`](#handlecallback-response) |
 
-Wave Pay has no status API in this package: the callback is the only payment result.
+Wave Pay has no status API: the callback is the only payment result.
 
 ## How it works
 

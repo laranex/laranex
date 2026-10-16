@@ -99,7 +99,7 @@ Length limits count UTF-8 bytes. `WavePayItem` takes a `name` and an `amount` (`
 
 ### Merchant Reference ID
 
-Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: Wave marks `orderId` as optional in callbacks, while `merchantReferenceId` is always present. `initiate()` fills it in, so read it from `data.merchantReferenceId` afterwards.
+Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: it identifies the attempt, and the callback carries it as `merchantReferenceId`. `initiate()` fills it in, so read it from `data.merchantReferenceId` afterwards.
 
 ## Handling Callbacks
 
@@ -177,6 +177,6 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 |---|---|---|
 | `initiate()` | `InvalidPaymentDataError` | A value breaks the rules above. Nothing is sent |
 | `initiate()` | `ApiError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
-| `handleCallback()` | `SignatureVerificationError` | `hashValue` doesn't match, a hashed field holds an object or array, `amount` isn't a decimal, both `orderId` and `merchantReferenceId` are missing, or either holds anything but letters, digits, `_` and `-` |
+| `handleCallback()` | `SignatureVerificationError` | `hashValue` doesn't match, a hashed field holds an object or array, `amount` isn't a decimal, both `orderId` and `merchantReferenceId` are missing or empty, or either holds anything but letters, digits, `_` and `-` |
 
 `httpStatus` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`gatewayCode` is `VALIDATION_ERROR`). When Wave can't be reached, `initiate()` throws `ApiError` with `httpStatus` `0`.

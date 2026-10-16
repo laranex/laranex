@@ -117,7 +117,7 @@ data := wavepay.PaymentData{
 
 ### Merchant Reference ID
 
-Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: Wave marks `orderId` as optional in callbacks, while `merchantReferenceId` is always present. `Initiate` takes a pointer and writes the generated ID to `data.MerchantReferenceID` once `data` passes validation.
+Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: every callback carries it as `merchantReferenceId`. `Initiate` takes a pointer and writes the generated ID to `data.MerchantReferenceID` once `data` passes validation.
 
 ## Handling Callbacks
 

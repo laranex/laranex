@@ -72,14 +72,14 @@ return redirect()->away($payment->url);
 | `amount` | `Amount\|int\|null` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). `null` charges the sum of the items. Wave only accepts MMK |
 | `merchantReferenceId` | `?string` | No | Unique ID of this attempt, at most 100 characters: letters, digits, `_` and `-` only. `null` or empty means a random ID |
 | `merchantName` | `?string` | No | Business name shown on Wave's page for this payment. `null` uses `WAVE_PAY_MERCHANT_NAME`; a blank one throws `The merchantName field is required.` |
-| `timeToLiveSeconds` | `?int` | No | Seconds the customer has to pay this payment, greater than 0. `null` uses the required `WAVE_PAY_TIME_TO_LIVE_IN_SECONDS`. Both override the configured value for this payment, including in the request hash |
+| `timeToLiveSeconds` | `?int` | No | Seconds the customer has to pay this payment, greater than 0. Overrides `WAVE_PAY_TIME_TO_LIVE_IN_SECONDS` for this payment, in the request hash too; `null` uses it |
 | `additionalField3`, `additionalField4`, `additionalField5` | `?string` | No | Extra information, at most 50 characters each, sent as `additional_field_3`–`5` and echoed in the callback's `additionalField3`–`5`. `null` or empty is not sent |
 
 Length limits count UTF-8 bytes. `WavePayItem` takes a `name` and an `amount` (`Amount|int`) in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats.
 
 ### Merchant Reference ID
 
-Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: Wave marks `orderId` as optional in callbacks, while `merchantReferenceId` is always present. Read it from `$data->merchantReferenceId`.
+Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it** from `$data->merchantReferenceId`: `orderId` is shared by every attempt of the order, while the callback's `merchantReferenceId` names the attempt that was paid.
 
 ## Handling Callbacks
 
@@ -106,7 +106,7 @@ Route::post('/payments/wave/callback', function (Request $request) {
 })->name('payments.wave.callback');
 ```
 
-Wave hashes the values joined with no separator, so a matching `hashValue` alone doesn't pin down where one value ends and the next begins. After the hash matches, `amount` must be a decimal (e.g. `10000` or `10000.00`) and `orderId` and `merchantReferenceId`, when sent, may only hold letters, digits, `_` and `-`; otherwise `handleCallback()` throws `SignatureVerificationException`. New payments are held to the same ID rules, so every callback for a payment made with this package passes them.
+Wave hashes the values joined with no separator, so a matching `hashValue` alone doesn't pin down where one value ends and the next begins. After the hash matches, `amount` must be a non-negative decimal (e.g. `10000` or `10000.00`), at least one of `orderId` and `merchantReferenceId` must be sent, and each, when sent, may only hold letters, digits, `_` and `-`; otherwise `handleCallback()` throws `SignatureVerificationException`. New payments are held to the same ID rules, so every callback for a payment made with this package passes them.
 
 ## Responses
 
@@ -155,6 +155,6 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 |---|---|---|
 | `new WavePayPaymentData(...)` | `InvalidPaymentDataException` | A value breaks the rules above. Nothing is sent |
 | `initiate()` | `ApiException` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
-| `handleCallback()` | `SignatureVerificationException` | `hashValue` doesn't match, a hashed field holds an object or array, `amount` isn't a decimal, or `orderId` or `merchantReferenceId` holds anything but letters, digits, `_` and `-` |
+| `handleCallback()` | `SignatureVerificationException` | `hashValue` doesn't match, a hashed field holds an object or array, `amount` isn't a decimal, neither `orderId` nor `merchantReferenceId` is sent, or either holds anything but letters, digits, `_` and `-` |
 
 `httpStatus` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`gatewayCode` is `VALIDATION_ERROR`).

@@ -96,7 +96,7 @@ Length limits count UTF-8 bytes. `wavepay.Item` takes a `Name` and an `Amount` (
 
 ### Merchant Reference ID
 
-Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: Wave marks `orderId` as optional in callbacks, while `merchantReferenceId` is always present. Read it from `data.MerchantReferenceID`.
+Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: every callback carries it as `merchantReferenceId`. Read it from `data.MerchantReferenceID`.
 
 ## Handling Callbacks
 
@@ -135,7 +135,7 @@ facades.Route().Post("/payments/wave/callback", func(
 })
 ```
 
-`callback.OrderID` falls back to `merchantReferenceId` when Wave's `orderId` is missing, null or empty.
+`callback.OrderID` falls back to `merchantReferenceId` when Wave's `orderId` is missing, null or empty, as a safeguard: earlier Wave documents marked `orderId` optional.
 
 Wave hashes the values joined with no separator, so a matching `hashValue` alone doesn't pin down where one value ends and the next begins. After the hash matches, `amount` must be a decimal (e.g. `10000` or `10000.00`), at least one of `orderId` and `merchantReferenceId` must be present, and each one sent may only hold letters, digits, `_` and `-`; otherwise `HandleCallback()` returns a `*myanmarpayments.SignatureVerificationError`. New payments are held to the same ID rules, so every callback for a payment made with this package passes them.
 
