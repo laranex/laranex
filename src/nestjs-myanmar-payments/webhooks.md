@@ -133,7 +133,7 @@ export class WebhooksController {
 }
 ```
 
-Use `https://shop.test/webhooks/payments/kbz-pay` (and `wave-money`, `aya-pay`, `yoma-mmqr`, `cyber-source`) as the gateway's callback URL.
+Use `https://shop.test/webhooks/payments/kbz-pay` (and `wave-pay`, `aya-pay`, `yoma-mmqr`, `cyber-source`) as the gateway's callback URL.
 
 ## Job
 
@@ -510,7 +510,7 @@ it('stores, acknowledges and processes a webhook', async () => {
   await app.init();
 
   await request(app.getHttpServer())
-    .post('/webhooks/payments/wave-money')
+    .post('/webhooks/payments/wave-pay')
     .set('Content-Type', 'application/json')
     .send(JSON.stringify(signedWavePayload))
     .expect(200);

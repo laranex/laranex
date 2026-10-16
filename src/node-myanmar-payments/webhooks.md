@@ -68,7 +68,7 @@ import {
 } from '@laranex/myanmar-payments';
 
 /**
- * What every gateway (KbzPay, WaveMoney, AyaPay, YomaMmqr, CyberSource)
+ * What every gateway (KbzPay, WavePay, AyaPay, YomaMmqr, CyberSource)
  * has in common.
  */
 interface Verifier {
@@ -80,7 +80,7 @@ const now = (): number => Math.floor(Date.now() / 1000);
 export class Webhooks {
   constructor(
     private readonly db: DatabaseSync,
-    // 'kbz-pay' => kbz, 'wave-money' => wave, ...
+    // 'kbz-pay' => kbz, 'wave-pay' => wave, ...
     private readonly gateways: Record<string, Verifier>,
   ) {}
 
@@ -296,7 +296,7 @@ import { DatabaseSync } from 'node:sqlite';
 import {
   CallbackRequest,
   KbzPay,
-  WaveMoney,
+  WavePay,
 } from '@laranex/myanmar-payments';
 
 import { Webhooks } from './webhooks.js';
@@ -304,7 +304,7 @@ import { Webhooks } from './webhooks.js';
 const db = new DatabaseSync('payments.sqlite');
 const webhooks = new Webhooks(db, {
   'kbz-pay': KbzPay.fromEnv(process.env),
-  'wave-money': WaveMoney.fromEnv(process.env),
+  'wave-pay': WavePay.fromEnv(process.env),
 });
 
 createServer(async (req, res) => {

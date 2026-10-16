@@ -29,9 +29,9 @@ This creates `config/myanmar-payments.php` (the `myanmar-payments` tag publishes
 
 | Class | What it is |
 |---|---|
-| `Facades\MyanmarPayments` | The facade: `kbzPay()`, `waveMoney()`, `ayaPay()`, `yomaMmqr()`, `cyberSource()`, `gateway($name)`, `gateways()`, `handleCallback($gateway, $request)`, `acknowledge($callback)` |
+| `Facades\MyanmarPayments` | The facade: `kbzPay()`, `wavePay()`, `ayaPay()`, `yomaMmqr()`, `cyberSource()`, `gateway($name)`, `gateways()`, `handleCallback($gateway, $request)`, `acknowledge($callback)` |
 | `MyanmarPayments` | The singleton behind the facade, for constructor injection |
-| `Gateways\KbzPay`, `WaveMoney`, `AyaPay`, `YomaMmqr`, `CyberSource` | The SDK gateways, extended to accept a Laravel `Request` in `handleCallback()` (and AYA's `verifyRedirect()`); AYA Pay and CyberSource also set `autoSubmitUrl` |
+| `Gateways\KbzPay`, `WavePay`, `AyaPay`, `YomaMmqr`, `CyberSource` | The SDK gateways, extended to accept a Laravel `Request` in `handleCallback()` (and AYA's `verifyRedirect()`); AYA Pay and CyberSource also set `autoSubmitUrl` |
 | `Http\CallbackResponse` | What `acknowledge()` returns: a `Responsable` with the gateway's acknowledgement |
 
 All classes live under `Laranex\LaravelMyanmarPayments`. Everything about payments themselves (`Amount`, payment data, results, `PaymentCallback`, `PaymentStatus`, exceptions) comes from `Laranex\PhpMyanmarPayments`.

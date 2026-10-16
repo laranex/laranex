@@ -9,7 +9,7 @@ Starting a payment always follows the same pattern: build the gateway's payment 
 
 | Result | What you do | Returned by |
 |---|---|---|
-| `*RedirectPayment` | Redirect the customer to `payment.URL` | `KbzPay()` → `PWA()`, `WaveMoney()` → `Initiate()` |
+| `*RedirectPayment` | Redirect the customer to `payment.URL` | `KbzPay()` → `PWA()`, `WavePay()` → `Initiate()` |
 | `*FormPayment` | Redirect to `payments.AutoSubmitURL(form)` | `AyaPay()` → `Initiate()`, `CyberSource()` → `Initiate()` |
 | `*QrPayment` | Show the QR to the customer | `KbzPay()` → `QR()`, `YomaMmqr()` → `Initiate()`, `RenewQR()` |
 | `*AppPayment` | Return the signed payload to your mobile app | `KbzPay()` → `App()` |
@@ -20,7 +20,7 @@ Goravel's `http.Context` is a `context.Context`, so pass `ctx` straight to gatew
 
 ## Redirect Payments
 
-Here is the flow with the KBZ Pay PWA; Wave Money works the same way with its own payment page.
+Here is the flow with the KBZ Pay PWA; Wave Pay works the same way with its own payment page.
 
 <SequenceDiagram
   title="Redirect payment with the KBZ Pay PWA"

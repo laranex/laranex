@@ -112,7 +112,7 @@ use App\Http\Controllers\PaymentWebhookController;
 
 Route::post('/webhooks/payments/{gateway}', PaymentWebhookController::class)
     ->whereIn('gateway', [
-        'kbz-pay', 'wave-money', 'aya-pay', 'yoma-mmqr', 'cyber-source',
+        'kbz-pay', 'wave-pay', 'aya-pay', 'yoma-mmqr', 'cyber-source',
     ])
     ->name('payments.webhook');
 ```
@@ -338,7 +338,7 @@ use Illuminate\Support\Facades\Queue;
 it('stores, acknowledges and processes a webhook', function () {
     Queue::fake();
 
-    $this->postJson('/webhooks/payments/wave-money', $signedWavePayload)
+    $this->postJson('/webhooks/payments/wave-pay', $signedWavePayload)
         ->assertOk();
 
     Queue::assertPushed(ProcessPaymentWebhook::class);

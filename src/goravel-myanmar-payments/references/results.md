@@ -9,7 +9,7 @@ Starting a payment returns a pointer to one of four types in `github.com/laranex
 
 ## RedirectPayment
 
-Returned by `KbzPay()` → `PWA()` and `WaveMoney()` → `Initiate()`.
+Returned by `KbzPay()` → `PWA()` and `WavePay()` → `Initiate()`.
 
 | Field | Type | Description |
 |---|---|---|

@@ -63,7 +63,7 @@ def test_starts_a_kbz_pay_qr_payment() -> None:
 | Gateway | Endpoints to fake |
 |---|---|
 | KBZ Pay | `{api_url}/precreate`, `{api_url}/queryorder` |
-| Wave Money | `{base_url}/payment` |
+| Wave Pay | `{base_url}/payment` |
 | AYA Pay | `{base_url}/v1/payment/services`, `{base_url}/v1/payment/enquiry` (`initiate()` is local) |
 | Yoma MMQR | `{base_url}/token`, then `{base_url}/payment-gateway/{api_version}/api/` + `payment/checkout`, `qr/generate`, `payment/check-status` |
 | CyberSource | None: forms are signed locally |
@@ -194,7 +194,7 @@ def test_verifies_a_kbz_pay_callback() -> None:
 
 A modified payload must be rejected: change `total_amount` after signing and `handle_callback()` raises `SignatureVerificationError`. To exercise your real callback view, post the same JSON with your framework's test client, e.g. Django's `client.post("/payments/kbz/callback", body, content_type="application/json")`, Flask's `client.post(..., data=body, content_type="application/json")` or Starlette's `TestClient.post(..., content=body)`.
 
-The other gateways sign with HMAC-SHA256 over documented fields, as described on their [gateway pages](/python-myanmar-payments/drivers/wave-money).
+The other gateways sign with HMAC-SHA256 over documented fields, as described on their [gateway pages](/python-myanmar-payments/drivers/wave-pay).
 
 ## Testing Your Own Logic
 

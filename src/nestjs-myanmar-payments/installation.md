@@ -66,17 +66,17 @@ Without it the package falls back to the unread request stream (Express) or enco
 | Export | What it is |
 |---|---|
 | `MyanmarPaymentsModule` | `forRoot()`, `forRootAsync()` |
-| `MyanmarPaymentsService` | `kbzPay()`, `waveMoney()`, `ayaPay()`, `yomaMmqr()`, `cyberSource()`, `gateway(name)`, `handleCallback()`, `autoSubmitUrl()`, `resolveFormPayment()`, `tokenCache` |
-| `@InjectKbzPay()`, `@InjectWaveMoney()`, `@InjectAyaPay()`, `@InjectYomaMmqr()`, `@InjectCyberSource()` | Inject one SDK gateway |
+| `MyanmarPaymentsService` | `kbzPay()`, `wavePay()`, `ayaPay()`, `yomaMmqr()`, `cyberSource()`, `gateway(name)`, `handleCallback()`, `autoSubmitUrl()`, `resolveFormPayment()`, `tokenCache` |
+| `@InjectKbzPay()`, `@InjectWavePay()`, `@InjectAyaPay()`, `@InjectYomaMmqr()`, `@InjectCyberSource()` | Inject one SDK gateway |
 | `@VerifiedCallback()`, `@AcknowledgeCallback()`, `@RawCallback()` | Callback decorators; see [Callbacks & Status](/nestjs-myanmar-payments/callbacks#callback-helpers) |
 | `VerifiedCallbackPipe`, `CallbackRequestPipe`, `AcknowledgementInterceptor` | The pipes and the interceptor behind those decorators; `AcknowledgementInterceptor` also works with `@UseInterceptors()` |
 | `callbackRequestFrom()`, `acknowledge()` | Callback helpers for handlers that use `@Req()` and `@Res()` |
 | `NestRequestLike`, `FastifyReplyLike` | The request and reply shapes those helpers accept (types) |
 | `FormPaymentController` | The auto-submit form route's controller; the module mounts it at `formRoute.path` |
 | `CacheManagerTokenCache`, `CacheManagerLike` | The Yoma token cache over `@nestjs/cache-manager`, and the cache shape it needs |
-| `GATEWAY_NAMES`, `GatewayName` | `'kbz-pay'`, `'wave-money'`, `'aya-pay'`, `'yoma-mmqr'`, `'cyber-source'` |
-| `MyanmarPaymentsGateway` | `KbzPay \| WaveMoney \| AyaPay \| YomaMmqr \| CyberSource`, what `gateway(name)` returns (type) |
-| `MYANMAR_PAYMENTS_OPTIONS`, `KBZ_PAY`, `WAVE_MONEY`, `AYA_PAY`, `YOMA_MMQR`, `CYBER_SOURCE` | Injection tokens of the options and of each gateway |
+| `GATEWAY_NAMES`, `GatewayName` | `'kbz-pay'`, `'wave-pay'`, `'aya-pay'`, `'yoma-mmqr'`, `'cyber-source'` |
+| `MyanmarPaymentsGateway` | `KbzPay \| WavePay \| AyaPay \| YomaMmqr \| CyberSource`, what `gateway(name)` returns (type) |
+| `MYANMAR_PAYMENTS_OPTIONS`, `KBZ_PAY`, `WAVE_PAY`, `AYA_PAY`, `YOMA_MMQR`, `CYBER_SOURCE` | Injection tokens of the options and of each gateway |
 | `DEFAULT_FORM_PATH` | `'myanmar-payments/form'` |
 | `MyanmarPaymentsModuleOptions`, `MyanmarPaymentsModuleExtras`, `MyanmarPaymentsModuleRootOptions`, `MyanmarPaymentsModuleAsyncOptions`, `MyanmarPaymentsOptionsFactory`, `FormLinkOptions`, `FormRouteOptions`, `ConfigReader` | Option types; see [Configuration](/nestjs-myanmar-payments/configuration) |
 

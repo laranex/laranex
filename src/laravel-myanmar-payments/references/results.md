@@ -9,7 +9,7 @@ Starting a payment returns one of four classes in `Laranex\PhpMyanmarPayments\Re
 
 ## RedirectPayment
 
-Returned by `kbzPay()->pwa()` and `waveMoney()->initiate()`.
+Returned by `kbzPay()->pwa()` and `wavePay()->initiate()`.
 
 | Property | Type | Description |
 |---|---|---|

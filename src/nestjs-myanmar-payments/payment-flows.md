@@ -9,7 +9,7 @@ Starting a payment always follows the same pattern: build the gateway's payment 
 
 | Result | What you do | Returned by |
 |---|---|---|
-| `RedirectPayment` | Redirect the customer to `payment.url` | `kbzPay().pwa()`, `waveMoney().initiate()` |
+| `RedirectPayment` | Redirect the customer to `payment.url` | `kbzPay().pwa()`, `wavePay().initiate()` |
 | `FormPayment` | Redirect to `this.payments.autoSubmitUrl(payment)` | `ayaPay().initiate()`, `cyberSource().initiate()` |
 | `QrPayment` | Show the QR to the customer | `kbzPay().qr()`, `yomaMmqr().initiate()`, `yomaMmqr().renewQr()` |
 | `AppPayment` | Return the signed payload to your mobile app | `kbzPay().app()` |
@@ -18,7 +18,7 @@ The samples run in a controller that injects `MyanmarPaymentsService` as `this.p
 
 ## Redirect Payments
 
-Here is the flow with the KBZ Pay PWA; Wave Money works the same way with its own payment page.
+Here is the flow with the KBZ Pay PWA; Wave Pay works the same way with its own payment page.
 
 <SequenceDiagram
   title="Redirect payment with the KBZ Pay PWA"

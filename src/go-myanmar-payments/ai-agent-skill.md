@@ -17,7 +17,7 @@ Or copy `skills/go-myanmar-payments` from the [repository](https://github.com/la
 
 ## What the skill covers
 
-Integrate Myanmar payment gateways (KBZ Pay, Wave Money, AYA Pay, Yoma MMQR, CyberSource) in a Go service with github.com/laranex/go-myanmar-payments/v4.
+Integrate Myanmar payment gateways (KBZ Pay, Wave Pay, AYA Pay, Yoma MMQR, CyberSource) in a Go service with github.com/laranex/go-myanmar-payments/v4.
 
 ## Keeping it current
 

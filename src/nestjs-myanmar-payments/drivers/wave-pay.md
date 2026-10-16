@@ -1,62 +1,62 @@
 ---
-title: Wave Money
-description: Integrate Wave Money (WavePay) with NestJS Myanmar Payments. Redirect payments with typed line items and verified callbacks.
+title: Wave Pay
+description: Integrate Wave Pay with NestJS Myanmar Payments. Redirect payments with typed line items and verified callbacks.
 ---
 
-# Wave Money
+# Wave Pay
 
-Wave Money's payment gateway sends the customer to a Wave payment page to pay with their WavePay wallet.
+Wave Pay (Pay with Wave API v1.3) sends the customer to Wave's payment page to pay with their WavePay wallet.
 
 | Call | What it does | Returns |
 |---|---|---|
-| `waveMoney().initiate(data)` | Redirect to Wave's payment page | [`RedirectPayment`](#initiate-response) |
-| `waveMoney().handleCallback(request)` | Verify the callback | [`PaymentCallback`](#handlecallback-response) |
+| `wavePay().initiate(data)` | Redirect to Wave's payment page | [`RedirectPayment`](#initiate-response) |
+| `wavePay().handleCallback(request)` | Verify the callback | [`PaymentCallback`](#handlecallback-response) |
 
-Wave Money has no status API in this package: the callback is the only payment result.
+Wave Pay has no status API in this package: the callback is the only payment result.
 
-[Responses](#responses) shows what Wave Money puts in each result.
+[Responses](#responses) shows what Wave Pay puts in each result.
 
 ## How it works
 
 Wave sends the customer back to your return URL and posts the result to your callback URL separately.
 
 <SequenceDiagram
-  title="Wave Money: payment request, authenticate, result"
-  :participants="['Customer', 'Your app', 'Wave Money']"
+  title="Wave Pay: payment request, authenticate, result"
+  :participants="['Customer', 'Your app', 'Wave Pay']"
   :steps="[
     { from: 'Customer', to: 'Your app', label: 'Check out' },
-    { from: 'Your app', to: 'Wave Money', label: 'Payment request with hash', detail: 'waveMoney().initiate(data)' },
-    { from: 'Wave Money', to: 'Your app', label: 'transaction_id', response: true },
+    { from: 'Your app', to: 'Wave Pay', label: 'Payment request with hash', detail: 'wavePay().initiate(data)' },
+    { from: 'Wave Pay', to: 'Your app', label: 'transaction_id', response: true },
     { from: 'Your app', to: 'Customer', label: 'Redirect to authenticate', detail: '/authenticate?transaction_id=…', response: true },
-    { from: 'Customer', to: 'Wave Money', label: 'Pay with WavePay' },
-    { from: 'Wave Money', to: 'Customer', label: 'Back to the frontend URL', detail: 'returnUrl: not proof of payment', response: true },
-    { from: 'Wave Money', to: 'Your app', label: 'Backend result URL callback', detail: 'POST to callbackUrl, hashValue' },
-    { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: 'waveMoney().handleCallback(request)' },
+    { from: 'Customer', to: 'Wave Pay', label: 'Pay with WavePay' },
+    { from: 'Wave Pay', to: 'Customer', label: 'Back to the frontend URL', detail: 'returnUrl: not proof of payment', response: true },
+    { from: 'Wave Pay', to: 'Your app', label: 'Backend result URL callback', detail: 'POST to callbackUrl, hashValue' },
+    { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: 'wavePay().handleCallback(request)' },
   ]"
 />
 
 ## Initiating a Payment
 
 ```ts
-import type { WaveMoneyPaymentData } from '@laranex/myanmar-payments';
+import type { WavePayPaymentData } from '@laranex/myanmar-payments';
 import { MyanmarPaymentsService } from '@laranex/nestjs-myanmar-payments';
 import { Controller, Param, Post, Redirect } from '@nestjs/common';
 
 import { OrdersService } from '../orders/orders.service';
 
 @Controller('checkout')
-export class WaveMoneyCheckoutController {
+export class WavePayCheckoutController {
   constructor(
     private readonly payments: MyanmarPaymentsService,
     private readonly orders: OrdersService,
   ) {}
 
-  @Post(':id/wave-money')
+  @Post(':id/wave-pay')
   @Redirect()
   async initiate(@Param('id') id: string): Promise<{ url: string }> {
     const order = await this.orders.findOrFail(id);
 
-    const data: WaveMoneyPaymentData = {
+    const data: WavePayPaymentData = {
       orderId: `ORDER_${order.id}`,
       callbackUrl: 'https://shop.test/payments/wave/callback',
       returnUrl: `https://shop.test/orders/${order.id}`,
@@ -67,7 +67,7 @@ export class WaveMoneyCheckoutController {
       ],
     };
 
-    const payment = await this.payments.waveMoney().initiate(data);
+    const payment = await this.payments.wavePay().initiate(data);
 
     await this.orders.update(order, {
       waveReference: data.merchantReferenceId,
@@ -78,23 +78,24 @@ export class WaveMoneyCheckoutController {
 }
 ```
 
-`initiate()` posts to `{baseUrl}/payment` and sends the customer to `{baseRedirectUrl}/authenticate`; see [Endpoints](/nestjs-myanmar-payments/configuration#endpoints).
+`initiate()` posts JSON, in MMK, to `{baseUrl}/payment` and sends the customer to `{baseRedirectUrl}/authenticate`; see [Endpoints](/nestjs-myanmar-payments/configuration#endpoints).
 
-### WaveMoneyPaymentData
+### WavePayPaymentData
 
 | Parameter | Type | Required | Rules |
 |---|---|---|---|
-| `orderId` | `string` | Yes | Your order ID: letters, digits, `_` and `-` only. One order can have several payment attempts |
-| `callbackUrl` | `string` | Yes | Absolute http or https URL that Wave posts the result to. Wave may require HTTPS with a CA-issued certificate in production |
-| `returnUrl` | `string` | Yes | Absolute http or https URL Wave sends the customer back to. Not proof of payment |
-| `description` | `string` | Yes | Shown to the customer |
-| `items` | `readonly WaveMoneyItem[]` | Yes | At least one item |
+| `orderId` | `string` | Yes | Your order ID, at most 100 characters: letters, digits, `_` and `-` only. One order can have several payment attempts |
+| `callbackUrl` | `string` | Yes | Absolute http or https URL that Wave posts the result to, at most 255 characters. Wave may require HTTPS with a CA-issued certificate in production |
+| `returnUrl` | `string` | Yes | Absolute http or https URL Wave sends the customer back to, at most 255 characters. Not proof of payment |
+| `description` | `string` | Yes | Shown to the customer, at most 255 characters |
+| `items` | `readonly WavePayItem[]` | Yes | At least one item |
 | `amount` | `AmountInput` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). Unset charges the sum of the items. Wave only accepts MMK |
-| `merchantReferenceId` | `string` | No | Unique ID of this attempt: letters, digits, `_` and `-` only. Unset or empty means a random ID |
-| `merchantName` | `string` | No | Business name shown on Wave's page for this payment. Unset or `null` uses `WAVE_MONEY_MERCHANT_NAME` (`waveMoney.merchantName`); a blank one is rejected |
-| `timeToLiveSeconds` | `number` | No | Seconds the customer has to pay this payment, a whole number greater than 0. Unset or `null` uses `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` (`waveMoney.timeToLiveSeconds`) |
+| `merchantReferenceId` | `string` | No | Unique ID of this attempt, at most 100 characters: letters, digits, `_` and `-` only. Unset or empty means a random ID |
+| `merchantName` | `string` | No | Business name shown on Wave's page for this payment. Unset or `null` uses `WAVE_PAY_MERCHANT_NAME` (`wavePay.merchantName`); a blank one is rejected |
+| `timeToLiveSeconds` | `number` | No | Seconds the customer has to pay this payment, a whole number greater than 0. Unset or `null` uses `WAVE_PAY_TIME_TO_LIVE_IN_SECONDS` (`wavePay.timeToLiveSeconds`) |
+| `additionalField3`, `additionalField4`, `additionalField5` | `string` | No | Extra information, at most 50 characters each, sent as `additional_field_3`–`5` and echoed in the callback's `additionalField3`–`5`. Unset, `null` or empty is not sent |
 
-`WaveMoneyItem` takes a `name` and an `amount` (`AmountInput`) in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats.
+Length limits count UTF-8 bytes. `WavePayItem` takes a `name` and an `amount` (`AmountInput`) in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats.
 
 ### Merchant Reference ID
 
@@ -111,11 +112,11 @@ import {
 import { Controller, Post } from '@nestjs/common';
 
 @Controller('payments')
-export class WaveMoneyCallbackController {
+export class WavePayCallbackController {
   @Post('wave/callback')
   @AcknowledgeCallback()
   handle(
-    @VerifiedCallback('wave-money') callback: PaymentCallback,
+    @VerifiedCallback('wave-pay') callback: PaymentCallback,
   ): PaymentCallback {
     if (callback.isSuccessful()) {
       // callback.orderId is your orderId
@@ -132,11 +133,11 @@ export class WaveMoneyCallbackController {
 
 ## Responses
 
-What Wave Money puts in each property. See [Results](/nestjs-myanmar-payments/references/results) and [PaymentCallback & Status](/nestjs-myanmar-payments/references/payment-callback) for the full classes. `raw` holds plain JavaScript values, with JSON numbers kept as their exact text in a `string` (`1000.50` stays `'1000.50'`).
+What Wave Pay puts in each property. See [Results](/nestjs-myanmar-payments/references/results) and [PaymentCallback & Status](/nestjs-myanmar-payments/references/payment-callback) for the full classes. `raw` holds plain JavaScript values, with JSON numbers kept as their exact text in a `string` (`1000.50` stays `'1000.50'`).
 
 ### `initiate()` → `RedirectPayment` {#initiate-response}
 
-| Property | Wave Money value |
+| Property | Wave Pay value |
 |---|---|
 | `flow` | `redirect` |
 | `orderId` | Your `orderId` |
@@ -146,7 +147,7 @@ What Wave Money puts in each property. See [Results](/nestjs-myanmar-payments/re
 
 ### `handleCallback()` → `PaymentCallback` {#handlecallback-response}
 
-| Property / Method | Wave Money value |
+| Property / Method | Wave Pay value |
 |---|---|
 | `orderId` | Wave `orderId`, falling back to `merchantReferenceId` when it is missing, null or empty |
 | `status` | `status` mapped, see [Statuses](#statuses) |
@@ -163,8 +164,7 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 | Wave `status` | `PaymentStatus` |
 |---|---|
 | `PAYMENT_CONFIRMED` | `Successful` |
-| `INSUFFICIENT_BALANCE` | `Pending` |
-| `ACCOUNT_LOCKED`, `BILL_COLLECTION_FAILED` | `Failed` |
+| `BILL_COLLECTION_FAILED`, `INSUFFICIENT_BALANCE`, `ACCOUNT_LOCKED` | `Failed` |
 | `PAYMENT_REQUEST_CANCELLED` | `Canceled` |
 | `TRANSACTION_TIMED_OUT`, `SCHEDULER_TRANSACTION_TIMED_OUT` | `Expired` |
 | anything else | `Unknown` |

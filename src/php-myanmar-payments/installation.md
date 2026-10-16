@@ -33,12 +33,12 @@ use Laranex\PhpMyanmarPayments\KbzPay\KbzPay;
 | `Laranex\PhpMyanmarPayments\Contracts` | `PaymentGateway` |
 | `Laranex\PhpMyanmarPayments\Support` | `ArrayCache` |
 | `Laranex\PhpMyanmarPayments\KbzPay` | `KbzPay`, `KbzPayConfig`, `KbzPayPaymentData`, `KbzPaySigner` |
-| `Laranex\PhpMyanmarPayments\WaveMoney` | `WaveMoney`, `WaveMoneyConfig`, `WaveMoneyPaymentData`, `WaveMoneyItem` |
+| `Laranex\PhpMyanmarPayments\WavePay` | `WavePay`, `WavePayConfig`, `WavePayPaymentData`, `WavePayItem` |
 | `Laranex\PhpMyanmarPayments\AyaPay` | `AyaPay`, `AyaPayConfig`, `AyaPayPaymentData`, `AyaPayMethod`, `AyaPayService` |
 | `Laranex\PhpMyanmarPayments\YomaMmqr` | `YomaMmqr`, `YomaMmqrConfig`, `YomaMmqrPaymentData` |
 | `Laranex\PhpMyanmarPayments\CyberSource` | `CyberSource`, `CyberSourceConfig`, `CyberSourcePaymentData`, `CyberSourceTransactionType` |
 
-Classes marked `@internal` (`Transport`, `HttpResponse`, the `Support` classes other than `ArrayCache`, and the Wave Money and AYA signers) are not part of the public API.
+Classes marked `@internal` (`Transport`, `HttpResponse`, the `Support` classes other than `ArrayCache`, and the Wave Pay and AYA signers) are not part of the public API.
 
 ## Quick Start
 

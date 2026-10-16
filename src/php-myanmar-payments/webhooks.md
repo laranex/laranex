@@ -71,7 +71,7 @@ use Laranex\PhpMyanmarPayments\Http\CallbackRequest;
 final class PaymentWebhooks
 {
     /**
-     * PaymentGateway is what every gateway (KbzPay, WaveMoney, AyaPay,
+     * PaymentGateway is what every gateway (KbzPay, WavePay, AyaPay,
      * YomaMmqr, CyberSource) has in common.
      *
      * @param  array<string, PaymentGateway>  $gateways  'kbz-pay' => $kbz, ...
@@ -301,7 +301,7 @@ $webhooks = new PaymentWebhooks(
     ]),
     [
         'kbz-pay' => $payments->kbzPay(),
-        'wave-money' => $payments->waveMoney(),
+        'wave-pay' => $payments->wavePay(),
     ],
 );
 ```

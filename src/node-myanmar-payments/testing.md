@@ -57,7 +57,7 @@ test('starts a KBZ Pay QR payment', async () => {
 | Gateway | Endpoints to fake |
 |---|---|
 | KBZ Pay | `{apiUrl}/precreate`, `{apiUrl}/queryorder` |
-| Wave Money | `{baseUrl}/payment` |
+| Wave Pay | `{baseUrl}/payment` |
 | AYA Pay | `{baseUrl}/v1/payment/services`, `{baseUrl}/v1/payment/enquiry` (`initiate()` is local) |
 | Yoma MMQR | `{baseUrl}/token`, then `{baseUrl}/payment-gateway/{apiVersion}/api/` + `payment/checkout`, `qr/generate`, `payment/check-status` |
 | CyberSource | None: forms are signed locally |
@@ -164,7 +164,7 @@ test('verifies a KBZ Pay callback', () => {
 
 A modified payload must be rejected: change `total_amount` after signing and `handleCallback()` throws `SignatureVerificationError`. To exercise your real callback route, post the same JSON with your framework's test client, e.g. supertest's `request(app).post('/payments/kbz/callback').type('json').send(body)` for Express, Fastify's `app.inject({ method: 'POST', url: '/payments/kbz/callback', payload: body })` or Hono's `app.request('/payments/kbz/callback', { method: 'POST', body })`.
 
-The other gateways sign with HMAC-SHA256 over documented fields, as described on their [gateway pages](/node-myanmar-payments/drivers/wave-money). To replay a call you stored, rebuild it from the stored raw body and headers: `CallbackRequest.from({ body: storedBody, headers: storedHeaders })`.
+The other gateways sign with HMAC-SHA256 over documented fields, as described on their [gateway pages](/node-myanmar-payments/drivers/wave-pay). To replay a call you stored, rebuild it from the stored raw body and headers: `CallbackRequest.from({ body: storedBody, headers: storedHeaders })`.
 
 ## Testing Your Own Logic
 

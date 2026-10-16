@@ -20,7 +20,7 @@ The samples on this page and the gateway pages are plain PHP scripts; [Framework
 
 ## Redirect Payments
 
-Here is the flow with the KBZ Pay PWA; Wave Money works the same way with its own payment page.
+Here is the flow with the KBZ Pay PWA; Wave Pay works the same way with its own payment page.
 
 <SequenceDiagram
   title="Redirect payment with the KBZ Pay PWA"

@@ -26,7 +26,7 @@ import (
 |---|---|
 | `github.com/laranex/go-myanmar-payments/v4` | `Amount`, results, `PaymentCallback`, `PaymentStatus`, `CallbackRequest`, `Acknowledgement`, errors and `PaymentError`, `HTTPDoer`, `TokenCache` and `MemoryTokenCache` |
 | `github.com/laranex/go-myanmar-payments/v4/kbzpay` | `Gateway`, `Config`, `PaymentData`, `Signer` |
-| `github.com/laranex/go-myanmar-payments/v4/wavemoney` | `Gateway`, `Config`, `PaymentData`, `Item` |
+| `github.com/laranex/go-myanmar-payments/v4/wavepay` | `Gateway`, `Config`, `PaymentData`, `Item` |
 | `github.com/laranex/go-myanmar-payments/v4/ayapay` | `Gateway`, `Config`, `PaymentData`, `Method`, `Service` |
 | `github.com/laranex/go-myanmar-payments/v4/yomammqr` | `Gateway`, `Config`, `PaymentData` |
 | `github.com/laranex/go-myanmar-payments/v4/cybersource` | `Gateway`, `Config`, `PaymentData`, `TransactionType` |

@@ -40,7 +40,7 @@ Every gateway that calls an API has a sync class and an async twin with the same
 | Sync | Async | Awaited on the async class |
 |---|---|---|
 | `KbzPay` | `AsyncKbzPay` | `pwa()`, `qr()`, `app()`, `status()` |
-| `WaveMoney` | `AsyncWaveMoney` | `initiate()` |
+| `WavePay` | `AsyncWavePay` | `initiate()` |
 | `AyaPay` | `AsyncAyaPay` | `services()`, `status()` |
 | `YomaMmqr` | `AsyncYomaMmqr` | `initiate()`, `renew_qr()`, `status()`, `forget_token()` |
 | `CyberSource` | `CyberSource` | None: one class for both |

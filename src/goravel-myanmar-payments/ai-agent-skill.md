@@ -17,7 +17,7 @@ Or copy `skills/goravel-myanmar-payments` from the [repository](https://github.c
 
 ## What the skill covers
 
-Integrate Myanmar payment gateways (KBZ Pay, Wave Money, AYA Pay, Yoma MMQR, CyberSource) in a Goravel app with github.com/laranex/goravel-myanmar-payments/v4.
+Integrate Myanmar payment gateways (KBZ Pay, Wave Pay, AYA Pay, Yoma MMQR, CyberSource) in a Goravel app with github.com/laranex/goravel-myanmar-payments/v4.
 
 It is written from the package source and kept in the repository next to the code, so agents follow the same API, configuration and conventions these docs describe.
 

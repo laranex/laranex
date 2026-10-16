@@ -5,7 +5,7 @@ description: Configure PHP Myanmar Payments with one config class per gateway or
 
 # Configuration
 
-Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes named arguments; gateways take the object or an array of its snake_case keys. Every setting is required except the HTTP timeout (`timeoutSeconds`, 30 seconds, `MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); a missing or blank one throws a `ConfigurationException` naming it:
+Each gateway has a config class (`KbzPayConfig`, `WavePayConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes named arguments; gateways take the object or an array of its snake_case keys. Every setting is required except the HTTP timeout (`timeoutSeconds`, 30 seconds, `MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); a missing or blank one throws a `ConfigurationException` naming it:
 
 ```php
 use Laranex\PhpMyanmarPayments\Exceptions\ConfigurationException;
@@ -32,7 +32,7 @@ $kbz = new KbzPay($config);
 
 `$e->getMessage()` reads `The kbz_pay configuration is missing [app_key].`
 
-`timeoutSeconds` and Wave Money's `timeToLiveSeconds` must be whole numbers greater than 0, and KBZ Pay's `timeToLiveMinutes` from 1 to 120; anything else, such as `0` or `'thirty'`, throws, e.g. `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+`timeoutSeconds` and Wave Pay's `timeToLiveSeconds` must be whole numbers greater than 0, and KBZ Pay's `timeToLiveMinutes` from 1 to 120; anything else, such as `0` or `'thirty'`, throws, e.g. `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
 ## Config Options
 
@@ -48,16 +48,16 @@ $kbz = new KbzPay($config);
 | `timeToLiveMinutes` | `int` | Yes | Minutes the customer has to pay each order, 1 to 120. A payment's own `timeToLiveMinutes` overrides it. Anything else throws `The kbz_pay configuration [time_to_live_in_minutes] must be a whole number from 1 to 120.` |
 | `timeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); an invalid one is reported as `timeout_in_seconds` |
 
-### WaveMoneyConfig
+### WavePayConfig
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `merchantId` | `string` | Yes | Merchant ID issued by Wave |
 | `secretKey` | `string` | Yes | Hash secret key issued by Wave |
-| `merchantName` | `string` | Yes | Shown on Wave's payment page. A payment can override it with `WaveMoneyPaymentData`'s `merchantName` |
-| `baseUrl` | `string` | Yes | The API base URL, e.g. `WaveMoneyConfig::PRODUCTION_URL`. Payments are requested at its `/payment` |
-| `baseRedirectUrl` | `string` | Yes | The host the customer is sent to, e.g. `WaveMoneyConfig::PRODUCTION_URL`. The customer approves the payment at its `/authenticate` |
-| `timeToLiveSeconds` | `int` | Yes | Seconds the customer has to pay, greater than 0. A payment can override it with `WaveMoneyPaymentData`'s `timeToLiveSeconds` |
+| `merchantName` | `string` | Yes | Shown on Wave's payment page. A payment can override it with `WavePayPaymentData`'s `merchantName` |
+| `baseUrl` | `string` | Yes | The API base URL, e.g. `WavePayConfig::PRODUCTION_URL`. Payments are requested at its `/payment` |
+| `baseRedirectUrl` | `string` | Yes | The host the customer is sent to, e.g. `WavePayConfig::PRODUCTION_URL`. The customer approves the payment at its `/authenticate` |
+| `timeToLiveSeconds` | `int` | Yes | Seconds the customer has to pay, greater than 0. A payment can override it with `WavePayPaymentData`'s `timeToLiveSeconds` |
 | `timeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); an invalid one is reported as `timeout_in_seconds` |
 
 ### AyaPayConfig
@@ -96,8 +96,8 @@ $kbz = new KbzPay($config);
 ```env
 KBZ_PAY_BASE_URL=https://api.kbzpay.com/payment/gateway
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://wap.kbzpay.com/pgw/pwa/#/"
-WAVE_MONEY_BASE_URL=https://payments.wavemoney.io
-WAVE_MONEY_BASE_REDIRECT_URL=https://payments.wavemoney.io
+WAVE_PAY_BASE_URL=https://payments.wavemoney.io
+WAVE_PAY_BASE_REDIRECT_URL=https://payments.wavemoney.io
 AYA_PAY_BASE_URL=https://pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://paymenthubapi.yomabank.com
 CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
@@ -108,8 +108,8 @@ CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
 ```env
 KBZ_PAY_BASE_URL=http://api-uat.kbzpay.com/payment/gateway/uat
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://static.kbzpay.com/pgw/uat/pwa/#/"
-WAVE_MONEY_BASE_URL=https://preprodpayments.wavemoney.io:8107
-WAVE_MONEY_BASE_REDIRECT_URL=https://preprodpayments.wavemoney.io
+WAVE_PAY_BASE_URL=https://preprodpayments.wavemoney.io:8107
+WAVE_PAY_BASE_REDIRECT_URL=https://preprodpayments.wavemoney.io:8107
 AYA_PAY_BASE_URL=https://uat-pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://devapi.yomabank.net
 CYBER_SOURCE_BASE_URL=https://testsecureacceptance.cybersource.com
@@ -143,13 +143,13 @@ KBZ_PAY_BASE_URL=
 KBZ_PAY_PWA_BASE_REDIRECT_URL=
 KBZ_PAY_TIME_TO_LIVE_IN_MINUTES=15    # 1 to 120
 
-# Wave Money
-WAVE_MONEY_MERCHANT_ID=
-WAVE_MONEY_SECRET_KEY=
-WAVE_MONEY_MERCHANT_NAME=
-WAVE_MONEY_BASE_URL=
-WAVE_MONEY_BASE_REDIRECT_URL=
-WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS=900   # greater than 0
+# Wave Pay
+WAVE_PAY_MERCHANT_ID=
+WAVE_PAY_SECRET_KEY=
+WAVE_PAY_MERCHANT_NAME=
+WAVE_PAY_BASE_URL=
+WAVE_PAY_BASE_REDIRECT_URL=
+WAVE_PAY_TIME_TO_LIVE_IN_SECONDS=900   # greater than 0
 
 # AYA Payment Gateway
 AYA_PAY_APP_KEY=
@@ -172,14 +172,14 @@ CYBER_SOURCE_SECRET_KEY=
 CYBER_SOURCE_BASE_URL=
 ```
 
-`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Money, AYA and Yoma MMQR. The package never reads files itself: load the `.env` file with your framework or with [`vlucas/phpdotenv`](https://github.com/vlucas/phpdotenv) before calling `fromEnv()`.
+`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Pay, AYA and Yoma MMQR. The package never reads files itself: load the `.env` file with your framework or with [`vlucas/phpdotenv`](https://github.com/vlucas/phpdotenv) before calling `fromEnv()`.
 
 Credentials from a config file go through `fromArray()`, which reads the same settings as snake_case keys:
 
 | Config class | Keys |
 |---|---|
 | `KbzPayConfig` | `app_id`, `app_key`, `merchant_code`, `api_url`, `pwa_url`, `time_to_live_in_minutes`, `timeout_in_seconds` |
-| `WaveMoneyConfig` | `merchant_id`, `secret_key`, `merchant_name`, `base_url`, `base_redirect_url`, `time_to_live_in_seconds`, `timeout_in_seconds` |
+| `WavePayConfig` | `merchant_id`, `secret_key`, `merchant_name`, `base_url`, `base_redirect_url`, `time_to_live_in_seconds`, `timeout_in_seconds` |
 | `AyaPayConfig` | `app_key`, `app_secret`, `base_url`, `timeout_in_seconds` |
 | `YomaMmqrConfig` | `merchant_id`, `client_id`, `client_secret`, `webhook_hashkey`, `api_version`, `webhook_secret`, `base_url`, `timeout_in_seconds` |
 | `CyberSourceConfig` | `profile_id`, `access_key`, `secret_key`, `base_url` |
@@ -216,14 +216,14 @@ $payments = new MyanmarPayments([
 
 $payments->kbzPay(); // KbzPay, the same instance on every call
 // throws ConfigurationException:
-// The wave_money configuration is missing [merchant_id].
-$payments->waveMoney();
+// The wave_pay configuration is missing [merchant_id].
+$payments->wavePay();
 
 // reads each gateway's variables on first use
 $fromEnv = MyanmarPayments::fromEnv();
 ```
 
-The keys `kbz_pay`, `wave_money`, `aya_pay`, `yoma_mmqr` and `cyber_source` take a config object or the array `fromArray()` reads, and the facade also takes the `httpClient` and `cache` arguments below, shared by every gateway it builds.
+The keys `kbz_pay`, `wave_pay`, `aya_pay`, `yoma_mmqr` and `cyber_source` take a config object or the array `fromArray()` reads, and the facade also takes the `httpClient` and `cache` arguments below, shared by every gateway it builds.
 
 ## HTTP Client
 

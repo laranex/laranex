@@ -17,7 +17,7 @@ Or copy `skills/python-myanmar-payments` from the [repository](https://github.co
 
 ## What the skill covers
 
-Integrate Myanmar payment gateways (KBZ Pay, Wave Money, AYA Pay, Yoma MMQR, CyberSource) in a Python app (Django, Flask, FastAPI or plain Python) with `python-myanmar-payments`.
+Integrate Myanmar payment gateways (KBZ Pay, Wave Pay, AYA Pay, Yoma MMQR, CyberSource) in a Python app (Django, Flask, FastAPI or plain Python) with `python-myanmar-payments`.
 
 ## Keeping it current
 

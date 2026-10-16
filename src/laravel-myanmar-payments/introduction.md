@@ -6,9 +6,9 @@ title: Introduction
 
 ## Why Laravel Myanmar Payments
 
-Every Myanmar payment gateway signs, sends and acknowledges payments its own way, with its own rules for amounts. Laravel Myanmar Payments puts KBZ Pay, Wave Money, AYA Pay, Yoma MMQR and CyberSource behind one facade. All gateway logic lives in [PHP Myanmar Payments](/php-myanmar-payments/introduction); this package wires it into Laravel.
+Every Myanmar payment gateway signs, sends and acknowledges payments its own way, with its own rules for amounts. Laravel Myanmar Payments puts KBZ Pay, Wave Pay, AYA Pay, Yoma MMQR and CyberSource behind one facade. All gateway logic lives in [PHP Myanmar Payments](/php-myanmar-payments/introduction); this package wires it into Laravel.
 
-- **One facade, every gateway.** `MyanmarPayments::kbzPay()`, `waveMoney()`, `ayaPay()`, `yomaMmqr()` and `cyberSource()`, configured from environment variables.
+- **One facade, every gateway.** `MyanmarPayments::kbzPay()`, `wavePay()`, `ayaPay()`, `yomaMmqr()` and `cyberSource()`, configured from environment variables.
 - **A typed result for each flow.** Every payment returns a `RedirectPayment`, `FormPayment`, `QrPayment` or `AppPayment`, so you always know what to do next. See [Payment Flows](/laravel-myanmar-payments/payment-flows).
 - **Exact amounts.** Plain integers or `Amount` values, never floats, checked against each gateway's documented rules before any request is sent.
 - **Verified callbacks.** `handleCallback($request)` checks the gateway's signature against the exact body it sent and maps its status onto one `PaymentStatus` enum; `acknowledge($callback)` returns the response the gateway expects.

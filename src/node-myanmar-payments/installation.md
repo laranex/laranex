@@ -47,7 +47,7 @@ The root entry exports every public name. Each gateway also has its own subpath,
 |---|---|
 | `@laranex/myanmar-payments` | Everything below, plus `Amount`, results, `PaymentCallback`, `PaymentStatus`, `CallbackRequest`, `Acknowledgement`, errors, `HttpClient`, `FetchHttpClient`, `TokenCache`, `MemoryTokenCache` and the `MyanmarPayments` facade |
 | `@laranex/myanmar-payments/kbz-pay` | `KbzPay`, `KbzPayConfig`, `KbzPaySigner`, `KbzPayConfigOptions`, `KbzPayPaymentData` |
-| `@laranex/myanmar-payments/wave-money` | `WaveMoney`, `WaveMoneyConfig`, `WaveMoneyConfigOptions`, `WaveMoneyItem`, `WaveMoneyPaymentData` |
+| `@laranex/myanmar-payments/wave-pay` | `WavePay`, `WavePayConfig`, `WavePayConfigOptions`, `WavePayItem`, `WavePayPaymentData` |
 | `@laranex/myanmar-payments/aya-pay` | `AyaPay`, `AyaPayConfig`, `AyaPayMethod`, `AyaPayService`, `AyaPayConfigOptions`, `AyaPayPaymentData` |
 | `@laranex/myanmar-payments/yoma-mmqr` | `YomaMmqr`, `YomaMmqrConfig`, `YomaMmqrConfigOptions`, `YomaMmqrOptions`, `YomaMmqrPaymentData` |
 | `@laranex/myanmar-payments/cyber-source` | `CyberSource`, `CyberSourceConfig`, `CyberSourceTransactionType`, `CyberSourceConfigOptions`, `CyberSourcePaymentData` |

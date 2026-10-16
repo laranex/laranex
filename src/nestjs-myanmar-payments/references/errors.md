@@ -49,7 +49,7 @@ try {
 
 ## ConfigurationError
 
-The message names the gateway and the key, e.g. `The wave_money configuration is missing [merchant_id].`, or `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting. `gateway` and `key` hold both. `autoSubmitUrl()` throws it with `form_route` and `ttl_minutes` when the form link lifetime is missing or invalid, and with `myanmar_payments` and `formLink.secret` when no form link secret is set. A secret shorter than 32 bytes throws it with `myanmar_payments` and the setting it came from (`formLink.secret`, `MYANMAR_PAYMENTS_FORM_KEY` or `APP_KEY`).
+The message names the gateway and the key, e.g. `The wave_pay configuration is missing [merchant_id].`, or `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting. `gateway` and `key` hold both. `autoSubmitUrl()` throws it with `form_route` and `ttl_minutes` when the form link lifetime is missing or invalid, and with `myanmar_payments` and `formLink.secret` when no form link secret is set. A secret shorter than 32 bytes throws it with `myanmar_payments` and the setting it came from (`formLink.secret`, `MYANMAR_PAYMENTS_FORM_KEY` or `APP_KEY`).
 
 ## Exception Filter
 

@@ -17,7 +17,7 @@ Or copy `skills/nestjs-myanmar-payments` from the [repository](https://github.co
 
 ## What the skill covers
 
-Integrate Myanmar payment gateways (KBZ Pay, Wave Money, AYA Pay, Yoma MMQR, CyberSource) in a NestJS app with @laranex/nestjs-myanmar-payments.
+Integrate Myanmar payment gateways (KBZ Pay, Wave Pay, AYA Pay, Yoma MMQR, CyberSource) in a NestJS app with @laranex/nestjs-myanmar-payments.
 
 It is written from the package source and kept in the repository next to the code, so agents follow the same API, configuration and conventions these docs describe.
 

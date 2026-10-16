@@ -1,6 +1,6 @@
 ---
 name: Python Myanmar Payments
-description: "Python SDK for Myanmar payment gateways: KBZ Pay, Wave Money, AYA Pay, Yoma MMQR and CyberSource. Typed requests and results, exact amounts, sync and async clients."
+description: "Python SDK for Myanmar payment gateways: KBZ Pay, Wave Pay, AYA Pay, Yoma MMQR and CyberSource. Typed requests and results, exact amounts, sync and async clients."
 requirements:
   - Python 3.10+
   - httpx only

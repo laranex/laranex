@@ -131,7 +131,7 @@ app.post('/payments/wave/callback', async (request, reply) => {
   });
 
   try {
-    const callback = payments.waveMoney().handleCallback(callbackRequest);
+    const callback = payments.wavePay().handleCallback(callbackRequest);
     // fulfill callback.orderId when callback.isSuccessful()
     // and the amount matches
     const ack = callback.acknowledgement;

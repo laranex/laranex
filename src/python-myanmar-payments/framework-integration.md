@@ -179,7 +179,7 @@ def callback_request() -> CallbackRequest:
 
 @app.post("/payments/wave/callback")
 def wave_callback() -> Response:
-    callback = payments.wave_money().handle_callback(callback_request())
+    callback = payments.wave_pay().handle_callback(callback_request())
     # fulfill callback.order_id when callback.is_successful()
     # and the amount matches
     ack = callback.acknowledgement

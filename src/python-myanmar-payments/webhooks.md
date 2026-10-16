@@ -75,7 +75,7 @@ from python_myanmar_payments import (
 
 
 class Verifier(Protocol):
-    """What every gateway (KbzPay, WaveMoney, AyaPay, YomaMmqr,
+    """What every gateway (KbzPay, WavePay, AyaPay, YomaMmqr,
     CyberSource) and its async twin have in common."""
 
     def handle_callback(self, request: CallbackRequest) -> PaymentCallback:
@@ -90,7 +90,7 @@ class Webhooks:
     def __init__(
         self,
         database: str,
-        # "kbz-pay" => kbz, "wave-money" => wave, ...
+        # "kbz-pay" => kbz, "wave-pay" => wave, ...
         gateways: Mapping[str, Verifier],
     ) -> None:
         self.database = database
@@ -295,7 +295,7 @@ With Flask, one route serves every gateway and a thread runs the worker; any oth
 import threading
 
 from flask import Flask, Response, request
-from python_myanmar_payments import CallbackRequest, KbzPay, WaveMoney
+from python_myanmar_payments import CallbackRequest, KbzPay, WavePay
 
 from shop.webhooks import Webhooks
 
@@ -303,7 +303,7 @@ webhooks = Webhooks(
     "payments.sqlite",
     {
         "kbz-pay": KbzPay.from_env(),
-        "wave-money": WaveMoney.from_env(),
+        "wave-pay": WavePay.from_env(),
     },
 )
 

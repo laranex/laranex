@@ -1,34 +1,34 @@
 ---
-title: Wave Money
-description: Integrate Wave Money (WavePay) in Node.js. Redirect payments with typed line items and verified callbacks.
+title: Wave Pay
+description: Integrate Wave Pay in Node.js. Redirect payments with typed line items and verified callbacks.
 ---
 
-# Wave Money
+# Wave Pay
 
-Wave Money's payment gateway sends the customer to a Wave payment page to pay with their WavePay wallet.
+Wave Pay (Pay with Wave API v1.3) sends the customer to Wave's payment page to pay with their WavePay wallet.
 
 | Call | What it does | Returns |
 |---|---|---|
 | `await wave.initiate(data)` | Redirect to Wave's payment page | [`RedirectPayment`](#initiate-response) |
 | `wave.handleCallback(request)` | Verify the callback | [`PaymentCallback`](#handlecallback-response) |
 
-Wave Money has no status API in this package: the callback is the only payment result.
+Wave Pay has no status API in this package: the callback is the only payment result.
 
 ## How it works
 
 Wave sends the customer back to your return URL and posts the result to your callback URL separately.
 
 <SequenceDiagram
-  title="Wave Money: payment request, authenticate, result"
-  :participants="['Customer', 'Your app', 'Wave Money']"
+  title="Wave Pay: payment request, authenticate, result"
+  :participants="['Customer', 'Your app', 'Wave Pay']"
   :steps="[
     { from: 'Customer', to: 'Your app', label: 'Check out' },
-    { from: 'Your app', to: 'Wave Money', label: 'Payment request with hash', detail: 'await wave.initiate(data)' },
-    { from: 'Wave Money', to: 'Your app', label: 'transaction_id', response: true },
+    { from: 'Your app', to: 'Wave Pay', label: 'Payment request with hash', detail: 'await wave.initiate(data)' },
+    { from: 'Wave Pay', to: 'Your app', label: 'transaction_id', response: true },
     { from: 'Your app', to: 'Customer', label: 'Redirect to authenticate', detail: '/authenticate?transaction_id=…', response: true },
-    { from: 'Customer', to: 'Wave Money', label: 'Pay with WavePay' },
-    { from: 'Wave Money', to: 'Customer', label: 'Back to the frontend URL', detail: 'returnUrl: not proof of payment', response: true },
-    { from: 'Wave Money', to: 'Your app', label: 'Backend result URL callback', detail: 'POST to callbackUrl, hashValue' },
+    { from: 'Customer', to: 'Wave Pay', label: 'Pay with WavePay' },
+    { from: 'Wave Pay', to: 'Customer', label: 'Back to the frontend URL', detail: 'returnUrl: not proof of payment', response: true },
+    { from: 'Wave Pay', to: 'Your app', label: 'Backend result URL callback', detail: 'POST to callbackUrl, hashValue' },
     { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: 'wave.handleCallback(request)' },
   ]"
 />
@@ -37,21 +37,21 @@ Wave sends the customer back to your return URL and posts the result to your cal
 
 ```ts
 import {
-  WaveMoney,
-  WaveMoneyConfig,
-  type WaveMoneyPaymentData,
-} from '@laranex/myanmar-payments/wave-money';
+  WavePay,
+  WavePayConfig,
+  type WavePayPaymentData,
+} from '@laranex/myanmar-payments/wave-pay';
 
-const wave = new WaveMoney({
+const wave = new WavePay({
   merchantId: '...',
   secretKey: '...',
   merchantName: 'My Shop',
-  baseUrl: WaveMoneyConfig.PRODUCTION_URL,
-  baseRedirectUrl: WaveMoneyConfig.PRODUCTION_URL,
+  baseUrl: WavePayConfig.PRODUCTION_URL,
+  baseRedirectUrl: WavePayConfig.PRODUCTION_URL,
   timeToLiveSeconds: 300,
 });
 
-const data: WaveMoneyPaymentData = {
+const data: WavePayPaymentData = {
   orderId: `ORDER_${order.id}`,
   callbackUrl: 'https://shop.test/payments/wave/callback',
   returnUrl: `https://shop.test/orders/${order.id}`,
@@ -69,23 +69,24 @@ const payment = await wave.initiate(data);
 res.writeHead(302, { Location: payment.url }).end();
 ```
 
-Payments are posted to `{baseUrl}/payment`; the customer is sent to `{baseRedirectUrl}/authenticate?transaction_id=…`.
+Payments are posted as JSON, in MMK, to `{baseUrl}/payment`; the customer is sent to `{baseRedirectUrl}/authenticate?transaction_id=…`.
 
-### WaveMoneyPaymentData
+### WavePayPaymentData
 
 | Field | Type | Required | Rules |
 |---|---|---|---|
-| `orderId` | `string` | Yes | Your order ID: letters, digits, `_` and `-` only. One order can have several payment attempts |
-| `callbackUrl` | `string` | Yes | Absolute http or https URL that Wave posts the result to |
-| `returnUrl` | `string` | Yes | Absolute http or https URL Wave sends the customer back to. Not proof of payment |
-| `description` | `string` | Yes | Shown to the customer |
-| `items` | `WaveMoneyItem[]` | Yes | At least one item |
+| `orderId` | `string` | Yes | Your order ID, at most 100 characters: letters, digits, `_` and `-` only. One order can have several payment attempts |
+| `callbackUrl` | `string` | Yes | Absolute http or https URL that Wave posts the result to, at most 255 characters |
+| `returnUrl` | `string` | Yes | Absolute http or https URL Wave sends the customer back to, at most 255 characters. Not proof of payment |
+| `description` | `string` | Yes | Shown to the customer, at most 255 characters |
+| `items` | `WavePayItem[]` | Yes | At least one item |
 | `amount` | `Amount \| number \| bigint` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). Unset charges the sum of the items. Wave only accepts MMK |
-| `merchantReferenceId` | `string` | No | Unique ID of this attempt: letters, digits, `_` and `-` only. Unset or empty means a random ID |
+| `merchantReferenceId` | `string` | No | Unique ID of this attempt, at most 100 characters: letters, digits, `_` and `-` only. Unset or empty means a random ID |
 | `merchantName` | `string` | No | Business name shown on Wave's page for this payment. Unset or `null` uses the configured `merchantName`; a blank one is rejected |
 | `timeToLiveSeconds` | `number` | No | Seconds the customer has to pay this payment, a whole number greater than 0. Unset or `null` uses the configured `timeToLiveSeconds` |
+| `additionalField3`, `additionalField4`, `additionalField5` | `string` | No | Extra information, at most 50 characters each, sent as `additional_field_3`–`5` and echoed in the callback's `additionalField3`–`5`. Unset, `null` or empty is not sent |
 
-`WaveMoneyItem` has a `name` and an `amount` in whole kyat, greater than 0. The items are summed with exact `bigint` arithmetic, never floats; `WaveMoney.resolvedAmount(data)` returns the total that will be charged.
+Length limits count UTF-8 bytes. `WavePayItem` has a `name` and an `amount` in whole kyat, greater than 0. The items are summed with exact `bigint` arithmetic, never floats; `WavePay.resolvedAmount(data)` returns the total that will be charged.
 
 ### Merchant Reference ID
 
@@ -119,7 +120,7 @@ See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & 
 
 ### `initiate()` → `RedirectPayment` {#initiate-response}
 
-| Field | Wave Money value |
+| Field | Wave Pay value |
 |---|---|
 | `flow` | `'redirect'` |
 | `orderId` | Your `data.orderId` |
@@ -129,7 +130,7 @@ See [Results](/node-myanmar-payments/references/results) and [PaymentCallback & 
 
 ### `handleCallback()` → `PaymentCallback` {#handlecallback-response}
 
-| Field | Wave Money value |
+| Field | Wave Pay value |
 |---|---|
 | `orderId` | Wave `orderId`, falling back to `merchantReferenceId` when it is missing, null or empty |
 | `status` | `status` mapped, see [Statuses](#statuses) |
@@ -146,8 +147,7 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 | Wave `status` | `PaymentStatus` |
 |---|---|
 | `PAYMENT_CONFIRMED` | `successful` |
-| `INSUFFICIENT_BALANCE` | `pending` |
-| `ACCOUNT_LOCKED`, `BILL_COLLECTION_FAILED` | `failed` |
+| `BILL_COLLECTION_FAILED`, `INSUFFICIENT_BALANCE`, `ACCOUNT_LOCKED` | `failed` |
 | `PAYMENT_REQUEST_CANCELLED` | `canceled` |
 | `TRANSACTION_TIMED_OUT`, `SCHEDULER_TRANSACTION_TIMED_OUT` | `expired` |
 | anything else | `unknown` |
@@ -158,7 +158,7 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 
 | Call | Throws | When |
 |---|---|---|
-| `initiate()` | `InvalidPaymentDataError` | `WaveMoney.validate(data)` fails. Nothing is sent and `data` is left untouched. Item errors use `items.0.amount` keys |
+| `initiate()` | `InvalidPaymentDataError` | `WavePay.validate(data)` fails. Nothing is sent and `data` is left untouched. Item errors use `items.0.amount` keys |
 | `initiate()` | `ApiError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
 | `handleCallback()` | `SignatureVerificationError` | `hashValue` doesn't match, a hashed field holds an object or array, `amount` isn't a decimal, both `orderId` and `merchantReferenceId` are empty, or either holds anything but letters, digits, `_` and `-` |
 

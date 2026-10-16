@@ -113,7 +113,7 @@ See [CallbackRequest](/go-myanmar-payments/references/payment-callback#callbackr
 
 - **Verify, then trust.** A callback that fails verification returns `*myanmarpayments.SignatureVerificationError`, and so does one whose signed or hashed field holds an object or array instead of a single value, since no gateway signs nested values. Never act on its payload; `Raw` carries the unverified data for logging only.
 - **Check the amount.** Compare `callback.Amount` (the exact text the gateway sent) with your order before fulfilling, e.g. with `Amount.Equals`. Yoma MMQR callbacks carry no amount: confirm those with [`Status`](/go-myanmar-payments/drivers/yoma-mmqr#status-checks).
-- **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Money), the package also rejects values that could be re-split into other fields. See each driver's Handling Callbacks section.
+- **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Pay), the package also rejects values that could be re-split into other fields. See each driver's Handling Callbacks section.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 
 ## Acknowledging
@@ -147,7 +147,7 @@ Each gateway page lists its exact mapping.
 
 ## Status Checks
 
-When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Money and CyberSource have no status API.
+When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Pay and CyberSource have no status API.
 
 <SequenceDiagram
   title="Checking the status when the callback is late"
@@ -168,7 +168,7 @@ Status checks return a `*myanmarpayments.PaymentStatusResult` with the same `Sta
 | KBZ Pay | `kbz.Status(ctx, orderID)` |
 | AYA Payment Gateway | `aya.Status(ctx, orderID)` |
 | Yoma MMQR | `yoma.Status(ctx, payment.Reference)` |
-| Wave Money | No status API: rely on the callback |
+| Wave Pay | No status API: rely on the callback |
 | CyberSource | No status API: rely on the callback |
 
 ```go

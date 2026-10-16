@@ -43,7 +43,7 @@ try {
 
 | Property / Method | Type | Description |
 |---|---|---|
-| `errors()` | `array<string, string>` | Field name to message, keyed by the payment data's camelCase parameter names, e.g. `['amount' => 'Wave Money does not accept decimal amounts; …']`. Wave item errors use `items.0.amount` keys |
+| `errors()` | `array<string, string>` | Field name to message, keyed by the payment data's camelCase parameter names, e.g. `['amount' => 'Wave Pay does not accept decimal amounts; …']`. Wave item errors use `items.0.amount` keys |
 
 `getMessage()` is `Invalid payment data: ` followed by the messages, in field-name order. A bad amount reads e.g. `The amount field must be a number such as 1000 or 1000.50, got "1,000".`
 

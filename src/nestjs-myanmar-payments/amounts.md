@@ -40,11 +40,11 @@ Each gateway checks the amount against its official documentation when you start
 | Gateway | Decimals | Other rules |
 |---|---|---|
 | KBZ Pay | Up to 2 places | Greater than 0, MMK only |
-| Wave Money | No | Greater than 0, MMK only. The total defaults to the sum of the items |
+| Wave Pay | No | Greater than 0, MMK only. The total defaults to the sum of the items |
 | AYA Payment Gateway | No | Greater than 0, MMK only |
 | Yoma MMQR | No | Greater than 0 |
 | CyberSource | Any | 0 or more, at most 15 characters, any ISO 4217 currency |
 
-A violation throws `InvalidPaymentDataError`, e.g. `Wave Money does not accept decimal amounts; the amount field must be a whole number.`
+A violation throws `InvalidPaymentDataError`, e.g. `Wave Pay does not accept decimal amounts; the amount field must be a whole number.`
 
 Amounts reported back by gateways (`PaymentCallback.amount`, `PaymentStatusResult.amount`) stay plain strings: they are the raw values the gateway sent. Compare them with your order before fulfilling.

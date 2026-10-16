@@ -74,7 +74,7 @@ import (
 	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
 )
 
-// Verifier is what every gateway (*kbzpay.Gateway, *wavemoney.Gateway,
+// Verifier is what every gateway (*kbzpay.Gateway, *wavepay.Gateway,
 // ...) has in common.
 type Verifier interface {
 	HandleCallback(
@@ -84,7 +84,7 @@ type Verifier interface {
 
 type Webhooks struct {
 	DB       *sql.DB
-	Gateways map[string]Verifier // "kbz-pay" => kbz, "wave-money" => wave, ...
+	Gateways map[string]Verifier // "kbz-pay" => kbz, "wave-pay" => wave, ...
 }
 
 // Handle verifies, stores and acknowledges. Processing happens in Work.
@@ -298,7 +298,7 @@ import (
 	"syscall"
 
 	"github.com/laranex/go-myanmar-payments/v4/kbzpay"
-	"github.com/laranex/go-myanmar-payments/v4/wavemoney"
+	"github.com/laranex/go-myanmar-payments/v4/wavepay"
 	_ "modernc.org/sqlite"
 
 	"example.com/shop/webhooks"
@@ -318,7 +318,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	wave, err := wavemoney.New(wavemoney.ConfigFromEnv(os.Getenv), nil)
+	wave, err := wavepay.New(wavepay.ConfigFromEnv(os.Getenv), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -327,7 +327,7 @@ func main() {
 		DB: db,
 		Gateways: map[string]webhooks.Verifier{
 			"kbz-pay":    kbz,
-			"wave-money": wave,
+			"wave-pay": wave,
 		},
 	}
 

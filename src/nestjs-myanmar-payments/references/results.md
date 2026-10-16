@@ -9,7 +9,7 @@ Starting a payment returns one of four classes from `@laranex/myanmar-payments`.
 
 ## RedirectPayment
 
-Returned by `kbzPay().pwa()` and `waveMoney().initiate()`.
+Returned by `kbzPay().pwa()` and `wavePay().initiate()`.
 
 | Property | Type | Description |
 |---|---|---|

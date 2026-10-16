@@ -24,7 +24,7 @@ composer require laranex/laravel-myanmar-payments:^4.0
 | `Laranex\LaravelMyanmarPayments\LaravelMyanmarPaymentsFacade` | `Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments` |
 | Alias `LaravelMyanmarPayments` | Alias `MyanmarPayments` |
 | `LaravelMyanmarPaymentsServiceProvider` | `MyanmarPaymentsServiceProvider` |
-| `channel('...')` | Typed accessors: `kbzPay()`, `waveMoney()`, `ayaPay()`, `yomaMmqr()`, `cyberSource()` |
+| `channel('...')` | Typed accessors: `kbzPay()`, `wavePay()`, `ayaPay()`, `yomaMmqr()`, `cyberSource()` |
 
 Both are auto-discovered. If you registered the old provider or alias by hand, replace them.
 
@@ -38,7 +38,7 @@ String channels and positional arguments are replaced with typed accessors and o
 | `channel('kbz_pay.qr')->getPaymentQr(...)` | `kbzPay()->qr($data)` → `QrPayment` (`qrString`) |
 | `channel('kbz_pay.app')->getPaymentData(...)` | `kbzPay()->app($data)` → `AppPayment` (`toArray()`) |
 | `channel('kbz_pay.*')->queryOrder($orderId, $nonceStr)` | `kbzPay()->status($orderId)` → `PaymentStatusResult` |
-| `channel('wave_money')->getPaymentScreenUrl($items, $orderId, $amount, $merchantReferenceId, $backendResultUrl, ...)` | `waveMoney()->initiate(new WaveMoneyPaymentData(...))` → `RedirectPayment` |
+| `channel('wave_money')->getPaymentScreenUrl($items, $orderId, $amount, $merchantReferenceId, $backendResultUrl, ...)` | `wavePay()->initiate(new WavePayPaymentData(...))` → `RedirectPayment` |
 | `channel('aya_pgw')->getPaymentServices()` | `ayaPay()->services()` → `list<AyaPayService>` |
 | `channel('aya_pgw')->paymentRequest($orderId, $amount, $channel, $method, ...)` | `ayaPay()->initiate(new AyaPayPaymentData(...))` → `FormPayment` |
 | `channel('aya_pgw')->paymentEnquiry($orderId)` | `ayaPay()->status($orderId)` → `PaymentStatusResult` |
@@ -51,7 +51,7 @@ Parameters share one vocabulary across gateways:
 
 - The order id is `orderId`; the server-to-server URL is `callbackUrl`; the customer's return URL is `returnUrl`.
 - KBZ Pay's `$nonceStr`, CyberSource's `$transactionId` (`transaction_uuid`) and AYA's `$currencyCode` are handled internally. CyberSource's `$referenceNumber` is now `orderId`.
-- Wave Money items are `WaveMoneyItem` objects, the total defaults to their sum, and `merchantReferenceId` defaults to a random id. `returnUrl` and `description` are required (v2 fell back to `APP_URL` and the app name).
+- Wave Pay items are `WavePayItem` objects, the total defaults to their sum, and `merchantReferenceId` defaults to a random id. `returnUrl` and `description` are required (v2 fell back to `APP_URL` and the app name).
 - AYA takes an `AyaPayMethod` enum for `method`.
 - Amounts are `Amount|int`, never floats or numeric strings. See [Amounts](/laravel-myanmar-payments/amounts).
 - Request data is validated against each gateway's documented rules when it is built, and throws `InvalidPaymentDataException`.
@@ -92,14 +92,14 @@ return MyanmarPayments::acknowledge($callback);
 | v2.2.7 | v4.0.0 |
 |---|---|
 | `channel('kbz_pay.*')->verifySignature($request)` | `kbzPay()->handleCallback($request)` |
-| `channel('wave_money')->verifyWaveSignature($request)` | `waveMoney()->handleCallback($request)` |
+| `channel('wave_money')->verifyWaveSignature($request)` | `wavePay()->handleCallback($request)` |
 | `channel('aya_pgw')->verifySignature($payload, $checkSum)` | `ayaPay()->handleCallback($request)`, or `ayaPay()->verifyRedirect($request)` on the return page |
 | `channel('cyber_source.secure_acceptance')->verifySignature($request)` | `cyberSource()->handleCallback($request)` |
 | `channel('yoma_mmqr')->verifySignature($request)` | `yomaMmqr()->handleCallback($request)` |
 
 - Branch on `$callback->status` (`PaymentStatus`) or `isSuccessful()`. v2's Wave check returned `false` for any status but `PAYMENT_CONFIRMED`; v4 verifies every status and maps it.
 - Return `MyanmarPayments::acknowledge($callback)` so each gateway gets the response it expects (KBZ Pay's plain `success`) and stops retrying.
-- Callback verification for KBZ Pay, Wave Money and AYA was fixed against their official specifications.
+- Callback verification for KBZ Pay, Wave Pay and AYA was fixed against their official specifications.
 - Yoma's `status()` returns `PaymentStatus::Expired` for an expired QR instead of throwing, and Yoma access tokens are now cached in your cache store.
 
 See [Callbacks & Status](/laravel-myanmar-payments/callbacks).
@@ -111,6 +111,8 @@ v4.0.0 includes many breaking changes to the configuration, so don't edit the ol
 ```bash
 php artisan vendor:publish --tag="myanmar-payments-config"
 ```
+
+Wave Money is now Wave Pay: rename `WAVE_MONEY_*` to `WAVE_PAY_*` (`WAVE_PAY_MERCHANT_ID`, `WAVE_PAY_SECRET_KEY`, `WAVE_PAY_MERCHANT_NAME`, `WAVE_PAY_BASE_URL`, `WAVE_PAY_TIME_TO_LIVE_IN_SECONDS`) and add `WAVE_PAY_BASE_REDIRECT_URL`. The old names are not read. See [Configuration](/laravel-myanmar-payments/configuration).
 
 ### Exceptions
 

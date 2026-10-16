@@ -5,7 +5,7 @@ description: Configure Python Myanmar Payments with one config class per gateway
 
 # Configuration
 
-Each gateway has a config class (`KbzPayConfig`, `WaveMoneyConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes keyword arguments. Gateways take the config object or a mapping of its keyword arguments (`KbzPay({"app_id": "...", ...})`). Every setting of a gateway you use is required and has no default, except the HTTP timeout (`timeout_seconds`, default 30, `DEFAULT_TIMEOUT_SECONDS`). A missing or blank setting raises a `ConfigurationError` naming it:
+Each gateway has a config class (`KbzPayConfig`, `WavePayConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes keyword arguments. Gateways take the config object or a mapping of its keyword arguments (`KbzPay({"app_id": "...", ...})`). Every setting of a gateway you use is required and has no default, except the HTTP timeout (`timeout_seconds`, default 30, `DEFAULT_TIMEOUT_SECONDS`). A missing or blank setting raises a `ConfigurationError` naming it:
 
 ```python
 from python_myanmar_payments import ConfigurationError, KbzPay, KbzPayConfig
@@ -29,7 +29,7 @@ kbz = KbzPay(config)
 
 `str(error)` reads `The kbz_pay configuration is missing [app_key].`
 
-The time settings take an `int` or integer text such as `"45"`: `timeout_seconds` and Wave Money's `time_to_live_seconds` greater than 0, KBZ Pay's `time_to_live_minutes` from 1 to 120. An invalid value such as `"2.5"` raises e.g. `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+The time settings take an `int` or integer text such as `"45"`: `timeout_seconds` and Wave Pay's `time_to_live_seconds` greater than 0, KBZ Pay's `time_to_live_minutes` from 1 to 120. An invalid value such as `"2.5"` raises e.g. `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
 
 ## Config Options
 
@@ -45,16 +45,16 @@ The time settings take an `int` or integer text such as `"45"`: `timeout_seconds
 | `time_to_live_minutes` | `int \| str` | Yes | Minutes the customer has to pay each order, 1 to 120. A payment's own `time_to_live_minutes` overrides it. A value outside 1 to 120 or not a whole number raises `The kbz_pay configuration [time_to_live_in_minutes] must be a whole number from 1 to 120.` |
 | `timeout_seconds` | `int \| str` | No | Seconds before the default HTTP client gives up. Default 30 |
 
-### WaveMoneyConfig
+### WavePayConfig
 
 | Argument | Type | Required | Description |
 |---|---|---|---|
 | `merchant_id` | `str` | Yes | Merchant ID issued by Wave |
 | `secret_key` | `str` | Yes | Hash secret key issued by Wave |
 | `merchant_name` | `str` | Yes | Shown on Wave's payment page |
-| `base_url` | `str` | Yes | The API base URL, e.g. `WaveMoneyConfig.PRODUCTION_URL`. Payments are requested at its `/payment` |
-| `base_redirect_url` | `str` | Yes | The host the customer is sent to, e.g. `WaveMoneyConfig.PRODUCTION_URL`. The customer approves the payment at its `/authenticate` |
-| `time_to_live_seconds` | `int \| str` | Yes | Seconds the customer has to pay, greater than 0. A payment can override it with `WaveMoneyPaymentData`'s `time_to_live_seconds`. An invalid one is reported as `time_to_live_in_seconds` |
+| `base_url` | `str` | Yes | The API base URL, e.g. `WavePayConfig.PRODUCTION_URL`. Payments are requested at its `/payment` |
+| `base_redirect_url` | `str` | Yes | The host the customer is sent to, e.g. `WavePayConfig.PRODUCTION_URL`. The customer approves the payment at its `/authenticate` |
+| `time_to_live_seconds` | `int \| str` | Yes | Seconds the customer has to pay, greater than 0. A payment can override it with `WavePayPaymentData`'s `time_to_live_seconds`. An invalid one is reported as `time_to_live_in_seconds` |
 | `timeout_seconds` | `int \| str` | No | Seconds before the default HTTP client gives up. Default 30 |
 
 ### AyaPayConfig
@@ -93,8 +93,8 @@ The time settings take an `int` or integer text such as `"45"`: `timeout_seconds
 ```env
 KBZ_PAY_BASE_URL=https://api.kbzpay.com/payment/gateway
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://wap.kbzpay.com/pgw/pwa/#/"
-WAVE_MONEY_BASE_URL=https://payments.wavemoney.io
-WAVE_MONEY_BASE_REDIRECT_URL=https://payments.wavemoney.io
+WAVE_PAY_BASE_URL=https://payments.wavemoney.io
+WAVE_PAY_BASE_REDIRECT_URL=https://payments.wavemoney.io
 AYA_PAY_BASE_URL=https://pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://paymenthubapi.yomabank.com
 CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
@@ -105,8 +105,8 @@ CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
 ```env
 KBZ_PAY_BASE_URL=http://api-uat.kbzpay.com/payment/gateway/uat
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://static.kbzpay.com/pgw/uat/pwa/#/"
-WAVE_MONEY_BASE_URL=https://preprodpayments.wavemoney.io:8107
-WAVE_MONEY_BASE_REDIRECT_URL=https://preprodpayments.wavemoney.io
+WAVE_PAY_BASE_URL=https://preprodpayments.wavemoney.io:8107
+WAVE_PAY_BASE_REDIRECT_URL=https://preprodpayments.wavemoney.io:8107
 AYA_PAY_BASE_URL=https://uat-pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://devapi.yomabank.net
 CYBER_SOURCE_BASE_URL=https://testsecureacceptance.cybersource.com
@@ -139,13 +139,13 @@ KBZ_PAY_BASE_URL=
 KBZ_PAY_PWA_BASE_REDIRECT_URL=
 KBZ_PAY_TIME_TO_LIVE_IN_MINUTES=15    # 1 to 120
 
-# Wave Money
-WAVE_MONEY_MERCHANT_ID=
-WAVE_MONEY_SECRET_KEY=
-WAVE_MONEY_MERCHANT_NAME=
-WAVE_MONEY_BASE_URL=
-WAVE_MONEY_BASE_REDIRECT_URL=
-WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS=900   # greater than 0
+# Wave Pay
+WAVE_PAY_MERCHANT_ID=
+WAVE_PAY_SECRET_KEY=
+WAVE_PAY_MERCHANT_NAME=
+WAVE_PAY_BASE_URL=
+WAVE_PAY_BASE_REDIRECT_URL=
+WAVE_PAY_TIME_TO_LIVE_IN_SECONDS=900   # greater than 0
 
 # AYA Payment Gateway
 AYA_PAY_APP_KEY=
@@ -203,16 +203,16 @@ payments = MyanmarPayments(
 
 payments.kbz_pay()  # KbzPay, the same instance on every call
 # raises ConfigurationError:
-# The wave_money configuration is missing [merchant_id].
-payments.wave_money()
+# The wave_pay configuration is missing [merchant_id].
+payments.wave_pay()
 
 # reads each gateway's variables on first use
 from_env = MyanmarPayments.from_env()
 ```
 
-The keyword arguments `kbz_pay`, `wave_money`, `aya_pay`, `yoma_mmqr` and `cyber_source` take the config objects or mappings of their keyword arguments, and the facade also takes the `http_client` and `token_cache` options below, shared by every gateway it builds. `payments.cyber_source()` returns a `CyberSource` (one class for sync and async).
+The keyword arguments `kbz_pay`, `wave_pay`, `aya_pay`, `yoma_mmqr` and `cyber_source` take the config objects or mappings of their keyword arguments, and the facade also takes the `http_client` and `token_cache` options below, shared by every gateway it builds. `payments.cyber_source()` returns a `CyberSource` (one class for sync and async).
 
-`AsyncMyanmarPayments` is the async twin: same arguments, but `kbz_pay()` returns an `AsyncKbzPay`, `wave_money()` an `AsyncWaveMoney` and so on, and `http_client` takes an `httpx.AsyncClient`.
+`AsyncMyanmarPayments` is the async twin: same arguments, but `kbz_pay()` returns an `AsyncKbzPay`, `wave_pay()` an `AsyncWavePay` and so on, and `http_client` takes an `httpx.AsyncClient`.
 
 ## HTTP Client
 

@@ -165,11 +165,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	myanmarpayments "github.com/laranex/go-myanmar-payments/v4"
-	"github.com/laranex/go-myanmar-payments/v4/wavemoney"
+	"github.com/laranex/go-myanmar-payments/v4/wavepay"
 )
 
 func main() {
-	wave, err := wavemoney.New(wavemoney.ConfigFromEnv(os.Getenv), nil)
+	wave, err := wavepay.New(wavepay.ConfigFromEnv(os.Getenv), nil)
 	if err != nil {
 		log.Fatal(err)
 	}

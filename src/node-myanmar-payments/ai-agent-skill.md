@@ -17,6 +17,6 @@ Or copy `skills/node-myanmar-payments` from the [repository](https://github.com/
 
 ## What the skill covers
 
-Integrate Myanmar payment gateways (KBZ Pay, Wave Money, AYA Pay, Yoma MMQR, CyberSource) in a Node.js or TypeScript app with `@laranex/myanmar-payments`.
+Integrate Myanmar payment gateways (KBZ Pay, Wave Pay, AYA Pay, Yoma MMQR, CyberSource) in a Node.js or TypeScript app with `@laranex/myanmar-payments`.
 
 The skill is versioned with the package; update it the same way you installed it.

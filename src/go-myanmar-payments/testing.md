@@ -89,7 +89,7 @@ func TestStartsAKBZPayQRPayment(t *testing.T) {
 | Gateway | Endpoints to fake |
 |---|---|
 | KBZ Pay | `{APIURL}/precreate`, `{APIURL}/queryorder` |
-| Wave Money | `{BaseURL}/payment` |
+| Wave Pay | `{BaseURL}/payment` |
 | AYA Pay | `{BaseURL}/v1/payment/services`, `{BaseURL}/v1/payment/enquiry` (`Initiate` is local) |
 | Yoma MMQR | `{BaseURL}/token`, then `{BaseURL}/payment-gateway/{APIVersion}/api/` + `payment/checkout`, `qr/generate`, `payment/check-status` |
 | CyberSource | None: forms are signed locally |
@@ -175,7 +175,7 @@ func TestReportsAPaidOrder(t *testing.T) {
 }
 ```
 
-Point `APIURL` (KBZ Pay) or `BaseURL` (Wave Money, AYA, Yoma) at the server.
+Point `APIURL` (KBZ Pay) or `BaseURL` (Wave Pay, AYA, Yoma) at the server.
 
 ## Replaying Signed Callbacks
 
@@ -235,7 +235,7 @@ func TestVerifiesAKBZPayCallback(t *testing.T) {
 
 A modified payload must be rejected: change `total_amount` after signing and `HandleCallback` returns `*myanmarpayments.SignatureVerificationError`. To exercise your real callback handler, post the same JSON through it with `httptest`: `httptest.NewRequest("POST", "/payments/kbz/callback", bytes.NewReader(request.Body))`, then `handler.ServeHTTP(recorder, req)` with an `httptest.NewRecorder()`. Gin's `*gin.Engine` and Echo's `*echo.Echo` are `http.Handler`s too.
 
-The other gateways sign with HMAC-SHA256 over documented fields, as described on their [gateway pages](/go-myanmar-payments/drivers/wave-money). To replay a call you stored, rebuild it from the stored raw body and headers: `myanmarpayments.NewCallbackRequest(storedBody, storedHeader, nil)`.
+The other gateways sign with HMAC-SHA256 over documented fields, as described on their [gateway pages](/go-myanmar-payments/drivers/wave-pay). To replay a call you stored, rebuild it from the stored raw body and headers: `myanmarpayments.NewCallbackRequest(storedBody, storedHeader, nil)`.
 
 ## Testing Your Own Logic
 

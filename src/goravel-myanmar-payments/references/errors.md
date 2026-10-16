@@ -11,7 +11,7 @@ Gateways return the SDK's typed errors from `github.com/laranex/go-myanmar-payme
 |---|---|
 | `*InvalidPaymentDataError` | Payment data has values the gateway would reject |
 | `*APIError` | A gateway rejects a request, answers with an error (including errors sent with HTTP 200), or cannot be reached |
-| `*SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification, or its signed values are malformed (an AYA Pay value holding `:`, a CyberSource `signed_field_names` that doesn't sign itself or an unknown `decision`, a Wave Money amount or ID out of format) |
+| `*SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification, or its signed values are malformed (an AYA Pay value holding `:`, a CyberSource `signed_field_names` that doesn't sign itself or an unknown `decision`, a Wave Pay amount or ID out of format) |
 | `*ConfigurationError` | A gateway is requested without a setting it needs (URLs, time to live and Yoma's webhook secret included), or a time setting is out of range |
 
 ```go
@@ -25,7 +25,7 @@ The package adds its own sentinel errors; match them with `errors.Is`:
 
 | Error | Returned when |
 |---|---|
-| `payments.ErrUnknownGateway` | `Manager.Gateway()` or `Manager.HandleCallback()` gets a name other than `kbz-pay`, `wave-money`, `aya-pay`, `yoma-mmqr` or `cyber-source` |
+| `payments.ErrUnknownGateway` | `Manager.Gateway()` or `Manager.HandleCallback()` gets a name other than `kbz-pay`, `wave-pay`, `aya-pay`, `yoma-mmqr` or `cyber-source` |
 | `payments.ErrFormRouteDisabled` | `AutoSubmitURL()` is called while `form_route.enabled` is `false` |
 | `payments.ErrCryptNotAvailable` | `AutoSubmitURL()` is called without the crypt facade |
 | `payments.ErrInvalidFormLink` | `Manager.ResolveFormPayment()` gets a tampered, foreign or expired link |
@@ -76,4 +76,4 @@ Validation runs inside the gateway call, before any request is sent. `err.Error(
 
 ## ConfigurationError
 
-The message names the gateway and the key, e.g. `myanmarpayments: The wave_money configuration is missing [merchant_id].`, or `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting, with `Invalid` set. `Gateway`, `Key`, `Invalid` and `Requirement` hold the details; KBZ Pay's time to live reads `The kbz_pay configuration [time_to_live_in_minutes] must be a whole number from 1 to 120.` `AutoSubmitURL` returns it with `form_route` and `ttl_minutes` when the form link lifetime is missing or invalid.
+The message names the gateway and the key, e.g. `myanmarpayments: The wave_pay configuration is missing [merchant_id].`, or `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting, with `Invalid` set. `Gateway`, `Key`, `Invalid` and `Requirement` hold the details; KBZ Pay's time to live reads `The kbz_pay configuration [time_to_live_in_minutes] must be a whole number from 1 to 120.` `AutoSubmitURL` returns it with `form_route` and `ttl_minutes` when the form link lifetime is missing or invalid.

@@ -65,7 +65,7 @@ it('starts a KBZ Pay QR payment', async () => {
 | Gateway | Endpoints to fake |
 |---|---|
 | KBZ Pay | `{apiUrl}/precreate`, `{apiUrl}/queryorder` |
-| Wave Money | `{baseUrl}/payment` |
+| Wave Pay | `{baseUrl}/payment` |
 | AYA Pay | `{baseUrl}/v1/payment/services`, `{baseUrl}/v1/payment/enquiry` (`initiate()` is local) |
 | Yoma MMQR | `{baseUrl}/token`, then `{baseUrl}/payment-gateway/{apiVersion}/api/` + `payment/checkout`, `qr/generate`, `payment/check-status` |
 | CyberSource | None: forms are signed locally |

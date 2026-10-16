@@ -24,14 +24,14 @@ except ApiError as error:
 |---|---|
 | `InvalidPaymentDataError` | Payment data breaks the gateway's documented rules, or `Amount.kyat` / `Amount.parse` / `Amount.of` get bad input. Raised before any request is sent |
 | `ApiError` | The gateway rejected the request, answered with an error (including errors sent with HTTP 200), or could not be reached |
-| `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification, or its signed values are malformed (an AYA Pay value holding `:`, a CyberSource `signed_field_names` that doesn't sign itself or an unknown `decision`, a Wave Money amount or ID out of format) |
+| `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification, or its signed values are malformed (an AYA Pay value holding `:`, a CyberSource `signed_field_names` that doesn't sign itself or an unknown `decision`, a Wave Pay amount or ID out of format) |
 | `ConfigurationError` | A gateway setting (URLs, time to live and Yoma's webhook secret included) is missing or blank, or a time setting is out of range |
 
 ## InvalidPaymentDataError
 
 | Field | Type | Description |
 |---|---|---|
-| `errors` | `Mapping[str, str]` | A read-only mapping of field name to message, keyed by the payment data's snake_case field names, e.g. `{"amount": "Wave Money does not accept decimal amounts; …"}`. Wave item errors use `items.0.amount` keys |
+| `errors` | `Mapping[str, str]` | A read-only mapping of field name to message, keyed by the payment data's snake_case field names, e.g. `{"amount": "Wave Pay does not accept decimal amounts; …"}`. Wave item errors use `items.0.amount` keys |
 
 `str(error)` is `Invalid payment data: ` followed by the messages, in field-name order.
 

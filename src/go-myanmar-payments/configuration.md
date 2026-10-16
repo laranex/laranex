@@ -43,7 +43,7 @@ func main() {
 
 ## Endpoints
 
-Every gateway URL is a required setting with no default. There is no switch between test and production: set production's URLs (see [Production Endpoints](#production-endpoints)) or the gateway's UAT ones (see [UAT Endpoints](#uat-endpoints)), or a proxy's. Each config has `Resolved…()` methods that return the URL as used, without its trailing slash: `ResolvedAPIURL()` and `ResolvedPWAURL()` (KBZ Pay; the PWA URL always ends in `/`), `ResolvedBaseURL()` and `ResolvedBaseRedirectURL()` (Wave Money), and `ResolvedBaseURL()` (AYA, Yoma, CyberSource). A gateway's `Config()` method returns the config it was created with.
+Every gateway URL is a required setting with no default. There is no switch between test and production: set production's URLs (see [Production Endpoints](#production-endpoints)) or the gateway's UAT ones (see [UAT Endpoints](#uat-endpoints)), or a proxy's. Each config has `Resolved…()` methods that return the URL as used, without its trailing slash: `ResolvedAPIURL()` and `ResolvedPWAURL()` (KBZ Pay; the PWA URL always ends in `/`), `ResolvedBaseURL()` and `ResolvedBaseRedirectURL()` (Wave Pay), and `ResolvedBaseURL()` (AYA, Yoma, CyberSource). A gateway's `Config()` method returns the config it was created with.
 
 ## Config Options
 
@@ -59,16 +59,16 @@ Every gateway URL is a required setting with no default. There is no switch betw
 | `TimeToLiveMinutes` | `int` | Yes | Minutes the customer has to pay each order, 1 to 120. A payment's own `TimeToLiveMinutes` overrides it. Outside 1 to 120 returns `The kbz_pay configuration [time_to_live_in_minutes] must be a whole number from 1 to 120.` |
 | `TimeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. `0` (unset) means 30 (`myanmarpayments.DefaultTimeoutSeconds`); a negative one is reported as `timeout_in_seconds` |
 
-### wavemoney.Config
+### wavepay.Config
 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `MerchantID` | `string` | Yes | Merchant ID issued by Wave |
 | `SecretKey` | `string` | Yes | Hash secret key issued by Wave |
-| `MerchantName` | `string` | Yes | Shown on Wave's payment page. A payment can override it with `wavemoney.PaymentData`'s `MerchantName` |
-| `BaseURL` | `string` | Yes | The API base URL, e.g. `wavemoney.ProductionURL`. Payments are requested at its `/payment` |
-| `BaseRedirectURL` | `string` | Yes | The host the customer is sent to, e.g. `wavemoney.ProductionURL`. The customer approves the payment at its `/authenticate` |
-| `TimeToLiveSeconds` | `int` | Yes | Seconds the customer has to pay, greater than 0. A payment can override it with `wavemoney.PaymentData`'s `TimeToLiveSeconds` |
+| `MerchantName` | `string` | Yes | Shown on Wave's payment page. A payment can override it with `wavepay.PaymentData`'s `MerchantName` |
+| `BaseURL` | `string` | Yes | The API base URL, e.g. `wavepay.ProductionURL`. Payments are requested at its `/payment` |
+| `BaseRedirectURL` | `string` | Yes | The host the customer is sent to, e.g. `wavepay.ProductionURL`. The customer approves the payment at its `/authenticate` |
+| `TimeToLiveSeconds` | `int` | Yes | Seconds the customer has to pay, greater than 0. A payment can override it with `wavepay.PaymentData`'s `TimeToLiveSeconds` |
 | `TimeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. `0` (unset) means 30 (`myanmarpayments.DefaultTimeoutSeconds`); a negative one is reported as `timeout_in_seconds` |
 
 ### ayapay.Config
@@ -107,8 +107,8 @@ Every gateway URL is a required setting with no default. There is no switch betw
 ```env
 KBZ_PAY_BASE_URL=https://api.kbzpay.com/payment/gateway
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://wap.kbzpay.com/pgw/pwa/#/"
-WAVE_MONEY_BASE_URL=https://payments.wavemoney.io
-WAVE_MONEY_BASE_REDIRECT_URL=https://payments.wavemoney.io
+WAVE_PAY_BASE_URL=https://payments.wavemoney.io
+WAVE_PAY_BASE_REDIRECT_URL=https://payments.wavemoney.io
 AYA_PAY_BASE_URL=https://pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://paymenthubapi.yomabank.com
 CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
@@ -121,8 +121,8 @@ The `Production*` constants in each gateway package name these values; they are 
 ```env
 KBZ_PAY_BASE_URL=http://api-uat.kbzpay.com/payment/gateway/uat
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://static.kbzpay.com/pgw/uat/pwa/#/"
-WAVE_MONEY_BASE_URL=https://preprodpayments.wavemoney.io:8107
-WAVE_MONEY_BASE_REDIRECT_URL=https://preprodpayments.wavemoney.io
+WAVE_PAY_BASE_URL=https://preprodpayments.wavemoney.io:8107
+WAVE_PAY_BASE_REDIRECT_URL=https://preprodpayments.wavemoney.io:8107
 AYA_PAY_BASE_URL=https://uat-pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://devapi.yomabank.net
 CYBER_SOURCE_BASE_URL=https://testsecureacceptance.cybersource.com
@@ -150,13 +150,13 @@ KBZ_PAY_BASE_URL=
 KBZ_PAY_PWA_BASE_REDIRECT_URL=
 KBZ_PAY_TIME_TO_LIVE_IN_MINUTES=15    # 1 to 120
 
-# Wave Money
-WAVE_MONEY_MERCHANT_ID=
-WAVE_MONEY_SECRET_KEY=
-WAVE_MONEY_MERCHANT_NAME=
-WAVE_MONEY_BASE_URL=
-WAVE_MONEY_BASE_REDIRECT_URL=
-WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS=900   # greater than 0
+# Wave Pay
+WAVE_PAY_MERCHANT_ID=
+WAVE_PAY_SECRET_KEY=
+WAVE_PAY_MERCHANT_NAME=
+WAVE_PAY_BASE_URL=
+WAVE_PAY_BASE_REDIRECT_URL=
+WAVE_PAY_TIME_TO_LIVE_IN_SECONDS=900   # greater than 0
 
 # AYA Payment Gateway
 AYA_PAY_APP_KEY=
@@ -226,8 +226,8 @@ func main() {
 	_ = kbz
 
 	// returns a *myanmarpayments.ConfigurationError:
-	// The wave_money configuration is missing [merchant_id].
-	_, err = gateways.WaveMoney()
+	// The wave_pay configuration is missing [merchant_id].
+	_, err = gateways.WavePay()
 
 	// reads each gateway's variables on first use
 	fromEnv := payments.FromEnv(os.Getenv, payments.Options{})
@@ -235,7 +235,7 @@ func main() {
 }
 ```
 
-The fields `KBZPay`, `WaveMoney`, `AYAPay`, `YomaMMQR` and `CyberSource` take a pointer to each config (`nil` leaves that gateway unconfigured), and `payments.Options` takes the `HTTPClient` and `TokenCache` described below, shared by every gateway it builds. Each method returns the gateway and an error; a failed build is not cached, so a later call tries again.
+The fields `KBZPay`, `WavePay`, `AYAPay`, `YomaMMQR` and `CyberSource` take a pointer to each config (`nil` leaves that gateway unconfigured), and `payments.Options` takes the `HTTPClient` and `TokenCache` described below, shared by every gateway it builds. Each method returns the gateway and an error; a failed build is not cached, so a later call tries again.
 
 ## HTTP Client
 

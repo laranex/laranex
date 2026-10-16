@@ -8,7 +8,7 @@ title: Introduction
 
 Every Myanmar payment gateway signs its requests and callbacks its own way, reports its own status codes and has its own rules for amounts. PHP Myanmar Payments handles all of that behind one typed API for plain PHP and any framework: build the payment data, start the payment, then verify the callback the gateway sends back.
 
-- **Five gateways, one pattern.** KBZ Pay (PWA, QR and in-app), Wave Money, AYA Pay, Yoma MMQR and CyberSource, each with its own class and the same three steps.
+- **Five gateways, one pattern.** KBZ Pay (PWA, QR and in-app), Wave Pay, AYA Pay, Yoma MMQR and CyberSource, each with its own class and the same three steps.
 - **One typed result per flow.** `RedirectPayment`, `FormPayment`, `QrPayment` or `AppPayment` holds exactly what the next step needs: a URL to redirect to, an auto-submitting form, a QR code or the signed order for the KBZ Pay mobile SDK. See [Payment Flows](/php-myanmar-payments/payment-flows).
 - **Exact amounts, checked against each gateway's rules.** Amounts are kept as decimal text and never pass through a float. Decimals, currency and limits follow each gateway's official documentation and are checked before any request is sent. See [Amounts](/php-myanmar-payments/amounts).
 - **Verified callbacks.** `handleCallback()` checks the gateway's signature without a network call, maps its status onto one `PaymentStatus` enum and gives you the acknowledgement the gateway expects. When a callback is late, ask KBZ Pay, AYA Pay or Yoma MMQR with `status()`. See [Callbacks & Status](/php-myanmar-payments/callbacks).

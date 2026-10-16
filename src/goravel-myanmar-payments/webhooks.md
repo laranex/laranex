@@ -193,7 +193,7 @@ facades.Route().Post(
 )
 ```
 
-Use `https://shop.test/webhooks/payments/kbz-pay` as the gateway's callback URL: pass it as `CallbackURL` when you start a payment (KBZ Pay, Wave Money, CyberSource) or register it in the gateway's merchant portal (AYA Pay, Yoma MMQR). The names are the ones `payments.GatewayNames()` returns: `kbz-pay`, `wave-money`, `aya-pay`, `yoma-mmqr`, `cyber-source`.
+Use `https://shop.test/webhooks/payments/kbz-pay` as the gateway's callback URL: pass it as `CallbackURL` when you start a payment (KBZ Pay, Wave Pay, CyberSource) or register it in the gateway's merchant portal (AYA Pay, Yoma MMQR). The names are the ones `payments.GatewayNames()` returns: `kbz-pay`, `wave-pay`, `aya-pay`, `yoma-mmqr`, `cyber-source`.
 
 `app/http/controllers/payment_webhook_controller.go`:
 
