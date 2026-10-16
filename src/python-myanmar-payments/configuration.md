@@ -5,7 +5,7 @@ description: Configure Python Myanmar Payments with one config class per gateway
 
 # Configuration
 
-Each gateway has a config class (`KbzPayConfig`, `WavePayConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes keyword arguments. Gateways take the config object or a mapping of its keyword arguments (`KbzPay({"app_id": "...", ...})`). Every setting of a gateway you use is required and has no default, except the HTTP timeout (`timeout_seconds`, default 30, `DEFAULT_TIMEOUT_SECONDS`). A missing or blank setting raises a `ConfigurationError` naming it:
+Each gateway has a config class (`KbzPayConfig`, `WavePayConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes keyword arguments. Gateways take the config object or a mapping of its keyword arguments (`KbzPay({"app_id": "...", ...})`); other keys in the mapping are ignored. Text settings also take integers (`merchant_code=200123` is `"200123"`); floats and booleans count as missing. Every setting of a gateway you use is required and has no default, except the HTTP timeout (`timeout_seconds`, default 30, `DEFAULT_TIMEOUT_SECONDS`). A missing or blank setting raises a `ConfigurationError` naming it:
 
 ```python
 from python_myanmar_payments import ConfigurationError, KbzPay, KbzPayConfig
@@ -29,7 +29,9 @@ kbz = KbzPay(config)
 
 `str(error)` reads `The kbz_pay configuration is missing [app_key].`
 
-The time settings take an `int` or integer text such as `"45"`: `timeout_seconds` and Wave Pay's `time_to_live_seconds` greater than 0, KBZ Pay's `time_to_live_minutes` from 1 to 120. An invalid value such as `"2.5"` raises e.g. `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+The time settings take an `int` or integer text such as `"45"`: `timeout_seconds` and Wave Pay's `time_to_live_seconds` from 1 to 2147483647, KBZ Pay's `time_to_live_minutes` from 1 to 120. An invalid value such as `"2.5"` or `"2147483648"` raises e.g. `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+
+Settings are checked in the same order in every Laranex SDK, so the first error is the same: the credentials, URLs and other text settings, then the time to live, then the HTTP timeout. Only ASCII whitespace is trimmed; a no-break space or a byte order mark counts as text.
 
 ## Config Options
 
@@ -216,7 +218,7 @@ The keyword arguments `kbz_pay`, `wave_pay`, `aya_pay`, `yoma_mmqr` and `cyber_s
 
 ## HTTP Client
 
-Gateways that call an API take `http_client=` (`httpx.Client`, or `httpx.AsyncClient` on the async classes), also on `from_env()`, for proxies, tracing, retries or test transports. A client you pass keeps its own timeout; without one, the gateway creates an `httpx` client with the config's `timeout_seconds`.
+Gateways that call an API take `http_client=` (`httpx.Client`, or `httpx.AsyncClient` on the async classes), also on `from_env()`, for proxies, tracing, retries or test transports. A client you pass keeps its own timeout; without one, the gateway creates an `httpx` client and `timeout_seconds` is one overall deadline per request (connecting, sending and reading the whole response). A request past it raises `ApiError("Could not reach <url>: timed out")`.
 
 ```python
 import httpx

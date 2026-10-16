@@ -31,7 +31,7 @@ Every KBZ Pay flow starts with the same precreate call and ends with KBZ's signe
     { from: 'Your app', to: 'Customer', label: 'PWA URL, QR or signed order', detail: 'URL / QRString / OrderInfo + Sign', response: true },
     { from: 'Customer', to: 'KBZ Pay', label: 'Pay in the KBZ Pay app' },
     { from: 'KBZ Pay', to: 'Your app', label: 'Notify callbackUrl', detail: 'signed JSON under Request' },
-    { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: 'kbz.HandleCallback(request)' },
+    { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: 'HandleCallbackFromContext(name, ctx)' },
     { from: 'Your app', to: 'KBZ Pay', label: 'Plain-text success', detail: 'within about 10 s, or KBZ retries', response: true },
     { from: 'Your app', to: 'KBZ Pay', label: 'No notify? Query the order', detail: 'kbz.Status(ctx, orderID)' },
   ]"
@@ -112,16 +112,9 @@ import (
 facades.Route().Post("/payments/kbz/callback", func(
 	ctx http.Context,
 ) http.Response {
-	request, err := payments.CallbackRequestFromContext(ctx)
-	if err != nil {
-		return ctx.Response().String(http.StatusBadRequest, "bad request")
-	}
-	kbz, err := paymentsfacades.MyanmarPayments().KbzPay()
-	if err != nil {
-		return ctx.Response().String(http.StatusInternalServerError, "%s", err)
-	}
-	callback, err := kbz.HandleCallback(request)
-	if err != nil { // *myanmarpayments.SignatureVerificationError
+	callback, err := paymentsfacades.MyanmarPayments().
+		HandleCallbackFromContext(payments.GatewayKbzPay, ctx)
+	if err != nil { // *myanmarpayments.SignatureVerificationError, ...
 		return ctx.Response().String(http.StatusBadRequest, "invalid")
 	}
 

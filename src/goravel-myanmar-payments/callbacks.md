@@ -5,7 +5,7 @@ description: Verify gateway callbacks with HandleCallback, read a gateway-indepe
 
 # Callbacks & Status
 
-Every gateway notifies your server of the payment result. `HandleCallback()` verifies the gateway's signature and returns a `*PaymentCallback`. Build its request with `payments.CallbackRequestFromContext(ctx)`: signatures are checked against the exact body the gateway sent.
+Every gateway notifies your server of the payment result. `HandleCallbackFromContext(gateway, ctx)` verifies the gateway's signature against the exact body the gateway sent and returns a `*PaymentCallback`.
 
 ::: tip Production setup
 For production, follow [Handling Webhooks (recommended)](/goravel-myanmar-payments/webhooks): verify, store the call, acknowledge immediately, then process it once in the background with retries. The example below handles everything inline to show the API.
@@ -18,7 +18,7 @@ Every callback goes through the same steps; KBZ Pay is shown here.
   :participants="['Your app', 'KBZ Pay']"
   :steps="[
     { from: 'KBZ Pay', to: 'Your app', label: 'Payment notification', detail: 'POST to CallbackURL' },
-    { from: 'Your app', to: 'Your app', label: 'Verify the signature', detail: 'kbz.HandleCallback(request)' },
+    { from: 'Your app', to: 'Your app', label: 'Verify the signature', detail: 'HandleCallbackFromContext(name, ctx)' },
     { from: 'Your app', to: 'KBZ Pay', label: 'Invalid: 400, never fulfill', detail: '*SignatureVerificationError', response: true },
     { from: 'Your app', to: 'Your app', label: 'Find the order', detail: 'by callback.OrderID' },
     { from: 'Your app', to: 'Your app', label: 'Fulfill once', detail: 'skip if paid, match the amount' },
@@ -41,16 +41,9 @@ import (
 facades.Route().Post("/payments/kbz/callback", func(
 	ctx http.Context,
 ) http.Response {
-	request, err := payments.CallbackRequestFromContext(ctx)
-	if err != nil {
-		return ctx.Response().String(http.StatusBadRequest, "bad request")
-	}
-	kbz, err := paymentsfacades.MyanmarPayments().KbzPay()
-	if err != nil {
-		return ctx.Response().String(http.StatusInternalServerError, "%s", err)
-	}
-	callback, err := kbz.HandleCallback(request)
-	if err != nil {
+	callback, err := paymentsfacades.MyanmarPayments().
+		HandleCallbackFromContext(payments.GatewayKbzPay, ctx)
+	if err != nil { // *myanmarpayments.SignatureVerificationError, ...
 		return ctx.Response().String(http.StatusBadRequest, "invalid")
 	}
 
@@ -80,6 +73,7 @@ Gateways post from their own servers, so keep callback routes free of CSRF and a
 
 | Helper | What it does |
 |---|---|
+| `manager.HandleCallbackFromContext(gateway, ctx)` | Verifies the callback in the current request by gateway name. It resolves the gateway first (`payments.ErrUnknownGateway` or a `*myanmarpayments.ConfigurationError`), then reads the body (`payments.ErrCallbackBodyTooLarge`), then checks the signature (`*myanmarpayments.SignatureVerificationError`) |
 | `kbz.HandleCallback(request)` | Verifies the callback. Takes the SDK's `*myanmarpayments.CallbackRequest` |
 | `payments.CallbackRequestFromContext(ctx)` | Builds that request from the current Goravel request: the raw body, the headers and the query string. A body over `payments.MaxCallbackBodyBytes` (64 KiB) returns `payments.ErrCallbackBodyTooLarge` |
 | `manager.HandleCallback(gateway, request)` | The same, by gateway name, for one route that serves every gateway; see [Handling Webhooks](/goravel-myanmar-payments/webhooks#route-and-controller) |
@@ -101,7 +95,8 @@ Signatures are computed over the exact bytes the gateway sent, so always build t
 Answer `payments.ErrCallbackBodyTooLarge` with `413`:
 
 ```go
-request, err := payments.CallbackRequestFromContext(ctx)
+callback, err := paymentsfacades.MyanmarPayments().
+	HandleCallbackFromContext(payments.GatewayKbzPay, ctx)
 if errors.Is(err, payments.ErrCallbackBodyTooLarge) {
 	return ctx.Response().String(http.StatusRequestEntityTooLarge, "too large")
 }

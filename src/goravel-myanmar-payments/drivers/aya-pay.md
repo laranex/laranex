@@ -31,7 +31,7 @@ AYA posts the result to your callback URL and also signs the query string it add
     { from: 'Your app', to: 'Customer', label: 'Redirect to autoSubmitUrl', detail: 'aya.Initiate(data), payments.AutoSubmitURL(form)', response: true },
     { from: 'Customer', to: 'AYA Pay', label: 'Post the form and pay', detail: 'POST /v1/payment/request' },
     { from: 'AYA Pay', to: 'Your app', label: 'Backend callback', detail: 'payload + checkSum' },
-    { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: 'aya.HandleCallback(request)' },
+    { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: 'HandleCallbackFromContext(name, ctx)' },
     { from: 'Customer', to: 'Your app', label: 'Back on your return page', detail: 'payload + checkSum in the query' },
     { from: 'Your app', to: 'Your app', label: 'Show the right message', detail: 'aya.VerifyRedirect(request)' },
   ]"
@@ -145,16 +145,9 @@ import (
 facades.Route().Post("/payments/aya/callback", func(
 	ctx http.Context,
 ) http.Response {
-	request, err := payments.CallbackRequestFromContext(ctx)
-	if err != nil {
-		return ctx.Response().String(http.StatusBadRequest, "bad request")
-	}
-	aya, err := paymentsfacades.MyanmarPayments().AyaPay()
-	if err != nil {
-		return ctx.Response().String(http.StatusInternalServerError, "%s", err)
-	}
-	callback, err := aya.HandleCallback(request)
-	if err != nil { // *myanmarpayments.SignatureVerificationError
+	callback, err := paymentsfacades.MyanmarPayments().
+		HandleCallbackFromContext(payments.GatewayAyaPay, ctx)
+	if err != nil { // *myanmarpayments.SignatureVerificationError, ...
 		return ctx.Response().String(http.StatusBadRequest, "invalid")
 	}
 

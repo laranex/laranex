@@ -21,7 +21,7 @@ amount, err := myanmarpayments.ParseAmount(input)
 
 `ParseAmount` accepts only digits with an optional fractional part: `1000`, `1000.50`, `0.5`. It rejects signs, exponents, spaces and thousands separators (`-1`, `1e5`, ` 10`, `1,000`, `10.`, `.5`). Leading zeros of the whole part are removed (`007` becomes `7`); fractional digits are kept exactly as given (`10.50` stays `10.50`).
 
-`Kyat` takes an `int64`, so plain integer variables need no conversion. A negative value does not panic: it produces an `Amount` that every gateway's `Validate` rejects like any other bad field. The zero value `myanmarpayments.Amount{}` means "not provided"; every gateway reports it as `The amount field is required.`
+`Kyat` takes an `int64`, so plain integer variables need no conversion. A negative value does not panic: every gateway's `Validate` reports it with the other field errors as `The amount field must not be negative.` (`items.0.amount` for a Wave Pay item). The zero value `myanmarpayments.Amount{}` means "not provided"; every gateway reports it as `The amount field is required.`
 
 `ParseAmount` returns an `*myanmarpayments.InvalidPaymentDataError` with an `amount` entry, so bad user input surfaces like any other invalid field:
 

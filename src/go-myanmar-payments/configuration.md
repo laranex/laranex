@@ -5,7 +5,7 @@ description: Configure Go Myanmar Payments with one Config struct per gateway or
 
 # Configuration
 
-Each gateway package has a config struct and a `New` constructor. Every setting is required and has no default except `TimeoutSeconds` (30 seconds); a missing or blank one returns a `*myanmarpayments.ConfigurationError` naming it:
+Each gateway package has a config struct and a `New` constructor. Every setting is required and has no default except `TimeoutSeconds` (30 seconds); a missing or blank one (empty or only ASCII whitespace; a no-break space is a character) returns a `*myanmarpayments.ConfigurationError` naming it:
 
 ```go
 package main
@@ -39,7 +39,7 @@ func main() {
 
 `err.Error()` reads `myanmarpayments: The kbz_pay configuration is missing [app_key].`
 
-`0` is unset: `TimeoutSeconds` then uses 30 (`myanmarpayments.DefaultTimeoutSeconds`), while a time to live of 0 is missing.
+`0` is unset: `TimeoutSeconds` then uses 30 (`myanmarpayments.DefaultTimeoutSeconds`), while a time to live of 0 is missing. Time settings hold at most 2147483647; a larger value is invalid, never clamped. Settings are checked in the same order as the other Laranex SDKs: the required strings, then the time to live, then the timeout.
 
 ## Endpoints
 
@@ -249,7 +249,7 @@ type HTTPDoer interface {
 
 | Argument | Description |
 |---|---|
-| `nil` | Uses an `*http.Client` with the config's `TimeoutSeconds` (30 by default) |
+| `nil` | Uses an `*http.Client` with the config's `TimeoutSeconds` (30 by default) that never follows redirects |
 | your `HTTPDoer` | Sends every request. Use it for proxies, tracing, retries or test doubles |
 
 ```go

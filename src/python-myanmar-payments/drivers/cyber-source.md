@@ -185,7 +185,7 @@ What CyberSource puts in each field. See [Results](/python-myanmar-payments/refe
 | `DECLINE`, `ERROR` | `FAILED` |
 | `CANCEL` | `CANCELED` |
 
-Any other `decision` raises `SignatureVerificationError`, so a verified callback never has the `UNKNOWN` status.
+Any other `decision` raises `SignatureVerificationError`, so a verified callback never has the `UNKNOWN` status. A bad field list or signature fails with `CyberSource callback signature verification failed.`; a signed post without a signed `decision` and `req_reference_number`, or with an unknown decision, fails with `CyberSource callback is malformed.`. With empty `auth_amount` and `req_amount`, `amount` is `None`.
 
 ## Errors
 

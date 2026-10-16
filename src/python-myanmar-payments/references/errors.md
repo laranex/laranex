@@ -24,7 +24,7 @@ except ApiError as error:
 |---|---|
 | `InvalidPaymentDataError` | Payment data breaks the gateway's documented rules, or `Amount.kyat` / `Amount.parse` / `Amount.of` get bad input. Raised before any request is sent |
 | `ApiError` | The gateway rejected the request, answered with an error (including errors sent with HTTP 200), or could not be reached |
-| `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification, or its signed values are malformed (an AYA Pay value holding `:`, a CyberSource `signed_field_names` that doesn't sign itself or an unknown `decision`, a Wave Pay amount or ID out of format) |
+| `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification (`<Gateway> <thing> <signature\|hash\|checksum> verification failed.`), or its correctly signed values are malformed (`Wave Pay callback is malformed.`, `AYA Pay <context> payload is malformed.`, `CyberSource callback is malformed.`) |
 | `ConfigurationError` | A gateway setting (URLs, time to live and Yoma's webhook secret included) is missing or blank, or a time setting is out of range |
 
 ## InvalidPaymentDataError
@@ -33,7 +33,7 @@ except ApiError as error:
 |---|---|---|
 | `errors` | `Mapping[str, str]` | A read-only mapping of field name to message, keyed by the payment data's snake_case field names, e.g. `{"amount": "Wave Pay does not accept decimal amounts; …"}`. Wave item errors use `items.0.amount` keys |
 
-`str(error)` is `Invalid payment data: ` followed by the messages, in field-name order.
+`str(error)` is `Invalid payment data: ` followed by the messages, in field-name order. A negative whole-number amount is reported with the other errors as `The amount field must not be negative.`, and a URL must be a printable ASCII `http://` or `https://` URL with a valid host name or bracketed IP (`The callback_url field must be a valid http or https URL.`).
 
 ## ApiError
 
@@ -62,4 +62,4 @@ When the gateway sends an error code without a message, `str(error)` ends with t
 | `gateway` | `str` | e.g. `kbz_pay` |
 | `key` | `str` | The setting, e.g. `app_key` |
 
-`str(error)` is e.g. `The kbz_pay configuration is missing [app_key].`, or `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting that is not a whole number greater than 0. Raised by each config class (and so by each gateway's `from_env()`), and by `MyanmarPayments` and `AsyncMyanmarPayments` when a gateway is used without configuration.
+`str(error)` is e.g. `The kbz_pay configuration is missing [app_key].`, or `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting that is not a whole number from 1 to 2147483647. Raised by each config class (and so by each gateway's `from_env()`), and by `MyanmarPayments` and `AsyncMyanmarPayments` when a gateway is used without configuration.

@@ -217,7 +217,7 @@ The same values as [`Initiate()`](#initiate-response) for the `orderID` you pass
 
 Yoma authenticates with an OAuth token that lasts hours. The gateway keeps it in the [token cache](/go-myanmar-payments/configuration#token-cache), shares one token request between concurrent calls, and fetches a new token, retrying once, when Yoma answers `401`. The shared token request runs without any one call's cancellation and is bounded by the configured `TimeoutSeconds` (30 by default), so a stuck request can't block later calls and canceling one call's `ctx` never fails the others; that call stops waiting and returns an `*APIError`.
 
-The token is cached for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits, so `28800.0` is 28800 seconds; a missing or non-positive value means 3600.
+The token is cached for Yoma's `expires_in` minus 60 seconds (at least 60 seconds). `expires_in` is read from its leading digits after any whitespace, so `28800.0` and ` 28800` are 28800 seconds; a missing or non-positive value means 3600.
 
 ## Errors
 

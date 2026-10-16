@@ -31,7 +31,7 @@ Yoma checks each order out once, then issues QR codes that each stay payable for
     { from: 'Your app', to: 'Yoma MMQR', label: 'Expired? Renew the QR', detail: 'yoma.RenewQR(ctx, orderID)' },
     { from: 'Customer', to: 'Yoma MMQR', label: 'Scan with an MMQR wallet' },
     { from: 'Yoma MMQR', to: 'Your app', label: 'Payment callback', detail: 'orderNumber, status, hashValue' },
-    { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: 'yoma.HandleCallback(request)' },
+    { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: 'HandleCallbackFromContext(name, ctx)' },
     { from: 'Your app', to: 'Yoma MMQR', label: 'No callback? Check status', detail: 'yoma.Status(ctx, reference)' },
   ]"
 />
@@ -106,16 +106,9 @@ import (
 facades.Route().Post("/payments/yoma/callback", func(
 	ctx http.Context,
 ) http.Response {
-	request, err := payments.CallbackRequestFromContext(ctx)
-	if err != nil {
-		return ctx.Response().String(http.StatusBadRequest, "bad request")
-	}
-	yoma, err := paymentsfacades.MyanmarPayments().YomaMmqr()
-	if err != nil {
-		return ctx.Response().String(http.StatusInternalServerError, "%s", err)
-	}
-	callback, err := yoma.HandleCallback(request)
-	if err != nil { // *myanmarpayments.SignatureVerificationError
+	callback, err := paymentsfacades.MyanmarPayments().
+		HandleCallbackFromContext(payments.GatewayYomaMmqr, ctx)
+	if err != nil { // *myanmarpayments.SignatureVerificationError, ...
 		return ctx.Response().String(http.StatusBadRequest, "invalid")
 	}
 

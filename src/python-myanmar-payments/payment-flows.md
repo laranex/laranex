@@ -88,7 +88,7 @@ def aya_checkout(request):
     return HttpResponse(payment.to_html())
 ```
 
-Under a Content Security Policy that allows scripts by nonce (`script-src 'nonce-…'`), pass the nonce so the inline script runs: `payment.to_html(nonce)` (or `to_html(nonce=nonce)`) renders `<script nonce="…">`.
+Under a Content Security Policy that allows scripts by nonce (`script-src 'nonce-…'`), pass the nonce so the inline script runs: `payment.to_html(nonce)` (or `to_html(nonce=nonce)`) renders `<script nonce="…">`; `None` or `""` adds no attribute.
 
 To build the form yourself, use `action`, `fields` (a tuple of `FormField(name, value)`) and `enctype` with your template engine, which escapes every value:
 

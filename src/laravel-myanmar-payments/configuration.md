@@ -58,7 +58,7 @@ CYBER_SOURCE_BASE_URL=
 
 | Variable | Config key | Required | Description |
 |---|---|---|---|
-| `MYANMAR_PAYMENTS_HTTP_TIMEOUT` | `http.timeout` | No | Seconds before a gateway call gives up, 30 by default. Given to every gateway except CyberSource as its `timeout_in_seconds` |
+| `MYANMAR_PAYMENTS_HTTP_TIMEOUT` | `http.timeout` | No | Seconds before a gateway call gives up, connecting included, 30 by default. The one timeout of every gateway except CyberSource |
 | `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` | `form_route.ttl_minutes` | Yes | Minutes an auto-submit form link stays valid. Needed by AYA Pay and CyberSource while the form route is enabled |
 | `MYANMAR_PAYMENTS_CACHE_STORE` | `cache_store` | No | Cache store for Yoma MMQR access tokens; empty means the default store |
 | `KBZ_PAY_APP_ID` | `kbz_pay.app_id` | Yes | `appid` issued by KBZ |
@@ -178,15 +178,15 @@ The time settings take an `int` or integer text such as `'30'`. Without the env 
 
 ## HTTP Client
 
-`timeout` is in seconds, applies to gateway calls only and defaults to 30: the package passes it to KBZ Pay, Wave Pay, AYA and Yoma MMQR as their `timeout_in_seconds`, and a null or blank one also means 30 seconds. To give one gateway its own timeout, set `timeout_in_seconds` in its array, e.g. `'kbz_pay' => [..., 'timeout_in_seconds' => 10]`. Redirects are returned as they are, never followed.
+`timeout` is in seconds, applies to gateway calls only and defaults to 30: the package passes it to KBZ Pay, Wave Pay, AYA and Yoma MMQR, and a null or blank one also means 30 seconds. It covers the whole call, connecting included, and there is no per-gateway timeout. Redirects are returned as they are, never followed.
 
 ## Auto-submit Form Route
 
-AYA Pay and CyberSource need the customer's browser to POST a signed form. The package registers a `GET myanmar-payments/form` route (named `myanmar-payments.form`) that renders that form and submits it, and sets `FormPayment::$autoSubmitUrl` to an encrypted link to it. Links expire after `ttl_minutes`; an invalid or expired link answers `410 Gone`. The page is sent with `Cache-Control: no-store` and `Referrer-Policy: strict-origin`, so the gateway sees only your origin, never the encrypted link. It needs no session or cookies, so the route runs without middleware by default. When your app sets a Content-Security-Policy nonce with `Vite::useCspNonce()`, the page's inline script carries it.
+AYA Pay and CyberSource need the customer's browser to POST a signed form. The package registers a `GET myanmar-payments/form` route (named `myanmar-payments.form`) that renders that form and submits it, and sets `FormPayment::$autoSubmitUrl` to an encrypted link to it. Links expire after `ttl_minutes`; an invalid or expired link answers `410 Gone`. The page is sent with `Cache-Control: no-store` and `Referrer-Policy: strict-origin`, so the gateway sees only your origin, never the encrypted link. It needs no session or cookies, so the route runs without middleware by default. When your app sets a Content-Security-Policy nonce with `Vite::useCspNonce()`, the page's inline script carries it. Links are encrypted with `APP_KEY`, which is read only when a link is built or opened: gateways without forms work without it.
 
 | Key | Meaning |
 |---|---|
-| `enabled` | Register the route. When `false`, `autoSubmitUrl` is `null`; build the form yourself, see [Form Payments](/laravel-myanmar-payments/payment-flows#form-payments) |
+| `enabled` | Register the route. When `false`, the route is not registered, `initiate()` still succeeds and `autoSubmitUrl` is `null`; build the form yourself, see [Form Payments](/laravel-myanmar-payments/payment-flows#form-payments) |
 | `path` | The route path |
 | `middleware` | Middleware for the route, `[]` by default, e.g. `['throttle:60,1']` or the middleware that calls `Vite::useCspNonce()`. Don't add authentication: the customer may arrive from a gateway or another device |
 | `ttl_minutes` | Minutes a link stays valid. Required while the route is enabled: AYA Pay and CyberSource throw `The form_route configuration is missing [ttl_minutes].` without it, or `The form_route configuration [ttl_minutes] must be a whole number greater than 0.` for an invalid value |

@@ -37,7 +37,9 @@ const kbz = new KbzPay(config);
 
 `error.message` reads `The kbz_pay configuration is missing [app_key].`
 
-`timeoutSeconds` defaults to 30 seconds (`DEFAULT_TIMEOUT_SECONDS`) when unset, `null` or blank. Time settings take a whole number or its text. `timeoutSeconds` and Wave's `timeToLiveSeconds` must be greater than 0, and KBZ's `timeToLiveMinutes` must be 1 to 120. An invalid value throws `ConfigurationError`, e.g. `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+`timeoutSeconds` defaults to 30 seconds (`DEFAULT_TIMEOUT_SECONDS`) when unset, `null` or blank. Time settings take a whole number or its text. `timeoutSeconds` and Wave's `timeToLiveSeconds` must be 1 to 2147483647, and KBZ's `timeToLiveMinutes` must be 1 to 120. An invalid value throws `ConfigurationError`, e.g. `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.`
+
+Text settings also take a safe integer (`merchantCode: 200123` becomes `'200123'`); floats and booleans count as missing. Only ASCII whitespace counts as blank, so a no-break space is a value. When several settings are wrong, the first error is the same in every Laranex SDK: the required text settings in the order listed below, then the time to live, then the timeout.
 
 ## Config Options
 
@@ -135,6 +137,17 @@ const config = KbzPayConfig.fromEnv(process.env);
 const kbzFromConfig = new KbzPay(config);
 ```
 
+To mix your own options with the environment per key, every config class also has `optionsFromEnv(env)`. It returns the options `fromEnv()` would read, trimmed but not validated, and leaves out every variable that is unset or blank:
+
+```ts
+import { KbzPayConfig, type KbzPayConfigOptions } from '@laranex/myanmar-payments';
+
+const config = new KbzPayConfig({
+  ...KbzPayConfig.optionsFromEnv(process.env), // e.g. { appId: 'kp123', apiUrl: '...' }
+  appKey: secrets.kbzAppKey, // your value wins for this key
+} as KbzPayConfigOptions); // the constructor still validates every setting
+```
+
 Every variable is required unless it is marked optional. Set the URLs to [production's](#production-endpoints) or the gateway's [UAT ones](#uat-endpoints). The values after `=` are examples:
 
 ```env
@@ -224,7 +237,7 @@ The keys `kbzPay`, `wavePay`, `ayaPay`, `yomaMmqr` and `cyberSource` take the co
 
 ## HTTP Client
 
-Gateways that call an API take an options object after the config:
+Gateways that call an API take an options object after the config. The default client never follows redirects (`redirect: 'manual'`): a 3xx answer is a failed request like any other non-2xx one.
 
 | Option | Type | Description |
 |---|---|---|

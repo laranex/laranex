@@ -31,7 +31,7 @@ try {
 |---|---|
 | `InvalidPaymentDataError` | Payment data breaks the gateway's documented rules, or `Amount.kyat` / `Amount.parse` / `Amount.from` get bad input. Thrown before any request is sent |
 | `ApiError` | The gateway rejected the request, answered with an error (including errors sent with HTTP 200), or could not be reached |
-| `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification, including one whose signed values are malformed (an AYA Pay value holding `:`, a CyberSource `signed_field_names` that doesn't sign itself or an unknown `decision`, a Wave Pay amount or ID out of format) |
+| `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification (`... verification failed.`), or its signature matched but its values are malformed (`Wave Pay callback is malformed.`, `AYA Pay callback payload is malformed.`, `CyberSource callback is malformed.`: an AYA Pay value holding `:`, an unsigned CyberSource `decision` or an unknown one, a Wave Pay amount or ID out of format) |
 | `ConfigurationError` | A gateway setting (URLs, time to live and Yoma's webhook secret included) is missing or blank, or a time setting is out of range |
 
 Each error's `name` is its class name, e.g. `ApiError`.
@@ -73,4 +73,4 @@ When the gateway sends an error code without a message, `error.message` ends wit
 | `gateway` | `string` | e.g. `kbz_pay` |
 | `key` | `string` | The setting, e.g. `app_key` |
 
-`error.message` is e.g. `The kbz_pay configuration is missing [app_key].`, or `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting. Thrown by each config class (and so by each gateway's constructor and `fromEnv()`), and by `MyanmarPayments` when a gateway is used without configuration.
+`error.message` is e.g. `The kbz_pay configuration is missing [app_key].`, or `The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting (at most 2147483647). Thrown by each config class (and so by each gateway's constructor and `fromEnv()`), and by `MyanmarPayments` when a gateway is used without configuration.

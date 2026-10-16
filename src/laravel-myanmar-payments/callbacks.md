@@ -53,7 +53,7 @@ Route::post('/payments/kbz/callback', function (Request $request) {
 })->name('payments.kbz.callback');
 ```
 
-Gateways post from their own servers, so exclude callback routes from CSRF verification.
+Gateways post from their own servers, so exclude callback routes from CSRF verification. A body over 64 KiB (`CallbackRequestFactory::MAX_CALLBACK_BODY_BYTES`, 65536 bytes, checked by `Content-Length` first) answers `413` with `The callback request body is larger than 65536 bytes.` before any verification.
 
 ## Callback Helpers
 

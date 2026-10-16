@@ -15,6 +15,8 @@ composer require laranex/laravel-myanmar-payments
 
 Laravel's package auto-discovery registers the service provider and the `MyanmarPayments` facade (`Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments`). The facade resolves the `Laranex\LaravelMyanmarPayments\MyanmarPayments` singleton, which you can also inject into your own classes.
 
+Only AYA Pay's and CyberSource's auto-submit form links use `APP_KEY` (they are encrypted with it); the other gateways work without one.
+
 The package is a thin Laravel layer over [`laranex/php-myanmar-payments`](https://github.com/laranex/php-myanmar-payments), which Composer installs alongside it.
 
 ## Publish the Config

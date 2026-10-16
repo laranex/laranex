@@ -118,7 +118,7 @@ io.WriteString(w, payment.HTML())
 | `Description` | `string` | No | Shown to the customer, no `:` |
 | `UserRefs` | `[]string` | No | Up to 5 of your own values, echoed back in the callback, none containing `:` |
 
-AYA joins the signed values with `:`, so `OrderID`, `Description` and `UserRefs` can't contain one. A `:` in a user ref is reported under its index, e.g. `userRefs.0`.
+AYA joins the signed values with `:`, so `OrderID`, `Description` and `UserRefs` can't contain one. A `:` in any user ref is reported once, under `userRefs`.
 
 ## Handling Callbacks
 
@@ -307,6 +307,6 @@ The same values as [`HandleCallback()`](#handlecallback-response), read from the
 | `Services()` | `*APIError` | AYA answers with an HTTP error or a `status` other than `00` |
 | `Status()` | `*APIError` | AYA answers with an HTTP error or a `status` other than `00`, e.g. `20` Transaction not found |
 | `Status()` | `*SignatureVerificationError` | The enquiry payload's `checkSum` doesn't match, or the payload is malformed (see [Handling Callbacks](#handling-callbacks)) |
-| `HandleCallback()`, `VerifyRedirect()` | `*SignatureVerificationError` | `payload` is missing or not base64 JSON, a signed field holds an object or array, `checkSum` doesn't match, or a signed value breaks the rules in [Handling Callbacks](#handling-callbacks) (a `:` outside `dateTime`, a missing `merchOrderId` or `tranId`, a non-decimal `amount`, a currency other than `104`, a `statusCode` that isn't two digits) |
+| `HandleCallback()`, `VerifyRedirect()` | `*SignatureVerificationError` | `AYA Pay callback checksum verification failed.` (`redirect` for `VerifyRedirect`): `payload` or `checkSum` is missing or not a string, `payload` isn't base64 JSON, a signed field holds an object or array, or `checkSum` doesn't match. `AYA Pay callback payload is malformed.`: the checksum matches but a signed value breaks the rules in [Handling Callbacks](#handling-callbacks) (a `:` outside `dateTime`, a missing `merchOrderId` or `tranId`, a non-decimal `amount`, a currency other than `104`, a `statusCode` that isn't two digits) |
 
 `*APIError` carries AYA's `status` (e.g. `20` Transaction not found, `09` Duplicate order ID) in `GatewayCode` and its `message` in `GatewayMessage`.

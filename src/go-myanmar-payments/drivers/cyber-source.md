@@ -181,13 +181,13 @@ What CyberSource puts in each field. See [Results](/go-myanmar-payments/referenc
 | `DECLINE`, `ERROR` | `StatusFailed` |
 | `CANCEL` | `StatusCanceled` |
 
-Any other `decision` returns `*SignatureVerificationError`, so a verified callback never has `StatusUnknown`.
+Any other `decision` returns `*SignatureVerificationError` (`CyberSource callback is malformed.`), so a verified callback never has `StatusUnknown`.
 
 ## Errors
 
 | Call | Returns | When |
 |---|---|---|
 | `Initiate()` | `*InvalidPaymentDataError` | `data.Validate()` fails. Nothing is signed |
-| `HandleCallback()` | `*SignatureVerificationError` | `signature` doesn't match, a field listed in `signed_field_names` is missing or holds an object or array, `decision` or `req_reference_number` isn't signed, `signed_field_names` doesn't list itself or has an empty, repeated or `=`-containing name, or `decision` isn't one of the five above |
+| `HandleCallback()` | `*SignatureVerificationError` | `CyberSource callback signature verification failed.`: `signature` is missing, not a string or doesn't match, a field listed in `signed_field_names` is missing or holds an object or array, or `signed_field_names` doesn't list itself or has an empty, repeated or `=`-containing name. `CyberSource callback is malformed.`: the signature matches but `decision` or `req_reference_number` isn't signed, or `decision` isn't one of the five above |
 
 CyberSource makes no HTTP calls, so nothing returns `*APIError`.

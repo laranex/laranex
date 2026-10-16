@@ -151,7 +151,7 @@ callback.Acknowledgement.Write(w)
 
 `callback.OrderID` falls back to `merchantReferenceId` when Wave's `orderId` is missing, null or empty.
 
-Wave hashes the values joined with no separator, so a matching `hashValue` alone doesn't pin down where one value ends and the next begins. After the hash matches, `amount` must be a decimal (e.g. `10000` or `10000.00`), at least one of `orderId` and `merchantReferenceId` must be present, and each one sent may only hold letters, digits, `_` and `-`; otherwise `HandleCallback` returns `*myanmarpayments.SignatureVerificationError`. New payments are held to the same ID rules, so every callback for a payment made with this package passes them.
+Wave hashes the values joined with no separator, so a matching `hashValue` alone doesn't pin down where one value ends and the next begins. After the hash matches, `amount` must be a decimal (e.g. `10000` or `10000.00`), at least one of `orderId` and `merchantReferenceId` must be present, and each one sent may only hold letters, digits, `_` and `-`; otherwise `HandleCallback` returns `*myanmarpayments.SignatureVerificationError` with `Wave Pay callback is malformed.`. New payments are held to the same ID rules, so every callback for a payment made with this package passes them.
 
 ## Responses
 
@@ -200,7 +200,7 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 | Call | Returns | When |
 |---|---|---|
 | `Initiate()` | `*InvalidPaymentDataError` | `data.Validate()` fails. Nothing is sent and `data` is left untouched. Item errors use `items.0.amount` keys |
-| `Initiate()` | `*APIError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
-| `HandleCallback()` | `*SignatureVerificationError` | `hashValue` doesn't match, a hashed field holds an object or array, `amount` isn't a decimal, both `orderId` and `merchantReferenceId` are empty, or either holds anything but letters, digits, `_` and `-` |
+| `Initiate()` | `*APIError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id`. `GatewayMessage` is Wave's `errors` object as `field: messages` pairs sorted by field (each entry a list or a single message), else its `message`; `GatewayCode` is `VALIDATION_ERROR` whenever `errors` is present |
+| `HandleCallback()` | `*SignatureVerificationError` | `Wave Pay callback hash verification failed.`: `hashValue` is missing, not a string or doesn't match, or a hashed field holds an object or array. `Wave Pay callback is malformed.`: the hash matches but `amount` isn't a decimal, both `orderId` and `merchantReferenceId` are empty, or either holds anything but letters, digits, `_` and `-` |
 
 `HTTPStatus` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`GatewayCode` is `VALIDATION_ERROR`).

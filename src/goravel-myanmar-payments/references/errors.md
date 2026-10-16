@@ -25,11 +25,11 @@ The package adds its own sentinel errors; match them with `errors.Is`:
 
 | Error | Returned when |
 |---|---|
-| `payments.ErrUnknownGateway` | `Manager.Gateway()` or `Manager.HandleCallback()` gets a name other than `kbz-pay`, `wave-pay`, `aya-pay`, `yoma-mmqr` or `cyber-source` |
+| `payments.ErrUnknownGateway` | `Manager.Gateway()`, `Manager.HandleCallback()` or `Manager.HandleCallbackFromContext()` gets a name other than `kbz-pay`, `wave-pay`, `aya-pay`, `yoma-mmqr` or `cyber-source` |
 | `payments.ErrFormRouteDisabled` | `AutoSubmitURL()` is called while `form_route.enabled` is `false` |
 | `payments.ErrCryptNotAvailable` | `AutoSubmitURL()` is called without the crypt facade |
 | `payments.ErrInvalidFormLink` | `Manager.ResolveFormPayment()` gets a tampered, foreign or expired link |
-| `payments.ErrCallbackBodyTooLarge` | `CallbackRequestFromContext()` gets a body (or rebuilt form) larger than `payments.MaxCallbackBodyBytes` (64 KiB) |
+| `payments.ErrCallbackBodyTooLarge` | `CallbackRequestFromContext()` or `Manager.HandleCallbackFromContext()` gets a body (or rebuilt form) larger than `payments.MaxCallbackBodyBytes` (64 KiB) |
 
 ## InvalidPaymentDataError
 

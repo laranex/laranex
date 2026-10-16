@@ -111,7 +111,7 @@ def aya_checkout(request, order_id: int):
 | `description` | `str` | No | Shown to the customer, no `:` |
 | `user_refs` | `Sequence[str]` | No | Up to 5 of your own values, as a `list` or `tuple`, echoed back in the callback, none containing `:` |
 
-AYA joins the signed values with `:`, so `order_id`, `description` and `user_refs` can't contain one (`The order_id field must not contain a colon (:).`).
+AYA joins the signed values with `:`, so `order_id`, `description` and `user_refs` can't contain one (`The order_id field must not contain ":".`).
 
 ## Handling Callbacks
 
@@ -149,13 +149,13 @@ AYA signs only the fields present in its payload (wallet payments leave out the 
 
 Because AYA joins the signed values with `:`, a matching `checkSum` alone could let a value be re-split into other fields. A payload is therefore only accepted when, besides the checksum:
 
-- no signed value contains `:`, except `dateTime`, which must have the form `YYYY-MM-DD HH:MM:SS`;
+- no signed value contains `:`, except `dateTime`, which must be empty or have the form `YYYY-MM-DD HH:MM:SS`;
 - `merchOrderId` and `tranId` are present;
 - `amount` is a decimal, e.g. `10000` or `10000.00`;
 - the currency code is `104` (MMK);
 - `statusCode` is two digits.
 
-Anything else raises `SignatureVerificationError`. The same checks apply to the return page and to `status()`.
+Anything else raises `SignatureVerificationError`: `AYA Pay callback checksum verification failed.` when the payload can't be decoded, holds a nested value or the checksum doesn't match, and `AYA Pay callback payload is malformed.` when a correctly signed payload breaks these rules (`redirect` or `enquiry response` instead of `callback` for the return page and `status()`).
 
 ## The Return Page
 

@@ -30,7 +30,7 @@ if err != nil {
 |---|---|
 | `*InvalidPaymentDataError` | Payment data breaks the gateway's documented rules, or `ParseAmount` gets bad input. Returned before any request is sent |
 | `*APIError` | The gateway rejected the request, answered with an error (including errors sent with HTTP 200), or could not be reached |
-| `*SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification, including one whose signed values are malformed (an AYA Pay value holding `:`, a CyberSource `signed_field_names` that doesn't sign itself or an unknown `decision`, a Wave Pay amount or ID out of format) |
+| `*SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification (`… signature`, `hash` or `checksum verification failed.`), or its signature matches but its signed values are malformed (`Wave Pay callback is malformed.`, `AYA Pay callback payload is malformed.`, `CyberSource callback is malformed.`) |
 | `*ConfigurationError` | A gateway setting (URLs, time to live and Yoma's webhook secret included) is missing or blank, or a time setting is out of range |
 
 To match any of the four, use the interface:
@@ -52,6 +52,8 @@ Every message starts with `myanmarpayments: `, the Go convention; the rest match
 
 `err.Error()` is `myanmarpayments: Invalid payment data: ` followed by the messages, in field-name order.
 
+A URL field (callback, return and cancel URLs) is valid when it is printable ASCII with no whitespace, starts with `http://` or `https://` (any case) and names a host: a bracketed IP address or dot-separated labels of letters, digits and inner `-` (at most 63 characters each, 253 in all, one trailing dot allowed), with an optional port from 0 to 65535. Otherwise the message is `The callbackUrl field must be a valid http or https URL.` (for that field). A negative amount gives `The amount field must not be negative.`
+
 ## APIError
 
 | Field | Type | Description |
@@ -63,7 +65,7 @@ Every message starts with `myanmarpayments: `, the Go convention; the rest match
 | `Raw` | `map[string]any` | The decoded response body |
 | `Err` | `error` | The underlying network error, if any; returned by `Unwrap()` |
 
-When the gateway sends an error code without a message, `Message` ends with the bracketed code, e.g. `KBZ Pay precreate failed: [ORDER_ID_USED]`. For a call that could not reach the gateway, `Message` is `Could not reach <url>: …` and `Err` is the error from the `HTTPDoer`, so `errors.Is(err, context.DeadlineExceeded)` works for timed-out calls.
+When the gateway sends an error code without a message, `Message` ends with the bracketed code, e.g. `KBZ Pay precreate failed: [ORDER_ID_USED]`. The default HTTP client never follows redirects: a `3xx` answer is an `*APIError` like any other non-`2xx` one. For a call that could not reach the gateway, `Message` is `Could not reach <url>: …` and `Err` is the error from the `HTTPDoer`, so `errors.Is(err, context.DeadlineExceeded)` works for timed-out calls.
 
 ## ErrCallbackBodyTooLarge
 
@@ -82,7 +84,7 @@ When the gateway sends an error code without a message, `Message` ends with the 
 |---|---|---|
 | `Gateway` | `string` | e.g. `kbz_pay` |
 | `Key` | `string` | The setting, e.g. `app_key` |
-| `Invalid` | `bool` | `true` when the setting is set but out of range: a time setting that is not a whole number greater than 0, or a KBZ Pay time to live outside 1 to 120 |
+| `Invalid` | `bool` | `true` when the setting is set but out of range: a time setting that is not a whole number from 1 to 2147483647, or a KBZ Pay time to live outside 1 to 120 |
 | `Requirement` | `string` | What a valid value is, used in the message when `Invalid`; empty means `PositiveWholeNumber` (`a whole number greater than 0`); KBZ Pay's time to live uses `kbzpay.TimeToLiveRequirement` (`a whole number from 1 to 120`) |
 
 `err.Error()` is e.g. `myanmarpayments: The kbz_pay configuration is missing [app_key].`, or `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` for a time setting. Returned by each gateway's `New`, and by the [`payments.Gateways`](/go-myanmar-payments/configuration#one-object-for-every-gateway) methods when a gateway is used without configuration.

@@ -53,17 +53,17 @@ Returned by `kbz.Status()`, `aya.Status()` and `yoma.Status()`.
 
 | Member | Type | Description |
 |---|---|---|
-| `NewCallbackRequestFromHTTP(r)` | `(*CallbackRequest, error)` | From an `*http.Request`: reads the body once and restores it. A body over `MaxCallbackBodyBytes` (64 KiB) returns an error wrapping `ErrCallbackBodyTooLarge` |
+| `NewCallbackRequestFromHTTP(r)` | `(*CallbackRequest, error)` | From an `*http.Request`: reads the body once and restores it, and decodes the query string like a form body (see `ParsedBody()`). A body over `MaxCallbackBodyBytes` (64 KiB) returns an error wrapping `ErrCallbackBodyTooLarge` |
 | `NewCallbackRequest(body, header, query)` | `*CallbackRequest` | From the raw parts: the body as `[]byte`, the headers as an `http.Header`, the query string as `url.Values`; `nil` header and query are allowed |
 | `NewCallbackRequestFromJSON(payload, header)` | `(*CallbackRequest, error)` | From a decoded payload, encoded as a JSON body with `Content-Type: application/json` |
 | `Body` | `[]byte` | The raw body, exactly as received |
 | `Header` | `http.Header` | The request headers |
 | `Query` | `url.Values` | The query string values |
-| `HeaderValue(name)` | `string` | One header, case-insensitively, or `""` |
-| `ParsedBody()` | `map[string]any` | The body decoded as JSON (when it is a JSON object) or a urlencoded form; JSON numbers become `json.Number` |
+| `HeaderValue(name)` | `string` | One header, case-insensitively, or `""`. A repeated header's values are joined with `", "` |
+| `ParsedBody()` | `map[string]any` | The body decoded as JSON (when it is a JSON object) or a urlencoded form; JSON numbers become `json.Number`. Only ASCII whitespace around the body is trimmed. A form splits on `&` and the first `=`, `+` is a space, an invalid `%` escape is kept as is, `;` is no separator, names stay as sent and the first value of a repeated name wins |
 | `Input()` | `map[string]any` | The body merged over the query string |
 | `QueryInput()` | `map[string]any` | The query string merged over the body |
 
 ## PaymentStatus
 
-`type PaymentStatus string`; the values and their meanings are in [Callbacks & Status](/go-myanmar-payments/callbacks#paymentstatus). `myanmarpayments.PaymentStatuses()` lists every status, and `ResolveStatus(statuses, gatewayStatus)` maps a trimmed gateway value through a `map[string]PaymentStatus` and returns `StatusUnknown` when it is not listed.
+`type PaymentStatus string`; the values and their meanings are in [Callbacks & Status](/go-myanmar-payments/callbacks#paymentstatus). `myanmarpayments.PaymentStatuses()` lists every status, and `ResolveStatus(statuses, gatewayStatus)` maps a gateway value trimmed of ASCII whitespace through a `map[string]PaymentStatus` and returns `StatusUnknown` when it is not listed.

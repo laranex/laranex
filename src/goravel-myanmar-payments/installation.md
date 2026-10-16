@@ -59,7 +59,7 @@ The provider uses whatever is registered and degrades gracefully:
 | Name | What it is |
 |---|---|
 | `paymentsfacades.MyanmarPayments()` | The `*payments.Manager` of the registered application. Panics when the provider is not registered |
-| `payments.Manager` | `KbzPay()`, `WavePay()`, `AyaPay()`, `YomaMmqr()`, `CyberSource()`, `Gateway(name)`, `HandleCallback(name, request)`, `AutoSubmitURL(form)`, `ResolveFormPayment(payload)`, `ServeForm(ctx)` |
+| `payments.Manager` | `KbzPay()`, `WavePay()`, `AyaPay()`, `YomaMmqr()`, `CyberSource()`, `Gateway(name)`, `HandleCallback(name, request)`, `HandleCallbackFromContext(name, ctx)`, `AutoSubmitURL(form)`, `ResolveFormPayment(payload)`, `ServeForm(ctx)` |
 | `payments.CallbackRequestFromContext(ctx)` | Turns a Goravel request into the SDK's `*myanmarpayments.CallbackRequest` |
 | `payments.Acknowledge(ctx, callback)` | The response the gateway expects after a callback |
 | `payments.AutoSubmitURL(form)` | `Manager.AutoSubmitURL` on the registered application's manager |

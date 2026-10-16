@@ -204,13 +204,16 @@ func init() {
 		// form. This route renders that form and submits it, so a handler can
 		// redirect to payments.AutoSubmitURL(form). Links are encrypted with
 		// APP_KEY and expire after "ttl_minutes" (required to create a link).
-		// "base_url" starts the links.
+		// "base_url" starts the links. "nonce", a
+		// func(contractshttp.Context) string, returns the CSP nonce put on the
+		// page's inline script (nil: no nonce).
 		"form_route": map[string]any{
 			"enabled":     true,
 			"path":        "myanmar-payments/form",
 			"middleware":  []contractshttp.Middleware{},
 			"ttl_minutes": config.Env("MYANMAR_PAYMENTS_FORM_TTL_MINUTES", ""),
 			"base_url":    config.Env("APP_URL", "http://localhost"),
+			"nonce":       nil,
 		},
 	})
 }
@@ -218,7 +221,7 @@ func init() {
 
 ## HTTP Client
 
-Gateway calls go through Goravel's HTTP client, so `Fake()` intercepts them in tests; see [Testing](/goravel-myanmar-payments/testing). `client` names an entry of `http.clients` in `config/http.go` (empty means the default client), so its transport settings (connection pool, telemetry) apply. `timeout` is in seconds, applies to gateway calls only and defaults to 30 (`payments.DefaultHTTPTimeoutSeconds`) when it is missing or blank; a value that is not a whole number greater than 0 returns `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` when you first request KBZ Pay.
+Gateway calls go through Goravel's HTTP client, so `Fake()` intercepts them in tests; see [Testing](/goravel-myanmar-payments/testing). `client` names an entry of `http.clients` in `config/http.go` (empty means the default client), so its transport settings (connection pool, telemetry) apply. `timeout` is in seconds, applies to gateway calls only and defaults to 30 (`payments.DefaultHTTPTimeoutSeconds`) when it is missing or blank; a value that is not a whole number greater than 0 returns `myanmarpayments: The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.` when you first request KBZ Pay. It is the only timeout: there is no per-gateway override. Redirects are never followed: a 3xx answer is handled like any other non-2xx one.
 
 ## Auto-submit Form Route
 
@@ -231,8 +234,9 @@ AYA Pay and CyberSource need the customer's browser to POST a signed form. The p
 | `middleware` | Middleware for the route, e.g. rate limiting. Don't add authentication: the customer may arrive from a gateway or another device |
 | `ttl_minutes` | Minutes a link stays valid. Required to create a link: without it `AutoSubmitURL` returns a `*myanmarpayments.ConfigurationError` with `form_route` and `ttl_minutes` (`The form_route configuration is missing [ttl_minutes].`), with `Invalid` set for a value that is not a whole number greater than 0 |
 | `base_url` | The scheme and host links start with. Falls back to `http.url`, then `APP_URL` |
+| `nonce` | A `func(contractshttp.Context) string` returning the Content-Security-Policy nonce of the current request; the page's inline script gets `nonce="…"` (`form.HTMLWithNonce`). `nil` (default) adds none |
 
-Links are encrypted with Goravel's crypt facade (`APP_KEY`); without it, `AutoSubmitURL` returns `payments.ErrCryptNotAvailable`.
+Links are encrypted with Goravel's crypt facade (`APP_KEY`); without it, `AutoSubmitURL` returns `payments.ErrCryptNotAvailable`. `AyaPay().Initiate()` and `CyberSource().Initiate()` never need the form route: with the route disabled or `ttl_minutes` missing they still return the `*FormPayment`, and only `AutoSubmitURL` fails. It checks in this order: route enabled, `ttl_minutes`, crypt.
 
 ## Cache
 

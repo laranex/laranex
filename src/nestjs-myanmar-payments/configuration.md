@@ -63,7 +63,7 @@ CYBER_SOURCE_BASE_URL=
 | `MYANMAR_PAYMENTS_HTTP_TIMEOUT` | `timeoutSeconds` of `kbzPay`, `wavePay`, `ayaPay` and `yomaMmqr` | No | Seconds before a gateway call gives up. Read by every gateway except CyberSource; defaults to `30` when unset or blank, and an invalid one is reported as `timeout_in_seconds` |
 | `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` | `formLink.ttlMinutes` | Yes | Minutes an auto-submit form link stays valid. Needed by AYA Pay and CyberSource while the form route is enabled |
 | `MYANMAR_PAYMENTS_FORM_KEY` | `formLink.secret` | No | Encrypts form links; falls back to `APP_KEY`. At least 32 bytes, e.g. `base64:` followed by 32 random bytes in base64 |
-| `APP_URL` | `formLink.baseUrl` | No | The scheme and host form links start with |
+| `APP_URL` | `formLink.baseUrl` | No | The scheme and host form links start with (`http://localhost` when unset) |
 | `KBZ_PAY_APP_ID` | `kbzPay.appId` | Yes | `appid` issued by KBZ |
 | `KBZ_PAY_APP_KEY` | `kbzPay.appKey` | Yes | Secret key used to sign requests |
 | `KBZ_PAY_MERCHANT_CODE` | `kbzPay.merchantCode` | Yes | `merch_code` issued by KBZ |
@@ -192,7 +192,7 @@ MyanmarPaymentsModule.forRootAsync({ useClass: PaymentsConfig });
 | Option | Meaning |
 |---|---|
 | `env` | Where variables are read: `process.env` (default), a record, or anything with `get(key)` such as `ConfigService` |
-| `kbzPay`, `wavePay`, `ayaPay`, `yomaMmqr`, `cyberSource` | A gateway's config, as options (`{ appId, appKey, ... }`) or an SDK config instance (`new KbzPayConfig(...)`). Wins over the environment for that gateway and needs every required setting (`timeoutSeconds` is optional, 30 seconds by default); see the SDK's [config options](/node-myanmar-payments/configuration) |
+| `kbzPay`, `wavePay`, `ayaPay`, `yomaMmqr`, `cyberSource` | A gateway's settings (`{ appId, appKey, ... }`), merged with the environment per setting: a setting given here wins, every other one (including `timeoutSeconds`, from `MYANMAR_PAYMENTS_HTTP_TIMEOUT`) is read from its variable, so `kbzPay: { appId }` still reads `KBZ_PAY_APP_KEY` and the rest. An SDK config instance (`new KbzPayConfig(...)`) is used as it is. See the SDK's [config options](/node-myanmar-payments/configuration) |
 | `fetch` | The `fetch` gateways call, e.g. a fake one in tests |
 | `httpClient` | An SDK `HttpClient`; takes precedence over `fetch` and keeps its own timeout (the config's `timeoutSeconds` only applies to the default client) |
 | `tokenCache` | An SDK `TokenCache` for Yoma MMQR access tokens |
@@ -210,7 +210,7 @@ The options object is available under the `MYANMAR_PAYMENTS_OPTIONS` token.
 
 ## HTTP Client
 
-Gateway calls go through the SDK's `fetch` client with each gateway's `timeoutSeconds`, read from `MYANMAR_PAYMENTS_HTTP_TIMEOUT`. Pass `fetch` to replace the function it calls, for example a fake one in tests, or `httpClient` to send requests yourself (proxies, tracing, retries); see [Testing](/nestjs-myanmar-payments/testing#faking-gateway-calls). When a gateway can't be reached, the call throws `ApiError` with `httpStatus` `0`. Every network method takes an optional last argument `{ signal }` to abort the call, e.g. `kbzPay().status(orderId, { signal: AbortSignal.timeout(5000) })`.
+Gateway calls go through the SDK's `fetch` client with each gateway's `timeoutSeconds`: the option, else `MYANMAR_PAYMENTS_HTTP_TIMEOUT` (also for gateways given in the options), else 30 seconds. Pass `fetch` to replace the function it calls, for example a fake one in tests, or `httpClient` to send requests yourself (proxies, tracing, retries); see [Testing](/nestjs-myanmar-payments/testing#faking-gateway-calls). When a gateway can't be reached, the call throws `ApiError` with `httpStatus` `0`. Every network method takes an optional last argument `{ signal }` to abort the call, e.g. `kbzPay().status(orderId, { signal: AbortSignal.timeout(5000) })`.
 
 ## Auto-submit Form Route
 
@@ -218,15 +218,15 @@ AYA Pay and CyberSource need the customer's browser to POST a signed form. The m
 
 | Setting | Meaning |
 |---|---|
-| `formRoute.enabled` | Register the route (default `true`). When `false`, `autoSubmitUrl()` throws |
+| `formRoute.enabled` | Register the route (default `true`). When `false`, `autoSubmitUrl()` throws `The form route is disabled (formRoute.enabled is false).` |
 | `formRoute.path` | The route path (default `myanmar-payments/form`). The app's global prefix applies |
 | `formRoute.guards` | Guards for the route, classes or instances, e.g. a rate-limiting `ThrottlerGuard`. Don't add authentication: the customer may be redirected from a gateway or another device |
 | `formRoute.nonce` | `(request, response) => string \| undefined` returning the Content Security Policy nonce for the page's inline script. Defaults to helmet's nonce: `res.locals.cspNonce` on Express, `reply.cspNonce.script` on Fastify (`@fastify/helmet`). Without a nonce the script has none |
 | `formLink.secret` | Encrypts the links (AES-256-GCM, key derived with HKDF-SHA256). Defaults to `MYANMAR_PAYMENTS_FORM_KEY`, then `APP_KEY`; a `base64:` prefix is decoded first. Must be at least 32 bytes after decoding: a shorter one makes `autoSubmitUrl()` throw a `ConfigurationError` naming the setting it came from, e.g. `The myanmar_payments configuration [MYANMAR_PAYMENTS_FORM_KEY] must be at least 32 bytes, e.g. base64: followed by 32 random bytes in base64.` |
 | `formLink.ttlMinutes` | Minutes a link stays valid. Defaults to `MYANMAR_PAYMENTS_FORM_TTL_MINUTES`; required, no default. Without it `autoSubmitUrl()` throws `The form_route configuration is missing [ttl_minutes].`, and the invalid-value message for a value that is not a whole number greater than 0 |
-| `formLink.baseUrl` | The scheme and host links start with. Defaults to `APP_URL`; without it links are relative |
+| `formLink.baseUrl` | The scheme and host links start with. Defaults to `APP_URL`, then `http://localhost`, so links are always absolute |
 
-Set `formRoute.enabled` to `false` to drop the route and build the form yourself, see [Form Payments](/nestjs-myanmar-payments/payment-flows#form-payments).
+`ayaPay().initiate()` and `cyberSource().initiate()` never need the route or the TTL: with the route disabled or the TTL missing they still return the `FormPayment`, and only `autoSubmitUrl()` throws. Set `formRoute.enabled` to `false` to drop the route and build the form yourself, see [Form Payments](/nestjs-myanmar-payments/payment-flows#form-payments).
 
 ## Cache
 

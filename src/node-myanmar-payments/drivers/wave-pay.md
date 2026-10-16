@@ -80,13 +80,13 @@ Payments are posted as JSON, in MMK, to `{baseUrl}/payment`; the customer is sen
 | `returnUrl` | `string` | Yes | Absolute http or https URL Wave sends the customer back to, at most 255 characters. Not proof of payment |
 | `description` | `string` | Yes | Shown to the customer, at most 255 characters |
 | `items` | `WavePayItem[]` | Yes | At least one item |
-| `amount` | `Amount \| number \| bigint` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). Unset charges the sum of the items. Wave only accepts MMK |
+| `amount` | `Amount \| number \| bigint` | No | Whole kyat, greater than 0 (Wave doesn't accept decimals). Unset or `null` charges the sum of the items. Wave only accepts MMK |
 | `merchantReferenceId` | `string` | No | Unique ID of this attempt, at most 100 characters: letters, digits, `_` and `-` only. Unset or empty means a random ID |
 | `merchantName` | `string` | No | Business name shown on Wave's page for this payment. Unset or `null` uses the configured `merchantName`; a blank one is rejected |
 | `timeToLiveSeconds` | `number` | No | Seconds the customer has to pay this payment, a whole number greater than 0. Unset or `null` uses the configured `timeToLiveSeconds` |
 | `additionalField3`, `additionalField4`, `additionalField5` | `string` | No | Extra information, at most 50 characters each, sent as `additional_field_3`–`5` and echoed in the callback's `additionalField3`–`5`. Unset, `null` or empty is not sent |
 
-Length limits count UTF-8 bytes. `WavePayItem` has a `name` and an `amount` in whole kyat, greater than 0. The items are summed with exact `bigint` arithmetic, never floats; `WavePay.resolvedAmount(data)` returns the total that will be charged.
+Length limits count UTF-8 bytes. `WavePayItem` has a `name` and an `amount` in whole kyat, greater than 0. The items are summed with exact `bigint` arithmetic, never floats; `WavePay.resolvedAmount(data)` returns the total that will be charged. Item names and amounts and the total are checked after the other fields; without items or `amount`, `amount` reports `The amount field is required.`, and an item amount that is invalid or has decimals skips the total check.
 
 ### Merchant Reference ID
 
@@ -160,6 +160,6 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 |---|---|---|
 | `initiate()` | `InvalidPaymentDataError` | `WavePay.validate(data)` fails. Nothing is sent and `data` is left untouched. Item errors use `items.0.amount` keys |
 | `initiate()` | `ApiError` | Wave answers with an HTTP error, a `message` other than `success`, or no `transaction_id` |
-| `handleCallback()` | `SignatureVerificationError` | `hashValue` doesn't match, a hashed field holds an object or array, `amount` isn't a decimal, both `orderId` and `merchantReferenceId` are empty, or either holds anything but letters, digits, `_` and `-` |
+| `handleCallback()` | `SignatureVerificationError` | `Wave Pay callback hash verification failed.`: `hashValue` isn't a string or doesn't match, or a hashed field holds an object or array. `Wave Pay callback is malformed.`: the hash matched but `amount` isn't a decimal, both `orderId` and `merchantReferenceId` are empty, or either holds anything but letters, digits, `_` and `-` |
 
 `httpStatus` tells Wave's rejections apart: `400` invalid hash, `404` unknown merchant, `409` reused reference, `422` validation (`gatewayCode` is `VALIDATION_ERROR`).

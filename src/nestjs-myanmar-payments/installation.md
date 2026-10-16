@@ -29,7 +29,7 @@ import { Module } from '@nestjs/common';
 export class AppModule {}
 ```
 
-Registering the module provides `MyanmarPaymentsService`, which you inject into your own controllers and services. Options are optional: without them every value is read from environment variables. See [Configuration](/nestjs-myanmar-payments/configuration) for `forRootAsync()` with `@nestjs/config`.
+Registering the module provides `MyanmarPaymentsService`, which you inject into your own controllers and services. Options are optional: every setting you leave out is read from its environment variable. See [Configuration](/nestjs-myanmar-payments/configuration) for `forRootAsync()` with `@nestjs/config`.
 
 ## Keep the Raw Body
 
@@ -59,7 +59,7 @@ const app = await NestFactory.create<NestFastifyApplication>(
 );
 ```
 
-Without it the package falls back to the unread request stream (Express) or encodes the parsed body again. That still verifies for every gateway's documented payloads, but re-encoded JSON can change how numbers are written, so `rawBody: true` is the safe setting.
+Without it the package reads the unread request stream when no body parser consumed it (Express). A JSON body that was already parsed is never encoded again, since that can change how numbers are written and break the signature: the callback answers `400` with `Enable rawBody: true in NestFactory.create() to verify JSON callbacks.` Only CyberSource's form callbacks verify without it.
 
 ## What It Provides
 

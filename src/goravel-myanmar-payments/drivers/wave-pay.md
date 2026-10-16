@@ -29,7 +29,7 @@ Wave sends the customer back to your return URL and posts the result to your cal
     { from: 'Customer', to: 'Wave Pay', label: 'Pay with WavePay' },
     { from: 'Wave Pay', to: 'Customer', label: 'Back to the frontend URL', detail: 'ReturnURL: not proof of payment', response: true },
     { from: 'Wave Pay', to: 'Your app', label: 'Backend result URL callback', detail: 'POST to CallbackURL, hashValue' },
-    { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: 'wave.HandleCallback(request)' },
+    { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: 'HandleCallbackFromContext(name, ctx)' },
   ]"
 />
 
@@ -112,16 +112,9 @@ import (
 facades.Route().Post("/payments/wave/callback", func(
 	ctx http.Context,
 ) http.Response {
-	request, err := payments.CallbackRequestFromContext(ctx)
-	if err != nil {
-		return ctx.Response().String(http.StatusBadRequest, "bad request")
-	}
-	wave, err := paymentsfacades.MyanmarPayments().WavePay()
-	if err != nil {
-		return ctx.Response().String(http.StatusInternalServerError, "%s", err)
-	}
-	callback, err := wave.HandleCallback(request)
-	if err != nil { // *myanmarpayments.SignatureVerificationError
+	callback, err := paymentsfacades.MyanmarPayments().
+		HandleCallbackFromContext(payments.GatewayWavePay, ctx)
+	if err != nil { // *myanmarpayments.SignatureVerificationError, ...
 		return ctx.Response().String(http.StatusBadRequest, "invalid")
 	}
 

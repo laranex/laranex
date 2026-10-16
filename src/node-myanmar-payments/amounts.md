@@ -24,7 +24,7 @@ Payment data accepts the same inputs directly (`amount: 10000`, `amount: 10000n`
 
 `Amount.kyat` takes a safe integer `number` or a `bigint` of any size. Negative values, fractions, `NaN` and integers beyond `Number.MAX_SAFE_INTEGER` (pass a `bigint` instead) throw.
 
-They throw an `InvalidPaymentDataError` with an `amount` entry, so bad user input surfaces like any other invalid field:
+They throw an `InvalidPaymentDataError` with an `amount` entry, so bad user input surfaces like any other invalid field. A negative whole `number` or `bigint` passed as payment data is reported by `validate()` with the other invalid fields, as `The amount field must not be negative.` (`items.0.amount` for a Wave Pay item):
 
 ```ts
 import { Amount, InvalidPaymentDataError } from '@laranex/myanmar-payments';

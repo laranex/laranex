@@ -63,7 +63,7 @@ for (const service of await aya.services()) {
 }
 ```
 
-Methods AYA lists that this package doesn't know yet are kept in `service.unknownMethods`.
+Methods AYA lists that this package doesn't know yet are kept in `service.unknownMethods`; `data` and each service's `methods` are read only when they are JSON lists, and method entries that aren't text, numbers or booleans are skipped.
 
 | `AyaPayMethod` | Value | Customer |
 |---|---|---|
@@ -105,7 +105,7 @@ res.end(payment.toHtml());
 | `method` | `AyaPayMethod` | Yes | `'WEB'`, `'QR'` or `'NOTI'` |
 | `returnUrl` | `string` | No | Absolute http or https URL. Unset uses the URL registered with AYA |
 | `description` | `string` | No | Shown to the customer, no `:` |
-| `userRefs` | `string[]` | No | Up to 5 of your own values, echoed back in the callback, none containing `:` |
+| `userRefs` | `string[]` | No | Up to 5 of your own values, echoed back in the callback, none containing `:` (`The userRefs field must not contain ":".`) |
 
 ## Handling Callbacks
 
@@ -140,7 +140,7 @@ Because AYA joins the signed values with `:`, a matching `checkSum` alone could 
 - the currency code is `104` (MMK);
 - `statusCode` is exactly two digits.
 
-Anything else throws `SignatureVerificationError`. The same checks apply to the return page and to `status()`.
+A bad payload or `checkSum` throws `SignatureVerificationError` with `AYA Pay callback checksum verification failed.`; a payload whose checksum matched but breaks a rule above throws it with `AYA Pay callback payload is malformed.` (`redirect` or `enquiry response` instead of `callback` for the return page and `status()`, which get the same checks).
 
 ## The Return Page
 

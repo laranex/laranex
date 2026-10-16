@@ -26,7 +26,7 @@ CyberSource posts the result twice, to your backoffice URL and through the brows
     { from: 'Your app', to: 'Customer', label: 'Redirect to autoSubmitUrl', detail: 'cyberSource.Initiate(data), payments.AutoSubmitURL(form)', response: true },
     { from: 'Customer', to: 'CyberSource', label: 'Post to the hosted checkout', detail: 'POST /pay, then the card form' },
     { from: 'CyberSource', to: 'Your app', label: 'Backoffice post', detail: 'override_backoffice_post_url' },
-    { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: 'cyberSource.HandleCallback(request)' },
+    { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: 'HandleCallbackFromContext(name, ctx)' },
     { from: 'Customer', to: 'Your app', label: 'Browser posts the receipt', detail: 'override_custom_receipt_page' },
     { from: 'Your app', to: 'Your app', label: 'Same signature check', detail: 'cyberSource.HandleCallback(request)' },
     { from: 'Your app', to: 'Customer', label: 'Show the receipt', response: true },
@@ -114,16 +114,9 @@ import (
 facades.Route().Post("/payments/cybersource/callback", func(
 	ctx http.Context,
 ) http.Response {
-	request, err := payments.CallbackRequestFromContext(ctx)
-	if err != nil {
-		return ctx.Response().String(http.StatusBadRequest, "bad request")
-	}
-	cyberSource, err := paymentsfacades.MyanmarPayments().CyberSource()
-	if err != nil {
-		return ctx.Response().String(http.StatusInternalServerError, "%s", err)
-	}
-	callback, err := cyberSource.HandleCallback(request)
-	if err != nil { // *myanmarpayments.SignatureVerificationError
+	callback, err := paymentsfacades.MyanmarPayments().
+		HandleCallbackFromContext(payments.GatewayCyberSource, ctx)
+	if err != nil { // *myanmarpayments.SignatureVerificationError, ...
 		return ctx.Response().String(http.StatusBadRequest, "invalid")
 	}
 
