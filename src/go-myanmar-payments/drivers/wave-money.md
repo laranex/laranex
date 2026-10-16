@@ -161,7 +161,7 @@ What Wave Money puts in each field. See [Results](/go-myanmar-payments/reference
 |---|---|
 | `Flow()` | `FlowRedirect` |
 | `OrderID` | Your `data.OrderID` |
-| `URL` | `{AuthenticateURL}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
+| `URL` | `{BaseURL}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
 | `GatewayReference` | Wave `transaction_id`. Always set |
 | `Raw` | Wave's `/payment` response: `message` (`success`), `transaction_id` |
 

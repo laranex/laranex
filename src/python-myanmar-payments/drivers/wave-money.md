@@ -162,7 +162,7 @@ What Wave Money puts in each field. See [Results](/python-myanmar-payments/refer
 |---|---|
 | `flow` | `PaymentFlow.REDIRECT` |
 | `order_id` | Your `data.order_id` |
-| `url` | `{authenticate_url}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
+| `url` | `{base_url}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
 | `gateway_reference` | Wave `transaction_id`. Always set |
 | `raw` | Wave's `/payment` response: `message` (`success`), `transaction_id` |
 

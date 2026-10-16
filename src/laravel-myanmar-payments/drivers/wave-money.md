@@ -136,7 +136,7 @@ What Wave Money puts in each property. See [Results](/laravel-myanmar-payments/r
 | Property | Wave Money value |
 |---|---|
 | `orderId` | Your `orderId` |
-| `url` | `{authenticate_url}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
+| `url` | `{base_url}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
 | `gatewayReference` | Wave `transaction_id`. Always set |
 | `raw` | Wave's `/payment` response: `message` (`success`), `transaction_id` |
 

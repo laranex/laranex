@@ -35,7 +35,6 @@ WAVE_MONEY_SECRET_KEY=
 WAVE_MONEY_MERCHANT_NAME=
 WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS=   # optional, greater than 0
 WAVE_MONEY_BASE_URL=                  # optional override
-WAVE_MONEY_AUTHENTICATE_URL=          # optional override
 
 # AYA Payment Gateway (AYA_PGW_* names are read too)
 AYA_PAY_APP_KEY=
@@ -77,7 +76,6 @@ CYBER_SOURCE_BASE_URL=                # optional override
 | `WAVE_MONEY_MERCHANT_NAME` | `wave_money.merchant_name` | Yes | Shown on Wave's payment page. A payment can override it with `wavemoney.PaymentData`'s `MerchantName` |
 | `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` | `wave_money.time_to_live_in_seconds` | No | Seconds the customer has to pay. A payment can override it with `wavemoney.PaymentData`'s `TimeToLiveSeconds`; when it is unset, every payment must set its own |
 | `WAVE_MONEY_BASE_URL` | `wave_money.base_url` | No | Override the API base URL |
-| `WAVE_MONEY_AUTHENTICATE_URL` | `wave_money.authenticate_url` | No | Override the host the customer is redirected to |
 | `AYA_PAY_APP_KEY` | `aya_pay.app_key` | Yes | Public application key |
 | `AYA_PAY_APP_SECRET` | `aya_pay.app_secret` | Yes | Secret used for checksums |
 | `AYA_PAY_BASE_URL` | `aya_pay.base_url` | No | Override the gateway base URL |
@@ -106,7 +104,6 @@ Every gateway uses its production endpoints. There is no switch between test and
 | KBZ Pay API | `https://api.kbzpay.com/payment/gateway` |
 | KBZ Pay PWA | `https://wap.kbzpay.com/pgw/pwa/#/` |
 | Wave Money API | `https://payments.wavemoney.io` |
-| Wave Money authenticate redirect | `https://payments.wavemoney.io` |
 | AYA Payment Gateway | `https://pgw.ayainnovation.com` |
 | Yoma MMQR | `https://paymenthubapi.yomabank.com` |
 | CyberSource | `https://secureacceptance.cybersource.com` |
@@ -120,19 +117,17 @@ Each gateway issues separate UAT credentials. To use them, set the URL overrides
 | KBZ Pay | `KBZ_PAY_BASE_URL` | `kbz_pay.api_url` | `http://api-uat.kbzpay.com/payment/gateway/uat` |
 | KBZ Pay | `KBZ_PAY_PWA_BASE_REDIRECT_URL` | `kbz_pay.pwa_url` | `https://static.kbzpay.com/pgw/uat/pwa/#/` |
 | Wave Money | `WAVE_MONEY_BASE_URL` | `wave_money.base_url` | `https://preprodpayments.wavemoney.io:8107` |
-| Wave Money | `WAVE_MONEY_AUTHENTICATE_URL` | `wave_money.authenticate_url` | `https://preprodpayments.wavemoney.io` |
 | AYA Payment Gateway | `AYA_PAY_BASE_URL` | `aya_pay.base_url` | `https://uat-pgw.ayainnovation.com` |
 | Yoma MMQR | `YOMA_MMQR_BASE_URL` | `yoma_mmqr.base_url` | `https://devapi.yomabank.net` |
 | CyberSource | `CYBER_SOURCE_BASE_URL` | `cyber_source.base_url` | `https://testsecureacceptance.cybersource.com` |
 
-Wave serves its API on port `8107` and the page the customer is redirected to on the same host without the port. Remove the overrides, and switch to the production credentials, when you go live. Quote the KBZ PWA URL in `.env`, because of its `#`:
+Wave Money's base URL is used as it is, port included: payments are requested at its `/payment` and the customer is sent to its `/authenticate`. Remove the overrides, and switch to the production credentials, when you go live. Quote the KBZ PWA URL in `.env`, because of its `#`:
 
 ```env
 # UAT
 KBZ_PAY_BASE_URL=http://api-uat.kbzpay.com/payment/gateway/uat
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://static.kbzpay.com/pgw/uat/pwa/#/"
 WAVE_MONEY_BASE_URL=https://preprodpayments.wavemoney.io:8107
-WAVE_MONEY_AUTHENTICATE_URL=https://preprodpayments.wavemoney.io
 AYA_PAY_BASE_URL=https://uat-pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://devapi.yomabank.net
 CYBER_SOURCE_BASE_URL=https://testsecureacceptance.cybersource.com
@@ -174,9 +169,6 @@ func init() {
 				"WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS", "",
 			),
 			"base_url": config.Env("WAVE_MONEY_BASE_URL", ""),
-			"authenticate_url": config.Env(
-				"WAVE_MONEY_AUTHENTICATE_URL", "",
-			),
 		},
 
 		"aya_pay": map[string]any{

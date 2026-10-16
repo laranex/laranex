@@ -166,7 +166,7 @@ What Wave Money puts in each field. See [Results](/goravel-myanmar-payments/refe
 | Field | Wave Money value |
 |---|---|
 | `OrderID` | Your `OrderID` |
-| `URL` | `{authenticate_url}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
+| `URL` | `{base_url}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
 | `GatewayReference` | Wave `transaction_id`. Always set |
 | `Raw` | Wave's `/payment` response: `message` (`success`), `transaction_id` |
 

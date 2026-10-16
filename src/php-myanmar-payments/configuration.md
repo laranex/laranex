@@ -59,7 +59,6 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `timeToLiveSeconds` | `?int` | No | Seconds the customer has to pay, greater than 0. A payment can override it with `WaveMoneyPaymentData`'s `timeToLiveSeconds`; when it is unset, every payment must set its own |
 | `timeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); an invalid one is reported as `timeout_in_seconds` |
 | `baseUrl` | `?string` | No | Override the API base URL |
-| `authenticateUrl` | `?string` | No | Override the host the customer is redirected to |
 
 ### AyaPayConfig
 
@@ -99,12 +98,11 @@ Every gateway uses its production endpoints. There is no switch between test and
 | KBZ Pay API | `https://api.kbzpay.com/payment/gateway` |
 | KBZ Pay PWA | `https://wap.kbzpay.com/pgw/pwa/#/` |
 | Wave Money API | `https://payments.wavemoney.io` |
-| Wave Money authenticate redirect | `https://payments.wavemoney.io` |
 | AYA Payment Gateway | `https://pgw.ayainnovation.com` |
 | Yoma MMQR | `https://paymenthubapi.yomabank.com` |
 | CyberSource | `https://secureacceptance.cybersource.com` |
 
-The URLs are class constants on the config classes: `KbzPayConfig::PRODUCTION_API_URL`, `KbzPayConfig::PRODUCTION_PWA_URL`, `WaveMoneyConfig::PRODUCTION_URL`, `WaveMoneyConfig::PRODUCTION_AUTHENTICATE_URL`, and `PRODUCTION_URL` on `AyaPayConfig`, `YomaMmqrConfig` and `CyberSourceConfig`.
+The URLs are class constants on the config classes: `KbzPayConfig::PRODUCTION_API_URL`, `KbzPayConfig::PRODUCTION_PWA_URL`, `WaveMoneyConfig::PRODUCTION_URL`, and `PRODUCTION_URL` on `AyaPayConfig`, `YomaMmqrConfig` and `CyberSourceConfig`.
 
 ## Testing Against UAT
 
@@ -115,12 +113,11 @@ Each gateway issues separate UAT credentials. To use them, set the URL overrides
 | KBZ Pay | `KBZ_PAY_BASE_URL` | `apiUrl` | `http://api-uat.kbzpay.com/payment/gateway/uat` |
 | KBZ Pay | `KBZ_PAY_PWA_BASE_REDIRECT_URL` | `pwaUrl` | `https://static.kbzpay.com/pgw/uat/pwa/#/` |
 | Wave Money | `WAVE_MONEY_BASE_URL` | `baseUrl` | `https://preprodpayments.wavemoney.io:8107` |
-| Wave Money | `WAVE_MONEY_AUTHENTICATE_URL` | `authenticateUrl` | `https://preprodpayments.wavemoney.io` |
 | AYA Payment Gateway | `AYA_PAY_BASE_URL` | `baseUrl` | `https://uat-pgw.ayainnovation.com` |
 | Yoma MMQR | `YOMA_MMQR_BASE_URL` | `baseUrl` | `https://devapi.yomabank.net` |
 | CyberSource | `CYBER_SOURCE_BASE_URL` | `baseUrl` | `https://testsecureacceptance.cybersource.com` |
 
-Wave serves its API on port `8107` and the page the customer is redirected to on the same host without the port. Remove the overrides, and switch to the production credentials, when you go live.
+Wave Money's base URL is used as it is, port included: payments are requested at its `/payment` and the customer is sent to its `/authenticate`. Remove the overrides, and switch to the production credentials, when you go live.
 
 ## From Environment Variables
 
@@ -156,7 +153,6 @@ WAVE_MONEY_SECRET_KEY=
 WAVE_MONEY_MERCHANT_NAME=
 WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS=   # optional, greater than 0
 WAVE_MONEY_BASE_URL=                  # optional override
-WAVE_MONEY_AUTHENTICATE_URL=          # optional override
 
 # AYA Payment Gateway (AYA_PGW_* names are read too)
 AYA_PAY_APP_KEY=
@@ -188,7 +184,7 @@ Credentials from a config file go through `fromArray()`, which reads the same se
 | Config class | Keys |
 |---|---|
 | `KbzPayConfig` | `app_id`, `app_key`, `merchant_code`, `timeout_in_seconds`, `api_url`, `pwa_url`, `time_to_live_in_minutes` |
-| `WaveMoneyConfig` | `merchant_id`, `secret_key`, `merchant_name`, `time_to_live_in_seconds`, `timeout_in_seconds`, `base_url`, `authenticate_url` |
+| `WaveMoneyConfig` | `merchant_id`, `secret_key`, `merchant_name`, `time_to_live_in_seconds`, `timeout_in_seconds`, `base_url` |
 | `AyaPayConfig` | `app_key`, `app_secret`, `timeout_in_seconds`, `base_url` |
 | `YomaMmqrConfig` | `merchant_id`, `client_id`, `client_secret`, `webhook_hashkey`, `api_version`, `timeout_in_seconds`, `webhook_secret`, `base_url` |
 | `CyberSourceConfig` | `profile_id`, `access_key`, `secret_key`, `base_url` |

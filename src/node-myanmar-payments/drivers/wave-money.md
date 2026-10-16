@@ -142,7 +142,7 @@ What Wave Money puts in each field. See [Results](/node-myanmar-payments/referen
 |---|---|
 | `flow` | `'redirect'` |
 | `orderId` | Your `data.orderId` |
-| `url` | `{authenticateUrl}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
+| `url` | `{baseUrl}/authenticate?transaction_id=…` (URL-encoded), e.g. `https://payments.wavemoney.io/authenticate?transaction_id=…` |
 | `gatewayReference` | Wave `transaction_id`. Always set |
 | `raw` | Wave's `/payment` response: `message` (`success`), `transaction_id` |
 

@@ -40,7 +40,7 @@ The time settings (`TimeoutSeconds`, and Wave Money's `TimeToLiveSeconds`) must 
 
 ## Endpoints
 
-Every gateway uses its production endpoints. There is no switch between test and production: to test against a gateway's UAT environment, or to go through a proxy, set the URL overrides (see [Testing Against UAT](#testing-against-uat)). An empty override means unset. Each config has `Resolved…()` methods that return the URL actually used: `ResolvedAPIURL()` and `ResolvedPWAURL()` (KBZ Pay), `ResolvedBaseURL()` and `ResolvedAuthenticateURL()` (Wave Money), and `ResolvedBaseURL()` (AYA, Yoma, CyberSource). A gateway's `Config()` method returns the config it was created with.
+Every gateway uses its production endpoints. There is no switch between test and production: to test against a gateway's UAT environment, or to go through a proxy, set the URL overrides (see [Testing Against UAT](#testing-against-uat)). An empty override means unset. Each config has `Resolved…()` methods that return the URL actually used: `ResolvedAPIURL()` and `ResolvedPWAURL()` (KBZ Pay), `ResolvedBaseURL()` (Wave Money), and `ResolvedBaseURL()` (AYA, Yoma, CyberSource). A gateway's `Config()` method returns the config it was created with.
 
 ## Config Options
 
@@ -66,7 +66,6 @@ Every gateway uses its production endpoints. There is no switch between test and
 | `TimeToLiveSeconds` | `int` | No | Seconds the customer has to pay, greater than 0. A payment can override it with `wavemoney.PaymentData`'s `TimeToLiveSeconds`; 0 means unset, and every payment must then set its own |
 | `TimeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. `0` (unset) means 30 (`myanmarpayments.DefaultTimeoutSeconds`); a negative one is reported as `timeout_in_seconds` |
 | `BaseURL` | `string` | No | Override the API base URL |
-| `AuthenticateURL` | `string` | No | Override the host the customer is redirected to |
 
 ### ayapay.Config
 
@@ -106,12 +105,11 @@ Every gateway uses its production endpoints. There is no switch between test and
 | KBZ Pay API | `https://api.kbzpay.com/payment/gateway` |
 | KBZ Pay PWA | `https://wap.kbzpay.com/pgw/pwa/#/` |
 | Wave Money API | `https://payments.wavemoney.io` |
-| Wave Money authenticate redirect | `https://payments.wavemoney.io` |
 | AYA Payment Gateway | `https://pgw.ayainnovation.com` |
 | Yoma MMQR | `https://paymenthubapi.yomabank.com` |
 | CyberSource | `https://secureacceptance.cybersource.com` |
 
-The URLs are exported constants in the gateway packages: `kbzpay.ProductionAPIURL`, `kbzpay.ProductionPWAURL`, `wavemoney.ProductionURL`, `wavemoney.ProductionAuthenticateURL`, and `ProductionURL` in `ayapay`, `yomammqr` and `cybersource`.
+The URLs are exported constants in the gateway packages: `kbzpay.ProductionAPIURL`, `kbzpay.ProductionPWAURL`, `wavemoney.ProductionURL`, and `ProductionURL` in `ayapay`, `yomammqr` and `cybersource`.
 
 ## Testing Against UAT
 
@@ -122,12 +120,11 @@ Each gateway issues separate UAT credentials. To use them, set the URL overrides
 | KBZ Pay | `KBZ_PAY_BASE_URL` | `APIURL` | `http://api-uat.kbzpay.com/payment/gateway/uat` |
 | KBZ Pay | `KBZ_PAY_PWA_BASE_REDIRECT_URL` | `PWAURL` | `https://static.kbzpay.com/pgw/uat/pwa/#/` |
 | Wave Money | `WAVE_MONEY_BASE_URL` | `BaseURL` | `https://preprodpayments.wavemoney.io:8107` |
-| Wave Money | `WAVE_MONEY_AUTHENTICATE_URL` | `AuthenticateURL` | `https://preprodpayments.wavemoney.io` |
 | AYA Payment Gateway | `AYA_PAY_BASE_URL` | `BaseURL` | `https://uat-pgw.ayainnovation.com` |
 | Yoma MMQR | `YOMA_MMQR_BASE_URL` | `BaseURL` | `https://devapi.yomabank.net` |
 | CyberSource | `CYBER_SOURCE_BASE_URL` | `BaseURL` | `https://testsecureacceptance.cybersource.com` |
 
-Wave serves its API on port `8107` and the page the customer is redirected to on the same host without the port. Remove the overrides, and switch to the production credentials, when you go live.
+Wave Money's base URL is used as it is, port included: payments are requested at its `/payment` and the customer is sent to its `/authenticate`. Remove the overrides, and switch to the production credentials, when you go live.
 
 ## From Environment Variables
 
@@ -157,7 +154,6 @@ WAVE_MONEY_SECRET_KEY=
 WAVE_MONEY_MERCHANT_NAME=
 WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS=   # optional, greater than 0
 WAVE_MONEY_BASE_URL=                  # optional override
-WAVE_MONEY_AUTHENTICATE_URL=          # optional override
 
 # AYA Payment Gateway (AYA_PGW_* names are read too)
 AYA_PAY_APP_KEY=
