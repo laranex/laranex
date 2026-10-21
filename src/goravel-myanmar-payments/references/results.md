@@ -1,11 +1,11 @@
 ---
 title: Results
-description: Field reference for RedirectPayment, FormPayment, QrPayment and AppPayment, the result types returned when a payment is started.
+description: Field reference for RedirectPayment, FormPayment, QrPayment, AppPayment and MiniAppPayment, the result types returned when a payment is started.
 ---
 
 # Results
 
-Starting a payment returns a pointer to one of four types in `github.com/laranex/go-myanmar-payments/v4` (imported as `myanmarpayments`). All implement `PaymentResult` and expose `Flow() PaymentFlow`.
+Starting a payment returns a pointer to one of five types in `github.com/laranex/go-myanmar-payments/v4` (imported as `myanmarpayments`). All implement `PaymentResult` and expose `Flow() PaymentFlow`.
 
 ## RedirectPayment
 
@@ -61,6 +61,22 @@ Returned by `KbzPay()` → `App()`.
 
 Encoded as JSON, an `AppPayment` has `orderId`, `orderInfo`, `sign` and `signType` for your mobile app; `Raw` is left out.
 
+## MiniAppPayment
+
+Returned by `WavePayMiniApp()` → `Payment()`. No request is sent: send `JSON()` to your mini app page, which hands it unchanged to `WaveJsSDK.paymentModule.makePayment()`.
+
+| Field / Method | Type | Description |
+|---|---|---|
+| `OrderID` | `string` | Your order ID (`orderID`) |
+| `Amount` | `Amount` | The signed total, in whole kyat |
+| `MiniAppID` | `string` | The configured mini app ID (`miniAppID`) |
+| `MerchantReferenceID` | `string` | Your ID for this attempt (`merchantRefID`) |
+| `CallbackURL` | `string` | The signed callback URL (`callBackUrl`) |
+| `HashValue` | `string` | The payload's hash (`hashValue`) |
+| `Items` | `[]MiniAppItem` | The line items, each with a `Name` and an `Amount` |
+| `JSON()` | `string` | Exactly the `makePayment` object, in this key order: `amount`, `miniAppID`, `merchantRefID`, `orderID`, `callBackUrl`, `hashValue`, `items` (`name`, `amount`). Amounts are JSON integers with every digit |
+| `MarshalJSON()` | `([]byte, error)` | `JSON()`. `encoding/json` (and so `ctx.Response().Json()`) escapes `<`, `>` and `&` in it; send `JSON()` with `ctx.Response().Data()` to keep the exact text |
+
 ## PaymentFlow
 
 | Constant | Value | Result |
@@ -69,3 +85,4 @@ Encoded as JSON, an `AppPayment` has `orderId`, `orderInfo`, `sign` and `signTyp
 | `myanmarpayments.FlowForm` | `form` | `FormPayment` |
 | `myanmarpayments.FlowQR` | `qr` | `QrPayment` |
 | `myanmarpayments.FlowApp` | `app` | `AppPayment` |
+| `myanmarpayments.FlowMiniApp` | `mini_app` | `MiniAppPayment` |

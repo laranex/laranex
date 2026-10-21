@@ -1,6 +1,6 @@
 ---
 title: Payment Flows
-description: Each gateway method returns one typed result class per flow — RedirectPayment, FormPayment, QrPayment or AppPayment — so you always know what to do next.
+description: Each gateway method returns one typed result class per flow — RedirectPayment, FormPayment, QrPayment, AppPayment or MiniAppPayment — so you always know what to do next.
 ---
 
 # Payment Flows
@@ -13,6 +13,7 @@ Starting a payment always follows the same pattern: build the gateway's payment 
 | `FormPayment` | Redirect to `this.payments.autoSubmitUrl(payment)` | `ayaPay().initiate()`, `cyberSource().initiate()` |
 | `QrPayment` | Show the QR to the customer | `kbzPay().qr()`, `yomaMmqr().initiate()`, `yomaMmqr().renewQr()` |
 | `AppPayment` | Return the signed payload to your mobile app | `kbzPay().app()` |
+| `MiniAppPayment` | Return the signed payload to your mini app page | `wavePayMiniApp().payment()` |
 
 The samples run in a controller that injects `MyanmarPaymentsService` as `this.payments`. The customer finishing on the gateway's side is never proof of payment. Fulfill orders from the verified [callback](/nestjs-myanmar-payments/callbacks) or a status check.
 
@@ -193,5 +194,18 @@ return payment;
 ```
 
 Returning the `AppPayment` from a handler serializes it with `toJSON()`, which leaves out `raw`. The SDK's own result only means the payment screen closed; rely on the callback or `kbzPay().status()`.
+
+## Mini App Payments
+
+Wave Pay Mini App runs your web page inside the WavePay app. `payment()` signs the object the page passes to Wave's JavaScript SDK; no request is sent:
+
+```ts
+const payment = this.payments.wavePayMiniApp().payment(data);
+
+// JSON: amount, miniAppID, merchantRefID, orderID, callBackUrl, hashValue, items
+return payment;
+```
+
+Returning the `MiniAppPayment` from a handler serializes it with `toJSON()`, exactly Wave's `makePayment` object. The page calls `WaveJsSDK.paymentModule.makePayment(payload)` with it after logging in with your app's access token; the SDK's result is not proof of payment. See [Wave Pay Mini App](/nestjs-myanmar-payments/drivers/wave-pay-mini-app) for the whole flow.
 
 See [Results](/nestjs-myanmar-payments/references/results) for every property.

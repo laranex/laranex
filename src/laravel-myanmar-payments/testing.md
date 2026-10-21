@@ -38,6 +38,7 @@ it('starts a KBZ Pay QR payment', function () {
 |---|---|
 | KBZ Pay | `{api_url}/precreate`, `{api_url}/queryorder` |
 | Wave Pay | `{base_url}/payment` |
+| Wave Pay Mini App | `{base_url}/auth/v1/external-utility/token` (`payment()` is local) |
 | AYA Pay | `{base_url}/v1/payment/services`, `{base_url}/v1/payment/enquiry` (`initiate()` is local) |
 | Yoma MMQR | `{base_url}/token`, then `{base_url}/payment-gateway/{api_version}/api/` + `payment/checkout`, `qr/generate`, `payment/check-status` |
 | CyberSource | None: forms are signed locally |

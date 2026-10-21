@@ -112,12 +112,13 @@ use App\Http\Controllers\PaymentWebhookController;
 
 Route::post('/webhooks/payments/{gateway}', PaymentWebhookController::class)
     ->whereIn('gateway', [
-        'kbz-pay', 'wave-pay', 'aya-pay', 'yoma-mmqr', 'cyber-source',
+        'kbz-pay', 'wave-pay', 'wave-pay-mini-app', 'aya-pay', 'yoma-mmqr',
+        'cyber-source',
     ])
     ->name('payments.webhook');
 ```
 
-Use `route('payments.webhook', 'kbz-pay')` as the gateway's callback URL. The names are the ones `MyanmarPayments::gateways()` returns.
+Use `route('payments.webhook', 'kbz-pay')` as the gateway's callback URL. The names are the ones `MyanmarPayments::gateways()` returns. Wave Pay Mini App's callback is verified against the request's own URL, so sign its payment with `route('payments.webhook', 'wave-pay-mini-app')`.
 
 ```php
 namespace App\Http\Controllers;

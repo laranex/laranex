@@ -16,7 +16,7 @@ MYANMAR_PAYMENTS_HTTP_TIMEOUT=30
 MYANMAR_PAYMENTS_FORM_TTL_MINUTES=30
 # optional, an http.clients entry, empty = default client
 MYANMAR_PAYMENTS_HTTP_CLIENT=
-# optional, store for Yoma access tokens, empty = default store
+# optional, store for Yoma MMQR and Wave Pay Mini App access tokens, empty = default store
 MYANMAR_PAYMENTS_CACHE_STORE=
 
 # KBZ Pay
@@ -34,6 +34,13 @@ WAVE_PAY_MERCHANT_NAME=
 WAVE_PAY_BASE_URL=
 WAVE_PAY_BASE_REDIRECT_URL=
 WAVE_PAY_TIME_TO_LIVE_IN_SECONDS=900   # greater than 0
+
+# Wave Pay Mini App
+WAVE_PAY_MINI_APP_CLIENT_ID=
+WAVE_PAY_MINI_APP_CLIENT_SECRET=
+WAVE_PAY_MINI_APP_MINI_APP_ID=
+WAVE_PAY_MINI_APP_SECRET_KEY=
+WAVE_PAY_MINI_APP_BASE_URL=
 
 # AYA Payment Gateway
 AYA_PAY_APP_KEY=
@@ -63,7 +70,7 @@ CYBER_SOURCE_BASE_URL=
 | `MYANMAR_PAYMENTS_HTTP_TIMEOUT` | `http.timeout` | No | Seconds before a gateway call gives up; missing or blank means 30. Given to every gateway except CyberSource as its `timeout_in_seconds` |
 | `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` | `form_route.ttl_minutes` | Yes | Minutes an auto-submit form link stays valid. Needed by AYA Pay and CyberSource while the form route is enabled |
 | `MYANMAR_PAYMENTS_HTTP_CLIENT` | `http.client` | No | An entry of `http.clients` in `config/http.go`; empty means the default client |
-| `MYANMAR_PAYMENTS_CACHE_STORE` | `cache_store` | No | Cache store for Yoma MMQR access tokens; empty means the default store |
+| `MYANMAR_PAYMENTS_CACHE_STORE` | `cache_store` | No | Cache store for Yoma MMQR and Wave Pay Mini App access tokens; empty means the default store |
 | `KBZ_PAY_APP_ID` | `kbz_pay.app_id` | Yes | `appid` issued by KBZ |
 | `KBZ_PAY_APP_KEY` | `kbz_pay.app_key` | Yes | Secret key used to sign requests |
 | `KBZ_PAY_MERCHANT_CODE` | `kbz_pay.merchant_code` | Yes | `merch_code` issued by KBZ |
@@ -76,6 +83,11 @@ CYBER_SOURCE_BASE_URL=
 | `WAVE_PAY_BASE_URL` | `wave_pay.base_url` | Yes | The API base URL. Payments are requested at its `/payment` |
 | `WAVE_PAY_BASE_REDIRECT_URL` | `wave_pay.base_redirect_url` | Yes | The host the customer is sent to. The customer approves the payment at its `/authenticate` |
 | `WAVE_PAY_TIME_TO_LIVE_IN_SECONDS` | `wave_pay.time_to_live_in_seconds` | Yes | Seconds the customer has to pay, greater than 0. A payment can override it with `wavepay.PaymentData`'s `TimeToLiveSeconds` |
+| `WAVE_PAY_MINI_APP_CLIENT_ID` | `wave_pay_mini_app.client_id` | Yes | Client ID issued by Wave, for the token endpoint |
+| `WAVE_PAY_MINI_APP_CLIENT_SECRET` | `wave_pay_mini_app.client_secret` | Yes | Client secret issued by Wave, for the token endpoint |
+| `WAVE_PAY_MINI_APP_MINI_APP_ID` | `wave_pay_mini_app.mini_app_id` | Yes | Your mini app ID (`miniAppID`) |
+| `WAVE_PAY_MINI_APP_SECRET_KEY` | `wave_pay_mini_app.secret_key` | Yes | Hash secret key for payment and callback hashes |
+| `WAVE_PAY_MINI_APP_BASE_URL` | `wave_pay_mini_app.base_url` | Yes | The API base URL. Access tokens are requested at its `/auth/v1/external-utility/token` |
 | `AYA_PAY_APP_KEY` | `aya_pay.app_key` | Yes | Public application key |
 | `AYA_PAY_APP_SECRET` | `aya_pay.app_secret` | Yes | Secret used for checksums |
 | `AYA_PAY_BASE_URL` | `aya_pay.base_url` | Yes | The gateway base URL |
@@ -102,6 +114,7 @@ KBZ_PAY_BASE_URL=https://api.kbzpay.com/payment/gateway
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://wap.kbzpay.com/pgw/pwa/#/"
 WAVE_PAY_BASE_URL=https://payments.wavemoney.io
 WAVE_PAY_BASE_REDIRECT_URL=https://payments.wavemoney.io
+WAVE_PAY_MINI_APP_BASE_URL=https://api.wavemoney.io:8100
 AYA_PAY_BASE_URL=https://pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://paymenthubapi.yomabank.com
 CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
@@ -114,6 +127,7 @@ KBZ_PAY_BASE_URL=http://api-uat.kbzpay.com/payment/gateway/uat
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://static.kbzpay.com/pgw/uat/pwa/#/"
 WAVE_PAY_BASE_URL=https://preprodpayments.wavemoney.io:8107
 WAVE_PAY_BASE_REDIRECT_URL=https://preprodpayments.wavemoney.io:8107
+WAVE_PAY_MINI_APP_BASE_URL=https://preprodnewapi.wavemoney.io
 AYA_PAY_BASE_URL=https://uat-pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://devapi.yomabank.net
 CYBER_SOURCE_BASE_URL=https://testsecureacceptance.cybersource.com
@@ -158,6 +172,14 @@ func init() {
 			"base_redirect_url":       config.Env("WAVE_PAY_BASE_REDIRECT_URL", ""),
 		},
 
+		"wave_pay_mini_app": map[string]any{
+			"client_id":     config.Env("WAVE_PAY_MINI_APP_CLIENT_ID", ""),
+			"client_secret": config.Env("WAVE_PAY_MINI_APP_CLIENT_SECRET", ""),
+			"mini_app_id":   config.Env("WAVE_PAY_MINI_APP_MINI_APP_ID", ""),
+			"secret_key":    config.Env("WAVE_PAY_MINI_APP_SECRET_KEY", ""),
+			"base_url":      config.Env("WAVE_PAY_MINI_APP_BASE_URL", ""),
+		},
+
 		"aya_pay": map[string]any{
 			"app_key":    config.Env("AYA_PAY_APP_KEY", ""),
 			"app_secret": config.Env("AYA_PAY_APP_SECRET", ""),
@@ -186,7 +208,8 @@ func init() {
 		// Gateway calls go through Goravel's HTTP client, so facades.Http().Fake()
 		// intercepts them in tests. "client" names an entry of http.clients
 		// (empty means the default client). "timeout" is the seconds KBZ Pay,
-		// Wave Pay, AYA Pay and Yoma MMQR calls may take (30 when empty).
+		// Wave Pay, Wave Pay Mini App, AYA Pay and Yoma MMQR calls may take
+		// (30 when empty).
 		"http": map[string]any{
 			"client":  config.Env("MYANMAR_PAYMENTS_HTTP_CLIENT", ""),
 			"timeout": config.Env("MYANMAR_PAYMENTS_HTTP_TIMEOUT", 30),
@@ -194,8 +217,8 @@ func init() {
 
 		// Cache
 		//
-		// The cache store that keeps Yoma MMQR access tokens between requests
-		// and processes. Empty uses your default store.
+		// The cache store that keeps Yoma MMQR and Wave Pay Mini App access
+		// tokens between requests and processes. Empty uses your default store.
 		"cache_store": config.Env("MYANMAR_PAYMENTS_CACHE_STORE", ""),
 
 		// Auto-submit Form Route
@@ -240,4 +263,4 @@ Links are encrypted with Goravel's crypt facade (`APP_KEY`); without it, `AutoSu
 
 ## Cache
 
-Yoma MMQR access tokens last several hours and are reused until they expire. They are kept in your default cache store, or in `cache_store` when set. Use a shared store (Redis, database) when you run more than one server. The token is stored under `myanmar-payments.yoma-mmqr.token.<sha256(baseURL|clientID)>`, the same key in every Laranex SDK, so services written in different languages can share one store. Without the cache facade, each process keeps its own token in memory.
+Yoma MMQR and Wave Pay Mini App access tokens are reused until they expire. They are kept in your default cache store, or in `cache_store` when set. Use a shared store (Redis, database) when you run more than one server. The tokens are stored under `myanmar-payments.yoma-mmqr.token.<sha256(baseURL|clientID)>` and `myanmar-payments.wave-pay-mini-app.token.<sha256(baseURL|clientID)>`, the same key in every Laranex SDK, so services written in different languages can share one store. Without the cache facade, each process keeps its own token in memory.

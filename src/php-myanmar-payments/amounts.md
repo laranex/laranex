@@ -5,7 +5,7 @@ description: Amounts are exact Amount values kept as decimal text, never floats.
 
 # Amounts
 
-Every payment data `amount` (and every Wave Pay item `amount`) is an `Amount` or a whole `int`. An `Amount` is an exact, non-negative amount kept as decimal text, so it is never rounded through a `float`.
+Every payment data `amount` (and every Wave Pay and Wave Pay Mini App item `amount`) is an `Amount` or a whole `int`. An `Amount` is an exact, non-negative amount kept as decimal text, so it is never rounded through a `float`.
 
 ```php
 use Laranex\PhpMyanmarPayments\Amount;
@@ -61,6 +61,7 @@ Each gateway checks the amount against its official documentation when you creat
 |---|---|---|
 | KBZ Pay | Up to 2 places | Greater than 0, MMK only |
 | Wave Pay | No | Greater than 0, MMK only. The total defaults to the sum of the items |
+| Wave Pay Mini App | No | Greater than 0. The total defaults to the sum of the items |
 | AYA Payment Gateway | No | Greater than 0, MMK only |
 | Yoma MMQR | No | Greater than 0 |
 | CyberSource | Any | 0 or more, at most 15 characters, any ISO 4217 currency |

@@ -1,11 +1,11 @@
 ---
 title: Results
-description: Field reference for RedirectPayment, FormPayment, QrPayment and AppPayment, the result classes returned when a payment is started.
+description: Field reference for RedirectPayment, FormPayment, QrPayment, AppPayment and MiniAppPayment, the result classes returned when a payment is started.
 ---
 
 # Results
 
-Starting a payment returns one of four classes exported from `@laranex/myanmar-payments`. Each has a read-only `flow` property, and `PaymentResult` is their union, so a `switch` on `payment.flow` tells them apart. Fields a gateway did not provide are `undefined`.
+Starting a payment returns one of five classes exported from `@laranex/myanmar-payments`. Each has a read-only `flow` property, and `PaymentResult` is their union, so a `switch` on `payment.flow` tells them apart. Fields a gateway did not provide are `undefined`.
 
 ## RedirectPayment
 
@@ -65,6 +65,23 @@ Returned by `kbz.app()`. `JSON.stringify(payment)` writes `orderId`, `orderInfo`
 | `raw` | `Record<string, unknown>` | The gateway's response; left out of `toJSON()` |
 | `toJSON()` | `{ orderId, orderInfo, sign, signType }` | The values your app needs |
 
+## MiniAppPayment
+
+Returned by `miniApp.payment()`. No request is sent: pass `JSON.stringify(payment)` or `payment.toJsonString()` to your mini app page, which hands it unchanged to `WaveJsSDK.paymentModule.makePayment()`.
+
+| Field / Method | Type | Description |
+|---|---|---|
+| `flow` | `'mini_app'` | `PaymentFlow.MiniApp` |
+| `orderId` | `string` | Your order ID (`orderID`) |
+| `amount` | `Amount` | The signed total, in whole kyat |
+| `miniAppId` | `string` | The configured mini app ID (`miniAppID`) |
+| `merchantReferenceId` | `string` | Your ID for this attempt (`merchantRefID`) |
+| `callbackUrl` | `string` | The signed callback URL (`callBackUrl`) |
+| `hashValue` | `string` | The payload's hash (`hashValue`) |
+| `items` | `readonly MiniAppPaymentItem[]` | The line items, `{ name: string; amount: Amount }` |
+| `toJSON()` | `MiniAppPaymentPayload` | Exactly the `makePayment` object: `amount`, `miniAppID`, `merchantRefID`, `orderID`, `callBackUrl`, `hashValue`, `items` (`name`, `amount`), amounts as numbers. An amount above `Number.MAX_SAFE_INTEGER` keeps every digit through `JSON.rawJSON` (Node.js 21+) and throws a `RangeError` without it |
+| `toJsonString()` | `string` | The same object as compact JSON, amounts as JSON integers with every digit on every Node.js version |
+
 ## PaymentFlow
 
 A string union, so `payment.flow === 'redirect'` works too.
@@ -75,7 +92,8 @@ A string union, so `payment.flow === 'redirect'` works too.
 | `PaymentFlow.Form` | `form` | `FormPayment` |
 | `PaymentFlow.Qr` | `qr` | `QrPayment` |
 | `PaymentFlow.App` | `app` | `AppPayment` |
+| `PaymentFlow.MiniApp` | `mini_app` | `MiniAppPayment` |
 
-`PaymentFlow` is also a type: `'redirect' | 'form' | 'qr' | 'app'`.
+`PaymentFlow` is also a type: `'redirect' | 'form' | 'qr' | 'app' | 'mini_app'`.
 
 `raw` values are plain JavaScript values, with JSON numbers kept as their exact text in a `string` (`1000.50` stays `"1000.50"`), never a rounded `number`. `JSON.stringify(payment.raw)` logs them.

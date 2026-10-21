@@ -1,6 +1,6 @@
 ---
 title: Payment Flows
-description: Each gateway method returns one typed result class per flow — RedirectPayment, FormPayment, QrPayment or AppPayment — so you always know what to do next.
+description: Each gateway method returns one typed result class per flow — RedirectPayment, FormPayment, QrPayment, AppPayment or MiniAppPayment — so you always know what to do next.
 ---
 
 # Payment Flows
@@ -13,6 +13,7 @@ Starting a payment always follows the same pattern: build the gateway's request 
 | `FormPayment` | Redirect to `$payment->autoSubmitUrl` | `ayaPay()->initiate()`, `cyberSource()->initiate()` |
 | `QrPayment` | Show the QR to the customer | `kbzPay()->qr()`, `yomaMmqr()->initiate()`, `yomaMmqr()->renewQr()` |
 | `AppPayment` | Return the signed payload to your mobile app | `kbzPay()->app()` |
+| `MiniAppPayment` | Return the signed payload to your mini app page | `wavePayMiniApp()->payment()` |
 
 The customer finishing on the gateway's side is never proof of payment. Fulfill orders from the verified [callback](/laravel-myanmar-payments/callbacks) or a status check.
 
@@ -170,5 +171,18 @@ return response()->json($payment->toArray());
 ```
 
 The SDK's own result only means the payment screen closed; rely on the callback or `kbzPay()->status()`.
+
+## Mini App Payments
+
+Wave Pay Mini App runs your web page inside the WavePay app. `payment()` signs the object the page passes to Wave's JavaScript SDK; no request is sent. `MiniAppPayment::toArray()` is exactly that object:
+
+```php
+$payment = MyanmarPayments::wavePayMiniApp()->payment($data);
+
+// amount, miniAppID, merchantRefID, orderID, callBackUrl, hashValue, items
+return response()->json($payment->toArray());
+```
+
+The page calls `WaveJsSDK.paymentModule.makePayment(payload)` with it after logging in with your app's access token; the SDK's result is not proof of payment. See [Wave Pay Mini App](/laravel-myanmar-payments/drivers/wave-pay-mini-app) for the whole flow.
 
 See [Results](/laravel-myanmar-payments/references/results) for every property.

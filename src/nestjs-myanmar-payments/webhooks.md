@@ -133,7 +133,7 @@ export class WebhooksController {
 }
 ```
 
-Use `https://shop.test/webhooks/payments/kbz-pay` (and `wave-pay`, `aya-pay`, `yoma-mmqr`, `cyber-source`) as the gateway's callback URL.
+Use `https://shop.test/webhooks/payments/kbz-pay` (and `wave-pay`, `aya-pay`, `yoma-mmqr`, `cyber-source`) as the gateway's callback URL. Wave Pay Mini App is verified against the URL its callback was posted to, which a `CallbackRequest` doesn't carry: verify it with `@VerifiedCallback('wave-pay-mini-app')` or `handleCallback('wave-pay-mini-app', req)` on the Nest request (see [Wave Pay Mini App](/nestjs-myanmar-payments/drivers/wave-pay-mini-app#handling-callbacks)).
 
 ## Job
 

@@ -1,11 +1,11 @@
 ---
 title: Payment Flows
-description: Each gateway method returns one typed result per flow — RedirectPayment, FormPayment, QrPayment or AppPayment — so you always know what to do next.
+description: Each gateway method returns one typed result per flow — RedirectPayment, FormPayment, QrPayment, AppPayment or MiniAppPayment — so you always know what to do next.
 ---
 
 # Payment Flows
 
-Starting a payment always follows the same pattern: build the gateway's payment data, call the gateway, then act on the typed result. Each flow has its own result class with exactly the fields that flow needs, and every result has a `flow` property (`'redirect'`, `'form'`, `'qr'` or `'app'`), so a `switch` on `payment.flow` narrows the `PaymentResult` union.
+Starting a payment always follows the same pattern: build the gateway's payment data, call the gateway, then act on the typed result. Each flow has its own result class with exactly the fields that flow needs, and every result has a `flow` property (`'redirect'`, `'form'`, `'qr'`, `'app'` or `'mini_app'`), so a `switch` on `payment.flow` narrows the `PaymentResult` union.
 
 | Result | What you do | Returned by |
 |---|---|---|
@@ -13,6 +13,7 @@ Starting a payment always follows the same pattern: build the gateway's payment 
 | `FormPayment` | Return `payment.toHtml()` | `aya.initiate`, `cs.initiate` |
 | `QrPayment` | Show the QR to the customer | `kbz.qr`, `yoma.initiate`, `yoma.renewQr` |
 | `AppPayment` | Return the signed payload to your mobile app | `kbz.app` |
+| `MiniAppPayment` | Return the signed payload to your mini app page | `miniApp.payment` |
 
 Every method validates the payment data first and throws `InvalidPaymentDataError` before any request is sent. Call the gateway's static `validate()` yourself to check the data earlier, e.g. `KbzPay.validate(data)` while handling a form. Callback, return and cancel URLs must be absolute http or https URLs by PHP's `FILTER_VALIDATE_URL` rules, the same in every Laranex SDK: printable ASCII only, an ASCII host name (labels of letters, digits and inner `-`, at most 63 characters each) or a bracketed IPv6 address, and an optional port from 0 to 65535; anything else fails with `The callbackUrl field must be a valid http or https URL.` The customer finishing on the gateway's side is never proof of payment: fulfill orders from the verified [callback](/node-myanmar-payments/callbacks) or a status check.
 
@@ -139,6 +140,20 @@ async function kbzAppCheckout(
 
 The SDK's own result only means the payment screen closed; rely on the callback or `kbz.status()`.
 
+## Mini App Payments
+
+Wave Pay Mini App runs your web page inside the WavePay app. `payment()` signs the object the page passes to Wave's JavaScript SDK; no request is sent. `JSON.stringify(payment)` (or `payment.toJsonString()`) is exactly that object:
+
+```ts
+const payment = miniApp.payment(data);
+
+res.writeHead(200, { 'Content-Type': 'application/json' });
+// {"amount", "miniAppID", "merchantRefID", "orderID", "callBackUrl", "hashValue", "items"}
+res.end(payment.toJsonString());
+```
+
+The page calls `WaveJsSDK.paymentModule.makePayment(payload)` with it after logging in with your server's access token; the SDK's result is not proof of payment. See [Wave Pay Mini App](/node-myanmar-payments/drivers/wave-pay-mini-app) for the whole flow.
+
 ## Handling Any Result
 
 ```ts
@@ -160,6 +175,10 @@ function respond(payment: PaymentResult, res: ServerResponse): void {
     case 'app':
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(payment));
+      break;
+    case 'mini_app':
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(payment.toJsonString());
       break;
   }
 }

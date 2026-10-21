@@ -69,7 +69,7 @@ import {
 
 /**
  * What every gateway (KbzPay, WavePay, AyaPay, YomaMmqr, CyberSource)
- * has in common.
+ * has in common. Wrap WavePayMiniApp to pass its callback URL.
  */
 interface Verifier {
   handleCallback(request: CallbackRequest): PaymentCallback;
@@ -297,14 +297,24 @@ import {
   CallbackRequest,
   KbzPay,
   WavePay,
+  WavePayMiniApp,
 } from '@laranex/myanmar-payments';
 
 import { Webhooks } from './webhooks.js';
 
 const db = new DatabaseSync('payments.sqlite');
+const miniApp = WavePayMiniApp.fromEnv(process.env);
 const webhooks = new Webhooks(db, {
   'kbz-pay': KbzPay.fromEnv(process.env),
   'wave-pay': WavePay.fromEnv(process.env),
+  // Wave Pay Mini App also needs the callback URL the payment was signed with
+  'wave-pay-mini-app': {
+    handleCallback: (request) =>
+      miniApp.handleCallback(
+        request,
+        'https://shop.test/webhooks/payments/wave-pay-mini-app',
+      ),
+  },
 });
 
 createServer(async (req, res) => {

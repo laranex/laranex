@@ -73,11 +73,12 @@ Gateways post from their own servers, so keep callback routes free of CSRF and a
 
 | Helper | What it does |
 |---|---|
-| `manager.HandleCallbackFromContext(gateway, ctx)` | Verifies the callback in the current request by gateway name. It resolves the gateway first (`payments.ErrUnknownGateway` or a `*myanmarpayments.ConfigurationError`), then reads the body (`payments.ErrCallbackBodyTooLarge`), then checks the signature (`*myanmarpayments.SignatureVerificationError`) |
+| `manager.HandleCallbackFromContext(gateway, ctx)` | Verifies the callback in the current request by gateway name. It resolves the gateway first (`payments.ErrUnknownGateway` or a `*myanmarpayments.ConfigurationError`), then reads the body (`payments.ErrCallbackBodyTooLarge`), then checks the signature (`*myanmarpayments.SignatureVerificationError`). Wave Pay Mini App callbacks are verified against the URL they were posted to, `payments.CallbackURLFromContext(ctx)` |
 | `kbz.HandleCallback(request)` | Verifies the callback. Takes the SDK's `*myanmarpayments.CallbackRequest` |
-| `manager.HandleCallback(gateway, request)` | The same, by gateway name, for one route that serves every gateway, e.g. to store the request first; see [Handling Webhooks](/goravel-myanmar-payments/webhooks#route-and-controller) |
+| `manager.HandleCallback(gateway, request)` | The same, by gateway name, for one route that serves every gateway, e.g. to store the request first; see [Handling Webhooks](/goravel-myanmar-payments/webhooks#route-and-controller). A request carries no URL, so `wave-pay-mini-app` returns `payments.ErrCallbackURLRequired`: use `WavePayMiniApp().HandleCallback(request, callbackURL)` |
+| `payments.CallbackURLFromContext(ctx)` | The current request's URL without its query string (scheme, host and path), the callback URL Wave Pay Mini App callbacks are verified against; see [Wave Pay Mini App](/goravel-myanmar-payments/drivers/wave-pay-mini-app#handling-callbacks) |
 | `payments.CallbackRequestFromContext(ctx)` | Builds the `*myanmarpayments.CallbackRequest` from the current Goravel request: the raw body, the headers and the query string. A body over `payments.MaxCallbackBodyBytes` (64 KiB) returns `payments.ErrCallbackBodyTooLarge` |
-| `manager.Gateway(name)` | The gateway for `kbz-pay`, `wave-pay`, `aya-pay`, `yoma-mmqr` or `cyber-source` (`payments.GatewayNames()` lists them), as a `payments.CallbackHandler`. An unknown name returns an error wrapping `payments.ErrUnknownGateway` |
+| `manager.Gateway(name)` | The gateway for `kbz-pay`, `wave-pay`, `wave-pay-mini-app`, `aya-pay`, `yoma-mmqr` or `cyber-source` (`payments.GatewayNames()` lists them), as a `payments.CallbackHandler` (for `wave-pay-mini-app`, a `*payments.WavePayMiniAppCallbackHandler`; set its `CallbackURL`). An unknown name returns an error wrapping `payments.ErrUnknownGateway` |
 | `payments.Acknowledge(ctx, callback)` | The response the gateway expects, written as the Goravel response. With a nil callback, an empty 200 |
 | `aya.VerifyRedirect(request)` | Verifies AYA's browser return; see [AYA Pay](/goravel-myanmar-payments/drivers/aya-pay) |
 
@@ -87,7 +88,7 @@ Signatures are computed over the exact bytes the gateway sent, so always build t
 
 | Body | What you get |
 |---|---|
-| JSON (KBZ Pay, Wave Pay, Yoma MMQR) | The body byte for byte |
+| JSON (KBZ Pay, Wave Pay, Wave Pay Mini App, Yoma MMQR) | The body byte for byte |
 | `application/x-www-form-urlencoded` or `multipart/form-data` (AYA Pay, CyberSource) | Goravel's gin driver parses form bodies before your handler runs, which consumes them. The body is rebuilt from the parsed form fields as urlencoded and `Content-Type` says so. These gateways sign field values, so the result verifies the same |
 
 ### Body Size Limit
@@ -108,7 +109,7 @@ Goravel parses form bodies before your handler runs, so keep a body size limit o
 
 - **Verify, then trust.** A callback that fails verification returns a `*myanmarpayments.SignatureVerificationError`, and so does one whose signed or hashed field holds an object or array instead of a single value, since no gateway signs nested values. Never act on its payload; it carries the unverified data in `Raw` for logging only.
 - **Check the amount.** Compare `callback.Amount` (as the gateway sent it, a string) with your order before fulfilling. A gateway may format it differently from your order (`10000` or `10000.00`); `amount.Equals(callback.Amount)`, with `amount` parsed from your order by `myanmarpayments.ParseAmount()`, compares decimal strings exactly. Yoma MMQR callbacks carry no amount: confirm those with [`Status()`](/goravel-myanmar-payments/drivers/yoma-mmqr#status-checks).
-- **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Pay), the package also rejects values that could be re-split into other fields. See each driver's Handling Callbacks section.
+- **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Pay, Wave Pay Mini App), the package also rejects values that could be re-split into other fields. See each driver's Handling Callbacks section.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 - **Acknowledge.** `payments.Acknowledge(ctx, callback)` returns the response the gateway expects, e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
 
@@ -131,7 +132,7 @@ Each gateway page lists its exact mapping.
 
 ## Status Checks
 
-When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Pay and CyberSource have no status API.
+When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Pay, Wave Pay Mini App and CyberSource have no status API.
 
 <SequenceDiagram
   title="Checking the status when the callback is late"
@@ -153,6 +154,7 @@ Status checks return a `*PaymentStatusResult` with the same `Status`, `GatewaySt
 | AYA Payment Gateway | `AyaPay()` → `Status(ctx, orderID)` |
 | Yoma MMQR | `YomaMmqr()` → `Status(ctx, payment.Reference)` |
 | Wave Pay | No status API: rely on the callback |
+| Wave Pay Mini App | No status API: rely on the callback |
 | CyberSource | No status API: rely on the callback |
 
 ```go

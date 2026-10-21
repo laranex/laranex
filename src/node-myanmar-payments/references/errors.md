@@ -31,7 +31,7 @@ try {
 |---|---|
 | `InvalidPaymentDataError` | Payment data breaks the gateway's documented rules, or `Amount.kyat` / `Amount.parse` / `Amount.from` get bad input. Thrown before any request is sent |
 | `ApiError` | The gateway rejected the request, answered with an error (including errors sent with HTTP 200), or could not be reached |
-| `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification (`... verification failed.`), or its signature matched but its values are malformed (`Wave Pay callback is malformed.`, `AYA Pay {callback|redirect|enquiry response} payload is malformed.`, `CyberSource callback is malformed.`: an AYA Pay value holding `:`, an unsigned CyberSource `decision` or an unknown one, a Wave Pay amount or ID out of format) |
+| `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification (`... verification failed.`), or its signature matched but its values are malformed (`Wave Pay callback is malformed.`, `Wave Pay Mini App callback is malformed.`, `AYA Pay {callback|redirect|enquiry response} payload is malformed.`, `CyberSource callback is malformed.`: an AYA Pay value holding `:`, an unsigned CyberSource `decision` or an unknown one, a Wave Pay amount or ID out of format, an empty Wave Pay Mini App ID or a non-whole amount) |
 | `ConfigurationError` | A gateway setting (URLs, time to live and Yoma's webhook secret included) is missing or blank, or a time setting is out of range |
 
 Each error's `name` is its class name, e.g. `ApiError`.

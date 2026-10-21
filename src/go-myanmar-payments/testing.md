@@ -90,6 +90,7 @@ func TestStartsAKBZPayQRPayment(t *testing.T) {
 |---|---|
 | KBZ Pay | `{APIURL}/precreate`, `{APIURL}/queryorder` |
 | Wave Pay | `{BaseURL}/payment` |
+| Wave Pay Mini App | `{BaseURL}/auth/v1/external-utility/token` (`Payment` is local) |
 | AYA Pay | `{BaseURL}/v1/payment/services`, `{BaseURL}/v1/payment/enquiry` (`Initiate` is local) |
 | Yoma MMQR | `{BaseURL}/token`, then `{BaseURL}/payment-gateway/{APIVersion}/api/` + `payment/checkout`, `qr/generate`, `payment/check-status` |
 | CyberSource | None: forms are signed locally |
@@ -175,7 +176,7 @@ func TestReportsAPaidOrder(t *testing.T) {
 }
 ```
 
-Point `APIURL` (KBZ Pay) or `BaseURL` (Wave Pay, AYA, Yoma) at the server.
+Point `APIURL` (KBZ Pay) or `BaseURL` (Wave Pay, Wave Pay Mini App, AYA, Yoma) at the server.
 
 ## Replaying Signed Callbacks
 
@@ -264,4 +265,4 @@ func TestFulfillsAPaidOrder(t *testing.T) {
 }
 ```
 
-`PaymentStatusResult`, `RedirectPayment`, `FormPayment`, `QrPayment` and `AppPayment` are plain structs too, so you can return them from a fake that implements your own interface over the gateway methods you call when a test only covers your own handlers.
+`PaymentStatusResult`, `RedirectPayment`, `FormPayment`, `QrPayment`, `AppPayment` and `MiniAppPayment` are plain structs too, so you can return them from a fake that implements your own interface over the gateway methods you call when a test only covers your own handlers.

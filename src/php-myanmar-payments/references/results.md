@@ -1,11 +1,11 @@
 ---
 title: Results
-description: Property reference for RedirectPayment, FormPayment, QrPayment and AppPayment, the result classes returned when a payment is started.
+description: Property reference for RedirectPayment, FormPayment, QrPayment, AppPayment and MiniAppPayment, the result classes returned when a payment is started.
 ---
 
 # Results
 
-Starting a payment returns one of four final classes in `Laranex\PhpMyanmarPayments\Results`, with read-only properties, each implementing `PaymentResult`. Properties a gateway did not provide are `null`.
+Starting a payment returns one of five final classes in `Laranex\PhpMyanmarPayments\Results`, with read-only properties, each implementing `PaymentResult`. Properties a gateway did not provide are `null`.
 
 ## RedirectPayment
 
@@ -65,9 +65,26 @@ Returned by `$kbz->app()`.
 | `raw` | `array` | The gateway's response; left out of `toArray()` |
 | `toArray()` | `array<string, string>` | `['orderId', 'orderInfo', 'sign', 'signType']`, the values your app needs |
 
+## MiniAppPayment
+
+Returned by `$wavePayMiniApp->payment()`. No request is sent: pass `toArray()` or `toJson()` to your mini app page, which hands it unchanged to `WaveJsSDK.paymentModule.makePayment()`.
+
+| Property / Method | Type | Description |
+|---|---|---|
+| `flow()` | `PaymentFlow` | `PaymentFlow::MiniApp` |
+| `orderId` | `string` | Your order ID (`orderID`) |
+| `amount` | `Amount` | The signed total, in whole kyat |
+| `miniAppId` | `string` | The configured mini app ID (`miniAppID`) |
+| `merchantReferenceId` | `string` | Your ID for this attempt (`merchantRefID`) |
+| `callbackUrl` | `string` | The signed callback URL (`callBackUrl`) |
+| `hashValue` | `string` | The payload's hash (`hashValue`) |
+| `items` | `list<array{name: string, amount: Amount}>` | The line items |
+| `toArray()` / `jsonSerialize()` | `array` | Exactly the `makePayment` object: `amount`, `miniAppID`, `merchantRefID`, `orderID`, `callBackUrl`, `hashValue`, `items` (`name`, `amount`), amounts as `int` |
+| `toJson()` | `string` | The same object as JSON, amounts as JSON integers with every digit (no `PHP_INT_MAX` limit) |
+
 ## PaymentFlow
 
-A string-backed enum in `Laranex\PhpMyanmarPayments\Enums`, so `$payment->flow()->value` is `redirect`, `form`, `qr` or `app`.
+A string-backed enum in `Laranex\PhpMyanmarPayments\Enums`, so `$payment->flow()->value` is `redirect`, `form`, `qr`, `app` or `mini_app`.
 
 | Case | Value | Class |
 |---|---|---|
@@ -75,6 +92,7 @@ A string-backed enum in `Laranex\PhpMyanmarPayments\Enums`, so `$payment->flow()
 | `PaymentFlow::Form` | `form` | `FormPayment` |
 | `PaymentFlow::Qr` | `qr` | `QrPayment` |
 | `PaymentFlow::App` | `app` | `AppPayment` |
+| `PaymentFlow::MiniApp` | `mini_app` | `MiniAppPayment` |
 
 `raw` values are decoded JSON: numbers keep their exact text as strings, never a `float`, so `json_encode($payment->raw)` logs them without rounding.
 

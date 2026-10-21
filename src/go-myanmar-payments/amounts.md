@@ -5,7 +5,7 @@ description: Amounts are exact myanmarpayments.Amount values kept as decimal tex
 
 # Amounts
 
-Every payment data `Amount` (and every Wave Pay item `Amount`) is a `myanmarpayments.Amount`. An `Amount` is an exact, non-negative amount kept as decimal text, so it is never rounded through a `float64`.
+Every payment data `Amount` (and every Wave Pay and Wave Pay Mini App item `Amount`) is a `myanmarpayments.Amount`. An `Amount` is an exact, non-negative amount kept as decimal text, so it is never rounded through a `float64`.
 
 ```go
 myanmarpayments.Kyat(10000) // whole amount: 10000
@@ -59,6 +59,7 @@ Each gateway checks the amount against its official documentation when you start
 |---|---|---|
 | KBZ Pay | Up to 2 places | Greater than 0, MMK only |
 | Wave Pay | No | Greater than 0, MMK only. The total defaults to the sum of the items |
+| Wave Pay Mini App | No | Greater than 0. The total defaults to the sum of the items |
 | AYA Payment Gateway | No | Greater than 0, MMK only |
 | Yoma MMQR | No | Greater than 0 |
 | CyberSource | Any | 0 or more, at most 15 characters, any ISO 4217 currency |

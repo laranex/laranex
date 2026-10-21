@@ -1,11 +1,11 @@
 ---
 title: Results
-description: Property reference for RedirectPayment, FormPayment, QrPayment and AppPayment, the result classes returned when a payment is started.
+description: Property reference for RedirectPayment, FormPayment, QrPayment, AppPayment and MiniAppPayment, the result classes returned when a payment is started.
 ---
 
 # Results
 
-Starting a payment returns one of four classes in `Laranex\PhpMyanmarPayments\Results`. All implement `PaymentResult` and expose `flow(): PaymentFlow`. `raw` holds plain PHP values; JSON numbers stay `string`s with their exact text.
+Starting a payment returns one of five classes in `Laranex\PhpMyanmarPayments\Results`. All implement `PaymentResult` and expose `flow(): PaymentFlow`. `raw` holds plain PHP values; JSON numbers stay `string`s with their exact text.
 
 ## RedirectPayment
 
@@ -61,6 +61,22 @@ Returned by `kbzPay()->app()`.
 | `raw` | `array` | The gateway's response, for logging |
 | `toArray()` | `array` | `orderId`, `orderInfo`, `sign`, `signType` for your mobile app |
 
+## MiniAppPayment
+
+Returned by `wavePayMiniApp()->payment()`. No request is sent: return `toArray()` to your mini app page, which passes it unchanged to `WaveJsSDK.paymentModule.makePayment()`.
+
+| Property / Method | Type | Description |
+|---|---|---|
+| `orderId` | `string` | Your order id (`orderID`) |
+| `amount` | `Amount` | The signed total, in whole kyat |
+| `miniAppId` | `string` | The configured mini app id (`miniAppID`) |
+| `merchantReferenceId` | `string` | Your id for this attempt (`merchantRefID`) |
+| `callbackUrl` | `string` | The signed callback URL (`callBackUrl`) |
+| `hashValue` | `string` | The payload's hash (`hashValue`) |
+| `items` | `list<array{name: string, amount: Amount}>` | The line items |
+| `toArray()` / `jsonSerialize()` | `array` | Exactly the `makePayment` object: `amount`, `miniAppID`, `merchantRefID`, `orderID`, `callBackUrl`, `hashValue`, `items` (`name`, `amount`), amounts as `int` |
+| `toJson()` | `string` | The same object as JSON, amounts as JSON integers with every digit (no `PHP_INT_MAX` limit) |
+
 ## PaymentFlow
 
 | Case | Value | Result |
@@ -69,3 +85,4 @@ Returned by `kbzPay()->app()`.
 | `PaymentFlow::Form` | `form` | `FormPayment` |
 | `PaymentFlow::Qr` | `qr` | `QrPayment` |
 | `PaymentFlow::App` | `app` | `AppPayment` |
+| `PaymentFlow::MiniApp` | `mini_app` | `MiniAppPayment` |

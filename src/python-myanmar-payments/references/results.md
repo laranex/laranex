@@ -1,11 +1,11 @@
 ---
 title: Results
-description: Field reference for RedirectPayment, FormPayment, QrPayment and AppPayment, the result classes returned when a payment is started.
+description: Field reference for RedirectPayment, FormPayment, QrPayment, AppPayment and MiniAppPayment, the result classes returned when a payment is started.
 ---
 
 # Results
 
-Starting a payment returns one of four frozen dataclasses exported from `python_myanmar_payments`. Each has a `flow` class attribute, and `PaymentResult` is their union, so a `match` statement or `isinstance` check tells them apart. Fields a gateway did not provide are `None`.
+Starting a payment returns one of five frozen dataclasses exported from `python_myanmar_payments`. Each has a `flow` class attribute, and `PaymentResult` is their union, so a `match` statement or `isinstance` check tells them apart. Fields a gateway did not provide are `None`.
 
 ## RedirectPayment
 
@@ -65,6 +65,23 @@ Returned by `kbz.app()`. `payment.to_dict()` returns `orderId`, `orderInfo`, `si
 | `raw` | `Mapping[str, Any]` | The gateway's response; left out of `to_dict()` |
 | `to_dict()` | `dict[str, str]` | `{"orderId", "orderInfo", "sign", "signType"}`, the values your app needs |
 
+## MiniAppPayment
+
+Returned by `mini_app.payment()`. No request is sent: pass `to_dict()` or `to_json()` to your mini app page, which hands it unchanged to `WaveJsSDK.paymentModule.makePayment()`.
+
+| Field / Method | Type | Description |
+|---|---|---|
+| `flow` | `PaymentFlow` | `PaymentFlow.MINI_APP` |
+| `order_id` | `str` | Your order ID (`orderID`) |
+| `amount` | `Amount` | The signed total, in whole kyat |
+| `mini_app_id` | `str` | The configured mini app ID (`miniAppID`) |
+| `merchant_reference_id` | `str` | Your ID for this attempt (`merchantRefID`) |
+| `callback_url` | `str` | The signed callback URL (`callBackUrl`) |
+| `hash_value` | `str` | The payload's hash (`hashValue`) |
+| `items` | `tuple[tuple[str, Amount], ...]` | The line items as `(name, amount)` pairs |
+| `to_dict()` | `dict[str, Any]` | Exactly the `makePayment` object: `amount`, `miniAppID`, `merchantRefID`, `orderID`, `callBackUrl`, `hashValue`, `items` (`name`, `amount`), amounts as `int` with every digit |
+| `to_json()` | `str` | `to_dict()` as compact JSON, with slashes and non-ASCII text unescaped |
+
 ## PaymentFlow
 
 A `str` enum, so `payment.flow == "redirect"` works too.
@@ -75,6 +92,7 @@ A `str` enum, so `payment.flow == "redirect"` works too.
 | `PaymentFlow.FORM` | `form` | `FormPayment` |
 | `PaymentFlow.QR` | `qr` | `QrPayment` |
 | `PaymentFlow.APP` | `app` | `AppPayment` |
+| `PaymentFlow.MINI_APP` | `mini_app` | `MiniAppPayment` |
 
 `raw` values are plain Python values: every JSON number is its exact text as a `str` (`1000.50` stays `"1000.50"`), never a `float`, so `json.dumps(payment.raw)` logs them as is.
 

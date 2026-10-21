@@ -1,11 +1,11 @@
 ---
 title: Payment Flows
-description: Each gateway method returns one typed result per flow — RedirectPayment, FormPayment, QrPayment or AppPayment — so you always know what to do next.
+description: Each gateway method returns one typed result per flow — RedirectPayment, FormPayment, QrPayment, AppPayment or MiniAppPayment — so you always know what to do next.
 ---
 
 # Payment Flows
 
-Starting a payment always follows the same pattern: build the gateway's payment data, call the gateway, then act on the typed result. Each flow has its own result type with exactly the fields that flow needs, and every result implements `myanmarpayments.PaymentResult`, whose `Flow()` returns `FlowRedirect`, `FlowForm`, `FlowQR` or `FlowApp`, so a type switch tells them apart.
+Starting a payment always follows the same pattern: build the gateway's payment data, call the gateway, then act on the typed result. Each flow has its own result type with exactly the fields that flow needs, and every result implements `myanmarpayments.PaymentResult`, whose `Flow()` returns `FlowRedirect`, `FlowForm`, `FlowQR`, `FlowApp` or `FlowMiniApp`, so a type switch tells them apart.
 
 | Result | What you do | Returned by |
 |---|---|---|
@@ -13,6 +13,7 @@ Starting a payment always follows the same pattern: build the gateway's payment 
 | `*FormPayment` | Write `payment.HTML()` | `aya.Initiate`, `cs.Initiate` |
 | `*QrPayment` | Show the QR to the customer | `kbz.QR`, `yoma.Initiate`, `yoma.RenewQR` |
 | `*AppPayment` | Return the signed payload to your mobile app | `kbz.App` |
+| `*MiniAppPayment` | Return the signed payload to your mini app page | `miniApp.Payment` |
 
 Every method validates the payment data first and returns `*myanmarpayments.InvalidPaymentDataError` before any request is sent. Call `data.Validate()` yourself to check a request earlier, e.g. while handling a form. Callback, return and cancel URLs must be absolute http or https URLs by PHP's `FILTER_VALIDATE_URL` rules, the same in every Laranex SDK: printable ASCII only, an ASCII host name (labels of letters, digits and inner `-`, at most 63 characters each) or a bracketed IPv6 address, and an optional port from 0 to 65535; anything else fails with `The callbackUrl field must be a valid http or https URL.` The customer finishing on the gateway's side is never proof of payment: fulfill orders from the verified [callback](/go-myanmar-payments/callbacks) or a status check.
 
@@ -189,6 +190,25 @@ func kbzAppCheckout(w http.ResponseWriter, r *http.Request) {
 
 The SDK's own result only means the payment screen closed; rely on the callback or `kbz.Status`.
 
+## Mini App Payments
+
+Wave Pay Mini App runs your web page inside the WavePay app. `Payment` signs the object the page passes to Wave's JavaScript SDK; no request is sent. `MiniAppPayment.JSON()` is exactly that object:
+
+```go
+func miniAppCheckout(w http.ResponseWriter, r *http.Request) {
+	payment, err := miniApp.Payment(&data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	// {"amount", "miniAppID", "merchantRefID", "orderID", "callBackUrl", "hashValue", "items"}
+	io.WriteString(w, payment.JSON())
+}
+```
+
+The page calls `WaveJsSDK.paymentModule.makePayment(payload)` with it after logging in with your server's access token; the SDK's result is not proof of payment. See [Wave Pay Mini App](/go-myanmar-payments/drivers/wave-pay-mini-app) for the whole flow.
+
 ## Handling Any Result
 
 ```go
@@ -222,6 +242,9 @@ func respond(
 	case *myanmarpayments.AppPayment:
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(payment)
+	case *myanmarpayments.MiniAppPayment:
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, payment.JSON())
 	}
 }
 ```

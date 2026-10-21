@@ -34,6 +34,7 @@ use Laranex\PhpMyanmarPayments\KbzPay\KbzPay;
 | `Laranex\PhpMyanmarPayments\Support` | `ArrayCache` |
 | `Laranex\PhpMyanmarPayments\KbzPay` | `KbzPay`, `KbzPayConfig`, `KbzPayPaymentData`, `KbzPaySigner` |
 | `Laranex\PhpMyanmarPayments\WavePay` | `WavePay`, `WavePayConfig`, `WavePayPaymentData`, `WavePayItem` |
+| `Laranex\PhpMyanmarPayments\WavePayMiniApp` | `WavePayMiniApp`, `WavePayMiniAppConfig`, `WavePayMiniAppPaymentData`, `WavePayMiniAppItem`, `WavePayMiniAppSigner` |
 | `Laranex\PhpMyanmarPayments\AyaPay` | `AyaPay`, `AyaPayConfig`, `AyaPayPaymentData`, `AyaPayMethod`, `AyaPayService` |
 | `Laranex\PhpMyanmarPayments\YomaMmqr` | `YomaMmqr`, `YomaMmqrConfig`, `YomaMmqrPaymentData` |
 | `Laranex\PhpMyanmarPayments\CyberSource` | `CyberSource`, `CyberSourceConfig`, `CyberSourcePaymentData`, `CyberSourceTransactionType` |

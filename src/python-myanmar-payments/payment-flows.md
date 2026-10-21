@@ -1,6 +1,6 @@
 ---
 title: Payment Flows
-description: Each gateway method returns one typed result per flow — RedirectPayment, FormPayment, QrPayment or AppPayment — so you always know what to do next.
+description: Each gateway method returns one typed result per flow — RedirectPayment, FormPayment, QrPayment, AppPayment or MiniAppPayment — so you always know what to do next.
 ---
 
 # Payment Flows
@@ -13,6 +13,7 @@ Starting a payment always follows the same pattern: build the gateway's payment 
 | `FormPayment` | Return `payment.to_html()` | `aya.initiate`, `cs.initiate` |
 | `QrPayment` | Show the QR to the customer | `kbz.qr`, `yoma.initiate`, `yoma.renew_qr` |
 | `AppPayment` | Return the signed payload to your mobile app | `kbz.app` |
+| `MiniAppPayment` | Return the signed payload to your mini app page | `mini_app.payment` |
 
 Every method validates the payment data first and raises `InvalidPaymentDataError` before any request is sent. Call the gateway's `validate()` yourself (e.g. `KbzPay.validate(data)`) to check a request earlier, e.g. while handling a form. Callback, return and cancel URLs must be absolute http or https URLs by PHP's `FILTER_VALIDATE_URL` rules, the same in every Laranex SDK: printable ASCII only, an ASCII host name (labels of letters, digits and inner `-`, at most 63 characters each) or a bracketed IPv6 address, and an optional port from 0 to 65535; anything else fails with `The callback_url field must be a valid http or https URL.` The customer finishing on the gateway's side is never proof of payment: fulfill orders from the verified [callback](/python-myanmar-payments/callbacks) or a status check.
 
@@ -178,6 +179,22 @@ def kbz_app_checkout(request):
 
 The SDK's own result only means the payment screen closed; rely on the callback or `kbz.status()`.
 
+## Mini App Payments
+
+Wave Pay Mini App runs your web page inside the WavePay app. `payment()` signs the object the page passes to Wave's JavaScript SDK; no request is sent. `MiniAppPayment.to_dict()` (or `to_json()`) is exactly that object:
+
+```python
+from django.http import HttpResponse
+
+
+def mini_app_checkout(request):
+    payment = mini_app.payment(data)
+    # {"amount", "miniAppID", "merchantRefID", "orderID", "callBackUrl", "hashValue", "items"}
+    return HttpResponse(payment.to_json(), content_type="application/json")
+```
+
+The page calls `WaveJsSDK.paymentModule.makePayment(payload)` with it after logging in with your server's access token; the SDK's result is not proof of payment. See [Wave Pay Mini App](/python-myanmar-payments/drivers/wave-pay-mini-app) for the whole flow.
+
 ## Handling Any Result
 
 ```python
@@ -186,6 +203,7 @@ from django.shortcuts import redirect
 from python_myanmar_payments import (
     AppPayment,
     FormPayment,
+    MiniAppPayment,
     PaymentResult,
     QrPayment,
     RedirectPayment,
@@ -203,6 +221,8 @@ def respond(payment: PaymentResult) -> HttpResponse:
             return HttpResponse(qr)
         case AppPayment():
             return JsonResponse(payment.to_dict())
+        case MiniAppPayment():
+            return HttpResponse(payment.to_json(), content_type="application/json")
 ```
 
 See [Results](/python-myanmar-payments/references/results) for every field.

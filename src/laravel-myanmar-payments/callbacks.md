@@ -5,7 +5,7 @@ description: Verify gateway callbacks with handleCallback(), read a gateway-inde
 
 # Callbacks & Status
 
-Every gateway notifies your server of the payment result. `handleCallback()` verifies the gateway's signature and returns a `PaymentCallback`. Pass it the Laravel request as is: signatures are checked against the exact body the gateway sent.
+Every gateway notifies your server of the payment result. `handleCallback()` verifies the gateway's signature and returns a `PaymentCallback`. Pass it the Laravel request as is: signatures are checked against the exact body the gateway sent. Wave Pay Mini App also checks the request's own URL, the [callback URL](/laravel-myanmar-payments/drivers/wave-pay-mini-app#handling-callbacks) its payment was signed with.
 
 ::: tip Production setup
 For production, follow [Handling Webhooks](/laravel-myanmar-payments/webhooks); this example handles everything inline.
@@ -60,8 +60,8 @@ Gateways post from their own servers, so exclude callback routes from CSRF verif
 | Helper | What it does |
 |---|---|
 | `kbzPay()->handleCallback($request)` | Verifies the callback. Takes the Laravel `Request` as is, or the SDK's `CallbackRequest` |
-| `MyanmarPayments::handleCallback($gateway, $request)` | The same, by gateway name, for one route that serves every gateway; see [Handling Webhooks](/laravel-myanmar-payments/webhooks#route-and-controller) |
-| `MyanmarPayments::gateway($name)` | The gateway for `kbz-pay`, `wave-pay`, `aya-pay`, `yoma-mmqr` or `cyber-source` (`gateways()` lists them). An unknown name throws `InvalidArgumentException` |
+| `MyanmarPayments::handleCallback($gateway, $request)` | The same, by gateway name, for one route that serves every gateway (Wave Pay Mini App verifies against `$request->url()`); see [Handling Webhooks](/laravel-myanmar-payments/webhooks#route-and-controller) |
+| `MyanmarPayments::gateway($name)` | The gateway for `kbz-pay`, `wave-pay`, `wave-pay-mini-app`, `aya-pay`, `yoma-mmqr` or `cyber-source` (`gateways()` lists them). An unknown name throws `InvalidArgumentException` |
 | `MyanmarPayments::acknowledge($callback)` | The response the gateway expects, as a `Responsable`. Without a callback, an empty 200 |
 | `ayaPay()->verifyRedirect($request)` | Verifies AYA's browser return; see [AYA Pay](/laravel-myanmar-payments/drivers/aya-pay) |
 
@@ -71,7 +71,7 @@ Signatures are computed over the exact bytes the gateway sent; the package reads
 
 - **Verify, then trust.** A callback that fails verification throws `SignatureVerificationException`, and so does one whose signed or hashed field holds an object or array instead of a single value, since no gateway signs nested values. Never act on its payload; it carries the unverified data in `$e->raw` for logging only.
 - **Check the amount.** Compare `$callback->amount` (as the gateway sent it, a string) with your order before fulfilling. A gateway may format it differently from your order (`10000` or `10000.00`); `Amount::parse($order->amount)->equals($callback->amount)` compares decimal strings exactly. Yoma MMQR callbacks carry no amount: confirm those with [`status()`](/laravel-myanmar-payments/drivers/yoma-mmqr#status-checks).
-- **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Pay), the package also rejects values that could be re-split into other fields. See each driver's Handling Callbacks section.
+- **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Pay, Wave Pay Mini App), the package also rejects values that could be re-split into other fields. See each driver's Handling Callbacks section.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 - **Acknowledge.** `MyanmarPayments::acknowledge($callback)` returns the response the gateway expects, e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
 
@@ -94,7 +94,7 @@ Each gateway page lists its exact mapping.
 
 ## Status Checks
 
-When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Pay and CyberSource have no status API.
+When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Pay, Wave Pay Mini App and CyberSource have no status API.
 
 <SequenceDiagram
   title="Checking the status when the callback is late"
@@ -116,6 +116,7 @@ Status checks return a `PaymentStatusResult` with the same `status`, `gatewaySta
 | AYA Payment Gateway | `MyanmarPayments::ayaPay()->status($orderId)` |
 | Yoma MMQR | `MyanmarPayments::yomaMmqr()->status($payment->reference)` |
 | Wave Pay | No status API: rely on the callback |
+| Wave Pay Mini App | No status API: rely on the callback |
 | CyberSource | No status API: rely on the callback |
 
 ```php

@@ -64,6 +64,7 @@ def test_starts_a_kbz_pay_qr_payment() -> None:
 |---|---|
 | KBZ Pay | `{api_url}/precreate`, `{api_url}/queryorder` |
 | Wave Pay | `{base_url}/payment` |
+| Wave Pay Mini App | `{base_url}/auth/v1/external-utility/token` (`payment()` is local) |
 | AYA Pay | `{base_url}/v1/payment/services`, `{base_url}/v1/payment/enquiry` (`initiate()` is local) |
 | Yoma MMQR | `{base_url}/token`, then `{base_url}/payment-gateway/{api_version}/api/` + `payment/checkout`, `qr/generate`, `payment/check-status` |
 | CyberSource | None: forms are signed locally |
@@ -217,4 +218,4 @@ def test_fulfills_a_paid_order() -> None:
     fulfill(callback)
 ```
 
-`PaymentStatusResult`, `RedirectPayment`, `FormPayment`, `QrPayment` and `AppPayment` take their fields as keyword arguments the same way, so you can return them from a mocked gateway (`unittest.mock.create_autospec(KbzPay)`) when a test only covers your own views.
+`PaymentStatusResult`, `RedirectPayment`, `FormPayment`, `QrPayment`, `AppPayment` and `MiniAppPayment` take their fields as keyword arguments the same way, so you can return them from a mocked gateway (`unittest.mock.create_autospec(KbzPay)`) when a test only covers your own views.

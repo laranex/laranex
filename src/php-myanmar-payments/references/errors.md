@@ -36,7 +36,7 @@ try {
 |---|---|
 | `InvalidPaymentDataException` | Payment data breaks the gateway's documented rules, or `Amount::kyat` / `Amount::parse` / `Amount::from` get bad input. Thrown when the payment data is created, before any request is sent |
 | `ApiException` | The gateway rejected the request, answered with an error (including errors sent with HTTP 200), or could not be reached |
-| `SignatureVerificationException` | A callback, return redirect or gateway response fails signature verification (`... signature`, `hash` or `checksum verification failed.`), or its signature matches but its signed values are malformed (`Wave Pay callback is malformed.`, `AYA Pay {callback\|redirect\|enquiry response} payload is malformed.`, `CyberSource callback is malformed.`) |
+| `SignatureVerificationException` | A callback, return redirect or gateway response fails signature verification (`... signature`, `hash` or `checksum verification failed.`), or its signature matches but its signed values are malformed (`Wave Pay callback is malformed.`, `Wave Pay Mini App callback is malformed.`, `AYA Pay {callback\|redirect\|enquiry response} payload is malformed.`, `CyberSource callback is malformed.`) |
 | `ConfigurationException` | A gateway setting (URLs, time to live and Yoma's webhook secret included) is missing or blank, or a time setting is out of range |
 
 ## InvalidPaymentDataException

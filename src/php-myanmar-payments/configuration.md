@@ -5,7 +5,7 @@ description: Configure PHP Myanmar Payments with one config class per gateway or
 
 # Configuration
 
-Each gateway has a config class (`KbzPayConfig`, `WavePayConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes named arguments; gateways take the object or an array of its snake_case keys. Every setting is required except the HTTP timeout (`timeoutSeconds`, 30 seconds, `MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); a missing or blank one throws a `ConfigurationException` naming it:
+Each gateway has a config class (`KbzPayConfig`, `WavePayConfig`, `WavePayMiniAppConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes named arguments; gateways take the object or an array of its snake_case keys. Every setting is required except the HTTP timeout (`timeoutSeconds`, 30 seconds, `MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); a missing or blank one throws a `ConfigurationException` naming it:
 
 ```php
 use Laranex\PhpMyanmarPayments\Exceptions\ConfigurationException;
@@ -62,6 +62,17 @@ In `fromArray()`, text settings also take an integer (`'merchant_code' => 200123
 | `timeToLiveSeconds` | `int` | Yes | Seconds the customer has to pay, greater than 0. A payment can override it with `WavePayPaymentData`'s `timeToLiveSeconds` |
 | `timeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); an invalid one is reported as `timeout_in_seconds` |
 
+### WavePayMiniAppConfig
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `clientId` | `string` | Yes | Client ID issued by Wave, for the token endpoint |
+| `clientSecret` | `string` | Yes | Client secret issued by Wave, for the token endpoint |
+| `miniAppId` | `string` | Yes | Your mini app ID (`miniAppID`) |
+| `secretKey` | `string` | Yes | Hash secret key for payment and callback hashes |
+| `baseUrl` | `string` | Yes | The API base URL, e.g. `WavePayMiniAppConfig::PRODUCTION_URL`. Tokens are requested at its `/auth/v1/external-utility/token` |
+| `timeoutSeconds` | `int` | No | Seconds before the default HTTP client gives up. Defaults to 30 (`MyanmarPayments::DEFAULT_TIMEOUT_SECONDS`); an invalid one is reported as `timeout_in_seconds` |
+
 ### AyaPayConfig
 
 | Parameter | Type | Required | Description |
@@ -100,6 +111,7 @@ KBZ_PAY_BASE_URL=https://api.kbzpay.com/payment/gateway
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://wap.kbzpay.com/pgw/pwa/#/"
 WAVE_PAY_BASE_URL=https://payments.wavemoney.io
 WAVE_PAY_BASE_REDIRECT_URL=https://payments.wavemoney.io
+WAVE_PAY_MINI_APP_BASE_URL=https://api.wavemoney.io:8100
 AYA_PAY_BASE_URL=https://pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://paymenthubapi.yomabank.com
 CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
@@ -112,6 +124,7 @@ KBZ_PAY_BASE_URL=http://api-uat.kbzpay.com/payment/gateway/uat
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://static.kbzpay.com/pgw/uat/pwa/#/"
 WAVE_PAY_BASE_URL=https://preprodpayments.wavemoney.io:8107
 WAVE_PAY_BASE_REDIRECT_URL=https://preprodpayments.wavemoney.io:8107
+WAVE_PAY_MINI_APP_BASE_URL=https://preprodnewapi.wavemoney.io
 AYA_PAY_BASE_URL=https://uat-pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://devapi.yomabank.net
 CYBER_SOURCE_BASE_URL=https://testsecureacceptance.cybersource.com
@@ -153,6 +166,13 @@ WAVE_PAY_BASE_URL=
 WAVE_PAY_BASE_REDIRECT_URL=
 WAVE_PAY_TIME_TO_LIVE_IN_SECONDS=900   # greater than 0
 
+# Wave Pay Mini App
+WAVE_PAY_MINI_APP_CLIENT_ID=
+WAVE_PAY_MINI_APP_CLIENT_SECRET=
+WAVE_PAY_MINI_APP_MINI_APP_ID=
+WAVE_PAY_MINI_APP_SECRET_KEY=
+WAVE_PAY_MINI_APP_BASE_URL=
+
 # AYA Payment Gateway
 AYA_PAY_APP_KEY=
 AYA_PAY_APP_SECRET=
@@ -174,7 +194,7 @@ CYBER_SOURCE_SECRET_KEY=
 CYBER_SOURCE_BASE_URL=
 ```
 
-`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Pay, AYA and Yoma MMQR. The package never reads files itself: load the `.env` file with your framework or with [`vlucas/phpdotenv`](https://github.com/vlucas/phpdotenv) before calling `fromEnv()`.
+`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Pay, Wave Pay Mini App, AYA and Yoma MMQR. The package never reads files itself: load the `.env` file with your framework or with [`vlucas/phpdotenv`](https://github.com/vlucas/phpdotenv) before calling `fromEnv()`.
 
 Credentials from a config file go through `fromArray()`, which reads the same settings as snake_case keys:
 
@@ -182,6 +202,7 @@ Credentials from a config file go through `fromArray()`, which reads the same se
 |---|---|
 | `KbzPayConfig` | `app_id`, `app_key`, `merchant_code`, `api_url`, `pwa_url`, `time_to_live_in_minutes`, `timeout_in_seconds` |
 | `WavePayConfig` | `merchant_id`, `secret_key`, `merchant_name`, `base_url`, `base_redirect_url`, `time_to_live_in_seconds`, `timeout_in_seconds` |
+| `WavePayMiniAppConfig` | `client_id`, `client_secret`, `mini_app_id`, `secret_key`, `base_url`, `timeout_in_seconds` |
 | `AyaPayConfig` | `app_key`, `app_secret`, `base_url`, `timeout_in_seconds` |
 | `YomaMmqrConfig` | `merchant_id`, `client_id`, `client_secret`, `webhook_hashkey`, `api_version`, `webhook_secret`, `base_url`, `timeout_in_seconds` |
 | `CyberSourceConfig` | `profile_id`, `access_key`, `secret_key`, `base_url` |
@@ -225,7 +246,7 @@ $payments->wavePay();
 $fromEnv = MyanmarPayments::fromEnv();
 ```
 
-The keys `kbz_pay`, `wave_pay`, `aya_pay`, `yoma_mmqr` and `cyber_source` take a config object or the array `fromArray()` reads, and the facade also takes the `httpClient` and `cache` arguments below, shared by every gateway it builds.
+The keys `kbz_pay`, `wave_pay`, `wave_pay_mini_app`, `aya_pay`, `yoma_mmqr` and `cyber_source` take a config object or the array `fromArray()` reads, and the facade also takes the `httpClient` and `cache` arguments below, shared by every gateway it builds.
 
 ## HTTP Client
 
@@ -258,7 +279,7 @@ A failed request (connection error, timeout) throws an `ApiException` whose `get
 
 ## Token Cache
 
-Yoma MMQR authenticates with an OAuth access token that lasts hours. `YomaMmqr` keeps it in a [PSR-16](https://www.php-fig.org/psr/psr-16/) cache, its third argument:
+Yoma MMQR authenticates with an OAuth access token that lasts hours, and Wave Pay Mini App's page logs in with an access token from your server. `YomaMmqr` and `WavePayMiniApp` keep it in a [PSR-16](https://www.php-fig.org/psr/psr-16/) cache, their third argument:
 
 ```php
 use Laranex\PhpMyanmarPayments\YomaMmqr\YomaMmqr;
@@ -277,4 +298,4 @@ $yoma = new YomaMmqr(YomaMmqrConfig::fromEnv(), null, $cache);
 The default is an in-memory `ArrayCache` that only lives for the current PHP process, so with PHP-FPM or CGI every request fetches a new token: slower, and it may hit Yoma's token rate limits. Pass a shared cache (Redis, APCu, filesystem, your framework's cache) in production, with `new YomaMmqr($config, $client, $cache)` or `MyanmarPayments::fromEnv(cache: $cache)`. Long-running workers keep the token for their own lifetime, but several workers or servers should still share one cache.
 :::
 
-The token is stored under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>`, the same key in every Laranex SDK, so services in different languages can share one cache. `$yoma->forgetToken()` drops a cached token, e.g. after rotating the client secret.
+The token is stored under `myanmar-payments.yoma-mmqr.token.<sha256(baseUrl|clientId)>` (Wave Pay Mini App: `myanmar-payments.wave-pay-mini-app.token.<sha256(baseUrl|clientId)>`), the same key in every Laranex SDK, so services in different languages can share one cache. `$yoma->forgetToken()` and `$wavePayMiniApp->forgetToken()` drop a cached token, e.g. after rotating the client secret.

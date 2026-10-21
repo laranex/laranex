@@ -1,6 +1,6 @@
 ---
 title: Payment Flows
-description: Each gateway method returns one typed result per flow — RedirectPayment, FormPayment, QrPayment or AppPayment — so you always know what to do next.
+description: Each gateway method returns one typed result per flow — RedirectPayment, FormPayment, QrPayment, AppPayment or MiniAppPayment — so you always know what to do next.
 ---
 
 # Payment Flows
@@ -13,6 +13,7 @@ Starting a payment always follows the same pattern: build the gateway's payment 
 | `*FormPayment` | Redirect to `payments.AutoSubmitURL(form)` | `AyaPay()` → `Initiate()`, `CyberSource()` → `Initiate()` |
 | `*QrPayment` | Show the QR to the customer | `KbzPay()` → `QR()`, `YomaMmqr()` → `Initiate()`, `RenewQR()` |
 | `*AppPayment` | Return the signed payload to your mobile app | `KbzPay()` → `App()` |
+| `*MiniAppPayment` | Return the signed payload to your mini app page | `WavePayMiniApp()` → `Payment()` |
 
 The customer finishing on the gateway's side is never proof of payment. Fulfill orders from the verified [callback](/goravel-myanmar-payments/callbacks) or a status check.
 
@@ -211,5 +212,24 @@ return ctx.Response().Json(http.StatusOK, payment)
 ```
 
 `KBZPay.startPay()`'s result only means the payment screen closed; rely on the callback or `kbz.Status()`.
+
+## Mini App Payments
+
+Wave Pay Mini App runs your web page inside the WavePay app. `Payment()` signs the object the page passes to Wave's JavaScript SDK; no request is sent. `MiniAppPayment.JSON()` is exactly that object:
+
+```go
+import (
+	"github.com/goravel/framework/contracts/http"
+	paymentsfacades "github.com/laranex/goravel-myanmar-payments/v4/facades"
+)
+
+miniApp, err := paymentsfacades.MyanmarPayments().WavePayMiniApp()
+payment, err := miniApp.Payment(data)
+
+// {"amount", "miniAppID", "merchantRefID", "orderID", "callBackUrl", "hashValue", "items"}
+return ctx.Response().Data(http.StatusOK, "application/json", []byte(payment.JSON()))
+```
+
+The page calls `WaveJsSDK.paymentModule.makePayment(payload)` with it after logging in with your server's access token; the SDK's result is not proof of payment. See [Wave Pay Mini App](/goravel-myanmar-payments/drivers/wave-pay-mini-app) for the whole flow.
 
 See [Results](/goravel-myanmar-payments/references/results) for every field.

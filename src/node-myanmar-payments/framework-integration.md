@@ -5,7 +5,7 @@ description: Use Node Myanmar Payments with Express, Fastify, Next.js route hand
 
 # Framework Integration
 
-The package needs only two things from your framework: the raw incoming request for callbacks and a way to write the acknowledgement. Create each gateway once at startup (or one `MyanmarPayments`) and share it across requests, so Yoma's token cache stays warm.
+The package needs only two things from your framework: the raw incoming request for callbacks and a way to write the acknowledgement. Create each gateway once at startup (or one `MyanmarPayments`) and share it across requests, so the Yoma MMQR and Wave Pay Mini App token caches stay warm.
 
 | Framework | Build the request | Acknowledge |
 |---|---|---|

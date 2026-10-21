@@ -282,6 +282,7 @@ export default defineConfig({
           items: [
             { text: 'KBZ Pay',     link: '/laravel-myanmar-payments/drivers/kbz-pay' },
             { text: 'Wave Pay',    link: '/laravel-myanmar-payments/drivers/wave-pay' },
+            { text: 'Wave Pay Mini App', link: '/laravel-myanmar-payments/drivers/wave-pay-mini-app' },
             { text: 'AYA Pay',     link: '/laravel-myanmar-payments/drivers/aya-pay' },
             { text: 'Yoma MMQR',   link: '/laravel-myanmar-payments/drivers/yoma-mmqr' },
             { text: 'CyberSource', link: '/laravel-myanmar-payments/drivers/cyber-source' },
@@ -317,6 +318,7 @@ export default defineConfig({
           items: [
             { text: 'KBZ Pay',     link: '/go-myanmar-payments/drivers/kbz-pay' },
             { text: 'Wave Pay',    link: '/go-myanmar-payments/drivers/wave-pay' },
+            { text: 'Wave Pay Mini App', link: '/go-myanmar-payments/drivers/wave-pay-mini-app' },
             { text: 'AYA Pay',     link: '/go-myanmar-payments/drivers/aya-pay' },
             { text: 'Yoma MMQR',   link: '/go-myanmar-payments/drivers/yoma-mmqr' },
             { text: 'CyberSource', link: '/go-myanmar-payments/drivers/cyber-source' },
@@ -352,6 +354,7 @@ export default defineConfig({
           items: [
             { text: 'KBZ Pay', link: '/node-myanmar-payments/drivers/kbz-pay' },
             { text: 'Wave Pay', link: '/node-myanmar-payments/drivers/wave-pay' },
+            { text: 'Wave Pay Mini App', link: '/node-myanmar-payments/drivers/wave-pay-mini-app' },
             { text: 'AYA Pay', link: '/node-myanmar-payments/drivers/aya-pay' },
             { text: 'Yoma MMQR', link: '/node-myanmar-payments/drivers/yoma-mmqr' },
             { text: 'CyberSource', link: '/node-myanmar-payments/drivers/cyber-source' },
@@ -387,6 +390,7 @@ export default defineConfig({
           items: [
             { text: 'KBZ Pay', link: '/python-myanmar-payments/drivers/kbz-pay' },
             { text: 'Wave Pay', link: '/python-myanmar-payments/drivers/wave-pay' },
+            { text: 'Wave Pay Mini App', link: '/python-myanmar-payments/drivers/wave-pay-mini-app' },
             { text: 'AYA Pay', link: '/python-myanmar-payments/drivers/aya-pay' },
             { text: 'Yoma MMQR', link: '/python-myanmar-payments/drivers/yoma-mmqr' },
             { text: 'CyberSource', link: '/python-myanmar-payments/drivers/cyber-source' },
@@ -422,6 +426,7 @@ export default defineConfig({
           items: [
             { text: 'KBZ Pay',     link: '/php-myanmar-payments/drivers/kbz-pay' },
             { text: 'Wave Pay',    link: '/php-myanmar-payments/drivers/wave-pay' },
+            { text: 'Wave Pay Mini App', link: '/php-myanmar-payments/drivers/wave-pay-mini-app' },
             { text: 'AYA Pay',     link: '/php-myanmar-payments/drivers/aya-pay' },
             { text: 'Yoma MMQR',   link: '/php-myanmar-payments/drivers/yoma-mmqr' },
             { text: 'CyberSource', link: '/php-myanmar-payments/drivers/cyber-source' },
@@ -572,6 +577,7 @@ export default defineConfig({
           items: [
             { text: 'KBZ Pay',     link: '/goravel-myanmar-payments/drivers/kbz-pay' },
             { text: 'Wave Pay',    link: '/goravel-myanmar-payments/drivers/wave-pay' },
+            { text: 'Wave Pay Mini App', link: '/goravel-myanmar-payments/drivers/wave-pay-mini-app' },
             { text: 'AYA Pay',     link: '/goravel-myanmar-payments/drivers/aya-pay' },
             { text: 'Yoma MMQR',   link: '/goravel-myanmar-payments/drivers/yoma-mmqr' },
             { text: 'CyberSource', link: '/goravel-myanmar-payments/drivers/cyber-source' },
@@ -606,6 +612,7 @@ export default defineConfig({
           items: [
             { text: 'KBZ Pay',     link: '/nestjs-myanmar-payments/drivers/kbz-pay' },
             { text: 'Wave Pay',    link: '/nestjs-myanmar-payments/drivers/wave-pay' },
+            { text: 'Wave Pay Mini App', link: '/nestjs-myanmar-payments/drivers/wave-pay-mini-app' },
             { text: 'AYA Pay',     link: '/nestjs-myanmar-payments/drivers/aya-pay' },
             { text: 'Yoma MMQR',   link: '/nestjs-myanmar-payments/drivers/yoma-mmqr' },
             { text: 'CyberSource', link: '/nestjs-myanmar-payments/drivers/cyber-source' },

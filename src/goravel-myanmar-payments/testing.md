@@ -52,6 +52,7 @@ func (s *CheckoutTestSuite) TestKbzPayQR() {
 |---|---|
 | KBZ Pay | `{api_url}/precreate`, `{api_url}/queryorder` |
 | Wave Pay | `{base_url}/payment` |
+| Wave Pay Mini App | `{base_url}/auth/v1/external-utility/token` (`Payment()` is local) |
 | AYA Pay | `{base_url}/v1/payment/services`, `{base_url}/v1/payment/enquiry` (`Initiate()` is local) |
 | Yoma MMQR | `{base_url}/token`, then `{base_url}/payment-gateway/{api_version}/api/` + `payment/checkout`, `qr/generate`, `payment/check-status` |
 | CyberSource | None: forms are signed locally |
@@ -69,7 +70,7 @@ KBZ_PAY_PWA_BASE_REDIRECT_URL="https://static.kbzpay.com/pgw/uat/pwa/#/"
 KBZ_PAY_TIME_TO_LIVE_IN_MINUTES=15
 ```
 
-The base URLs are required too; pointing them at a test host (`KBZ_PAY_BASE_URL`, `WAVE_PAY_BASE_URL`, `AYA_PAY_BASE_URL`, `YOMA_MMQR_BASE_URL`) keeps the fake patterns short. Yoma access tokens are kept in your cache store; clear it between tests that fake the token call.
+The base URLs are required too; pointing them at a test host (`KBZ_PAY_BASE_URL`, `WAVE_PAY_BASE_URL`, `WAVE_PAY_MINI_APP_BASE_URL`, `AYA_PAY_BASE_URL`, `YOMA_MMQR_BASE_URL`) keeps the fake patterns short. Yoma MMQR and Wave Pay Mini App access tokens are kept in your cache store; clear it between tests that fake the token call.
 
 ## Sending Signed Callbacks
 

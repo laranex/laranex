@@ -66,11 +66,12 @@ Gateways post from their own servers, so keep callback routes free of authentica
 
 | API | What it does |
 |---|---|
-| `@VerifiedCallback(gateway)` | Reads the request, verifies it with the named gateway (`'kbz-pay'`, `'wave-pay'`, `'aya-pay'`, `'yoma-mmqr'`, `'cyber-source'`) and injects the `PaymentCallback`. A bad signature answers `400 Bad Request` before your handler runs, a body over 64 KiB answers `413 Payload Too Large` with `The callback request body is larger than 65536 bytes.`, a JSON body without `rawBody: true` answers `400`, and a missing credential answers `500` |
+| `@VerifiedCallback(gateway)` | Reads the request, verifies it with the named gateway (`'kbz-pay'`, `'wave-pay'`, `'wave-pay-mini-app'`, `'aya-pay'`, `'yoma-mmqr'`, `'cyber-source'`) and injects the `PaymentCallback`. `'wave-pay-mini-app'` verifies against the URL the callback was posted to, `callbackUrlFrom(req)` (see [Wave Pay Mini App](/nestjs-myanmar-payments/drivers/wave-pay-mini-app#handling-callbacks)). A bad signature answers `400 Bad Request` before your handler runs, a body over 64 KiB answers `413 Payload Too Large` with `The callback request body is larger than 65536 bytes.`, a JSON body without `rawBody: true` answers `400`, and a missing credential answers `500` |
 | `@AcknowledgeCallback()` | When the handler returns the `PaymentCallback`, answers with its `acknowledgement` (status, headers and body): KBZ Pay's plain `success`, an empty `text/plain` 200 for the others. Any other return value passes through with status 200 |
 | `@RawCallback()` | Injects the unverified `CallbackRequest` (body, headers, query), e.g. to store it before verifying it yourself |
-| `this.payments.handleCallback(gateway, request)` | Verifies a `CallbackRequest` or a Nest request with the named gateway; throws `SignatureVerificationError` |
+| `this.payments.handleCallback(gateway, request)` | Verifies a `CallbackRequest` or a Nest request with the named gateway; throws `SignatureVerificationError`. `'wave-pay-mini-app'` takes only the Nest request |
 | `this.payments.gateway(gateway)` | The gateway for a name, e.g. `gateway('kbz-pay')` is `kbzPay()` (`GATEWAY_NAMES` lists them) |
+| `callbackUrlFrom(req)` | The URL a request was posted to: protocol, host and path without the query string, with `X-Forwarded-Proto` and `X-Forwarded-Host` counted only from a proxy the app trusts |
 | `callbackRequestFrom(req)` | Builds a `CallbackRequest` from an Express or Fastify request (`@Req()`), e.g. for `ayaPay().verifyRedirect()` |
 | `acknowledge(res, callback)` | Sends the acknowledgement on an Express response or a Fastify reply (`@Res()`); without a callback, an empty 200 |
 
@@ -141,7 +142,7 @@ async waveCallback(
 
 - **Verify, then trust.** A callback that fails verification throws `SignatureVerificationError`, and so does one whose signed or hashed field holds an object or array instead of a single value, since no gateway signs nested values. Never act on its payload; it carries the unverified data in `error.raw` for logging only.
 - **Check the amount.** Compare `callback.amount` (as the gateway sent it, a string) with your order before fulfilling. A gateway may format it differently from your order (`10000` or `10000.00`); `Amount.parse(order.amount).equals(callback.amount)` compares decimal strings exactly. Yoma MMQR callbacks carry no amount: confirm those with [`status()`](/nestjs-myanmar-payments/drivers/yoma-mmqr#status-checks).
-- **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Pay), the package also rejects values that could be re-split into other fields. See each driver's Handling Callbacks section.
+- **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Pay, Wave Pay Mini App), the package also rejects values that could be re-split into other fields. See each driver's Handling Callbacks section.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 - **Acknowledge.** Returning the callback from an `@AcknowledgeCallback()` handler (or `acknowledge(res, callback)`) sends the response the gateway expects, e.g. KBZ Pay's plain `success`. Without it, gateways keep retrying.
 
@@ -151,7 +152,7 @@ Every gateway's status is mapped onto one `PaymentStatus`; the original stays in
 
 ## Status Checks
 
-When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Pay and CyberSource have no status API.
+When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Pay, Wave Pay Mini App and CyberSource have no status API.
 
 <SequenceDiagram
   title="Checking the status when the callback is late"
@@ -173,6 +174,7 @@ Status checks return a `PaymentStatusResult` with the same `status`, `gatewaySta
 | AYA Payment Gateway | `this.payments.ayaPay().status(orderId)` |
 | Yoma MMQR | `this.payments.yomaMmqr().status(payment.reference)` |
 | Wave Pay | No status API: rely on the callback |
+| Wave Pay Mini App | No status API: rely on the callback |
 | CyberSource | No status API: rely on the callback |
 
 ```ts

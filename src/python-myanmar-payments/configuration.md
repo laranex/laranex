@@ -5,7 +5,7 @@ description: Configure Python Myanmar Payments with one config class per gateway
 
 # Configuration
 
-Each gateway has a config class (`KbzPayConfig`, `WavePayConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes keyword arguments. Gateways take the config object or a mapping of its keyword arguments (`KbzPay({"app_id": "...", ...})`); other keys in the mapping are ignored. Text settings also take integers (`merchant_code=200123` is `"200123"`); floats and booleans count as missing. Every setting of a gateway you use is required and has no default, except the HTTP timeout (`timeout_seconds`, default 30, `DEFAULT_TIMEOUT_SECONDS`). A missing or blank setting raises a `ConfigurationError` naming it:
+Each gateway has a config class (`KbzPayConfig`, `WavePayConfig`, `WavePayMiniAppConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes keyword arguments. Gateways take the config object or a mapping of its keyword arguments (`KbzPay({"app_id": "...", ...})`); other keys in the mapping are ignored. Text settings also take integers (`merchant_code=200123` is `"200123"`); floats and booleans count as missing. Every setting of a gateway you use is required and has no default, except the HTTP timeout (`timeout_seconds`, default 30, `DEFAULT_TIMEOUT_SECONDS`). A missing or blank setting raises a `ConfigurationError` naming it:
 
 ```python
 from python_myanmar_payments import ConfigurationError, KbzPay, KbzPayConfig
@@ -59,6 +59,17 @@ Settings are checked in the same order in every Laranex SDK, so the first error 
 | `time_to_live_seconds` | `int \| str` | Yes | Seconds the customer has to pay, greater than 0. A payment can override it with `WavePayPaymentData`'s `time_to_live_seconds`. An invalid one is reported as `time_to_live_in_seconds` |
 | `timeout_seconds` | `int \| str` | No | Seconds before the default HTTP client gives up. Default 30 |
 
+### WavePayMiniAppConfig
+
+| Argument | Type | Required | Description |
+|---|---|---|---|
+| `client_id` | `str` | Yes | Client ID issued by Wave, for the token endpoint |
+| `client_secret` | `str` | Yes | Client secret issued by Wave, for the token endpoint |
+| `mini_app_id` | `str` | Yes | Your mini app ID (`miniAppID`) |
+| `secret_key` | `str` | Yes | Hash secret key for payment and callback hashes |
+| `base_url` | `str` | Yes | The API base URL, e.g. `WavePayMiniAppConfig.PRODUCTION_URL`. Tokens are requested at its `/auth/v1/external-utility/token` |
+| `timeout_seconds` | `int \| str` | No | Seconds before the default HTTP client gives up. Default 30 |
+
 ### AyaPayConfig
 
 | Argument | Type | Required | Description |
@@ -97,6 +108,7 @@ KBZ_PAY_BASE_URL=https://api.kbzpay.com/payment/gateway
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://wap.kbzpay.com/pgw/pwa/#/"
 WAVE_PAY_BASE_URL=https://payments.wavemoney.io
 WAVE_PAY_BASE_REDIRECT_URL=https://payments.wavemoney.io
+WAVE_PAY_MINI_APP_BASE_URL=https://api.wavemoney.io:8100
 AYA_PAY_BASE_URL=https://pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://paymenthubapi.yomabank.com
 CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
@@ -109,6 +121,7 @@ KBZ_PAY_BASE_URL=http://api-uat.kbzpay.com/payment/gateway/uat
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://static.kbzpay.com/pgw/uat/pwa/#/"
 WAVE_PAY_BASE_URL=https://preprodpayments.wavemoney.io:8107
 WAVE_PAY_BASE_REDIRECT_URL=https://preprodpayments.wavemoney.io:8107
+WAVE_PAY_MINI_APP_BASE_URL=https://preprodnewapi.wavemoney.io
 AYA_PAY_BASE_URL=https://uat-pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://devapi.yomabank.net
 CYBER_SOURCE_BASE_URL=https://testsecureacceptance.cybersource.com
@@ -148,6 +161,13 @@ WAVE_PAY_MERCHANT_NAME=
 WAVE_PAY_BASE_URL=
 WAVE_PAY_BASE_REDIRECT_URL=
 WAVE_PAY_TIME_TO_LIVE_IN_SECONDS=900   # greater than 0
+
+# Wave Pay Mini App
+WAVE_PAY_MINI_APP_CLIENT_ID=
+WAVE_PAY_MINI_APP_CLIENT_SECRET=
+WAVE_PAY_MINI_APP_MINI_APP_ID=
+WAVE_PAY_MINI_APP_SECRET_KEY=
+WAVE_PAY_MINI_APP_BASE_URL=
 
 # AYA Payment Gateway
 AYA_PAY_APP_KEY=
@@ -212,7 +232,7 @@ payments.wave_pay()
 from_env = MyanmarPayments.from_env()
 ```
 
-The keyword arguments `kbz_pay`, `wave_pay`, `aya_pay`, `yoma_mmqr` and `cyber_source` take the config objects or mappings of their keyword arguments, and the facade also takes the `http_client` and `token_cache` options below, shared by every gateway it builds. `payments.cyber_source()` returns a `CyberSource` (one class for sync and async).
+The keyword arguments `kbz_pay`, `wave_pay`, `wave_pay_mini_app`, `aya_pay`, `yoma_mmqr` and `cyber_source` take the config objects or mappings of their keyword arguments, and the facade also takes the `http_client` and `token_cache` options below, shared by every gateway it builds. `payments.cyber_source()` returns a `CyberSource` (one class for sync and async).
 
 `AsyncMyanmarPayments` is the async twin: same arguments, but `kbz_pay()` returns an `AsyncKbzPay`, `wave_pay()` an `AsyncWavePay` and so on, and `http_client` takes an `httpx.AsyncClient`.
 
@@ -247,7 +267,7 @@ An `httpx.AsyncClient` belongs to the event loop it first ran on, so create asyn
 
 ## Token Cache
 
-Yoma MMQR authenticates with an OAuth access token that lasts hours. `YomaMmqr` keeps it in a `TokenCache`, under a key derived from the base URL and client ID that every Laranex payments SDK shares (see [Access Tokens](/python-myanmar-payments/drivers/yoma-mmqr#access-tokens)). `TokenCache` is a protocol with three methods:
+Yoma MMQR authenticates with an OAuth access token that lasts hours, and Wave Pay Mini App's page logs in with an access token from your server. `YomaMmqr` and `WavePayMiniApp` keep it in a `TokenCache`, under a key derived from the base URL and client ID that every Laranex payments SDK shares (see Yoma's [Access Tokens](/python-myanmar-payments/drivers/yoma-mmqr#access-tokens) and Wave Pay Mini App's [Access Token](/python-myanmar-payments/drivers/wave-pay-mini-app#access-token)). `TokenCache` is a protocol with three methods:
 
 ```python
 from typing import Protocol
@@ -261,7 +281,7 @@ class TokenCache(Protocol):
     def delete(self, key: str) -> None: ...
 ```
 
-The default is a thread-safe `MemoryTokenCache` (`clear()` empties it), which lives as long as the process: create one `YomaMmqr` (or one `MyanmarPayments`) at startup and share it across requests. When you run several processes, implement the protocol on top of Redis:
+The default is a thread-safe `MemoryTokenCache` (`clear()` empties it), which lives as long as the process: create one `YomaMmqr` or `WavePayMiniApp` (or one `MyanmarPayments`) at startup and share it across requests. When you run several processes, implement the protocol on top of Redis:
 
 ```python
 import redis
@@ -284,4 +304,4 @@ class RedisTokenCache:
 yoma = YomaMmqr.from_env(token_cache=RedisTokenCache(redis.Redis()))
 ```
 
-`AsyncYomaMmqr` and `AsyncMyanmarPayments` also accept an `AsyncTokenCache`, the same protocol with `async def` methods, e.g. on top of `redis.asyncio`. Pass `token_cache` to `MyanmarPayments` to share one cache with the Yoma gateway it builds.
+`AsyncYomaMmqr`, `AsyncWavePayMiniApp` and `AsyncMyanmarPayments` also accept an `AsyncTokenCache`, the same protocol with `async def` methods, e.g. on top of `redis.asyncio`. Pass `token_cache` to `MyanmarPayments` to share one cache with the Yoma MMQR and Wave Pay Mini App gateways it builds.

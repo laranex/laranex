@@ -5,7 +5,7 @@ description: Verify gateway callbacks with handle_callback, read a gateway-indep
 
 # Callbacks & Status
 
-Every gateway notifies your server of the payment result. `handle_callback` takes a `CallbackRequest`, verifies the gateway's signature and returns a `PaymentCallback`.
+Every gateway notifies your server of the payment result. `handle_callback` takes a `CallbackRequest` (Wave Pay Mini App also takes the [callback URL](/python-myanmar-payments/drivers/wave-pay-mini-app#handling-callbacks) the payment was signed with), verifies the gateway's signature and returns a `PaymentCallback`.
 
 ::: tip Production setup
 For production, follow [Handling Webhooks (recommended)](/python-myanmar-payments/webhooks): verify, store the call, acknowledge immediately, then process it once in the background with retries. The example below handles everything inline to show the API.
@@ -78,7 +78,7 @@ See [Framework Integration](/python-myanmar-payments/framework-integration) for 
 
 - **Verify, then trust.** A callback that fails verification raises `SignatureVerificationError`, and so does one whose signed or hashed field holds an object or a list instead of a single value, since no gateway signs nested values. Never act on its payload; `raw` carries the unverified data for logging only.
 - **Check the amount.** Compare `callback.amount` (the exact text the gateway sent) with your order before fulfilling, e.g. with `Amount.equals`. Yoma MMQR callbacks carry no amount, and neither does its [`status()`](/python-myanmar-payments/drivers/yoma-mmqr#status-checks): match the order number to your stored order and trust its stored amount.
-- **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Pay), the package also rejects values that could be re-split into other fields: a correctly signed callback that fails these checks reports `... is malformed.` instead of `... verification failed.`. See each driver's Handling Callbacks section.
+- **Signed is not enough on its own.** Where a gateway joins the signed values with a separator (AYA Pay `:`, CyberSource `,` and `=`) or with none (Wave Pay, Wave Pay Mini App), the package also rejects values that could be re-split into other fields: a correctly signed callback that fails these checks reports `... is malformed.` instead of `... verification failed.`. See each driver's Handling Callbacks section.
 - **Be idempotent.** Gateways retry and may deliver the same callback more than once.
 
 ## Acknowledging
@@ -91,7 +91,7 @@ Every gateway's status maps onto `PaymentStatus` (see the [reference](/python-my
 
 ## Status Checks
 
-When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Pay and CyberSource have no status API.
+When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Pay, Wave Pay Mini App and CyberSource have no status API.
 
 <SequenceDiagram
   title="Checking the status when the callback is late"
@@ -113,6 +113,7 @@ Status checks return a `PaymentStatusResult` with the same `status`, `gateway_st
 | AYA Payment Gateway | `aya.status(order_id)` |
 | Yoma MMQR | `yoma.status(payment.reference)` |
 | Wave Pay | No status API: rely on the callback |
+| Wave Pay Mini App | No status API: rely on the callback |
 | CyberSource | No status API: rely on the callback |
 
 ```python

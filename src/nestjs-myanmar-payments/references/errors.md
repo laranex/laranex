@@ -11,10 +11,10 @@ Every error extends `PaymentError` from `@laranex/myanmar-payments`, so one `cat
 |---|---|
 | `InvalidPaymentDataError` | A payment is started with values the gateway would reject |
 | `ApiError` | A gateway rejects a request, answers with an error (including errors sent with HTTP 200), or cannot be reached |
-| `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification |
+| `SignatureVerificationError` | A callback, return redirect or gateway response fails signature verification, or its signature matches but its signed values are malformed (e.g. `Wave Pay Mini App callback is malformed.`) |
 | `ConfigurationError` | A gateway is used without a setting it needs (URLs, time to live and Yoma's webhook secret included), a time setting is out of range, or the form link secret is shorter than 32 bytes |
 
-Outside this hierarchy: a callback body over 64 KiB throws `PayloadTooLargeException` (`413`), a JSON callback without `rawBody: true` throws `BadRequestException` (`400`), and an unknown name passed to `gateway()` or `handleCallback()`, or `autoSubmitUrl()` with the form route disabled, throws a plain `Error`.
+Outside this hierarchy: a callback body over 64 KiB throws `PayloadTooLargeException` (`413`), a JSON callback without `rawBody: true` throws `BadRequestException` (`400`), and an unknown name passed to `gateway()` or `handleCallback()`, `autoSubmitUrl()` with the form route disabled, `handleCallback('wave-pay-mini-app', ...)` given a `CallbackRequest` instead of the Nest request, or a Wave Pay Mini App callback request without a host, throws a plain `Error`.
 
 ## InvalidPaymentDataError
 

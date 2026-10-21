@@ -58,6 +58,7 @@ test('starts a KBZ Pay QR payment', async () => {
 |---|---|
 | KBZ Pay | `{apiUrl}/precreate`, `{apiUrl}/queryorder` |
 | Wave Pay | `{baseUrl}/payment` |
+| Wave Pay Mini App | `{baseUrl}/auth/v1/external-utility/token` (`payment()` is local) |
 | AYA Pay | `{baseUrl}/v1/payment/services`, `{baseUrl}/v1/payment/enquiry` (`initiate()` is local) |
 | Yoma MMQR | `{baseUrl}/token`, then `{baseUrl}/payment-gateway/{apiVersion}/api/` + `payment/checkout`, `qr/generate`, `payment/check-status` |
 | CyberSource | None: forms are signed locally |
@@ -188,4 +189,4 @@ test('fulfills a paid order', async () => {
 });
 ```
 
-`PaymentStatusResult`, `RedirectPayment`, `FormPayment`, `QrPayment` and `AppPayment` take their fields as an object the same way, so you can return them from a mocked gateway (e.g. `mock.method(kbz, 'pwa', async () => new RedirectPayment({ ... }))` with `node:test`, or `vi.spyOn` in Vitest) when a test only covers your own routes.
+`PaymentStatusResult`, `RedirectPayment`, `FormPayment`, `QrPayment`, `AppPayment` and `MiniAppPayment` take their fields as an object the same way, so you can return them from a mocked gateway (e.g. `mock.method(kbz, 'pwa', async () => new RedirectPayment({ ... }))` with `node:test`, or `vi.spyOn` in Vitest) when a test only covers your own routes.

@@ -1,11 +1,11 @@
 ---
 title: Payment Flows
-description: Each gateway method returns one typed result per flow — RedirectPayment, FormPayment, QrPayment or AppPayment — so you always know what to do next.
+description: Each gateway method returns one typed result per flow — RedirectPayment, FormPayment, QrPayment, AppPayment or MiniAppPayment — so you always know what to do next.
 ---
 
 # Payment Flows
 
-Starting a payment always follows the same pattern: build the gateway's payment data, call the gateway, then act on the typed result. Each flow has its own result class with exactly the fields that flow needs, and every result implements `PaymentResult`, whose `flow()` returns a `PaymentFlow` (`Redirect`, `Form`, `Qr` or `App`), so a `match` or `instanceof` check tells them apart.
+Starting a payment always follows the same pattern: build the gateway's payment data, call the gateway, then act on the typed result. Each flow has its own result class with exactly the fields that flow needs, and every result implements `PaymentResult`, whose `flow()` returns a `PaymentFlow` (`Redirect`, `Form`, `Qr`, `App` or `MiniApp`), so a `match` or `instanceof` check tells them apart.
 
 | Result | What you do | Returned by |
 |---|---|---|
@@ -13,6 +13,7 @@ Starting a payment always follows the same pattern: build the gateway's payment 
 | `FormPayment` | Echo `$payment->toHtml()` | `$aya->initiate()`, `$cs->initiate()` |
 | `QrPayment` | Show the QR to the customer | `$kbz->qr()`, `$yoma->initiate()`, `$yoma->renewQr()` |
 | `AppPayment` | Return the signed payload to your mobile app | `$kbz->app()` |
+| `MiniAppPayment` | Return the signed payload to your mini app page | `$wavePayMiniApp->payment()` |
 
 Every payment data class validates its values when you create it and throws `InvalidPaymentDataException` before any request is sent. `$data->validate()` runs the same checks again. Callback, return and cancel URLs must be absolute http or https URLs by PHP's `FILTER_VALIDATE_URL` rules, the same in every Laranex SDK: printable ASCII only, an ASCII host name (labels of letters, digits and inner `-`, at most 63 characters each) or a bracketed IPv6 address, and an optional port from 0 to 65535; anything else fails with `The callbackUrl field must be a valid http or https URL.` The customer finishing on the gateway's side is never proof of payment: fulfill orders from the verified [callback](/php-myanmar-payments/callbacks) or a status check.
 
@@ -170,11 +171,26 @@ echo json_encode($payment->toArray());
 
 The SDK's own result only means the payment screen closed; rely on the callback or `$kbz->status()`.
 
+## Mini App Payments
+
+Wave Pay Mini App runs your web page inside the WavePay app. `payment()` signs the object the page passes to Wave's JavaScript SDK; no request is sent. `MiniAppPayment::toArray()` (or `toJson()`) is exactly that object:
+
+```php
+$payment = $wavePayMiniApp->payment($data);
+
+header('Content-Type: application/json');
+// {"amount", "miniAppID", "merchantRefID", "orderID", "callBackUrl", "hashValue", "items"}
+echo $payment->toJson();
+```
+
+The page calls `WaveJsSDK.paymentModule.makePayment(payload)` with it after logging in with your server's access token; the SDK's result is not proof of payment. See [Wave Pay Mini App](/php-myanmar-payments/drivers/wave-pay-mini-app) for the whole flow.
+
 ## Handling Any Result
 
 ```php
 use Laranex\PhpMyanmarPayments\Results\AppPayment;
 use Laranex\PhpMyanmarPayments\Results\FormPayment;
+use Laranex\PhpMyanmarPayments\Results\MiniAppPayment;
 use Laranex\PhpMyanmarPayments\Results\PaymentResult;
 use Laranex\PhpMyanmarPayments\Results\QrPayment;
 use Laranex\PhpMyanmarPayments\Results\RedirectPayment;
@@ -189,6 +205,7 @@ function respond(PaymentResult $payment): void
             => print $payment->qrImageDataUri() ?? $payment->qrString,
         $payment instanceof AppPayment
             => print json_encode($payment->toArray()),
+        $payment instanceof MiniAppPayment => print $payment->toJson(),
     };
 }
 ```

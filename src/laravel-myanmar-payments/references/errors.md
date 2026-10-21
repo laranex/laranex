@@ -11,7 +11,7 @@ Every exception extends `Laranex\PhpMyanmarPayments\Exceptions\PaymentException`
 |---|---|
 | `InvalidPaymentDataException` | A request object is built with values the gateway would reject |
 | `ApiException` | A gateway rejects a request, answers with an error (including errors sent with HTTP 200), or cannot be reached |
-| `SignatureVerificationException` | A callback, return redirect or gateway response fails signature verification, including one whose signed values are malformed (an AYA Pay value holding `:`, a CyberSource `signed_field_names` that doesn't sign itself or an unknown `decision`, a Wave Pay amount or ID out of format, or no ID at all) |
+| `SignatureVerificationException` | A callback, return redirect or gateway response fails signature verification, including one whose signed values are malformed (an AYA Pay value holding `:`, a CyberSource `signed_field_names` that doesn't sign itself or an unknown `decision`, a Wave Pay amount or ID out of format or no ID at all, or a Wave Pay Mini App callback with an empty `orderId` or `merchantRefId` or a non-whole `amount`) |
 | `ConfigurationException` | A gateway is used without a setting it needs (URLs, time to live and Yoma's webhook secret included), or a time setting is out of range |
 
 Outside this hierarchy: a callback body over 64 KiB throws an `HttpException` answering `413`, an unknown name passed to `gateway()` or `handleCallback()` throws `InvalidArgumentException`, and AYA Pay's or CyberSource's `initiate()` without `APP_KEY` throws Laravel's `MissingAppKeyException`.

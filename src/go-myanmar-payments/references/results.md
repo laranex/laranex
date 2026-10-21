@@ -1,11 +1,11 @@
 ---
 title: Results
-description: Field reference for RedirectPayment, FormPayment, QrPayment and AppPayment, the result types returned when a payment is started.
+description: Field reference for RedirectPayment, FormPayment, QrPayment, AppPayment and MiniAppPayment, the result types returned when a payment is started.
 ---
 
 # Results
 
-Starting a payment returns a pointer to one of four structs from the root package `myanmarpayments`. Each implements `PaymentResult`, whose `Flow()` method returns a `PaymentFlow`, so a type switch or `Flow()` tells them apart. On error the result is `nil`. Fields a gateway did not provide are `""`.
+Starting a payment returns a pointer to one of five structs from the root package `myanmarpayments`. Each implements `PaymentResult`, whose `Flow()` method returns a `PaymentFlow`, so a type switch or `Flow()` tells them apart. On error the result is `nil`. Fields a gateway did not provide are `""`.
 
 ## RedirectPayment
 
@@ -65,6 +65,23 @@ Returned by `kbz.App()`. It encodes to JSON as `orderId`, `orderInfo`, `sign` an
 | `SignType` | `string` | The signature algorithm, `SHA256` |
 | `Raw` | `map[string]any` | The gateway's response; left out of the JSON encoding |
 
+## MiniAppPayment
+
+Returned by `miniApp.Payment()`. No request is sent: write `JSON()` to your mini app page, which hands it unchanged to `WaveJsSDK.paymentModule.makePayment()`.
+
+| Field / Method | Type | Description |
+|---|---|---|
+| `Flow()` | `PaymentFlow` | `FlowMiniApp` |
+| `OrderID` | `string` | Your order ID (`orderID`) |
+| `Amount` | `Amount` | The signed total, in whole kyat |
+| `MiniAppID` | `string` | The configured mini app ID (`miniAppID`) |
+| `MerchantReferenceID` | `string` | Your ID for this attempt (`merchantRefID`) |
+| `CallbackURL` | `string` | The signed callback URL (`callBackUrl`) |
+| `HashValue` | `string` | The payload's hash (`hashValue`) |
+| `Items` | `[]MiniAppItem` | The line items, each with a `Name` and an `Amount` |
+| `JSON()` | `string` | Exactly the `makePayment` object, compact, in this key order: `amount`, `miniAppID`, `merchantRefID`, `orderID`, `callBackUrl`, `hashValue`, `items` (`name`, `amount`). Amounts are JSON integers with every digit; slashes, `<`, `>`, `&` and non-ASCII characters are not escaped |
+| `MarshalJSON()` | `([]byte, error)` | `JSON()`. `json.Marshal` escapes `<`, `>` and `&` in it; write `JSON()` to keep the exact text |
+
 ## PaymentFlow
 
 A `string` type, so `payment.Flow() == "redirect"` works too.
@@ -75,6 +92,7 @@ A `string` type, so `payment.Flow() == "redirect"` works too.
 | `FlowForm` | `form` | `FormPayment` |
 | `FlowQR` | `qr` | `QrPayment` |
 | `FlowApp` | `app` | `AppPayment` |
+| `FlowMiniApp` | `mini_app` | `MiniAppPayment` |
 
 `Raw` values are decoded JSON: numbers are `json.Number`, never a `float64`. Use `json.Marshal(payment.Raw)` to log them.
 

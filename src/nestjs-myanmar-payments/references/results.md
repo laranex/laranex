@@ -1,11 +1,11 @@
 ---
 title: Results
-description: Property reference for RedirectPayment, FormPayment, QrPayment and AppPayment, the result classes returned when a payment is started.
+description: Property reference for RedirectPayment, FormPayment, QrPayment, AppPayment and MiniAppPayment, the result classes returned when a payment is started.
 ---
 
 # Results
 
-Starting a payment returns one of four classes from `@laranex/myanmar-payments`. Their union is the `PaymentResult` type, and each exposes `flow: PaymentFlow`.
+Starting a payment returns one of five classes from `@laranex/myanmar-payments`. Their union is the `PaymentResult` type, and each exposes `flow: PaymentFlow`.
 
 ## RedirectPayment
 
@@ -61,6 +61,22 @@ Returned by `kbzPay().app()`.
 | `raw` | `Readonly<Record<string, unknown>>` | The gateway's response, for logging |
 | `toJSON()` | `object` | `orderId`, `orderInfo`, `sign`, `signType` for your mobile app |
 
+## MiniAppPayment
+
+Returned by `wavePayMiniApp().payment()`. No request is sent: return it to your mini app page, which hands it unchanged to `WaveJsSDK.paymentModule.makePayment()`.
+
+| Property / Method | Type | Description |
+|---|---|---|
+| `orderId` | `string` | Your order ID (`orderID`) |
+| `amount` | `Amount` | The signed total, in whole kyat |
+| `miniAppId` | `string` | The configured mini app ID (`miniAppID`) |
+| `merchantReferenceId` | `string` | Your ID for this attempt (`merchantRefID`) |
+| `callbackUrl` | `string` | The signed callback URL (`callBackUrl`) |
+| `hashValue` | `string` | The payload's hash (`hashValue`) |
+| `items` | `readonly MiniAppPaymentItem[]` | The line items, `{ name, amount }` with `amount` an `Amount` |
+| `toJSON()` | `object` | Exactly the `makePayment` object: `amount`, `miniAppID`, `merchantRefID`, `orderID`, `callBackUrl`, `hashValue`, `items` (`name`, `amount`), amounts as numbers |
+| `toJsonString()` | `string` | The same object as compact JSON, amounts with every digit |
+
 ## PaymentFlow
 
 | Value | String | Result |
@@ -69,3 +85,4 @@ Returned by `kbzPay().app()`.
 | `PaymentFlow.Form` | `form` | `FormPayment` |
 | `PaymentFlow.Qr` | `qr` | `QrPayment` |
 | `PaymentFlow.App` | `app` | `AppPayment` |
+| `PaymentFlow.MiniApp` | `mini_app` | `MiniAppPayment` |

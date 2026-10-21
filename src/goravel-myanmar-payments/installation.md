@@ -14,7 +14,7 @@ go get github.com/laranex/goravel-myanmar-payments/v4
 ./artisan package:install github.com/laranex/goravel-myanmar-payments/v4
 ```
 
-`package:install` registers `&payments.ServiceProvider{}` in `bootstrap/providers.go`, writes `config/myanmar_payments.go` and appends the gateway variables (`KBZ_PAY_*`, `WAVE_PAY_*`, `AYA_PAY_*`, `YOMA_MMQR_*`, `CYBER_SOURCE_*`) to `.env.example`. `./artisan package:uninstall github.com/laranex/goravel-myanmar-payments/v4` removes the provider and the config file.
+`package:install` registers `&payments.ServiceProvider{}` in `bootstrap/providers.go`, writes `config/myanmar_payments.go` and appends the gateway variables (`KBZ_PAY_*`, `WAVE_PAY_*`, `WAVE_PAY_MINI_APP_*`, `AYA_PAY_*`, `YOMA_MMQR_*`, `CYBER_SOURCE_*`) to `.env.example`. `./artisan package:uninstall github.com/laranex/goravel-myanmar-payments/v4` removes the provider and the config file.
 
 ## Publish the Config
 
@@ -50,7 +50,7 @@ The provider uses whatever is registered and degrades gracefully:
 | Service | Used for | Without it |
 |---|---|---|
 | HTTP client (`&http.ServiceProvider{}`) | Gateway calls, so `Fake()` works in tests | A plain `*http.Client` with the configured timeout |
-| Cache (`&cache.ServiceProvider{}`) | Sharing Yoma MMQR access tokens | The SDK's in-memory cache, per process |
+| Cache (`&cache.ServiceProvider{}`) | Sharing Yoma MMQR and Wave Pay Mini App access tokens | The SDK's in-memory cache, per process |
 | Crypt (`&crypt.ServiceProvider{}`, `APP_KEY`) | Encrypting auto-submit form links | `AutoSubmitURL` returns `payments.ErrCryptNotAvailable` |
 | Route | The auto-submit form route | No route is registered |
 
@@ -59,23 +59,25 @@ The provider uses whatever is registered and degrades gracefully:
 | Name | What it is |
 |---|---|
 | `paymentsfacades.MyanmarPayments()` | The `*payments.Manager` of the registered application. Panics when the provider is not registered |
-| `payments.Manager` | `KbzPay()`, `WavePay()`, `AyaPay()`, `YomaMmqr()`, `CyberSource()`, `Gateway(name)`, `HandleCallback(name, request)`, `HandleCallbackFromContext(name, ctx)`, `AutoSubmitURL(form)`, `ResolveFormPayment(payload)`, `ServeForm(ctx)` |
+| `payments.Manager` | `KbzPay()`, `WavePay()`, `WavePayMiniApp()`, `AyaPay()`, `YomaMmqr()`, `CyberSource()`, `Gateway(name)`, `HandleCallback(name, request)`, `HandleCallbackFromContext(name, ctx)`, `AutoSubmitURL(form)`, `ResolveFormPayment(payload)`, `ServeForm(ctx)` |
 | `payments.CallbackRequestFromContext(ctx)` | Turns a Goravel request into the SDK's `*myanmarpayments.CallbackRequest` |
+| `payments.CallbackURLFromContext(ctx)` | The current request's URL without its query string, which Wave Pay Mini App callbacks are verified against |
 | `payments.Acknowledge(ctx, callback)` | The response the gateway expects after a callback |
 | `payments.AutoSubmitURL(form)` | `Manager.AutoSubmitURL` on the registered application's manager |
-| `payments.GatewayKbzPay`, `GatewayWavePay`, `GatewayAyaPay`, `GatewayYomaMmqr`, `GatewayCyberSource`, `GatewayNames()` | The gateway names `Gateway` and `HandleCallback` accept: `kbz-pay`, `wave-pay`, `aya-pay`, `yoma-mmqr`, `cyber-source` |
+| `payments.GatewayKbzPay`, `GatewayWavePay`, `GatewayWavePayMiniApp`, `GatewayAyaPay`, `GatewayYomaMmqr`, `GatewayCyberSource`, `GatewayNames()` | The gateway names `Gateway` and `HandleCallback` accept: `kbz-pay`, `wave-pay`, `wave-pay-mini-app`, `aya-pay`, `yoma-mmqr`, `cyber-source` |
 | `payments.CallbackHandler` | What `Gateway(name)` returns: anything with `HandleCallback` |
+| `payments.WavePayMiniAppCallbackHandler` | What `Gateway("wave-pay-mini-app")` returns: the SDK `Gateway` and the `CallbackURL` to verify against |
 | `payments.ServiceProvider` | The provider `package:install` registers. It binds the manager, publishes the config and registers the form route |
 | `payments.Registered()`, `payments.Resolve(app)` | The manager with an error instead of a panic |
 | `payments.NewManager(payments.Options{...})` | Builds a manager outside the container. `Options` holds `Config` (required), `HTTPClient` (nil uses the SDK's default client), `TokenCache` (nil uses the SDK's in-memory cache), `Crypt` (nil disables `AutoSubmitURL`) and `Now` (nil uses `time.Now`) |
 | `payments.NewHTTPClient(factory, name, timeout)` | The `myanmarpayments.HTTPDoer` the provider uses: each request goes through the Goravel HTTP client `name` (empty means the default) with `timeout`. A nil factory sends requests with a plain `*http.Client` |
-| `payments.NewTokenCache(store)` | The `myanmarpayments.TokenCache` the provider uses for Yoma MMQR tokens, backed by a Goravel cache store |
-| `payments.ErrUnknownGateway`, `ErrFormRouteDisabled`, `ErrCryptNotAvailable`, `ErrInvalidFormLink`, `ErrCallbackBodyTooLarge` | The package's own errors; see [Errors](/goravel-myanmar-payments/references/errors) |
+| `payments.NewTokenCache(store)` | The `myanmarpayments.TokenCache` the provider uses for Yoma MMQR and Wave Pay Mini App tokens, backed by a Goravel cache store |
+| `payments.ErrUnknownGateway`, `ErrCallbackURLRequired`, `ErrFormRouteDisabled`, `ErrCryptNotAvailable`, `ErrInvalidFormLink`, `ErrCallbackBodyTooLarge` | The package's own errors; see [Errors](/goravel-myanmar-payments/references/errors) |
 | `payments.Binding`, `PackageName`, `ConfigKey`, `FormRouteName` | `laranex.myanmar_payments`, `github.com/laranex/goravel-myanmar-payments/v4`, `myanmar_payments` and `myanmar-payments.form` |
 | `payments.DefaultFormRoutePath` | The form route path without a published config: `myanmar-payments/form` |
 | `payments.MaxCallbackBodyBytes`, `payments.DefaultHTTPTimeoutSeconds` | 64 KiB, the largest callback body `CallbackRequestFromContext` reads; 30, the HTTP timeout when `MYANMAR_PAYMENTS_HTTP_TIMEOUT` is blank |
 
-Payment data, results, `PaymentCallback`, `PaymentStatus`, `Amount` and errors are the SDK's own types, imported from `github.com/laranex/go-myanmar-payments/v4` (as `myanmarpayments`) and its gateway packages `kbzpay`, `wavepay`, `ayapay`, `yomammqr` and `cybersource`.
+Payment data, results, `PaymentCallback`, `PaymentStatus`, `Amount` and errors are the SDK's own types, imported from `github.com/laranex/go-myanmar-payments/v4` (as `myanmarpayments`) and its gateway packages `kbzpay`, `wavepay`, `wavepayminiapp`, `ayapay`, `yomammqr` and `cybersource`.
 
 ## Without Goravel
 

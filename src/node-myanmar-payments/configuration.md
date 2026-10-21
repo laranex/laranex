@@ -5,7 +5,7 @@ description: Configure Node Myanmar Payments with one config class per gateway o
 
 # Configuration
 
-Each gateway has a config class (`KbzPayConfig`, `WavePayConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes an options object. Gateways take the config object or the plain options. Every setting of a gateway you use is required and has no default, except the HTTP timeout (`timeoutSeconds`, 30 seconds by default): that includes the URLs, the time to live (KBZ Pay's `timeToLiveMinutes` and Wave Pay's `timeToLiveSeconds`) and Yoma's webhook secret, and a missing or blank setting throws a `ConfigurationError` naming it:
+Each gateway has a config class (`KbzPayConfig`, `WavePayConfig`, `WavePayMiniAppConfig`, `AyaPayConfig`, `YomaMmqrConfig`, `CyberSourceConfig`) that takes an options object. Gateways take the config object or the plain options. Every setting of a gateway you use is required and has no default, except the HTTP timeout (`timeoutSeconds`, 30 seconds by default): that includes the URLs, the time to live (KBZ Pay's `timeToLiveMinutes` and Wave Pay's `timeToLiveSeconds`) and Yoma's webhook secret, and a missing or blank setting throws a `ConfigurationError` naming it:
 
 ```ts
 import {
@@ -67,6 +67,17 @@ Text settings also take a safe integer (`merchantCode: 200123` becomes `'200123'
 | `timeToLiveSeconds` | `number \| string` | Yes | Seconds the customer has to pay, greater than 0. A payment can override it with `WavePayPaymentData`'s `timeToLiveSeconds` |
 | `timeoutSeconds` | `number \| string` | No | Seconds before the default HTTP client gives up. Default `30` |
 
+### WavePayMiniAppConfig
+
+| Option | Type | Required | Description |
+|---|---|---|---|
+| `clientId` | `string` | Yes | Client ID issued by Wave, for the token endpoint |
+| `clientSecret` | `string` | Yes | Client secret issued by Wave, for the token endpoint |
+| `miniAppId` | `string` | Yes | Your mini app ID (`miniAppID`) |
+| `secretKey` | `string` | Yes | Hash secret key for payment and callback hashes |
+| `baseUrl` | `string` | Yes | The API base URL, e.g. `WavePayMiniAppConfig.PRODUCTION_URL`. Tokens are requested at its `/auth/v1/external-utility/token` |
+| `timeoutSeconds` | `number \| string` | No | Seconds before the default HTTP client gives up. Default `30` |
+
 ### AyaPayConfig
 
 | Option | Type | Required | Description |
@@ -107,6 +118,7 @@ KBZ_PAY_BASE_URL=https://api.kbzpay.com/payment/gateway
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://wap.kbzpay.com/pgw/pwa/#/"
 WAVE_PAY_BASE_URL=https://payments.wavemoney.io
 WAVE_PAY_BASE_REDIRECT_URL=https://payments.wavemoney.io
+WAVE_PAY_MINI_APP_BASE_URL=https://api.wavemoney.io:8100
 AYA_PAY_BASE_URL=https://pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://paymenthubapi.yomabank.com
 CYBER_SOURCE_BASE_URL=https://secureacceptance.cybersource.com
@@ -119,6 +131,7 @@ KBZ_PAY_BASE_URL=http://api-uat.kbzpay.com/payment/gateway/uat
 KBZ_PAY_PWA_BASE_REDIRECT_URL="https://static.kbzpay.com/pgw/uat/pwa/#/"
 WAVE_PAY_BASE_URL=https://preprodpayments.wavemoney.io:8107
 WAVE_PAY_BASE_REDIRECT_URL=https://preprodpayments.wavemoney.io:8107
+WAVE_PAY_MINI_APP_BASE_URL=https://preprodnewapi.wavemoney.io
 AYA_PAY_BASE_URL=https://uat-pgw.ayainnovation.com
 YOMA_MMQR_BASE_URL=https://devapi.yomabank.net
 CYBER_SOURCE_BASE_URL=https://testsecureacceptance.cybersource.com
@@ -170,6 +183,13 @@ WAVE_PAY_BASE_URL=
 WAVE_PAY_BASE_REDIRECT_URL=
 WAVE_PAY_TIME_TO_LIVE_IN_SECONDS=900   # greater than 0
 
+# Wave Pay Mini App
+WAVE_PAY_MINI_APP_CLIENT_ID=
+WAVE_PAY_MINI_APP_CLIENT_SECRET=
+WAVE_PAY_MINI_APP_MINI_APP_ID=
+WAVE_PAY_MINI_APP_SECRET_KEY=
+WAVE_PAY_MINI_APP_BASE_URL=
+
 # AYA Payment Gateway
 AYA_PAY_APP_KEY=
 AYA_PAY_APP_SECRET=
@@ -191,7 +211,7 @@ CYBER_SOURCE_SECRET_KEY=
 CYBER_SOURCE_BASE_URL=
 ```
 
-`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Pay, AYA and Yoma MMQR. The package never reads files itself: load the `.env` file with your framework or with `node --env-file=.env` before `fromEnv()`.
+`MYANMAR_PAYMENTS_HTTP_TIMEOUT` sets `timeout_in_seconds` for KBZ Pay, Wave Pay, Wave Pay Mini App, AYA and Yoma MMQR. The package never reads files itself: load the `.env` file with your framework or with `node --env-file=.env` before `fromEnv()`.
 
 ## One Object for Every Gateway
 
@@ -233,7 +253,7 @@ payments.wavePay();
 const fromEnv = MyanmarPayments.fromEnv(process.env);
 ```
 
-The keys `kbzPay`, `wavePay`, `ayaPay`, `yomaMmqr` and `cyberSource` take the config objects or plain options, and the second argument takes the `fetch`, `httpClient` and `tokenCache` options below, shared by every gateway it builds. Each gateway exposes its config as `gateway.config`.
+The keys `kbzPay`, `wavePay`, `wavePayMiniApp`, `ayaPay`, `yomaMmqr` and `cyberSource` take the config objects or plain options, and the second argument takes the `fetch`, `httpClient` and `tokenCache` options below, shared by every gateway it builds. Each gateway exposes its config as `gateway.config`.
 
 ## HTTP Client
 
@@ -283,7 +303,7 @@ A failed request (network error, timeout, aborted signal) throws an `ApiError` w
 
 ## Token Cache
 
-Yoma MMQR authenticates with an OAuth access token that lasts hours. `YomaMmqr` keeps it in a `TokenCache`, an interface with three methods:
+Yoma MMQR authenticates with an OAuth access token that lasts hours, and Wave Pay Mini App's page logs in with an access token from your server. `YomaMmqr` and `WavePayMiniApp` keep it in a `TokenCache` (their `tokenCache` option), an interface with three methods:
 
 ```ts
 interface TokenCache {
@@ -300,7 +320,7 @@ interface TokenCache {
 }
 ```
 
-Every method may be async. The default is a `MemoryTokenCache`, which lives as long as the process: create one `YomaMmqr` (or one `MyanmarPayments`) at startup and share it across requests; `clear()` empties it. When you run several processes, implement the interface on top of Redis:
+Every method may be async. The default is a `MemoryTokenCache`, which lives as long as the process: create one `YomaMmqr` or `WavePayMiniApp` (or one `MyanmarPayments`) at startup and share it across requests; `clear()` empties it. When you run several processes, implement the interface on top of Redis:
 
 ```ts
 import { createClient } from 'redis';
@@ -320,4 +340,4 @@ const tokenCache: TokenCache = {
 const yoma = YomaMmqr.fromEnv(process.env, { tokenCache });
 ```
 
-Pass `tokenCache` to `MyanmarPayments` to share one cache with the Yoma gateway it builds. The token is stored under `myanmar-payments.yoma-mmqr.token.<sha256 of baseUrl|clientId>`, the same key in every Laranex SDK, so services written in different languages can share one cache.
+Pass `tokenCache` to `MyanmarPayments` to share one cache with the Yoma MMQR and Wave Pay Mini App gateways it builds. The token is stored under `myanmar-payments.yoma-mmqr.token.<sha256 of baseUrl|clientId>` (Wave Pay Mini App: `myanmar-payments.wave-pay-mini-app.token.<sha256 of baseUrl|clientId>`), the same key in every Laranex SDK, so services written in different languages can share one cache.
