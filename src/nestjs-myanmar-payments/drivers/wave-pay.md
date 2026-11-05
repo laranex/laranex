@@ -95,13 +95,15 @@ export class WavePayCheckoutController {
 | `timeToLiveSeconds` | `number` | No | Seconds the customer has to pay this payment, a whole number greater than 0. Unset or `null` uses `WAVE_PAY_TIME_TO_LIVE_IN_SECONDS` (`wavePay.timeToLiveSeconds`) |
 | `additionalField3`, `additionalField4`, `additionalField5` | `string` | No | Extra information, at most 50 characters each, sent as `additional_field_3`–`5` and echoed in the callback's `additionalField3`–`5`. Unset, `null` or empty is not sent |
 
-Length limits count UTF-8 bytes. `WavePayItem` takes a `name` and an `amount` (`AmountInput`) in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats.
+Length limits count characters, not bytes. `WavePayItem` takes a `name` and an `amount` (`AmountInput`) in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats.
 
 ### Merchant Reference ID
 
-Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: it identifies the attempt, and the callback carries it as `merchantReferenceId`. `initiate()` fills it in, so read it from `data.merchantReferenceId` afterwards.
+Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: the callback's `merchantReferenceId` tells you which attempt was paid. `initiate()` fills it in, so read it from `data.merchantReferenceId` afterwards.
 
 ## Handling Callbacks
+
+Wave requires callback URLs on HTTPS, with a certificate from a recognized certificate authority (not self-signed), on the standard port 443. The package doesn't check this, so make sure your production callback URL meets it.
 
 ```ts
 import { PaymentCallback } from '@laranex/myanmar-payments';
@@ -131,6 +133,8 @@ export class WavePayCallbackController {
 
 `callback.orderId` falls back to `merchantReferenceId` when Wave's `orderId` is missing, null or empty.
 
+Wave's specification spells the time-to-live field two ways: its callback example sends `timeToLiveSeconds`, its field table and hash formula `timeToLiveInSeconds`. The callback hash uses whichever one arrives (`timeToLiveSeconds` when both do), and the raw body keeps the key Wave sent.
+
 ## Responses
 
 What Wave Pay puts in each property. See [Results](/nestjs-myanmar-payments/references/results) and [PaymentCallback & Status](/nestjs-myanmar-payments/references/payment-callback) for the full classes. `raw` holds plain JavaScript values, with JSON numbers kept as their exact text in a `string` (`1000.50` stays `'1000.50'`).
@@ -154,7 +158,7 @@ What Wave Pay puts in each property. See [Results](/nestjs-myanmar-payments/refe
 | `gatewayStatus` | Wave `status`, trimmed, e.g. `PAYMENT_CONFIRMED` |
 | `gatewayReference` | Wave `transactionId` |
 | `amount` | Wave `amount`, e.g. `10000` |
-| `raw` | The verified body: `status`, `merchantId`, `orderId`, `merchantReferenceId`, `frontendResultUrl`, `backendResultUrl`, `initiatorMsisdn`, `amount`, `timeToLiveSeconds`, `paymentDescription`, `currency`, `additionalField1`–`5`, `transactionId`, `paymentRequestId`, `requestTime`, `hashValue` |
+| `raw` | The verified body: `status`, `merchantId`, `orderId`, `merchantReferenceId`, `frontendResultUrl`, `backendResultUrl`, `initiatorMsisdn`, `amount`, `timeToLiveSeconds` (or `timeToLiveInSeconds`), `paymentDescription`, `currency`, `additionalField1`–`5`, `transactionId`, `paymentRequestId`, `requestTime`, `hashValue` |
 | `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
 ## Statuses
@@ -165,8 +169,8 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 |---|---|
 | `PAYMENT_CONFIRMED` | `Successful` |
 | `BILL_COLLECTION_FAILED`, `INSUFFICIENT_BALANCE`, `ACCOUNT_LOCKED` | `Failed` |
-| `PAYMENT_REQUEST_CANCELLED` | `Canceled` |
-| `TRANSACTION_TIMED_OUT`, `SCHEDULER_TRANSACTION_TIMED_OUT` | `Expired` |
+| `PAYMENT_REQUEST_CANCELLED` (not in V1.3) | `Canceled` |
+| `TRANSACTION_TIMED_OUT` (not in V1.3), `SCHEDULER_TRANSACTION_TIMED_OUT` | `Expired` |
 | anything else | `Unknown` |
 
 `SCHEDULER_TRANSACTION_TIMED_OUT` arrives up to 15 minutes after the time-to-live ends.

@@ -151,12 +151,12 @@ if callback.IsSuccessful() {
 callback.Acknowledgement.Write(w)
 ```
 
-AYA signs only the fields present in its payload (wallet payments leave out the card fields); the package verifies them in the order the specification lists.
+AYA signs only the fields present in its payload: fields AYA leaves out are skipped when verifying, and the rest are verified in the order the specification lists.
 
 Because AYA joins the signed values with `:`, a matching `checkSum` alone could let a value be re-split into other fields. A payload is therefore only accepted when, besides the checksum:
 
 - no signed value contains `:`, except `dateTime`, which must be empty or have the form `YYYY-MM-DD HH:MM:SS`;
-- `merchOrderId` and `tranId` are present;
+- `merchOrderId` is present, and so is `tranId` when `statusCode` is `00` (a failed, rejected or pending payload may leave it out);
 - `amount` is a decimal, e.g. `10000` or `10000.00`;
 - the currency code is `104` (MMK);
 - `statusCode` is two digits.
@@ -267,11 +267,11 @@ Entries AYA sends without a `key` are skipped.
 | `OrderID` | AYA `merchOrderId`. Always set: an enquiry payload without it fails verification |
 | `Status` | `statusCode` mapped, see [Statuses](#statuses) |
 | `GatewayStatus` | AYA `statusCode`, always two digits, e.g. `00` |
-| `GatewayReference` | AYA `tranId` |
+| `GatewayReference` | AYA `tranId`. Always set when `statusCode` is `00`; `""` when a payload with another status leaves it out |
 | `Amount` | AYA `amount`, e.g. `10000` |
-| `Raw` | The verified, decoded enquiry payload: `merchOrderId`, `tranId`, `amount`, `currencyCode`, `statusCode`, `paymentCardNumber`, `paymentMobileNumber`, `cardTypeName`, `cardExpiryDate`, `nameOnCard`, `approvalCode`, `tranRef`, `userRef1`–`5`, `description`, `dateTime` |
+| `Raw` | The verified, decoded enquiry payload: `merchOrderId`, `tranId`, `amount`, `currenyCode`, `statusCode`, `paymentCardNumber`, `paymentMobileNumber`, `cardTypeName`, `cardExpiryDate`, `nameOnCard`, `approvalCode`, `tranRef`, `userRef1`–`5`, `description`, `dateTime` |
 
-AYA leaves out the fields that don't apply (wallet payments have no card fields), so `Raw` only has the keys AYA sent. Some payloads spell `currencyCode` as `currenyCode`.
+`Raw` only has the keys AYA sent. The currency code arrives as `currenyCode`: AYA's payload spells it that way.
 
 ### `HandleCallback()` → `*myanmarpayments.PaymentCallback` {#handlecallback-response}
 
@@ -280,7 +280,7 @@ AYA leaves out the fields that don't apply (wallet payments have no card fields)
 | `OrderID` | AYA `merchOrderId` (your `OrderID`) |
 | `Status` | `statusCode` mapped, see [Statuses](#statuses) |
 | `GatewayStatus` | AYA `statusCode`, always two digits, e.g. `00` |
-| `GatewayReference` | AYA `tranId` |
+| `GatewayReference` | AYA `tranId`. Always set when `statusCode` is `00`; `""` when a payload with another status leaves it out |
 | `Amount` | AYA `amount`, e.g. `10000` |
 | `Raw` | The verified, decoded payload, with the same keys as `Status()` |
 | `Acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |

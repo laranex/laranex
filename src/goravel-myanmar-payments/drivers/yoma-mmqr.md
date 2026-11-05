@@ -88,9 +88,11 @@ func (r *CheckoutController) Yoma(ctx http.Context) http.Response {
 | `Amount` | `myanmarpayments.Amount` | Yes | Whole kyat, greater than 0, e.g. `Kyat(10000)`. Yoma documents no decimals or currency |
 | `Description` | `string` | Yes | At most 50 characters |
 
+Length limits count characters, not bytes.
+
 ### QR Image
 
-`QRImage` is an already rendered base64 PNG of the payment slip: display it as is, no QR library needed. Wrap the data URI in `template.URL`, or `html/template` replaces it with `#ZgotmplZ`.
+`QRImage` is an already rendered base64 QR image: display it as is, no QR library needed. Wrap the data URI in `template.URL`, or `html/template` replaces it with `#ZgotmplZ`.
 
 ## Handling Callbacks
 
@@ -120,7 +122,7 @@ facades.Route().Post("/payments/yoma/callback", func(
 })
 ```
 
-The callback URL is registered with Yoma, not sent per order. Every callback must carry the required `YOMA_MMQR_WEBHOOK_SECRET` in the `X-Webhook-Secret` header, compared in constant time; a missing or wrong header fails verification. The hash is checked with HMAC-SHA256 keyed with your order number plus `YOMA_MMQR_WEBHOOK_HASHKEY`.
+The callback URL is registered with Yoma, not sent per order. Every callback must carry the required `YOMA_MMQR_WEBHOOK_SECRET` in the `X-Webhook-Secret` header, compared in constant time; a missing or wrong header fails verification. The hash is checked with HMAC-SHA256 keyed with your order number plus `YOMA_MMQR_WEBHOOK_HASHKEY`. Yoma's specification only says the payload is hashed with that key; HMAC-SHA256 is inferred from its description and its 64-hex-digit sample.
 
 ::: warning Callbacks carry no amount
 Yoma signs only `orderNumber` and `status`, and the callback has no amount (`callback.Amount` is empty). Before fulfilling, confirm the payment with `yoma.Status(ctx, reference)`, using the `Reference` of the QR you created for the order's stored amount, rather than trusting the callback alone.
@@ -170,11 +172,11 @@ What Yoma MMQR puts in each field. See [Results](/goravel-myanmar-payments/refer
 |---|---|
 | `OrderID` | Your `OrderID` (Yoma `orderNumber`) |
 | `QRString` | Always empty |
-| `QRImage` | Yoma `qrString`, a base64 PNG of the payment slip. Always set |
+| `QRImage` | Yoma `qrString`, a base64 QR image. Always set |
 | `ExpiresAt` | Now + 120 seconds (`yomammqr.QRLifetime`). Always set |
 | `Reference` | Yoma `refLabel`, e.g. `100000083331`. Pass it to `Status()`. Always set |
 | `Raw` | The `qr/generate` response: `refLabel`, `qrString`, `errorCode` (`null`), `errorDescription` |
-| `QRImageDataURI("")` | `data:image/png;base64,…` |
+| `QRImageDataURI("")` | `data:image/png;base64,…`. Yoma doesn't name the image format; PNG is the usual one |
 
 `Initiate()` checks the order out (`payment/checkout`), then generates its first QR; the result comes from the generate call.
 
@@ -231,4 +233,19 @@ The token is cached for Yoma's `expires_in` minus 60 seconds (at least 60 second
 | `Status()` | `*APIError` | The token request fails, or Yoma answers with an HTTP error or any `errorCode` other than `QR EXPIRED` |
 | `HandleCallback()` | `*SignatureVerificationError` | `X-Webhook-Secret` is missing or wrong, `orderNumber` is missing, `orderNumber` or `status` holds an object or array, or `hashValue` doesn't match |
 
-Yoma reports business errors with HTTP 200 and an `errorCode`; `*APIError` carries it in `GatewayCode` and Yoma's `errorDescription` in `GatewayMessage`.
+Yoma reports business errors with HTTP 200 and an `errorCode`; `*APIError` carries it in `GatewayCode` (an empty `errorCode` counts as none) and Yoma's `errorDescription` (or `error_description`) in `GatewayMessage`.
+
+### Error Codes
+
+Yoma's specification lists these `errorCode` values. Its error table gives HTTP 200 for the business codes, `401` for `UNAUTHORIZED` and `400` for `VALIDATION ERROR`; `PAYMENT ALREADY EXISTS` and `QR EXPIRED` appear only in the endpoint descriptions.
+
+| `errorCode` | Yoma's description | What it means for your app |
+|---|---|---|
+| `PAYMENT ALREADY EXISTS` | Listed for checkout, without a description | The order number was already checked out. Never call `Initiate()` twice for one order: call `RenewQR()` |
+| `PAYMENT ALREADY DONE` | Payment already processed for this order | The order may already be paid: confirm against your records before charging again or fulfilling |
+| `PAYMENT ALREADY PROCESSED` | Duplicate processing detected | As above: confirm against your records |
+| `MERCHANT NOT FOUND` | Merchant is invalid or inactive | Check the merchant ID and that your Yoma account is active |
+| `PAYMENT NOT FOUND` | Order or refLabel not found | Yoma doesn't know the order number or reference: check you passed the stored `refLabel` |
+| `QR EXPIRED` | Qr has been expired. | `Status()` reports the QR as expired instead of an error; renew the QR to keep collecting the payment |
+| `UNAUTHORIZED` | Missing or invalid token | The token is refetched once; if it persists, check the client ID and secret |
+| `VALIDATION ERROR` | One or more fields are invalid | A request field broke Yoma's rules; Yoma's `errorDescription` says which |

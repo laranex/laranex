@@ -75,13 +75,15 @@ return redirect()->away($payment->url);
 | `timeToLiveSeconds` | `?int` | No | Seconds the customer has to pay this payment, greater than 0. Overrides `WAVE_PAY_TIME_TO_LIVE_IN_SECONDS` for this payment, in the request hash too; `null` uses it |
 | `additionalField3`, `additionalField4`, `additionalField5` | `?string` | No | Extra information, at most 50 characters each, sent as `additional_field_3`–`5` and echoed in the callback's `additionalField3`–`5`. `null` or empty is not sent |
 
-Length limits count UTF-8 bytes. `WavePayItem` takes a `name` and an `amount` (`Amount|int`) in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats.
+Length limits count characters, not bytes. `WavePayItem` takes a `name` and an `amount` (`Amount|int`) in whole kyat, greater than 0. The items are summed with exact integer arithmetic, never floats.
 
 ### Merchant Reference ID
 
-Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it** from `$data->merchantReferenceId`: `orderId` is shared by every attempt of the order, while the callback's `merchantReferenceId` names the attempt that was paid.
+Wave rejects a reused `merchant_reference_id` (`409 Record already exists`), so every attempt, including a retry of the same order, needs a new one. Leave it empty to get a fresh random ID, and **store it**: the callback's `merchantReferenceId` tells you which attempt was paid. Read it from `$data->merchantReferenceId`.
 
 ## Handling Callbacks
+
+Wave requires callback URLs on HTTPS, with a certificate from a recognized certificate authority (not self-signed), on the standard port 443. The package doesn't check this, so make sure your production callback URL meets it.
 
 ```php
 use Illuminate\Http\Request;
@@ -108,6 +110,8 @@ Route::post('/payments/wave/callback', function (Request $request) {
 
 Wave hashes the values joined with no separator, so a matching `hashValue` alone doesn't pin down where one value ends and the next begins. After the hash matches, `amount` must be a non-negative decimal (e.g. `10000` or `10000.00`), at least one of `orderId` and `merchantReferenceId` must be sent, and each, when sent, may only hold letters, digits, `_` and `-`; otherwise `handleCallback()` throws `SignatureVerificationException`. New payments are held to the same ID rules, so every callback for a payment made with this package passes them.
 
+Wave's specification spells the time-to-live field two ways: its callback example sends `timeToLiveSeconds`, its field table and hash formula `timeToLiveInSeconds`. The callback hash uses whichever one arrives (`timeToLiveSeconds` when both do), and the raw body keeps the key Wave sent.
+
 ## Responses
 
 What Wave Pay puts in each property. See [Results](/laravel-myanmar-payments/references/results) and [PaymentCallback & Status](/laravel-myanmar-payments/references/payment-callback) for the full classes.
@@ -132,7 +136,7 @@ The attempt's `merchantReferenceId` is not on the result: read it from `$data->m
 | `gatewayStatus` | Wave `status`, trimmed, e.g. `PAYMENT_CONFIRMED` |
 | `gatewayReference` | Wave `transactionId` |
 | `amount` | Wave `amount`, e.g. `10000` |
-| `raw` | The verified body: `status`, `merchantId`, `orderId`, `merchantReferenceId`, `frontendResultUrl`, `backendResultUrl`, `initiatorMsisdn`, `amount`, `timeToLiveSeconds`, `paymentDescription`, `currency`, `additionalField1`–`5`, `transactionId`, `paymentRequestId`, `requestTime`, `hashValue` |
+| `raw` | The verified body: `status`, `merchantId`, `orderId`, `merchantReferenceId`, `frontendResultUrl`, `backendResultUrl`, `initiatorMsisdn`, `amount`, `timeToLiveSeconds` (or `timeToLiveInSeconds`), `paymentDescription`, `currency`, `additionalField1`–`5`, `transactionId`, `paymentRequestId`, `requestTime`, `hashValue` |
 | `acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
 ## Statuses
@@ -143,8 +147,8 @@ Only `PAYMENT_CONFIRMED` means the customer paid.
 |---|---|
 | `PAYMENT_CONFIRMED` | `Successful` |
 | `BILL_COLLECTION_FAILED`, `INSUFFICIENT_BALANCE`, `ACCOUNT_LOCKED` | `Failed` |
-| `PAYMENT_REQUEST_CANCELLED` | `Canceled` |
-| `TRANSACTION_TIMED_OUT`, `SCHEDULER_TRANSACTION_TIMED_OUT` | `Expired` |
+| `PAYMENT_REQUEST_CANCELLED` (not in V1.3) | `Canceled` |
+| `TRANSACTION_TIMED_OUT` (not in V1.3), `SCHEDULER_TRANSACTION_TIMED_OUT` | `Expired` |
 | anything else | `Unknown` |
 
 `SCHEDULER_TRANSACTION_TIMED_OUT` arrives up to 15 minutes after the time-to-live ends.

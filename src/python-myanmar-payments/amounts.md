@@ -64,7 +64,7 @@ Each gateway checks the amount against its official documentation when you start
 | Yoma MMQR | No | Greater than 0 |
 | CyberSource | Any | 0 or more, at most 15 characters, any ISO 4217 currency |
 
-A violation raises `InvalidPaymentDataError`, e.g. `Wave Pay does not accept decimal amounts; the amount field must be a whole number.`
+A violation raises `InvalidPaymentDataError`, e.g. `Wave Pay does not accept decimal amounts; the amount field must be a whole number.` AYA Payment Gateway, whose documentation shows no decimal amounts, reports `AYA Payment Gateway documents no decimal amounts; the amount field must be a whole number.`
 
 ## Storing Amounts
 

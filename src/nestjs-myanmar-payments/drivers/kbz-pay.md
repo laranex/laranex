@@ -143,6 +143,8 @@ export class KbzPayCallbackController {
 
 KBZ requires an HTTP 200 with the plain-text body `success`, answered within about 10 seconds. Otherwise it retries after 60 and 600 seconds; when no callback arrives, [query the order](#status-checks).
 
+KBZ also asks you to check that the notification's `total_amount` matches the order in your system: compare the callback's amount with your stored order total before fulfilling.
+
 ## Status Checks
 
 ```ts
@@ -201,9 +203,9 @@ What KBZ Pay puts in each property. See [Results](/nestjs-myanmar-payments/refer
 | `orderId` | KBZ `merch_order_id`, falling back to the `orderId` you passed. Always set |
 | `status` | `trade_status` mapped, see [Statuses](#statuses) |
 | `gatewayStatus` | KBZ `trade_status`, trimmed, e.g. `PAY_SUCCESS` |
-| `gatewayReference` | KBZ `mm_order_id`. `undefined` until KBZ has created the payment |
+| `gatewayReference` | KBZ `mm_order_id`, set only when `trade_status` is `PAY_SUCCESS`; `undefined` otherwise |
 | `amount` | KBZ `total_amount`, e.g. `10000` |
-| `raw` | The `queryorder` response: `result`, `code`, `msg`, `merch_order_id`, `mm_order_id`, `total_amount`, `trans_currency`, `trade_status`, `trans_end_time`, `nonce_str`, `sign_type`, `sign` |
+| `raw` | The `queryorder` response: `result`, `code`, `msg`, `merch_order_id`, `mm_order_id`, `total_amount`, `trans_currency`, `trade_status`, `pay_success_time`, `refund_info`, `nonce_str`, `sign_type`, `sign` |
 
 ### `handleCallback()` → `PaymentCallback` {#handlecallback-response}
 
@@ -230,7 +232,7 @@ What KBZ Pay puts in each property. See [Results](/nestjs-myanmar-payments/refer
 
 ## Signing
 
-KBZ signs requests, the in-app `orderInfo` and notifications the same way: every non-empty field except `sign` and `sign_type`, sorted by key, joined as raw `key=value` pairs, with `&key=<app key>` appended, hashed with SHA-256 and uppercased. The package signs every request and verifies every notification for you. The SDK exposes the signer as `kbzPay().signer` (a `KbzPaySigner`) for custom calls and test fixtures.
+KBZ signs requests, the in-app `orderInfo` and notifications the same way: every non-empty field except `sign` and `sign_type`, sorted by key, joined as raw `key=value` pairs, with `&key=<app key>` appended, hashed with SHA-256 and uppercased. The package signs every request and verifies every notification for you. The SDK exposes the signer as `kbzPay().signer` (a `KbzPaySigner`) for custom calls and test fixtures. Whitespace around a received `sign` is ignored, as KBZ's own examples show padded values.
 
 ## Errors
 

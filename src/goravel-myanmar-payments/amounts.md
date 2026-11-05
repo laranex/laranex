@@ -53,6 +53,6 @@ Each gateway checks the amount against its official documentation before any req
 | Yoma MMQR | No | Greater than 0 |
 | CyberSource | Any | 0 or more, at most 15 characters, any ISO 4217 currency |
 
-A violation returns an `*InvalidPaymentDataError`, e.g. `Wave Pay does not accept decimal amounts; the amount field must be a whole number.`
+A violation returns an `*InvalidPaymentDataError`, e.g. `Wave Pay does not accept decimal amounts; the amount field must be a whole number.` AYA Payment Gateway, whose documentation shows no decimal amounts, reports `AYA Payment Gateway documents no decimal amounts; the amount field must be a whole number.`
 
 Amounts reported back by gateways (`PaymentCallback.Amount`, `PaymentStatusResult.Amount`) stay plain strings: they are the raw values the gateway sent. Compare them with your order before fulfilling.

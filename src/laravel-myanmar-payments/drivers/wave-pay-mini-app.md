@@ -125,7 +125,13 @@ Amounts are JSON integers. `hashValue` is the lowercase hex HMAC-SHA256, keyed w
 
 ### On the Page
 
-Load Wave's SDK as Wave's guide shows, then pass the payload from your app unchanged. Never compute the token or the hash in the browser.
+Load Wave's SDK with this script tag, then pass the payload from your app unchanged. Never compute the token or the hash in the browser.
+
+```html
+<script src="https://sdk.wavemoney.com.mm/js/jssdk/1.0.0.min.js" integrity="sha256-5Rs6crfDhIbuYzkMXj3uRGTQ3z6XMGulYcDRhypCSd8=" crossorigin="anonymous"></script>
+```
+
+This `integrity` hash is the one in the installation section of Wave's guide; the hash in its Quick Start (`sha256-/lINQ…`) is stale.
 
 ```js
 const sdk = new WaveJsSDK({ appName: 'My Shop', appIconUrl: 'https://shop.test/icon.png' })
@@ -138,7 +144,30 @@ const payload = await (await fetch('/mini-app/orders/1/pay', { method: 'POST' })
 const result = await window.WaveJsSDK.paymentModule.makePayment(payload)
 ```
 
-`makePayment`'s result only tells the page how the payment screen ended; fulfill from the verified callback.
+`sdk.init()` only works inside the WavePay app; in a normal browser it throws.
+
+`makePayment`'s success result, `{ response: { data: { amount, transactionID, transactionDate } } }`, only tells the page how the payment screen ended. It is not proof of payment: fulfill from the verified callback.
+
+### SDK Errors
+
+A failed SDK call answers with `{ response: { error: { code, message } } }`. Show Wave's `message` to the customer as-is: Wave writes it for the user.
+
+| Error | `code` |
+|---|---|
+| PermissionDenied | `WM-PERMISSION-001` |
+| PermissionDeniedForever | `WM-PERMISSION-002` |
+| ServiceDisable | `WM-PERMISSION-003` |
+| Unknown | `WM-OTHER-001` |
+| NotFound | `WM-OTHER-002` |
+| Canceled | `WM-OTHER-003` |
+| Unsupported | `WM-OTHER-004` |
+| ExceedSize | `WM-OTHER-005` |
+| InvalidRequest | `WM-OTHER-006` |
+| CapabilityDenied | `WM-AUTH-001` |
+| TokenExpired | `WM-AUTH-002` |
+| InvalidToken | `WM-AUTH-003` |
+
+On `WM-AUTH-002` (TokenExpired) or `WM-AUTH-003` (InvalidToken), call `wavePayMiniApp()->forgetToken()` on your server, fetch a new token and log in again.
 
 ### Merchant Reference ID
 
@@ -146,7 +175,7 @@ Give every attempt, including a retry of the same order, a new `merchantReferenc
 
 ## Handling Callbacks
 
-The callback carries neither the mini app ID nor the callback URL. `handleCallback($request)`, and `MyanmarPayments::handleCallback('wave-pay-mini-app', $request)`, verify it against the request's own URL (`$request->url()`: scheme, host and path, no query string), which is the callback URL the payment was signed with. The mini app ID comes from the configuration.
+The callback carries neither the mini app ID nor the callback URL. `handleCallback($request)`, and `MyanmarPayments::handleCallback('wave-pay-mini-app', $request)`, verify it against the request's own URL (`$request->url()`: scheme, host and path, no query string), which is the callback URL the payment was signed with. `$request->url()` drops a trailing `/`, so build the payment's `callbackUrl` with the same `route()` or `url()` helper, which drops it too. The mini app ID comes from the configuration.
 
 ```php
 use Illuminate\Http\Request;

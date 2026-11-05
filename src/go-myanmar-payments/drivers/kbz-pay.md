@@ -141,6 +141,8 @@ callback.Acknowledgement.Write(w) // plain-text "success"
 
 KBZ requires an HTTP 200 with the plain-text body `success`, answered within about 10 seconds. Otherwise it retries after 60 and 600 seconds; when no callback arrives, [query the order](#status-checks).
 
+KBZ also asks you to check that the notification's `total_amount` matches the order in your system: compare the callback's amount with your stored order total before fulfilling.
+
 ## Status Checks
 
 ```go
@@ -203,9 +205,9 @@ What KBZ Pay puts in each field. See [Results](/go-myanmar-payments/references/r
 | `OrderID` | KBZ `merch_order_id`, falling back to the `orderID` you passed. Always set |
 | `Status` | `trade_status` mapped, see [Statuses](#statuses) |
 | `GatewayStatus` | KBZ `trade_status`, trimmed, e.g. `PAY_SUCCESS` |
-| `GatewayReference` | KBZ `mm_order_id`. `""` until KBZ has created the payment |
+| `GatewayReference` | KBZ `mm_order_id`, set only when `trade_status` is `PAY_SUCCESS`; `""` otherwise |
 | `Amount` | KBZ `total_amount`, e.g. `10000` |
-| `Raw` | The `queryorder` response: `result`, `code`, `msg`, `merch_order_id`, `mm_order_id`, `total_amount`, `trans_currency`, `trade_status`, `trans_end_time`, `nonce_str`, `sign_type`, `sign` |
+| `Raw` | The `queryorder` response: `result`, `code`, `msg`, `merch_order_id`, `mm_order_id`, `total_amount`, `trans_currency`, `trade_status`, `pay_success_time`, `refund_info`, `nonce_str`, `sign_type`, `sign` |
 
 ### `HandleCallback()` → `*myanmarpayments.PaymentCallback` {#handlecallback-response}
 
@@ -232,7 +234,7 @@ What KBZ Pay puts in each field. See [Results](/go-myanmar-payments/references/r
 
 ## Signing
 
-KBZ signs requests, the in-app `orderInfo` and notifications the same way: every non-empty field except `sign` and `sign_type`, sorted by key, joined as raw `key=value` pairs, with `&key=<app key>` appended, hashed with SHA-256 and uppercased. The package signs every request and verifies every notification for you; `kbz.Signer()` (a `kbzpay.Signer`; build one with `kbzpay.NewSigner(appKey)`) exposes the same signature for custom calls: `SignString(fields)`, `Sign(fields)` and `Verify(fields)`.
+KBZ signs requests, the in-app `orderInfo` and notifications the same way: every non-empty field except `sign` and `sign_type`, sorted by key, joined as raw `key=value` pairs, with `&key=<app key>` appended, hashed with SHA-256 and uppercased. The package signs every request and verifies every notification for you; `kbz.Signer()` (a `kbzpay.Signer`; build one with `kbzpay.NewSigner(appKey)`) exposes the same signature for custom calls: `SignString(fields)`, `Sign(fields)` and `Verify(fields)`. Whitespace around a received `sign` is ignored, as KBZ's own examples show padded values.
 
 ## Errors
 
