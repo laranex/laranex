@@ -21,7 +21,7 @@ Returned by `kbz.pwa()` and `wave.initiate()`.
 
 ## FormPayment
 
-Returned by `aya.initiate()` and `cs.initiate()`.
+Returned by `aya.initiate()` and `cs.hosted_checkout()`.
 
 | Field / Method | Type | Description |
 |---|---|---|

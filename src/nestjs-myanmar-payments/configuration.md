@@ -240,7 +240,7 @@ AYA Pay and CyberSource need the customer's browser to POST a signed form. The m
 | `formLink.ttlMinutes` | Minutes a link stays valid. Defaults to `MYANMAR_PAYMENTS_FORM_TTL_MINUTES`; required, no default. Without it `autoSubmitUrl()` throws `The form_route configuration is missing [ttl_minutes].`, and the invalid-value message for a value that is not a whole number greater than 0 |
 | `formLink.baseUrl` | The scheme and host links start with. Defaults to `APP_URL`, then `http://localhost`, so links are always absolute |
 
-`ayaPay().initiate()` and `cyberSource().initiate()` never need the route or the TTL: with the route disabled or the TTL missing they still return the `FormPayment`, and only `autoSubmitUrl()` throws. Set `formRoute.enabled` to `false` to drop the route and build the form yourself, see [Form Payments](/nestjs-myanmar-payments/payment-flows#form-payments).
+`ayaPay().initiate()` and `cyberSource().hostedCheckout()` never need the route or the TTL: with the route disabled or the TTL missing they still return the `FormPayment`, and only `autoSubmitUrl()` throws. Set `formRoute.enabled` to `false` to drop the route and build the form yourself, see [Form Payments](/nestjs-myanmar-payments/payment-flows#form-payments).
 
 ## Cache
 

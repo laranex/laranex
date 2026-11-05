@@ -147,7 +147,7 @@ Each gateway page lists its exact mapping.
 
 ## Status Checks
 
-When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Pay, Wave Pay Mini App and CyberSource have no status API.
+When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Pay, Wave Pay Mini App and CyberSource have no status API in this package.
 
 <SequenceDiagram
   title="Checking the status when the callback is late"
@@ -170,7 +170,7 @@ Status checks return a `*myanmarpayments.PaymentStatusResult` with the same `Sta
 | Yoma MMQR | `yoma.Status(ctx, payment.Reference)` |
 | Wave Pay | No status API: rely on the callback |
 | Wave Pay Mini App | No status API: rely on the callback |
-| CyberSource | No status API: rely on the callback |
+| CyberSource | No status API in this package: rely on the callback |
 
 ```go
 result, err := kbz.Status(ctx, "ORDER_1")

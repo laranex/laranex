@@ -1,15 +1,15 @@
 ---
 title: CyberSource
-description: Integrate CyberSource Secure Acceptance card payments in Go. Signed hosted checkout form and verified callbacks.
+description: Integrate CyberSource Secure Acceptance Hosted Checkout card payments in Go. Signed hosted checkout form and verified callbacks.
 ---
 
 # CyberSource
 
-CyberSource Secure Acceptance is a hosted checkout for card payments, in MMK or any other currency.
+CyberSource Secure Acceptance Hosted Checkout is a hosted page for card payments, in the currencies enabled on your Secure Acceptance profile (all are disabled by default; your merchant account provider lists the supported ones). The package follows CyberSource's [Secure Acceptance Hosted Checkout guide](https://developer.cybersource.com/docs/cybs/en-us/sa/developer/all/sa-hosted/secure-acceptance.html).
 
 | Call | What it does | Returns |
 |---|---|---|
-| `cs.Initiate(data)` | Signed form posted to the hosted checkout | [`*FormPayment`](#initiate-response) |
+| `cs.HostedCheckout(data)` | Signed form posted to the hosted checkout | [`*FormPayment`](#hosted-checkout-response) |
 | `cs.HandleCallback(request)` | Verify the result post | [`*PaymentCallback`](#handlecallback-response) |
 
 CyberSource has no status API in this package: the callback is the only payment result.
@@ -18,24 +18,24 @@ CyberSource has no status API in this package: the callback is the only payment 
 
 ## How it works
 
-CyberSource posts the result twice, to your backoffice URL and through the browser to your receipt page, and both are verified the same way.
+CyberSource posts the result to your Merchant POST URL (`CallbackURL`). When a receipt page is set (`ReturnURL`, or the custom receipt page on your Secure Acceptance profile), the customer's browser also posts the result there, so you get two posts, both verified the same way. Without a receipt page there is one post, to the Merchant POST URL.
 
 <SequenceDiagram
-  title="CyberSource: signed form, hosted checkout, two result posts"
+  title="CyberSource Hosted Checkout: signed form, card page, result posts"
   :participants="['Customer', 'Your app', 'CyberSource']"
   :steps="[
     { from: 'Customer', to: 'Your app', label: 'Check out' },
-    { from: 'Your app', to: 'Customer', label: 'Signed form, auto-submits', detail: 'cs.Initiate(data)', response: true },
+    { from: 'Your app', to: 'Customer', label: 'Signed form, auto-submits', detail: 'cs.HostedCheckout(data)', response: true },
     { from: 'Customer', to: 'CyberSource', label: 'Post to the hosted checkout', detail: 'POST /pay, then the card form' },
     { from: 'CyberSource', to: 'Your app', label: 'Backoffice post', detail: 'override_backoffice_post_url' },
     { from: 'Your app', to: 'Your app', label: 'Verified callback is proof', detail: 'cs.HandleCallback(request)' },
-    { from: 'Customer', to: 'Your app', label: 'Browser posts the receipt', detail: 'override_custom_receipt_page' },
+    { from: 'Customer', to: 'Your app', label: 'Browser posts the receipt, when one is set', detail: 'override_custom_receipt_page' },
     { from: 'Your app', to: 'Your app', label: 'Same signature check', detail: 'cs.HandleCallback(request)' },
     { from: 'Your app', to: 'Customer', label: 'Show the receipt', response: true },
   ]"
 />
 
-## Initiating a Payment
+## Hosted Checkout
 
 ```go
 import (
@@ -67,7 +67,7 @@ data := cybersource.PaymentData{
 	CancelURL:       "https://shop.test/checkout",
 }
 
-payment, err := cs.Initiate(data)
+payment, err := cs.HostedCheckout(data)
 if err != nil {
 	return err
 }
@@ -81,14 +81,20 @@ io.WriteString(w, payment.HTML())
 
 | Field | Type | Required | Rules |
 |---|---|---|---|
-| `OrderID` | `string` | Yes | At most 50 characters, sent as `reference_number` |
+| `OrderID` | `string` | Yes | At most 40 characters, sent as `reference_number` |
 | `Amount` | `myanmarpayments.Amount` | Yes | Order total in `Currency`, 0 or more, any number of decimals, at most 15 characters, e.g. `Kyat(10000)` or `MustParseAmount("10.50")` |
 | `CallbackURL` | `string` | Yes | Absolute http or https URL CyberSource posts the result to. At most 255 characters |
-| `Currency` | `string` | Yes | Any three-letter uppercase ISO 4217 code, e.g. `MMK` |
+| `Currency` | `string` | Yes | Three-letter uppercase ISO 4217 code enabled on your Secure Acceptance profile, e.g. `MMK` |
 | `TransactionType` | `cybersource.TransactionType` | Yes | `cybersource.Sale` (`"sale"`), `.Authorization` (`"authorization"`), `.SaleAndCreateToken` (`"sale,create_payment_token"`) or `.AuthorizationAndCreateToken` (`"authorization,create_payment_token"`) |
 | `Locale` | `string` | Yes | Hosted page language, lowercase `xx-xx`, e.g. `en-us` |
-| `ReturnURL` | `string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters |
-| `CancelURL` | `string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters |
+| `ReturnURL` | `string` | No | Receipt page for the customer (absolute http or https URL). At most 255 characters. Left out of the form when unset |
+| `CancelURL` | `string` | No | Page shown when the customer cancels (absolute http or https URL). At most 255 characters. Left out of the form when unset |
+
+CyberSource requires the callback, receipt and cancel URLs to use HTTPS with TLS 1.2 or later on port 443; the package doesn't enforce it.
+
+### Transaction Types
+
+`sale` authorizes the payment and settles it in one step. `authorization` only authorizes it: the funds are held, not collected, until you capture the authorization through CyberSource (the Business Center or its API), which is outside this package. The `create_payment_token` variants also ask CyberSource to create a payment token for the card.
 
 ## Handling Callbacks
 
@@ -127,7 +133,7 @@ Only signed fields are trusted: `decision` and `req_reference_number` must be li
 
 What CyberSource puts in each field. See [Results](/go-myanmar-payments/references/results) and [PaymentCallback & Status](/go-myanmar-payments/references/payment-callback) for the full structs. CyberSource posts form fields, so every `Raw` value is a `string`, exactly as sent.
 
-### `Initiate()` → `*myanmarpayments.FormPayment` {#initiate-response}
+### `HostedCheckout()` → `*myanmarpayments.FormPayment` {#hosted-checkout-response}
 
 | Field / Method | CyberSource value |
 |---|---|
@@ -144,16 +150,16 @@ What CyberSource puts in each field. See [Results](/go-myanmar-payments/referenc
 | `access_key` | `Config.AccessKey` |
 | `profile_id` | `Config.ProfileID` |
 | `transaction_uuid` | A random ID, new for every call |
-| `signed_field_names` | The field names in this table except `signature`, comma-separated |
+| `signed_field_names` | The names of the fields sent, except `signature`, comma-separated |
 | `signed_date_time` | UTC time, e.g. `2026-10-08T09:30:00Z` |
 | `locale` | `data.Locale` |
 | `transaction_type` | `data.TransactionType` |
 | `reference_number` | `data.OrderID` |
 | `amount` | `data.Amount`, e.g. `10000` |
 | `currency` | `data.Currency` |
-| `override_custom_receipt_page` | `data.ReturnURL`, `""` when unset |
+| `override_custom_receipt_page` | `data.ReturnURL`; left out when unset |
 | `override_backoffice_post_url` | `data.CallbackURL` |
-| `override_custom_cancel_page` | `data.CancelURL`, `""` when unset |
+| `override_custom_cancel_page` | `data.CancelURL`; left out when unset |
 | `signature` | Base64 HMAC-SHA256 of the signed fields |
 
 `FormPayment` has no `Raw`: nothing is sent to CyberSource until the customer's browser posts the form.
@@ -166,7 +172,7 @@ What CyberSource puts in each field. See [Results](/go-myanmar-payments/referenc
 | `Status` | `decision` mapped, see [Statuses](#statuses) |
 | `GatewayStatus` | CyberSource `decision`, trimmed and uppercased, e.g. `ACCEPT` |
 | `GatewayReference` | CyberSource `transaction_id`. `""` when it is not signed |
-| `Amount` | CyberSource `auth_amount`, falling back to `req_amount` when it is missing or empty, e.g. `10000`; `""` when both are. Signed values only |
+| `Amount` | CyberSource `auth_amount`, falling back to `req_amount` when it is missing or empty, e.g. `10000`; `""` when both are. Signed values only. On `ACCEPT` it can be less than the order total (partial approval, reason code `110`); on `DECLINE`, `ERROR` and `CANCEL` it is the requested amount (`req_amount`), not a paid amount |
 | `Raw` | The signed fields of the verified post plus `signature`, e.g. `decision`, `reason_code`, `message`, `transaction_id`, `auth_amount`, `auth_code`, `req_reference_number`, `req_amount`, `req_currency`, `req_transaction_uuid`, `signed_field_names`, `signed_date_time`. Unsigned fields are left out |
 | `Acknowledgement` | HTTP `200`, empty body, `Content-Type: text/plain` |
 
@@ -179,13 +185,17 @@ What CyberSource puts in each field. See [Results](/go-myanmar-payments/referenc
 | `DECLINE`, `ERROR` | `StatusFailed` |
 | `CANCEL` | `StatusCanceled` |
 
+`ACCEPT` includes partial approvals (reason code `110`), where the issuer approved less than the requested amount: compare `Amount` with the order total before fulfilling. With an `authorization` transaction type, `ACCEPT` means authorized, not captured, see [Transaction Types](#transaction-types).
+
+`REVIEW` means the authorization needs your review (reason codes `200`, `201`, `230` and `520`), and CyberSource posts nothing again once it is decided: resolve it in the Business Center and update the order yourself.
+
 Any other `decision` returns `*SignatureVerificationError` (`CyberSource callback is malformed.`), so a verified callback never has the `StatusUnknown` status.
 
 ## Errors
 
 | Call | Returns | When |
 |---|---|---|
-| `Initiate()` | `*InvalidPaymentDataError` | `data.Validate()` fails. Nothing is signed |
+| `HostedCheckout()` | `*InvalidPaymentDataError` | `data.Validate()` fails. Nothing is signed |
 | `HandleCallback()` | `*SignatureVerificationError` | `CyberSource callback signature verification failed.`: `signature` is missing, not a string or doesn't match, a field listed in `signed_field_names` is missing or holds an object or array, or `signed_field_names` doesn't list itself or has an empty, repeated or `=`-containing name. `CyberSource callback is malformed.`: the signature matches but `decision` or `req_reference_number` isn't signed, or `decision` isn't one of the five above |
 
 CyberSource makes no HTTP calls, so nothing returns `*APIError`.

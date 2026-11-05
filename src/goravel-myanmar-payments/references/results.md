@@ -20,7 +20,7 @@ Returned by `KbzPay()` → `PWA()` and `WavePay()` → `Initiate()`.
 
 ## FormPayment
 
-Returned by `AyaPay()` → `Initiate()` and `CyberSource()` → `Initiate()`.
+Returned by `AyaPay()` → `Initiate()` and `CyberSource()` → `HostedCheckout()`.
 
 | Field / Method | Type | Description |
 |---|---|---|

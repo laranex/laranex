@@ -62,7 +62,7 @@ Each gateway checks the amount against its official documentation when you start
 | Wave Pay Mini App | No | Greater than 0. The total defaults to the sum of the items |
 | AYA Payment Gateway | No | Greater than 0, MMK only |
 | Yoma MMQR | No | Greater than 0 |
-| CyberSource | Any | 0 or more, at most 15 characters, any ISO 4217 currency |
+| CyberSource | Any | 0 or more, at most 15 characters, currencies enabled on your Secure Acceptance profile |
 
 A violation returns `*myanmarpayments.InvalidPaymentDataError`, e.g. `Wave Pay does not accept decimal amounts; the amount field must be a whole number.` AYA Payment Gateway, whose documentation shows no decimal amounts, reports `AYA Payment Gateway documents no decimal amounts; the amount field must be a whole number.`
 

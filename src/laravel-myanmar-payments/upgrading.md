@@ -42,7 +42,7 @@ String channels and positional arguments are replaced with typed accessors and o
 | `channel('aya_pgw')->getPaymentServices()` | `ayaPay()->services()` → `list<AyaPayService>` |
 | `channel('aya_pgw')->paymentRequest($orderId, $amount, $channel, $method, ...)` | `ayaPay()->initiate(new AyaPayPaymentData(...))` → `FormPayment` |
 | `channel('aya_pgw')->paymentEnquiry($orderId)` | `ayaPay()->status($orderId)` → `PaymentStatusResult` |
-| `channel('cyber_source.secure_acceptance')->getPaymentData($transactionId, $referenceNumber, $amount, ...)` | `cyberSource()->initiate(new CyberSourcePaymentData(...))` → `FormPayment` |
+| `channel('cyber_source.secure_acceptance')->getPaymentData($transactionId, $referenceNumber, $amount, ...)` | `cyberSource()->hostedCheckout(new CyberSourcePaymentData(...))` → `FormPayment` |
 | `channel('yoma_mmqr')->getPaymentQr($orderNumber, $amount, $description)` | `yomaMmqr()->initiate(new YomaMmqrPaymentData(...))` → `QrPayment` (`qrImage`) |
 | `channel('yoma_mmqr')->checkoutOrder(...)` + `generateQr($orderNumber)` | `yomaMmqr()->initiate($data)` once, then `yomaMmqr()->renewQr($orderId)` |
 | `channel('yoma_mmqr')->checkPaymentStatus($refLabel)` | `yomaMmqr()->status($payment->reference)` → `PaymentStatusResult` |

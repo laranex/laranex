@@ -152,7 +152,7 @@ Every gateway's status is mapped onto one `PaymentStatus`; the original stays in
 
 ## Status Checks
 
-When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Pay, Wave Pay Mini App and CyberSource have no status API.
+When a callback is late, ask KBZ Pay, AYA or Yoma directly; Wave Pay, Wave Pay Mini App and CyberSource have no status API in this package.
 
 <SequenceDiagram
   title="Checking the status when the callback is late"
@@ -175,7 +175,7 @@ Status checks return a `PaymentStatusResult` with the same `status`, `gatewaySta
 | Yoma MMQR | `this.payments.yomaMmqr().status(payment.reference)` |
 | Wave Pay | No status API: rely on the callback |
 | Wave Pay Mini App | No status API: rely on the callback |
-| CyberSource | No status API: rely on the callback |
+| CyberSource | No status API in this package: rely on the callback |
 
 ```ts
 const result = await this.payments.kbzPay().status(`ORDER_${order.id}`);

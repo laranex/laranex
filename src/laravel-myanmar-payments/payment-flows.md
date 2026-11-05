@@ -10,7 +10,7 @@ Starting a payment always follows the same pattern: build the gateway's request 
 | Result | What you do | Returned by |
 |---|---|---|
 | `RedirectPayment` | Redirect the customer to `$payment->url` | `kbzPay()->pwa()`, `wavePay()->initiate()` |
-| `FormPayment` | Redirect to `$payment->autoSubmitUrl` | `ayaPay()->initiate()`, `cyberSource()->initiate()` |
+| `FormPayment` | Redirect to `$payment->autoSubmitUrl` | `ayaPay()->initiate()`, `cyberSource()->hostedCheckout()` |
 | `QrPayment` | Show the QR to the customer | `kbzPay()->qr()`, `yomaMmqr()->initiate()`, `yomaMmqr()->renewQr()` |
 | `AppPayment` | Return the signed payload to your mobile app | `kbzPay()->app()` |
 | `MiniAppPayment` | Return the signed payload to your mini app page | `wavePayMiniApp()->payment()` |

@@ -21,7 +21,7 @@ Returned by `kbz.PWA()` and `wave.Initiate()`.
 
 ## FormPayment
 
-Returned by `aya.Initiate()` and `cs.Initiate()`.
+Returned by `aya.Initiate()` and `cs.HostedCheckout()`.
 
 | Field / Method | Type | Description |
 |---|---|---|

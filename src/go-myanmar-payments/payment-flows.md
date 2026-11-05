@@ -10,7 +10,7 @@ Starting a payment always follows the same pattern: build the gateway's payment 
 | Result | What you do | Returned by |
 |---|---|---|
 | `*RedirectPayment` | Redirect the customer to `payment.URL` | `kbz.PWA`, `wave.Initiate` |
-| `*FormPayment` | Write `payment.HTML()` | `aya.Initiate`, `cs.Initiate` |
+| `*FormPayment` | Write `payment.HTML()` | `aya.Initiate`, `cs.HostedCheckout` |
 | `*QrPayment` | Show the QR to the customer | `kbz.QR`, `yoma.Initiate`, `yoma.RenewQR` |
 | `*AppPayment` | Return the signed payload to your mobile app | `kbz.App` |
 | `*MiniAppPayment` | Return the signed payload to your mini app page | `miniApp.Payment` |
