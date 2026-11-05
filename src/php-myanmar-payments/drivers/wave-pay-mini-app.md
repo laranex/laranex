@@ -59,7 +59,7 @@ $wavePayMiniApp = new WavePayMiniApp(
 |---|---|---|
 | `WAVE_PAY_MINI_APP_CLIENT_ID` | `client_id` | Client ID issued by Wave, for the token endpoint |
 | `WAVE_PAY_MINI_APP_CLIENT_SECRET` | `client_secret` | Client secret issued by Wave, for the token endpoint |
-| `WAVE_PAY_MINI_APP_MINI_APP_ID` | `mini_app_id` | Your mini app ID (`miniAppID`) |
+| `WAVE_PAY_MINI_APP_APP_ID` | `mini_app_id` | Your mini app ID (`miniAppID`) |
 | `WAVE_PAY_MINI_APP_SECRET_KEY` | `secret_key` | Hash secret key for payment and callback hashes |
 | `WAVE_PAY_MINI_APP_BASE_URL` | `base_url` | The API base URL, e.g. `WavePayMiniAppConfig::PRODUCTION_URL`. A trailing `/` is dropped |
 | `MYANMAR_PAYMENTS_HTTP_TIMEOUT` | `timeout_in_seconds` | Optional, 30 seconds by default |

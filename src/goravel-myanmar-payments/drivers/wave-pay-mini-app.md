@@ -44,7 +44,7 @@ The page logs in with a token from your server, then pays with a payload your se
 ```env
 WAVE_PAY_MINI_APP_CLIENT_ID=
 WAVE_PAY_MINI_APP_CLIENT_SECRET=
-WAVE_PAY_MINI_APP_MINI_APP_ID=
+WAVE_PAY_MINI_APP_APP_ID=
 WAVE_PAY_MINI_APP_SECRET_KEY=
 WAVE_PAY_MINI_APP_BASE_URL=
 ```
@@ -53,7 +53,7 @@ WAVE_PAY_MINI_APP_BASE_URL=
 |---|---|---|
 | `WAVE_PAY_MINI_APP_CLIENT_ID` | `wave_pay_mini_app.client_id` | Client ID issued by Wave, for the token endpoint |
 | `WAVE_PAY_MINI_APP_CLIENT_SECRET` | `wave_pay_mini_app.client_secret` | Client secret issued by Wave, for the token endpoint |
-| `WAVE_PAY_MINI_APP_MINI_APP_ID` | `wave_pay_mini_app.mini_app_id` | Your mini app ID (`miniAppID`) |
+| `WAVE_PAY_MINI_APP_APP_ID` | `wave_pay_mini_app.mini_app_id` | Your mini app ID (`miniAppID`) |
 | `WAVE_PAY_MINI_APP_SECRET_KEY` | `wave_pay_mini_app.secret_key` | Hash secret key for payment and callback hashes |
 | `WAVE_PAY_MINI_APP_BASE_URL` | `wave_pay_mini_app.base_url` | The API base URL. A trailing `/` is dropped |
 

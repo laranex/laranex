@@ -36,7 +36,7 @@ WAVE_PAY_TIME_TO_LIVE_IN_SECONDS=900   # greater than 0
 # Wave Pay Mini App
 WAVE_PAY_MINI_APP_CLIENT_ID=
 WAVE_PAY_MINI_APP_CLIENT_SECRET=
-WAVE_PAY_MINI_APP_MINI_APP_ID=
+WAVE_PAY_MINI_APP_APP_ID=
 WAVE_PAY_MINI_APP_SECRET_KEY=
 WAVE_PAY_MINI_APP_BASE_URL=
 
@@ -82,7 +82,7 @@ CYBER_SOURCE_BASE_URL=
 | `WAVE_PAY_BASE_REDIRECT_URL` | `wave_pay.base_redirect_url` | Yes | The host the customer is sent to. The customer approves the payment at its `/authenticate` |
 | `WAVE_PAY_MINI_APP_CLIENT_ID` | `wave_pay_mini_app.client_id` | Yes | Client ID issued by Wave, for the token endpoint |
 | `WAVE_PAY_MINI_APP_CLIENT_SECRET` | `wave_pay_mini_app.client_secret` | Yes | Client secret issued by Wave, for the token endpoint |
-| `WAVE_PAY_MINI_APP_MINI_APP_ID` | `wave_pay_mini_app.mini_app_id` | Yes | Your mini app ID (`miniAppID`) |
+| `WAVE_PAY_MINI_APP_APP_ID` | `wave_pay_mini_app.mini_app_id` | Yes | Your mini app ID (`miniAppID`) |
 | `WAVE_PAY_MINI_APP_SECRET_KEY` | `wave_pay_mini_app.secret_key` | Yes | Hash secret key for payment and callback hashes |
 | `WAVE_PAY_MINI_APP_BASE_URL` | `wave_pay_mini_app.base_url` | Yes | The API base URL. Access tokens are requested at its `/auth/v1/external-utility/token` |
 | `AYA_PAY_APP_KEY` | `aya_pay.app_key` | Yes | Public application key |
@@ -153,7 +153,7 @@ return [
     'wave_pay_mini_app' => [
         'client_id' => env('WAVE_PAY_MINI_APP_CLIENT_ID'),
         'client_secret' => env('WAVE_PAY_MINI_APP_CLIENT_SECRET'),
-        'mini_app_id' => env('WAVE_PAY_MINI_APP_MINI_APP_ID'),
+        'mini_app_id' => env('WAVE_PAY_MINI_APP_APP_ID'),
         'secret_key' => env('WAVE_PAY_MINI_APP_SECRET_KEY'),
         'base_url' => env('WAVE_PAY_MINI_APP_BASE_URL'),
     ],

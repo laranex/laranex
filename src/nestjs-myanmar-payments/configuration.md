@@ -38,7 +38,7 @@ WAVE_PAY_TIME_TO_LIVE_IN_SECONDS=900   # greater than 0
 # Wave Pay Mini App
 WAVE_PAY_MINI_APP_CLIENT_ID=
 WAVE_PAY_MINI_APP_CLIENT_SECRET=
-WAVE_PAY_MINI_APP_MINI_APP_ID=
+WAVE_PAY_MINI_APP_APP_ID=
 WAVE_PAY_MINI_APP_SECRET_KEY=
 WAVE_PAY_MINI_APP_BASE_URL=
 
@@ -85,7 +85,7 @@ CYBER_SOURCE_BASE_URL=
 | `WAVE_PAY_TIME_TO_LIVE_IN_SECONDS` | `wavePay.timeToLiveSeconds` | Yes | Seconds the customer has to pay, greater than 0. A payment can override it with `WavePayPaymentData`'s `timeToLiveSeconds` |
 | `WAVE_PAY_MINI_APP_CLIENT_ID` | `wavePayMiniApp.clientId` | Yes | Client ID issued by Wave, for the token endpoint |
 | `WAVE_PAY_MINI_APP_CLIENT_SECRET` | `wavePayMiniApp.clientSecret` | Yes | Client secret issued by Wave, for the token endpoint |
-| `WAVE_PAY_MINI_APP_MINI_APP_ID` | `wavePayMiniApp.miniAppId` | Yes | Your mini app ID (`miniAppID`) |
+| `WAVE_PAY_MINI_APP_APP_ID` | `wavePayMiniApp.miniAppId` | Yes | Your mini app ID (`miniAppID`) |
 | `WAVE_PAY_MINI_APP_SECRET_KEY` | `wavePayMiniApp.secretKey` | Yes | Hash secret key for payment and callback hashes |
 | `WAVE_PAY_MINI_APP_BASE_URL` | `wavePayMiniApp.baseUrl` | Yes | The API base URL, e.g. `WavePayMiniAppConfig.PRODUCTION_URL`. Tokens are requested at its `/auth/v1/external-utility/token` |
 | `AYA_PAY_APP_KEY` | `ayaPay.appKey` | Yes | Public application key |

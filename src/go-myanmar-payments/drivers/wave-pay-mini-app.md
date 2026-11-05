@@ -61,7 +61,7 @@ if err != nil {
 |---|---|---|
 | `WAVE_PAY_MINI_APP_CLIENT_ID` | `ClientID` | Client ID issued by Wave, for the token endpoint |
 | `WAVE_PAY_MINI_APP_CLIENT_SECRET` | `ClientSecret` | Client secret issued by Wave, for the token endpoint |
-| `WAVE_PAY_MINI_APP_MINI_APP_ID` | `MiniAppID` | Your mini app ID (`miniAppID`) |
+| `WAVE_PAY_MINI_APP_APP_ID` | `MiniAppID` | Your mini app ID (`miniAppID`) |
 | `WAVE_PAY_MINI_APP_SECRET_KEY` | `SecretKey` | Hash secret key for payment and callback hashes |
 | `WAVE_PAY_MINI_APP_BASE_URL` | `BaseURL` | The API base URL, e.g. `wavepayminiapp.ProductionURL`. A trailing `/` is dropped |
 | `MYANMAR_PAYMENTS_HTTP_TIMEOUT` | `TimeoutSeconds` | Optional, 30 seconds by default |
